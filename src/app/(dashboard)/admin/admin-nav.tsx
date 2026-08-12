@@ -15,6 +15,7 @@ import {
   GraduationCap,
   BookMarked,
   LayoutDashboard,
+  Library,
 } from "lucide-react";
 
 const adminSections = [
@@ -25,6 +26,7 @@ const adminSections = [
   { label: "admin.modules", href: "/admin/modules", icon: Boxes },
   { label: "admin.classes", href: "/admin/classes", icon: GraduationCap },
   { label: "admin.subjects", href: "/admin/subjects", icon: BookMarked },
+  { label: "admin.library", href: "/admin/library", icon: Library },
   { label: "admin.content", href: "/admin/content", icon: FileText },
   { label: "admin.notifications", href: "/admin/notifications", icon: Bell },
   { label: "admin.auditLog", href: "/admin/audit", icon: ScrollText },
