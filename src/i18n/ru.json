@@ -116,7 +116,17 @@
     "schoolPhone": "Телефон",
     "schoolEmail": "Электронная почта",
     "schoolWebsite": "Веб-сайт",
-    "idPrefix": "Префикс ID"
+    "idPrefix": "Префикс ID",
+    "createPage": "Создать страницу",
+    "noPagesYet": "Пока нет страниц",
+    "published": "Опубликовано",
+    "draft": "Черновик",
+    "addBlock": "Добавить блок",
+    "section": "Секция",
+    "blockType": "Тип блока",
+    "titleTg": "Заголовок (тҷ)",
+    "titleRu": "Заголовок (ру)",
+    "bodyTg": "Текст (тҷ)"
   },
   "modules": {
     "messages": "Сообщения",

@@ -116,7 +116,17 @@
     "schoolPhone": "Телефон",
     "schoolEmail": "Почтаи электронӣ",
     "schoolWebsite": "Вебсайт",
-    "idPrefix": "Префикси ID"
+    "idPrefix": "Префикси ID",
+    "createPage": "Эҷоди саҳифа",
+    "noPagesYet": "Ҳоло саҳифае нест",
+    "published": "Нашршуда",
+    "draft": "Пешнавис",
+    "addBlock": "Илова кардани блок",
+    "section": "Бахш",
+    "blockType": "Навъи блок",
+    "titleTg": "Сарлавҳа (тҷ)",
+    "titleRu": "Заголовок (ру)",
+    "bodyTg": "Матн (тҷ)"
   },
   "modules": {
     "messages": "Паёмҳо",
