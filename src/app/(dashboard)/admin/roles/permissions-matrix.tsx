@@ -107,14 +107,12 @@ export function PermissionsMatrix({
                               className="px-2 py-2 text-center"
                             >
                               <form
-                                action={async () => {
-                                  "use server";
-                                  await togglePermissionAction(
-                                    role.id,
-                                    perm.id,
-                                    !checked
-                                  );
-                                }}
+                                action={togglePermissionAction.bind(
+                                  null,
+                                  role.id,
+                                  perm.id,
+                                  !checked
+                                )}
                               >
                                 <button
                                   type="submit"

@@ -111,10 +111,7 @@ export function UserDetail({
                 </div>
                 {!role.isSystem && (
                   <form
-                    action={async () => {
-                      "use server";
-                      await removeRoleAction(user.id, role.id);
-                    }}
+                    action={removeRoleAction.bind(null, user.id, role.id)}
                   >
                     <Button
                       type="submit"

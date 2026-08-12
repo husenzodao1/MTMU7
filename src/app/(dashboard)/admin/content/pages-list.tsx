@@ -51,10 +51,11 @@ export function PagesList({ pages }: { pages: PageItem[] }) {
                 {page.isPublished ? t("published") : t("draft")}
               </Badge>
               <form
-                action={async () => {
-                  "use server";
-                  await togglePagePublishAction(page.id, !page.isPublished);
-                }}
+                action={togglePagePublishAction.bind(
+                  null,
+                  page.id,
+                  !page.isPublished
+                )}
               >
                 <Button type="submit" variant="ghost" size="icon">
                   {page.isPublished ? (
@@ -69,12 +70,7 @@ export function PagesList({ pages }: { pages: PageItem[] }) {
                   <Edit className="h-4 w-4" />
                 </Button>
               </Link>
-              <form
-                action={async () => {
-                  "use server";
-                  await deletePageAction(page.id);
-                }}
-              >
+              <form action={deletePageAction.bind(null, page.id)}>
                 <Button
                   type="submit"
                   variant="ghost"

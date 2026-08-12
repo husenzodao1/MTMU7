@@ -160,14 +160,12 @@ export function ContentEditor({
                 </div>
                 <div className="flex items-center gap-1">
                   <form
-                    action={async () => {
-                      "use server";
-                      await toggleBlockVisibilityAction(
-                        pageId,
-                        block.id,
-                        !block.isVisible
-                      );
-                    }}
+                    action={toggleBlockVisibilityAction.bind(
+                      null,
+                      pageId,
+                      block.id,
+                      !block.isVisible
+                    )}
                   >
                     <Button type="submit" variant="ghost" size="icon">
                       {block.isVisible ? (
@@ -178,10 +176,7 @@ export function ContentEditor({
                     </Button>
                   </form>
                   <form
-                    action={async () => {
-                      "use server";
-                      await deleteBlockAction(pageId, block.id);
-                    }}
+                    action={deleteBlockAction.bind(null, pageId, block.id)}
                   >
                     <Button
                       type="submit"

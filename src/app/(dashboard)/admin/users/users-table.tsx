@@ -83,10 +83,11 @@ export function UsersTable({ users }: { users: UserRow[] }) {
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
                   <form
-                    action={async () => {
-                      "use server";
-                      await toggleUserActiveAction(user.id, !user.isActive);
-                    }}
+                    action={toggleUserActiveAction.bind(
+                      null,
+                      user.id,
+                      !user.isActive
+                    )}
                   >
                     <Button type="submit" variant="ghost" size="sm">
                       {user.isActive ? t("deactivate") : t("activate")}

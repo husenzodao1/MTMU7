@@ -38,13 +38,11 @@ export function NotificationSettings({
                 </span>
               </div>
               <form
-                action={async () => {
-                  "use server";
-                  await toggleNotificationTypeAction(
-                    setting.id,
-                    !setting.isEnabled
-                  );
-                }}
+                action={toggleNotificationTypeAction.bind(
+                  null,
+                  setting.id,
+                  !setting.isEnabled
+                )}
               >
                 <Button
                   type="submit"
