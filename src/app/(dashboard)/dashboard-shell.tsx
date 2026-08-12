@@ -8,19 +8,13 @@ import type { UserWithRole } from "@/types/auth";
 
 interface DashboardShellProps {
   user: UserWithRole;
+  enabledModules: string[];
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, children }: DashboardShellProps) {
+export function DashboardShell({ user, enabledModules, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user.roles.some((r) => r.slug === "admin");
-
-  // TODO: Load from server — for now show all modules
-  const enabledModules = [
-    "messages", "library", "grades", "attendance",
-    "homework", "schedule", "documents", "events",
-    "announcements", "reports", "analytics",
-  ];
 
   const handleMenuToggle = useCallback(() => {
     setMobileMenuOpen((prev) => !prev);
