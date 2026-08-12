@@ -11,6 +11,7 @@ import {
   Download,
   BookOpen,
   ArrowLeft,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,9 +68,9 @@ export function BookDetailView({ book }: BookDetailProps) {
         <CardContent className="p-6">
           <div className="flex flex-col gap-6 sm:flex-row">
             <div className="flex h-48 w-36 shrink-0 items-center justify-center self-center rounded-lg bg-neutral-50 sm:h-56 sm:w-40 sm:self-start">
-              {book.coverUrl ? (
+              {book.signedCoverUrl ? (
                 <img
-                  src={book.coverUrl}
+                  src={book.signedCoverUrl}
                   alt={book.title}
                   className="h-full w-full rounded-lg object-cover"
                 />
@@ -145,20 +146,29 @@ export function BookDetailView({ book }: BookDetailProps) {
               )}
 
               <div className="flex flex-wrap gap-3 pt-2">
-                <Button asChild>
-                  <a href={book.fileUrl} target="_blank" rel="noopener noreferrer">
-                    <BookOpen className="h-4 w-4" />
-                    {book.readingProgress
-                      ? t("continueReading")
-                      : t("openBook")}
-                  </a>
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href={book.fileUrl} download={book.fileName}>
-                    <Download className="h-4 w-4" />
-                    {t("downloadFile")}
-                  </a>
-                </Button>
+                {book.signedFileUrl ? (
+                  <>
+                    <Button asChild>
+                      <a href={book.signedFileUrl} target="_blank" rel="noopener noreferrer">
+                        <BookOpen className="h-4 w-4" />
+                        {book.readingProgress
+                          ? t("continueReading")
+                          : t("openBook")}
+                      </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <a href={book.signedFileUrl} download={book.fileName}>
+                        <Download className="h-4 w-4" />
+                        {t("downloadFile")}
+                      </a>
+                    </Button>
+                  </>
+                ) : (
+                  <Button disabled>
+                    <Lock className="h-4 w-4" />
+                    {t("noAccess")}
+                  </Button>
+                )}
                 <form
                   action={toggleFavoriteAction.bind(
                     null,

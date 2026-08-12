@@ -58,11 +58,12 @@ export function BookForm({ categories }: BookFormProps) {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-neutral-700">
-                File URL *
+                Storage Path *
               </label>
               <input
-                name="file_url"
+                name="file_path"
                 required
+                placeholder="{school_id}/{item_id}/file.pdf"
                 className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-300"
               />
             </div>
@@ -192,10 +193,11 @@ export function BookForm({ categories }: BookFormProps) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">
-              {t("uploadCover")} (URL)
+              {t("uploadCover")} (Storage Path)
             </label>
             <input
-              name="cover_url"
+              name="cover_path"
+              placeholder="{school_id}/{item_id}/cover.jpg"
               className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary-300"
             />
           </div>

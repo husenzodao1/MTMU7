@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
@@ -8,6 +9,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+
+const LIBRARY_COVERS_BUCKET = "library-covers";
+const SIGNED_URL_EXPIRY = 3600;
 
 interface HistoryEntry {
   id: string;
@@ -37,15 +41,34 @@ export default async function ReadingHistoryPage() {
     .eq("user_id" as never, user.id)
     .order("updated_at" as never, { ascending: false });
 
-  const entries: HistoryEntry[] = (
-    (data as Array<Record<string, unknown>>) ?? []
-  ).map((h) => {
+  const rows = (data as Array<Record<string, unknown>>) ?? [];
+  const coverPaths = rows
+    .map((h) => (h.library_items as Record<string, unknown>).cover_url as string | null)
+    .filter((p): p is string => !!p);
+
+  let signedCoverMap = new Map<string, string>();
+  if (coverPaths.length > 0) {
+    const adminClient = createAdminClient();
+    const { data: signedUrls } = await adminClient.storage
+      .from(LIBRARY_COVERS_BUCKET)
+      .createSignedUrls(coverPaths, SIGNED_URL_EXPIRY);
+    if (signedUrls) {
+      for (const entry of signedUrls) {
+        if (entry.signedUrl && entry.path) {
+          signedCoverMap.set(entry.path, entry.signedUrl);
+        }
+      }
+    }
+  }
+
+  const entries: HistoryEntry[] = rows.map((h) => {
     const item = h.library_items as Record<string, unknown>;
+    const rawCoverPath = item.cover_url as string | null;
     return {
       id: item.id as string,
       title: item.title as string,
       author: item.author as string | null,
-      coverUrl: item.cover_url as string | null,
+      coverUrl: rawCoverPath ? (signedCoverMap.get(rawCoverPath) ?? null) : null,
       fileType: item.file_type as string,
       lastPage: h.last_page as number,
       updatedAt: h.updated_at as string,

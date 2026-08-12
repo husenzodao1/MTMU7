@@ -3,6 +3,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { canPerformAction } from "@/lib/modules/check";
+import { getSignedFileUrl, getSignedCoverUrl } from "@/lib/storage/library";
 import { redirect } from "next/navigation";
 
 export interface BookDetail {
@@ -10,8 +11,8 @@ export interface BookDetail {
   title: string;
   author: string | null;
   description: string | null;
-  coverUrl: string | null;
-  fileUrl: string;
+  signedCoverUrl: string | null;
+  signedFileUrl: string | null;
   fileName: string;
   fileSize: number;
   fileType: string;
@@ -74,13 +75,18 @@ export async function getBookDetail(
   const category = row.library_categories as Record<string, unknown> | null;
   const subject = row.subjects as Record<string, unknown> | null;
 
+  const [signedFileUrl, signedCoverUrl] = await Promise.all([
+    getSignedFileUrl(itemId),
+    getSignedCoverUrl(itemId),
+  ]);
+
   return {
     id: row.id as string,
     title: row.title as string,
     author: row.author as string | null,
     description: row.description as string | null,
-    coverUrl: row.cover_url as string | null,
-    fileUrl: row.file_url as string,
+    signedCoverUrl,
+    signedFileUrl,
     fileName: row.file_name as string,
     fileSize: row.file_size as number,
     fileType: row.file_type as string,

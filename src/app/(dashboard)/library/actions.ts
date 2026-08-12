@@ -1,9 +1,13 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
+
+const LIBRARY_COVERS_BUCKET = "library-covers";
+const SIGNED_URL_EXPIRY = 3600;
 
 export interface CategoryItem {
   id: string;
@@ -20,7 +24,6 @@ export interface LibraryItem {
   author: string | null;
   description: string | null;
   coverUrl: string | null;
-  fileUrl: string;
   fileName: string;
   fileSize: number;
   fileType: string;
@@ -108,15 +111,36 @@ export async function getLibraryItems(
     )
   );
 
-  return (data as Array<Record<string, unknown>>).map((item) => {
+  const rows = data as Array<Record<string, unknown>>;
+  const coverPaths = rows
+    .map((item) => item.cover_url as string | null)
+    .filter((p): p is string => !!p);
+
+  let signedCoverMap = new Map<string, string>();
+  if (coverPaths.length > 0) {
+    const adminClient = createAdminClient();
+    const { data: signedUrls } = await adminClient.storage
+      .from(LIBRARY_COVERS_BUCKET)
+      .createSignedUrls(coverPaths, SIGNED_URL_EXPIRY);
+
+    if (signedUrls) {
+      for (const entry of signedUrls) {
+        if (entry.signedUrl && entry.path) {
+          signedCoverMap.set(entry.path, entry.signedUrl);
+        }
+      }
+    }
+  }
+
+  return rows.map((item) => {
     const category = item.library_categories as Record<string, unknown> | null;
+    const rawCoverPath = item.cover_url as string | null;
     return {
       id: item.id as string,
       title: item.title as string,
       author: item.author as string | null,
       description: item.description as string | null,
-      coverUrl: item.cover_url as string | null,
-      fileUrl: item.file_url as string,
+      coverUrl: rawCoverPath ? (signedCoverMap.get(rawCoverPath) ?? null) : null,
       fileName: item.file_name as string,
       fileSize: item.file_size as number,
       fileType: item.file_type as string,
