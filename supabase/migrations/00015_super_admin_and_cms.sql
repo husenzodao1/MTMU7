@@ -5,6 +5,28 @@
 -- 1. Add is_super_admin to users (NEVER settable from client)
 ALTER TABLE public.users ADD COLUMN is_super_admin BOOLEAN NOT NULL DEFAULT false;
 
+-- 1b. Protect is_super_admin from client mutation at the DB level.
+-- RLS is row-level, not column-level, so the existing users_update_self
+-- policy would otherwise let any authenticated user set this flag on
+-- their own row. Only the service_role (server-side admin client) may
+-- set is_super_admin = true.
+CREATE OR REPLACE FUNCTION public.protect_super_admin_flag()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.is_super_admin = true AND (TG_OP = 'INSERT' OR OLD.is_super_admin = false) THEN
+    IF current_setting('role') != 'service_role' THEN
+      NEW.is_super_admin := false;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_protect_super_admin
+  BEFORE INSERT OR UPDATE ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_super_admin_flag();
+
 -- 2. Add English fields to CMS tables
 ALTER TABLE public.schools ADD COLUMN description_en TEXT;
 ALTER TABLE public.pages ADD COLUMN title_en VARCHAR(300);
@@ -159,7 +181,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000099',
   '00000000-0000-0000-0000-000000000000',
   'juraaaevilyos@gmail.com',
-  crypt('SuperAdmin2026!Mtmu7', gen_salt('bf')),
+  crypt(gen_random_uuid()::text, gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}',
   '{}',
@@ -192,6 +214,12 @@ INSERT INTO auth.identities (
 ) ON CONFLICT (provider, provider_id) DO NOTHING;
 
 -- Create public.users record for Super Admin
+-- Migrations run as the `postgres` role, not `service_role`, so the
+-- trg_protect_super_admin trigger added above would otherwise strip
+-- is_super_admin back to false on this seed insert. Disable the
+-- trigger for this single statement, then re-enable it immediately.
+ALTER TABLE public.users DISABLE TRIGGER trg_protect_super_admin;
+
 INSERT INTO public.users (
   id,
   school_id,
@@ -207,6 +235,8 @@ INSERT INTO public.users (
   'Admin',
   true
 ) ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.users ENABLE TRIGGER trg_protect_super_admin;
 
 -- Assign admin role to Super Admin
 INSERT INTO public.user_roles (
