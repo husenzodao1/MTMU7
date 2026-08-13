@@ -16,6 +16,9 @@ import {
   BookMarked,
   LayoutDashboard,
   Library,
+  Ticket,
+  Crown,
+  UserPlus,
 } from "lucide-react";
 
 const adminSections = [
@@ -30,6 +33,9 @@ const adminSections = [
   { label: "admin.content", href: "/admin/content", icon: FileText },
   { label: "admin.notifications", href: "/admin/notifications", icon: Bell },
   { label: "admin.auditLog", href: "/admin/audit", icon: ScrollText },
+  { label: "admin.landing", href: "/admin/landing", icon: Crown },
+  { label: "admin.directors", href: "/admin/directors", icon: Users },
+  { label: "admin.invitations", href: "/admin/invitations", icon: Ticket },
 ] as const;
 
 export function AdminNav() {
