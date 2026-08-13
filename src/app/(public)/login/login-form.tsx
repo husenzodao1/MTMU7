@@ -31,9 +31,14 @@ export function LoginForm({ redirect }: { redirect?: string }) {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium text-neutral-700">
-          {t("password")}
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium text-neutral-700">
+            {t("password")}
+          </label>
+          <Link href="/reset-password" className="text-xs text-primary-600 hover:text-primary-700">
+            {t("forgotPassword")}
+          </Link>
+        </div>
         <Input
           id="password"
           name="password"
