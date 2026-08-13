@@ -37,7 +37,7 @@ export function BookCard({ item }: BookCardProps) {
   const t = useTranslations("library");
 
   return (
-    <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
+    <Card className="group relative overflow-hidden transition-shadow hover:shadow-md press-scale">
       <Link href={`/library/${item.id}`} className="block">
         <div className="flex h-40 items-center justify-center bg-neutral-50">
           {item.coverUrl ? (

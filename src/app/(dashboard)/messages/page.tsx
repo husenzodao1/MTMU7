@@ -16,7 +16,7 @@ export default async function MessagesPage() {
   const conversations = await getConversations();
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white animate-in">
       <div className="flex w-full flex-col border-r border-neutral-200 lg:w-80 xl:w-96">
         <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
           <h1 className="text-lg font-semibold text-neutral-900">

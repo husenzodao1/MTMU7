@@ -11,7 +11,7 @@ export function StatCard({ label, value, icon, className }: StatCardProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition-shadow duration-[var(--duration-normal)] ease-[var(--ease-default)] hover:shadow-md",
+        "flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition-shadow duration-[var(--duration-normal)] ease-[var(--ease-default)] hover:shadow-md press-scale",
         className
       )}
     >
