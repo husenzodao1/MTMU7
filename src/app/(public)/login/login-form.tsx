@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { loginAction } from "./actions";
+import Link from "next/link";
 
 export function LoginForm({ redirect }: { redirect?: string }) {
   const t = useTranslations("auth");
@@ -52,6 +53,13 @@ export function LoginForm({ redirect }: { redirect?: string }) {
       <Button type="submit" className="w-full" loading={isPending}>
         {t("loginButton")}
       </Button>
+
+      <p className="text-center text-sm text-neutral-500">
+        {t("noAccount")}{" "}
+        <Link href="/register" className="font-medium text-primary-600 hover:text-primary-700">
+          {t("registerButton")}
+        </Link>
+      </p>
     </form>
   );
 }
