@@ -259,6 +259,12 @@
     "noHistory": "История чтения пуста",
     "noHistoryDesc": "Откройте книгу и начните чтение"
   },
+  "dashboard": {
+    "totalUsers": "Пользователи",
+    "totalMessages": "Сообщения",
+    "totalLibrary": "Книги",
+    "unreadNotifications": "Непрочитанные"
+  },
   "profile": {
     "title": "Мой профиль",
     "firstName": "Имя",

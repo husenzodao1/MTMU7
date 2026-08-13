@@ -259,6 +259,12 @@
     "noHistory": "Таърихи хониш холӣ аст",
     "noHistoryDesc": "Китобро кушоед ва хониш оғоз кунед"
   },
+  "dashboard": {
+    "totalUsers": "Корбарон",
+    "totalMessages": "Паёмҳо",
+    "totalLibrary": "Китобҳо",
+    "unreadNotifications": "Нахонда"
+  },
   "profile": {
     "title": "Профили ман",
     "firstName": "Ном",
