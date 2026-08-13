@@ -259,6 +259,20 @@
     "noHistory": "Таърихи хониш холӣ аст",
     "noHistoryDesc": "Китобро кушоед ва хониш оғоз кунед"
   },
+  "notifications": {
+    "title": "Огоҳиномаҳо",
+    "markAllRead": "Ҳамаро хонда қайд кардан",
+    "deleteRead": "Хондашударо нест кардан",
+    "noNotifications": "Огоҳиномае нест",
+    "noNotificationsDesc": "Ҳангоми пайдо шудани огоҳиномаи нав, инҷо намоиш дода мешавад",
+    "today": "Имрӯз",
+    "yesterday": "Дирӯз",
+    "earlier": "Пештар",
+    "justNow": "Ҳоло",
+    "minutesAgo": "{count} дақиқа пеш",
+    "hoursAgo": "{count} соат пеш",
+    "daysAgo": "{count} рӯз пеш"
+  },
   "dashboard": {
     "totalUsers": "Корбарон",
     "totalMessages": "Паёмҳо",

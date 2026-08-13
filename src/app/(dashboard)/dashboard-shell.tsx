@@ -9,10 +9,11 @@ import type { UserWithRole } from "@/types/auth";
 interface DashboardShellProps {
   user: UserWithRole;
   enabledModules: string[];
+  notificationCount?: number;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, enabledModules, children }: DashboardShellProps) {
+export function DashboardShell({ user, enabledModules, notificationCount, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user.roles.some((r) => r.slug === "admin");
 
@@ -35,7 +36,7 @@ export function DashboardShell({ user, enabledModules, children }: DashboardShel
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={user} onMenuToggle={handleMenuToggle} />
+        <Header user={user} onMenuToggle={handleMenuToggle} notificationCount={notificationCount} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
         </main>

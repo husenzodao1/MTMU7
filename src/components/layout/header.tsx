@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -36,14 +37,21 @@ export function Header({ user, onMenuToggle, notificationCount = 0 }: HeaderProp
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative" aria-label={t("nav.notifications")}>
-          <Bell className="h-5 w-5 text-neutral-500" />
+        <Link
+          href="/notifications"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-100 hover:text-neutral-700 press-scale"
+          aria-label={t("nav.notifications")}
+        >
+          <Bell className="h-5 w-5" />
           {notificationCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-medium text-white animate-scale-in">
+            <span
+              className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-medium text-white animate-scale-in"
+              aria-live="polite"
+            >
               {notificationCount > 99 ? "99+" : notificationCount}
             </span>
           )}
-        </Button>
+        </Link>
 
         <UserMenu user={user} />
       </div>

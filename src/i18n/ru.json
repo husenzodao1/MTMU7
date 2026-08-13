@@ -259,6 +259,20 @@
     "noHistory": "История чтения пуста",
     "noHistoryDesc": "Откройте книгу и начните чтение"
   },
+  "notifications": {
+    "title": "Уведомления",
+    "markAllRead": "Отметить все прочитанными",
+    "deleteRead": "Удалить прочитанные",
+    "noNotifications": "Нет уведомлений",
+    "noNotificationsDesc": "Новые уведомления появятся здесь",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "earlier": "Ранее",
+    "justNow": "Только что",
+    "minutesAgo": "{count} мин. назад",
+    "hoursAgo": "{count} ч. назад",
+    "daysAgo": "{count} дн. назад"
+  },
   "dashboard": {
     "totalUsers": "Пользователи",
     "totalMessages": "Сообщения",
