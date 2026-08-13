@@ -48,7 +48,8 @@
     "profile": "Профил",
     "settings": "Танзимот",
     "admin": "Панели маъмурӣ",
-    "notifications": "Огоҳиномаҳо"
+    "notifications": "Огоҳиномаҳо",
+    "about": "Дар бораи система"
   },
   "errors": {
     "generic": "Ой. Чизе хато шуд.",
@@ -284,6 +285,7 @@
     "language": "Забон",
     "tajik": "Тоҷикӣ",
     "russian": "Русский",
+    "english": "English",
     "notificationSettings": "Танзимоти огоҳиномаҳо",
     "enableNotifications": "Фаъол кардани огоҳиномаҳо",
     "notifMessage": "Паёмҳо",
@@ -320,5 +322,15 @@
     "readOnly": "Танҳо барои хондан",
     "personalInfo": "Маълумоти шахсӣ",
     "contactInfo": "Маълумоти тамос"
+  },
+  "about": {
+    "title": "Дар бораи система",
+    "version": "Версия",
+    "developedBy": "Аз ҷониби даста таҳия шудааст",
+    "developers": "Таҳиягарон",
+    "support": "Дастгирӣ",
+    "supportDescription": "Агар шумо саволе ё мушкилие бо система доред, ба хадамоти дастгирӣ муроҷиат кунед.",
+    "contactSupport": "Бо дастгирӣ тамос гиред",
+    "systemDescription": "Системаи идоракунии иттилоотии мактаби Таълимии Миёнаи Умумии №7."
   }
 }

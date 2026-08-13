@@ -70,6 +70,18 @@ export function SettingsForm({ settings }: SettingsFormProps) {
                 {t("russian")}
               </div>
             </label>
+            <label className="flex-1">
+              <input
+                type="radio"
+                name="locale"
+                value="en"
+                defaultChecked={settings.locale === "en"}
+                className="peer sr-only"
+              />
+              <div className="cursor-pointer rounded-lg border-2 border-neutral-200 px-4 py-3 text-center text-sm font-medium text-neutral-600 transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] peer-checked:border-primary-500 peer-checked:bg-primary-50 peer-checked:text-primary-700 hover:border-neutral-300 press-scale">
+                {t("english")}
+              </div>
+            </label>
           </div>
         </CardContent>
       </Card>

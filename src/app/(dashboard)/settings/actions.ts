@@ -11,7 +11,7 @@ export interface UserSettings {
 }
 
 const settingsSchema = z.object({
-  locale: z.enum(["tg", "ru"]),
+  locale: z.enum(["tg", "ru", "en"]),
   notifications_enabled: z.coerce.boolean(),
   notification_message: z.coerce.boolean().optional(),
   notification_grade: z.coerce.boolean().optional(),

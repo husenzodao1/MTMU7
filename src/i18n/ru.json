@@ -48,7 +48,8 @@
     "profile": "Профиль",
     "settings": "Настройки",
     "admin": "Админ-панель",
-    "notifications": "Уведомления"
+    "notifications": "Уведомления",
+    "about": "О системе"
   },
   "errors": {
     "generic": "Ой. Что-то пошло не так.",
@@ -284,6 +285,7 @@
     "language": "Язык",
     "tajik": "Таджикский",
     "russian": "Русский",
+    "english": "English",
     "notificationSettings": "Настройки уведомлений",
     "enableNotifications": "Включить уведомления",
     "notifMessage": "Сообщения",
@@ -320,5 +322,15 @@
     "readOnly": "Только для чтения",
     "personalInfo": "Личная информация",
     "contactInfo": "Контактная информация"
+  },
+  "about": {
+    "title": "О системе",
+    "version": "Версия",
+    "developedBy": "Разработано командой",
+    "developers": "Разработчики",
+    "support": "Поддержка",
+    "supportDescription": "Если у вас возникли вопросы или проблемы с системой, обратитесь в службу поддержки.",
+    "contactSupport": "Связаться с поддержкой",
+    "systemDescription": "Информационная система управления школой №7."
   }
 }

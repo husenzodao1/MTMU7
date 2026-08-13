@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, MessageSquare, BookOpen, GraduationCap,
   ClipboardCheck, FileText, Calendar, FolderOpen,
-  PartyPopper, Megaphone, BarChart3, Settings, Shield
+  PartyPopper, Megaphone, BarChart3, Settings, Shield, Info
 } from "lucide-react";
 
 export interface NavItem {
@@ -29,4 +29,5 @@ export const mainNavItems: NavItem[] = [
 export const bottomNavItems: NavItem[] = [
   { label: "nav.admin", href: "/admin", icon: Shield, adminOnly: true },
   { label: "nav.settings", href: "/settings", icon: Settings },
+  { label: "nav.about", href: "/about", icon: Info },
 ];
