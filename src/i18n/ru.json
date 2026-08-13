@@ -294,6 +294,14 @@
     "role": "Роль",
     "publicId": "Идентификатор",
     "avatar": "Фото",
-    "changeAvatar": "Изменить фото"
+    "changeAvatar": "Изменить фото",
+    "editProfile": "Редактировать профиль",
+    "saveChanges": "Сохранить",
+    "profileUpdated": "Профиль обновлён",
+    "school": "Школа",
+    "roles": "Роли",
+    "readOnly": "Только для чтения",
+    "personalInfo": "Личная информация",
+    "contactInfo": "Контактная информация"
   }
 }

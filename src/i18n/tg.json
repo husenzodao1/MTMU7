@@ -294,6 +294,14 @@
     "role": "Нақш",
     "publicId": "Рақами шиносоӣ",
     "avatar": "Акс",
-    "changeAvatar": "Иваз кардани акс"
+    "changeAvatar": "Иваз кардани акс",
+    "editProfile": "Таҳрири профил",
+    "saveChanges": "Нигоҳ доштан",
+    "profileUpdated": "Профил навсозӣ шуд",
+    "school": "Мактаб",
+    "roles": "Нақшҳо",
+    "readOnly": "Танҳо барои хондан",
+    "personalInfo": "Маълумоти шахсӣ",
+    "contactInfo": "Маълумоти тамос"
   }
 }
