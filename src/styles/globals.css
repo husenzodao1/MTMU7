@@ -74,6 +74,12 @@
     @apply border-neutral-200;
   }
 
+  :focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;

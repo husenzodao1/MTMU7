@@ -136,6 +136,7 @@ function ToggleRow({
           name={name}
           value="true"
           defaultChecked={defaultChecked}
+          role="switch"
           className="peer sr-only"
         />
         <div className="h-6 w-11 rounded-full bg-neutral-200 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)] peer-checked:bg-primary-500" />
