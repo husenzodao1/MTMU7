@@ -279,6 +279,23 @@
     "totalLibrary": "Китобҳо",
     "unreadNotifications": "Нахонда"
   },
+  "settings": {
+    "title": "Танзимот",
+    "language": "Забон",
+    "tajik": "Тоҷикӣ",
+    "russian": "Русский",
+    "notificationSettings": "Танзимоти огоҳиномаҳо",
+    "enableNotifications": "Фаъол кардани огоҳиномаҳо",
+    "notifMessage": "Паёмҳо",
+    "notifGrade": "Баҳоҳо",
+    "notifHomework": "Вазифаи хонагӣ",
+    "notifSchedule": "Ҷадвал",
+    "notifAttendance": "Ҳозирӣ",
+    "notifAnnouncement": "Эълонҳо",
+    "notifLibrary": "Китобхона",
+    "notifSystem": "Системавӣ",
+    "saved": "Танзимот нигоҳ дошта шуд"
+  },
   "profile": {
     "title": "Профили ман",
     "firstName": "Ном",

@@ -279,6 +279,23 @@
     "totalLibrary": "Книги",
     "unreadNotifications": "Непрочитанные"
   },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "tajik": "Таджикский",
+    "russian": "Русский",
+    "notificationSettings": "Настройки уведомлений",
+    "enableNotifications": "Включить уведомления",
+    "notifMessage": "Сообщения",
+    "notifGrade": "Оценки",
+    "notifHomework": "Домашние задания",
+    "notifSchedule": "Расписание",
+    "notifAttendance": "Посещаемость",
+    "notifAnnouncement": "Объявления",
+    "notifLibrary": "Библиотека",
+    "notifSystem": "Системные",
+    "saved": "Настройки сохранены"
+  },
   "profile": {
     "title": "Мой профиль",
     "firstName": "Имя",
