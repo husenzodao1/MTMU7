@@ -2,6 +2,7 @@
 
 import { requireAdmin } from "@/lib/admin/guard";
 import { createServerClient } from "@/lib/supabase/server";
+import { uploadPublicImage } from "@/lib/storage/public-images";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -104,4 +105,25 @@ export async function toggleDirectorVisibilityAction(id: string, isVisible: bool
 
   revalidatePath("/admin/directors");
   revalidatePath("/");
+}
+
+export async function uploadDirectorPhotoAction(
+  _prevState: { error: string | null; url: string | null },
+  formData: FormData
+): Promise<{ error: string | null; url: string | null }> {
+  const user = await requireAdmin();
+  const file = formData.get("file") as File;
+
+  if (!file || file.size === 0) {
+    return { error: "noFile", url: null };
+  }
+
+  try {
+    const url = await uploadPublicImage(user.schoolId, "directors", file);
+    revalidatePath("/admin/directors");
+    revalidatePath("/");
+    return { error: null, url };
+  } catch {
+    return { error: "uploadFailed", url: null };
+  }
 }
