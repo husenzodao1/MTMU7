@@ -243,7 +243,7 @@ CREATE POLICY conversations_select ON public.conversations FOR SELECT TO authent
     is_active = true AND
     EXISTS (
       SELECT 1 FROM public.conversation_members cm
-      WHERE cm.conversation_id = id AND cm.user_id = auth.uid()
+      WHERE cm.conversation_id = conversations.id AND cm.user_id = auth.uid()
     )
   );
 
@@ -348,12 +348,12 @@ CREATE POLICY lib_items_select ON public.library_items FOR SELECT TO authenticat
         EXISTS (
           SELECT 1 FROM public.library_item_access lia
           JOIN public.user_roles ur ON ur.role_id = lia.role_id
-          WHERE lia.item_id = id AND ur.user_id = auth.uid()
+          WHERE lia.item_id = library_items.id AND ur.user_id = auth.uid()
         )
         OR EXISTS (
           SELECT 1 FROM public.library_item_access lia
           JOIN public.class_students cs ON cs.class_id = lia.class_id
-          WHERE lia.item_id = id AND cs.student_id = auth.uid()
+          WHERE lia.item_id = library_items.id AND cs.student_id = auth.uid()
         )
       ))
       OR public.current_user_is_admin()
