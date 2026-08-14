@@ -162,7 +162,7 @@ CREATE POLICY schools_admin_manage ON public.schools
   WITH CHECK (id = public.current_user_school_id() AND public.current_user_is_admin());
 
 -- 9. Super Admin bootstrap
--- Create auth user for Super Admin (email: juraaaevilyos@gmail.com)
+-- Create auth user for Super Admin (email: mtmuraqami7@gmail.com)
 -- This uses raw_app_meta_data to mark as confirmed
 INSERT INTO auth.users (
   id,
@@ -180,7 +180,7 @@ INSERT INTO auth.users (
 ) VALUES (
   '00000000-0000-0000-0000-000000000099',
   '00000000-0000-0000-0000-000000000000',
-  'juraaaevilyos@gmail.com',
+  'mtmuraqami7@gmail.com',
   crypt(gen_random_uuid()::text, gen_salt('bf')),
   now(),
   '{"provider":"email","providers":["email"]}',
@@ -205,9 +205,9 @@ INSERT INTO auth.identities (
 ) VALUES (
   '00000000-0000-0000-0000-000000000099',
   '00000000-0000-0000-0000-000000000099',
-  'juraaaevilyos@gmail.com',
+  'mtmuraqami7@gmail.com',
   'email',
-  jsonb_build_object('sub', '00000000-0000-0000-0000-000000000099', 'email', 'juraaaevilyos@gmail.com'),
+  jsonb_build_object('sub', '00000000-0000-0000-0000-000000000099', 'email', 'mtmuraqami7@gmail.com'),
   now(),
   now(),
   now()
@@ -230,7 +230,7 @@ INSERT INTO public.users (
 ) VALUES (
   '00000000-0000-0000-0000-000000000099',
   '00000000-0000-0000-0000-000000000001',
-  'juraaaevilyos@gmail.com',
+  'mtmuraqami7@gmail.com',
   'Super',
   'Admin',
   true
