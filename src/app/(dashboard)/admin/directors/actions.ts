@@ -82,26 +82,28 @@ export async function createDirectorAction(
 }
 
 export async function deleteDirectorAction(id: string) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const supabase = await createServerClient();
   await supabase
     .from("directors" as never)
     .delete()
-    .eq("id" as never, id);
+    .eq("id" as never, id)
+    .eq("school_id" as never, user.schoolId);
 
   revalidatePath("/admin/directors");
   revalidatePath("/");
 }
 
 export async function toggleDirectorVisibilityAction(id: string, isVisible: boolean) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const supabase = await createServerClient();
   await supabase
     .from("directors" as never)
     .update({ is_visible: isVisible } as never)
-    .eq("id" as never, id);
+    .eq("id" as never, id)
+    .eq("school_id" as never, user.schoolId);
 
   revalidatePath("/admin/directors");
   revalidatePath("/");

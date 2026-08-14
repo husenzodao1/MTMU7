@@ -21,7 +21,7 @@ export async function updateBlockAction(
   _prevState: { error: string | null },
   formData: FormData
 ): Promise<{ error: string | null }> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const parsed = blockSchema.safeParse({
     id: formData.get("id"),
@@ -51,7 +51,8 @@ export async function updateBlockAction(
       image_url: parsed.data.imageUrl ?? null,
       updated_at: new Date().toISOString(),
     } as never)
-    .eq("id" as never, parsed.data.id);
+    .eq("id" as never, parsed.data.id)
+    .eq("school_id" as never, user.schoolId);
 
   if (error) {
     return { error: "saveFailed" };

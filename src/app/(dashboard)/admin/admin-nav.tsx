@@ -18,7 +18,6 @@ import {
   Library,
   Ticket,
   Crown,
-  UserPlus,
 } from "lucide-react";
 
 const adminSections = [

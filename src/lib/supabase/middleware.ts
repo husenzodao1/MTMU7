@@ -45,6 +45,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  const isResetWithToken =
+    request.nextUrl.pathname === "/reset-password" &&
+    request.nextUrl.searchParams.has("code");
+
   const isPublicAuthRoute =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/register" ||
@@ -52,7 +56,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/verify" ||
     request.nextUrl.pathname === "/reset-password";
 
-  if (user && isPublicAuthRoute) {
+  if (user && isPublicAuthRoute && !isResetWithToken) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

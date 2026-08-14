@@ -7,9 +7,10 @@ import { z } from "zod";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
   let code = "";
   for (let i = 0; i < 8; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[bytes[i]! % chars.length];
   }
   return code;
 }
@@ -65,13 +66,14 @@ export async function createInvitationAction(
 }
 
 export async function deleteInvitationAction(id: string) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const supabase = await createServerClient();
   await supabase
     .from("invitation_codes" as never)
     .update({ is_active: false } as never)
-    .eq("id" as never, id);
+    .eq("id" as never, id)
+    .eq("school_id" as never, user.schoolId);
 
   revalidatePath("/admin/invitations");
 }
