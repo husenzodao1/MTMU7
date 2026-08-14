@@ -49,7 +49,8 @@ export async function sendOtpAction(
   });
 
   if (error) {
-    return { ...prevState, error: "otpSendFailed" };
+    console.error("OTP send error:", error.message, error.status);
+    return { ...prevState, error: `otpSendFailed: ${error.message}` };
   }
 
   return { step: "otp", email: parsed.data.email, error: null };

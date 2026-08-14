@@ -35,7 +35,8 @@ export async function sendResetAction(
   });
 
   if (error) {
-    return { step: "email", error: "resetSendFailed" };
+    console.error("Reset password error:", error.message, error.status);
+    return { step: "email", error: `resetSendFailed: ${error.message}` };
   }
 
   return { step: "sent", error: null };
