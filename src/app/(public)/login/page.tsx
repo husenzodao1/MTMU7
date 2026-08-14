@@ -5,10 +5,10 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string }>;
+  searchParams: Promise<{ redirect?: string; message?: string }>;
 }) {
   const t = await getTranslations("auth");
-  const { redirect } = await searchParams;
+  const { redirect, message } = await searchParams;
 
   return (
     <Card className="w-full max-w-md animate-in">
@@ -20,6 +20,11 @@ export default async function LoginPage({
         <CardDescription>{t("loginDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
+        {message === "passwordReset" && (
+          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+            {t("passwordReset")}
+          </div>
+        )}
         <LoginForm redirect={redirect} />
       </CardContent>
     </Card>

@@ -30,13 +30,14 @@ export async function sendResetAction(
   }
 
   const supabase = await createServerClient();
+  const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent("/reset-password?step=update")}`;
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?step=update`,
+    redirectTo,
   });
 
   if (error) {
     console.error("Reset password error:", error.message, error.status);
-    return { step: "email", error: `resetSendFailed: ${error.message}` };
+    return { step: "email", error: "resetSendFailed" };
   }
 
   return { step: "sent", error: null };
