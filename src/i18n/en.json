@@ -71,7 +71,8 @@
     "resetSendFailed": "Failed to send reset link",
     "invalidPassword": "Password must be at least 8 characters",
     "passwordUpdateFailed": "Failed to update password",
-    "passwordReset": "Password successfully updated"
+    "passwordReset": "Password successfully updated",
+    "rateLimitExceeded": "Too many attempts. Please wait a few minutes"
   },
   "nav": {
     "dashboard": "Dashboard",

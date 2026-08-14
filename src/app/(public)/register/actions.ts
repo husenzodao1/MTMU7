@@ -50,6 +50,9 @@ export async function sendOtpAction(
 
   if (error) {
     console.error("OTP send error:", error.message, error.status);
+    if (error.status === 429) {
+      return { ...prevState, error: "rateLimitExceeded" };
+    }
     return { ...prevState, error: "otpSendFailed" };
   }
 

@@ -37,6 +37,9 @@ export async function sendResetAction(
 
   if (error) {
     console.error("Reset password error:", error.message, error.status);
+    if (error.status === 429) {
+      return { step: "email", error: "rateLimitExceeded" };
+    }
     return { step: "email", error: "resetSendFailed" };
   }
 

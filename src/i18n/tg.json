@@ -71,7 +71,8 @@
     "resetSendFailed": "Фиристодани линк нашуд",
     "invalidPassword": "Рамз бояд ҳадди ақал 8 рамз бошад",
     "passwordUpdateFailed": "Навсозии рамз нашуд",
-    "passwordReset": "Рамз бомуваффақият навсозӣ шуд"
+    "passwordReset": "Рамз бомуваффақият навсозӣ шуд",
+    "rateLimitExceeded": "Аз ҳад зиёд талош шуд. Лутфан чанд дақиқа интизор шавед"
   },
   "nav": {
     "dashboard": "Панели асосӣ",

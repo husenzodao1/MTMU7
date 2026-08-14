@@ -71,7 +71,8 @@
     "resetSendFailed": "Не удалось отправить ссылку",
     "invalidPassword": "Пароль должен содержать минимум 8 символов",
     "passwordUpdateFailed": "Не удалось обновить пароль",
-    "passwordReset": "Пароль успешно обновлён"
+    "passwordReset": "Пароль успешно обновлён",
+    "rateLimitExceeded": "Слишком много попыток. Подождите несколько минут"
   },
   "nav": {
     "dashboard": "Главная",
