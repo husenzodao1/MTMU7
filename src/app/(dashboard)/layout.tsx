@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   if (!user) {
     const supabase = await createServerClient();
     await supabase.auth.signOut();
-    redirect("/login");
+    redirect("/login?error=noProfile");
   }
 
   const [enabledModules, notificationCount] = await Promise.all([

@@ -8,17 +8,24 @@ const emailSchema = z.object({
   email: z.string().email(),
 });
 
-const resetSchema = z.object({
+const otpSchema = z.object({
+  email: z.string().email(),
+  token: z.string().length(6).regex(/^\d+$/),
+});
+
+const passwordSchema = z.object({
   password: z.string().min(8).max(128),
+  confirmPassword: z.string().min(8).max(128),
 });
 
 export type ResetState = {
-  step: "email" | "sent" | "new-password";
+  step: "email" | "otp" | "new-password";
+  email: string | null;
   error: string | null;
 };
 
-export async function sendResetAction(
-  _prevState: ResetState,
+export async function sendResetOtpAction(
+  prevState: ResetState,
   formData: FormData
 ): Promise<ResetState> {
   const parsed = emailSchema.safeParse({
@@ -26,36 +33,78 @@ export async function sendResetAction(
   });
 
   if (!parsed.success) {
-    return { step: "email", error: "invalidEmail" };
+    return { ...prevState, error: "invalidEmail" };
   }
 
   const supabase = await createServerClient();
-  const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent("/reset-password?step=update")}`;
-  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo,
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    options: {
+      shouldCreateUser: false,
+    },
   });
 
   if (error) {
-    console.error("Reset password error:", error.message, error.status);
+    console.error("Reset OTP send error:", error.message, error.status);
     if (error.status === 429) {
-      return { step: "email", error: "rateLimitExceeded" };
+      return { ...prevState, error: "rateLimitExceeded" };
     }
-    return { step: "email", error: "resetSendFailed" };
+    if (error.message?.includes("Signups not allowed for otp")) {
+      return { ...prevState, error: "resetSendFailed" };
+    }
+    return { ...prevState, error: "resetSendFailed" };
   }
 
-  return { step: "sent", error: null };
+  return { step: "otp", email: parsed.data.email, error: null };
 }
 
-export async function updatePasswordAction(
-  _prevState: ResetState,
+export async function verifyResetOtpAction(
+  prevState: ResetState,
   formData: FormData
 ): Promise<ResetState> {
-  const parsed = resetSchema.safeParse({
-    password: formData.get("password"),
+  const email = prevState.email;
+  if (!email) {
+    return { step: "email", email: null, error: "sessionExpired" };
+  }
+
+  const parsed = otpSchema.safeParse({
+    email,
+    token: formData.get("token"),
   });
 
   if (!parsed.success) {
-    return { step: "new-password", error: "invalidPassword" };
+    return { ...prevState, error: "invalidOtp" };
+  }
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.token,
+    type: "email",
+  });
+
+  if (error) {
+    return { ...prevState, error: "otpVerifyFailed" };
+  }
+
+  return { step: "new-password", email, error: null };
+}
+
+export async function updatePasswordAction(
+  prevState: ResetState,
+  formData: FormData
+): Promise<ResetState> {
+  const parsed = passwordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    return { ...prevState, error: "invalidPassword" };
+  }
+
+  if (parsed.data.password !== parsed.data.confirmPassword) {
+    return { ...prevState, error: "passwordMismatch" };
   }
 
   const supabase = await createServerClient();
@@ -64,8 +113,9 @@ export async function updatePasswordAction(
   });
 
   if (error) {
-    return { step: "new-password", error: "passwordUpdateFailed" };
+    return { ...prevState, error: "passwordUpdateFailed" };
   }
 
+  await supabase.auth.signOut();
   redirect("/login?message=passwordReset");
 }

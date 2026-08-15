@@ -45,19 +45,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isResetPasswordFlow =
-    request.nextUrl.pathname === "/reset-password" &&
-    (request.nextUrl.searchParams.has("code") ||
-     request.nextUrl.searchParams.get("step") === "update");
-
   const isPublicAuthRoute =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/register" ||
     request.nextUrl.pathname.startsWith("/register/") ||
-    request.nextUrl.pathname === "/verify" ||
-    request.nextUrl.pathname === "/reset-password";
+    request.nextUrl.pathname === "/verify";
 
-  if (user && isPublicAuthRoute && !isResetPasswordFlow) {
+  if (user && isPublicAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
