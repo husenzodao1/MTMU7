@@ -45,6 +45,30 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && isAuthRoute) {
+    const { data: profile } = await supabase
+      .from("users" as never)
+      .select("id" as never)
+      .eq("id" as never, user.id)
+      .single();
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      url.searchParams.set("error", "noProfile");
+
+      const redirectResponse = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, {
+          ...cookie,
+        });
+      });
+      return redirectResponse;
+    }
+  }
+
   const isPublicAuthRoute =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/register" ||

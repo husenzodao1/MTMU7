@@ -3,7 +3,6 @@ import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { getEnabledModulesForUser } from "@/lib/modules/get-enabled";
 import { getUnreadCount } from "./notifications/actions";
 import { DashboardShell } from "./dashboard-shell";
-import { createServerClient } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
   children,
@@ -13,9 +12,7 @@ export default async function DashboardLayout({
   const user = await getUserWithRole();
 
   if (!user) {
-    const supabase = await createServerClient();
-    await supabase.auth.signOut();
-    redirect("/login?error=noProfile");
+    redirect("/login");
   }
 
   const [enabledModules, notificationCount] = await Promise.all([
