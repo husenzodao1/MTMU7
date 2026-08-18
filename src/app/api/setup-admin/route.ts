@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
     email: TARGET_EMAIL,
     first_name: "Mehrovar",
     last_name: "Admin",
-    status: "active",
     is_active: true,
     is_super_admin: true,
   } as never);
