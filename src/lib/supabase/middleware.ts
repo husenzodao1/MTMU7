@@ -48,11 +48,13 @@ export async function updateSession(request: NextRequest) {
   if (user && isAuthRoute) {
     const { data: profile } = await supabase
       .from("users" as never)
-      .select("id" as never)
+      .select("id, status" as never)
       .eq("id" as never, user.id)
       .single();
 
-    if (!profile) {
+    const profileRow = profile as Record<string, unknown> | null;
+
+    if (!profileRow) {
       await supabase.auth.signOut();
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -67,18 +69,49 @@ export async function updateSession(request: NextRequest) {
       });
       return redirectResponse;
     }
+
+    const userStatus = profileRow.status as string | undefined;
+
+    if (
+      (userStatus === "pending" || userStatus === "rejected") &&
+      !request.nextUrl.pathname.startsWith("/pending")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pending";
+      return NextResponse.redirect(url);
+    }
   }
 
   const isPublicAuthRoute =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/register" ||
     request.nextUrl.pathname.startsWith("/register/") ||
-    request.nextUrl.pathname === "/verify";
+    request.nextUrl.pathname === "/verify" ||
+    request.nextUrl.pathname === "/pending";
 
   if (user && isPublicAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    let redirectToDashboard = true;
+
+    if (request.nextUrl.pathname === "/pending") {
+      const { data: profile } = await supabase
+        .from("users" as never)
+        .select("status" as never)
+        .eq("id" as never, user.id)
+        .single();
+
+      const profileRow = profile as Record<string, unknown> | null;
+      const status = profileRow?.status as string | undefined;
+
+      if (status === "pending" || status === "rejected") {
+        redirectToDashboard = false;
+      }
+    }
+
+    if (redirectToDashboard) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
