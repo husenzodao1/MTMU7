@@ -6,14 +6,20 @@ import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import type { UserWithRole } from "@/types/auth";
 
+interface SchoolInfo {
+  name: string;
+  logoUrl: string | null;
+}
+
 interface DashboardShellProps {
   user: UserWithRole;
   enabledModules: string[];
   notificationCount?: number;
+  school?: SchoolInfo;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, enabledModules, notificationCount, children }: DashboardShellProps) {
+export function DashboardShell({ user, enabledModules, notificationCount, school, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user.roles.some((r) => r.slug === "admin");
 
@@ -27,7 +33,7 @@ export function DashboardShell({ user, enabledModules, notificationCount, childr
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
-      <Sidebar enabledModules={enabledModules} isAdmin={isAdmin} />
+      <Sidebar enabledModules={enabledModules} isAdmin={isAdmin} school={school} />
       <MobileNav
         isOpen={mobileMenuOpen}
         onClose={handleMenuClose}

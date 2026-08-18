@@ -1,7 +1,8 @@
 import {
   LayoutDashboard, MessageSquare, BookOpen, GraduationCap,
   ClipboardCheck, FileText, Calendar, FolderOpen,
-  PartyPopper, Megaphone, BarChart3, Settings, Shield, Info
+  PartyPopper, Megaphone, BarChart3, Settings, Shield, Info,
+  Newspaper,
 } from "lucide-react";
 
 export interface NavItem {
@@ -24,6 +25,7 @@ export const mainNavItems: NavItem[] = [
   { label: "nav.events", href: "/events", icon: PartyPopper, moduleSlug: "events" },
   { label: "nav.announcements", href: "/announcements", icon: Megaphone, moduleSlug: "announcements" },
   { label: "nav.reports", href: "/reports", icon: BarChart3, moduleSlug: "reports" },
+  { label: "nav.news", href: "/news", icon: Newspaper, moduleSlug: "news" },
 ];
 
 export const bottomNavItems: NavItem[] = [
