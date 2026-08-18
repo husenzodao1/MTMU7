@@ -19,6 +19,8 @@ import {
   Ticket,
   Crown,
   Clock,
+  Newspaper,
+  BarChart3,
 } from "lucide-react";
 
 const adminSections = [
@@ -38,6 +40,8 @@ const adminSections = [
   { label: "admin.landing", href: "/admin/landing", icon: Crown },
   { label: "admin.directors", href: "/admin/directors", icon: Users },
   { label: "admin.invitations", href: "/admin/invitations", icon: Ticket },
+  { label: "admin.news", href: "/admin/news", icon: Newspaper },
+  { label: "admin.reports", href: "/admin/reports", icon: BarChart3 },
 ] as const;
 
 export function AdminNav() {

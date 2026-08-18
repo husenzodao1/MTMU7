@@ -9,9 +9,10 @@ import { mainNavItems, bottomNavItems, type NavItem } from "./nav-items";
 interface SidebarProps {
   enabledModules: string[];
   isAdmin: boolean;
+  school?: { name: string; logoUrl: string | null };
 }
 
-export function Sidebar({ enabledModules, isAdmin }: SidebarProps) {
+export function Sidebar({ enabledModules, isAdmin, school }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
 
@@ -27,10 +28,18 @@ export function Sidebar({ enabledModules, isAdmin }: SidebarProps) {
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200 lg:bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b border-neutral-200 px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
-          М
-        </div>
-        <span className="font-semibold text-neutral-900">МТМУ №7</span>
+        {school?.logoUrl ? (
+          <img
+            src={school.logoUrl}
+            alt={school.name}
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+            {(school?.name ?? "М").charAt(0)}
+          </div>
+        )}
+        <span className="font-semibold text-neutral-900">{school?.name ?? "МТМУ №7"}</span>
       </div>
 
       {/* Main nav */}

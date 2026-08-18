@@ -13,6 +13,7 @@ const schoolSettingsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   website: z.string().max(255).optional(),
   idPrefix: z.string().min(1).max(5),
+  logoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function updateSchoolSettingsAction(
@@ -29,6 +30,7 @@ export async function updateSchoolSettingsAction(
     email: formData.get("email") || "",
     website: formData.get("website") || undefined,
     idPrefix: formData.get("idPrefix"),
+    logoUrl: formData.get("logoUrl") || "",
   });
 
   if (!parsed.success) {
@@ -46,6 +48,7 @@ export async function updateSchoolSettingsAction(
       email: parsed.data.email || null,
       website: parsed.data.website ?? null,
       id_prefix: parsed.data.idPrefix,
+      logo_url: parsed.data.logoUrl || null,
     } as never)
     .eq("id" as never, user.schoolId);
 

@@ -15,6 +15,7 @@ interface SchoolData {
   email: string | null;
   website: string | null;
   idPrefix: string;
+  logoUrl: string | null;
 }
 
 export function SchoolSettingsForm({ school }: { school: SchoolData }) {
@@ -31,6 +32,35 @@ export function SchoolSettingsForm({ school }: { school: SchoolData }) {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="max-w-xl space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="logoUrl"
+              className="text-sm font-medium text-neutral-700"
+            >
+              {t("schoolLogo")}
+            </label>
+            <div className="flex items-center gap-4">
+              {school.logoUrl ? (
+                <img
+                  src={school.logoUrl}
+                  alt="School logo"
+                  className="h-16 w-16 rounded-lg border border-neutral-200 object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary-100 text-xl font-bold text-primary-600">
+                  {school.shortName.charAt(0)}
+                </div>
+              )}
+              <Input
+                id="logoUrl"
+                name="logoUrl"
+                type="url"
+                defaultValue={school.logoUrl ?? ""}
+                placeholder="https://..."
+                className="flex-1"
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <label
               htmlFor="shortName"

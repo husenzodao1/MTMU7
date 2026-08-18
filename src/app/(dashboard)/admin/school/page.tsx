@@ -9,7 +9,7 @@ async function getSchoolData() {
   const { data } = await supabase
     .from("schools" as never)
     .select(
-      "short_name, full_name, address, phone, email, website, id_prefix" as never
+      "short_name, full_name, address, phone, email, website, id_prefix, logo_url" as never
     )
     .single();
 
@@ -24,6 +24,7 @@ async function getSchoolData() {
     email: (row.email as string) ?? null,
     website: (row.website as string) ?? null,
     idPrefix: row.id_prefix as string,
+    logoUrl: (row.logo_url as string | null) ?? null,
   };
 }
 
