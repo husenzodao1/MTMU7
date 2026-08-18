@@ -11,64 +11,72 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const admin = createAdminClient();
-
-  const { data: existingUser } = await admin
-    .from("users" as never)
-    .select("id, is_super_admin, email" as never)
-    .eq("email" as never, TARGET_EMAIL)
-    .single();
-
-  if (existingUser) {
-    const eu = existingUser as Record<string, unknown>;
-    return NextResponse.json({
-      status: "already_exists",
-      id: eu.id,
-      is_super_admin: eu.is_super_admin,
-    });
-  }
-
   const pw = request.nextUrl.searchParams.get("pw");
   if (!pw) {
     return NextResponse.json({ error: "pw param required" }, { status: 400 });
   }
 
-  // Try to find existing auth user first
-  const { data: { users: authUsers } } = await admin.auth.admin.listUsers();
-  const existingAuth = (authUsers ?? []).find(
-    (u: { email?: string }) => u.email === TARGET_EMAIL
-  );
+  const admin = createAdminClient();
 
+  // Check if user already exists in public.users with super admin
+  const { data: existingUser } = await admin
+    .from("users" as never)
+    .select("id, is_super_admin, email, is_active" as never)
+    .eq("email" as never, TARGET_EMAIL)
+    .single();
+
+  if (existingUser) {
+    const eu = existingUser as Record<string, unknown>;
+    // Update password for existing user
+    await admin.auth.admin.updateUserById(eu.id as string, { password: pw });
+    // Ensure super admin
+    if (!eu.is_super_admin) {
+      await admin.from("users" as never)
+        .update({ is_super_admin: true, is_active: true } as never)
+        .eq("id" as never, eu.id as string);
+    }
+    return NextResponse.json({
+      status: "already_exists_updated",
+      id: eu.id,
+      is_super_admin: true,
+      password_set: true,
+    });
+  }
+
+  // Step 1: Create or find auth user
   let userId: string;
 
-  if (existingAuth) {
-    userId = existingAuth.id;
-    const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
+  // Try create first
+  const { data: authData, error: authError } =
+    await admin.auth.admin.createUser({
+      email: TARGET_EMAIL,
       password: pw,
+      email_confirm: true,
     });
-    if (pwErr) {
-      return NextResponse.json(
-        { error: "password_update_failed", detail: pwErr.message },
-        { status: 500 }
-      );
-    }
-  } else {
-    const { data: authData, error: authError } =
-      await admin.auth.admin.createUser({
-        email: TARGET_EMAIL,
-        password: pw,
-        email_confirm: true,
-      });
 
-    if (authError) {
+  if (authError) {
+    // User exists in auth but not in public.users — find their ID
+    const { data: { users: allUsers } } = await admin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    const found = (allUsers ?? []).find(
+      (u) => u.email === TARGET_EMAIL
+    );
+    if (!found) {
       return NextResponse.json(
-        { error: "auth_create_failed", detail: authError.message },
+        { error: "auth_user_not_found_after_conflict", detail: authError.message },
         { status: 500 }
       );
     }
+    userId = found.id;
+    // Update password
+    await admin.auth.admin.updateUserById(userId, { password: pw });
+  } else {
     userId = authData.user.id;
   }
 
+  // Step 2: Insert into public.users
   const { error: userError } = await admin.from("users" as never).insert({
     id: userId,
     school_id: DEFAULT_SCHOOL_ID,
@@ -86,6 +94,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Step 3: Assign admin role
   const { data: adminRole } = await admin
     .from("roles" as never)
     .select("id" as never)
@@ -102,6 +111,7 @@ export async function GET(request: NextRequest) {
     } as never);
   }
 
+  // Step 4: Verify
   const { data: verify } = await admin
     .from("users" as never)
     .select("id, email, is_super_admin, is_active" as never)
