@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+  const results: string[] = [];
 
-  // Check if user already exists in public.users with super admin
+  // Check public.users first
   const { data: existingUser } = await admin
     .from("users" as never)
     .select("id, is_super_admin, email, is_active" as never)
@@ -27,58 +28,73 @@ export async function GET(request: NextRequest) {
 
   if (existingUser) {
     const eu = existingUser as Record<string, unknown>;
-    // Update password for existing user
+    results.push("public.users: found id=" + eu.id);
     await admin.auth.admin.updateUserById(eu.id as string, { password: pw });
-    // Ensure super admin
+    results.push("password: updated");
     if (!eu.is_super_admin) {
       await admin.from("users" as never)
         .update({ is_super_admin: true, is_active: true } as never)
         .eq("id" as never, eu.id as string);
+      results.push("is_super_admin: set to true");
     }
+    // Check role
+    const { data: existingRoles } = await admin
+      .from("user_roles" as never)
+      .select("roles:role_id(slug)" as never)
+      .eq("user_id" as never, eu.id as string);
+    const roleSlugs = ((existingRoles ?? []) as Array<Record<string, unknown>>)
+      .map((r) => ((r.roles as Record<string, unknown>)?.slug as string));
     return NextResponse.json({
       status: "already_exists_updated",
       id: eu.id,
       is_super_admin: true,
       password_set: true,
+      roles: roleSlugs,
+      log: results,
     });
   }
 
-  // Step 1: Create or find auth user
+  results.push("public.users: not found, creating...");
+
+  // Try to create auth user. If fails (already exists), find via listUsers
   let userId: string;
+  const { data: newAuth, error: createErr } = await admin.auth.admin.createUser({
+    email: TARGET_EMAIL,
+    password: pw,
+    email_confirm: true,
+  });
 
-  // Try create first
-  const { data: authData, error: authError } =
-    await admin.auth.admin.createUser({
-      email: TARGET_EMAIL,
-      password: pw,
-      email_confirm: true,
-    });
-
-  if (authError) {
-    // User exists in auth but not in public.users — find their ID
-    const { data: { users: allUsers } } = await admin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-    const found = (allUsers ?? []).find(
-      (u) => u.email === TARGET_EMAIL
-    );
-    if (!found) {
-      return NextResponse.json(
-        { error: "auth_user_not_found_after_conflict", detail: authError.message },
-        { status: 500 }
-      );
+  if (createErr) {
+    results.push("createUser failed: " + createErr.message);
+    // The user exists in auth but not in public.users
+    // List all users page by page to find them
+    let found = false;
+    for (let page = 1; page <= 10; page++) {
+      const resp = await admin.auth.admin.listUsers({ page, perPage: 100 });
+      const users = resp.data?.users ?? [];
+      results.push(`listUsers page ${page}: ${users.length} users`);
+      const match = users.find((u) => u.email === TARGET_EMAIL);
+      if (match) {
+        userId = match.id;
+        found = true;
+        results.push("found auth user: " + userId);
+        await admin.auth.admin.updateUserById(userId, { password: pw });
+        results.push("password: updated");
+        break;
+      }
+      if (users.length < 100) break;
     }
-    userId = found.id;
-    // Update password
-    await admin.auth.admin.updateUserById(userId, { password: pw });
+    if (!found) {
+      return NextResponse.json({ error: "cannot_find_auth_user", log: results }, { status: 500 });
+    }
   } else {
-    userId = authData.user.id;
+    userId = newAuth.user.id;
+    results.push("auth user created: " + userId);
   }
 
-  // Step 2: Insert into public.users
+  // Insert into public.users
   const { error: userError } = await admin.from("users" as never).insert({
-    id: userId,
+    id: userId!,
     school_id: DEFAULT_SCHOOL_ID,
     email: TARGET_EMAIL,
     first_name: "Mehrovar",
@@ -89,12 +105,13 @@ export async function GET(request: NextRequest) {
 
   if (userError) {
     return NextResponse.json(
-      { error: "user_insert_failed", detail: userError.message },
+      { error: "user_insert_failed", detail: userError.message, log: results },
       { status: 500 }
     );
   }
+  results.push("public.users: inserted");
 
-  // Step 3: Assign admin role
+  // Assign admin role
   const { data: adminRole } = await admin
     .from("roles" as never)
     .select("id" as never)
@@ -105,23 +122,26 @@ export async function GET(request: NextRequest) {
   const roleRow = adminRole as Record<string, unknown> | null;
   if (roleRow) {
     await admin.from("user_roles" as never).insert({
-      user_id: userId,
+      user_id: userId!,
       role_id: roleRow.id as string,
       school_id: DEFAULT_SCHOOL_ID,
     } as never);
+    results.push("admin role: assigned");
+  } else {
+    results.push("admin role: NOT FOUND");
   }
 
-  // Step 4: Verify
+  // Verify
   const { data: verify } = await admin
     .from("users" as never)
     .select("id, email, is_super_admin, is_active" as never)
-    .eq("id" as never, userId)
+    .eq("id" as never, userId!)
     .single();
 
   const { data: roles } = await admin
     .from("user_roles" as never)
     .select("roles:role_id(slug)" as never)
-    .eq("user_id" as never, userId);
+    .eq("user_id" as never, userId!);
 
   return NextResponse.json({
     status: "created",
@@ -129,6 +149,6 @@ export async function GET(request: NextRequest) {
     roles: (roles ?? []).map((r: Record<string, unknown>) =>
       (r.roles as Record<string, unknown>)?.slug
     ),
-    message: "DELETE THIS ROUTE IMMEDIATELY",
+    log: results,
   });
 }
