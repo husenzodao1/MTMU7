@@ -66,50 +66,39 @@ export async function GET(request: NextRequest) {
     log.push("createUser conflict: " + createErr.message);
 
     // User exists in auth but not in public.users
-    // Use signInWithPassword to get their ID, then reset password
-    const { data: signInData, error: signInErr } =
-      await admin.auth.signInWithPassword({
+    // Use generateLink to get the user's ID without polluting the client's auth state
+    const { data: linkData, error: linkErr } =
+      await admin.auth.admin.generateLink({
+        type: "magiclink",
         email: TARGET_EMAIL,
-        password: pw,
       });
 
-    if (signInErr) {
-      log.push("signIn with new pw failed, trying OTP approach");
-      // Generate a magic link to get the user, or use the admin generateLink API
-      const { data: linkData, error: linkErr } =
-        await admin.auth.admin.generateLink({
-          type: "magiclink",
-          email: TARGET_EMAIL,
-        });
-      if (linkErr || !linkData?.user) {
-        return NextResponse.json({
-          error: "cannot_resolve_auth_user",
-          log,
-          linkErr: linkErr?.message,
-        }, { status: 500 });
-      }
-      userId = linkData.user.id;
-      log.push("resolved via generateLink: " + userId);
-      // Now set their password
-      const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
-        password: pw,
-      });
-      if (pwErr) {
-        return NextResponse.json({
-          error: "password_update_failed",
-          detail: pwErr.message,
-          log,
-        }, { status: 500 });
-      }
-      log.push("password set via updateUserById");
+    if (linkErr || !linkData?.user) {
+      return NextResponse.json({
+        error: "cannot_resolve_auth_user",
+        log,
+        linkErr: linkErr?.message,
+      }, { status: 500 });
+    }
+    userId = linkData.user.id;
+    log.push("resolved via generateLink: " + userId);
+
+    // Set their password
+    const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
+      password: pw,
+    });
+    if (pwErr) {
+      log.push("password update failed: " + pwErr.message);
     } else {
-      userId = signInData.user.id;
-      log.push("signIn succeeded, user id: " + userId);
+      log.push("password set via updateUserById");
     }
   }
 
+  // Fresh admin client to ensure service_role context (not polluted by signIn)
+  const adminForInsert = createAdminClient();
+
   // Insert into public.users
-  const { error: userError } = await admin.from("users" as never).insert({
+  const { error: userError } = await adminForInsert.from("users" as never).insert({
     id: userId,
     school_id: DEFAULT_SCHOOL_ID,
     email: TARGET_EMAIL,
@@ -128,7 +117,7 @@ export async function GET(request: NextRequest) {
   log.push("public.users: inserted");
 
   // Assign admin role
-  const { data: adminRole } = await admin
+  const { data: adminRole } = await adminForInsert
     .from("roles" as never)
     .select("id" as never)
     .eq("school_id" as never, DEFAULT_SCHOOL_ID)
@@ -137,7 +126,7 @@ export async function GET(request: NextRequest) {
 
   const roleRow = adminRole as Record<string, unknown> | null;
   if (roleRow) {
-    await admin.from("user_roles" as never).insert({
+    await adminForInsert.from("user_roles" as never).insert({
       user_id: userId,
       role_id: roleRow.id as string,
       school_id: DEFAULT_SCHOOL_ID,
@@ -148,13 +137,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Verify
-  const { data: verify } = await admin
+  const { data: verify } = await adminForInsert
     .from("users" as never)
     .select("id, email, is_super_admin, is_active" as never)
     .eq("id" as never, userId)
     .single();
 
-  const { data: roles } = await admin
+  const { data: roles } = await adminForInsert
     .from("user_roles" as never)
     .select("roles:role_id(slug)" as never)
     .eq("user_id" as never, userId);
