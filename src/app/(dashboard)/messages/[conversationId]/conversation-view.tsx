@@ -83,23 +83,11 @@ export function ConversationView({
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white">
       {/* Sidebar: conversation list (hidden on mobile) */}
       <div className="hidden w-80 flex-col border-r border-neutral-200 lg:flex xl:w-96">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <h2 className="text-lg font-semibold text-neutral-900">
-            {t("title")}
-          </h2>
-          <Link href="/messages/new">
-            <Button size="sm" variant="default">
-              {t("newConversation")}
-            </Button>
-          </Link>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <ConversationsList
-            conversations={conversations}
-            currentUserId={currentUserId}
-            activeConversationId={conversationId}
-          />
-        </div>
+        <ConversationsList
+          conversations={conversations}
+          currentUserId={currentUserId}
+          activeConversationId={conversationId}
+        />
       </div>
 
       {/* Main: message thread */}
