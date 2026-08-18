@@ -18,10 +18,12 @@ import {
   Library,
   Ticket,
   Crown,
+  Clock,
 } from "lucide-react";
 
 const adminSections = [
   { label: "admin.overview", href: "/admin", icon: LayoutDashboard, exact: true },
+  { label: "admin.pendingUsers", href: "/admin/pending", icon: Clock },
   { label: "admin.users", href: "/admin/users", icon: Users },
   { label: "admin.roles", href: "/admin/roles", icon: Shield },
   { label: "admin.school", href: "/admin/school", icon: School },
