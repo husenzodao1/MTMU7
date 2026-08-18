@@ -33,21 +33,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "pw param required" }, { status: 400 });
   }
 
-  const { data: authData, error: authError } =
-    await admin.auth.admin.createUser({
-      email: TARGET_EMAIL,
+  // Try to find existing auth user first
+  const { data: { users: authUsers } } = await admin.auth.admin.listUsers();
+  const existingAuth = (authUsers ?? []).find(
+    (u: { email?: string }) => u.email === TARGET_EMAIL
+  );
+
+  let userId: string;
+
+  if (existingAuth) {
+    userId = existingAuth.id;
+    const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
       password: pw,
-      email_confirm: true,
     });
+    if (pwErr) {
+      return NextResponse.json(
+        { error: "password_update_failed", detail: pwErr.message },
+        { status: 500 }
+      );
+    }
+  } else {
+    const { data: authData, error: authError } =
+      await admin.auth.admin.createUser({
+        email: TARGET_EMAIL,
+        password: pw,
+        email_confirm: true,
+      });
 
-  if (authError) {
-    return NextResponse.json(
-      { error: "auth_create_failed", detail: authError.message },
-      { status: 500 }
-    );
+    if (authError) {
+      return NextResponse.json(
+        { error: "auth_create_failed", detail: authError.message },
+        { status: 500 }
+      );
+    }
+    userId = authData.user.id;
   }
-
-  const userId = authData.user.id;
 
   const { error: userError } = await admin.from("users" as never).insert({
     id: userId,
@@ -84,7 +104,7 @@ export async function GET(request: NextRequest) {
 
   const { data: verify } = await admin
     .from("users" as never)
-    .select("id, email, is_super_admin, status" as never)
+    .select("id, email, is_super_admin, is_active" as never)
     .eq("id" as never, userId)
     .single();
 
