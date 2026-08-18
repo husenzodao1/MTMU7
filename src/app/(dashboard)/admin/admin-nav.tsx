@@ -29,6 +29,7 @@ const adminSections = [
   { label: "admin.school", href: "/admin/school", icon: School },
   { label: "admin.modules", href: "/admin/modules", icon: Boxes },
   { label: "admin.classes", href: "/admin/classes", icon: GraduationCap },
+  { label: "admin.graduates", href: "/admin/graduates", icon: GraduationCap },
   { label: "admin.subjects", href: "/admin/subjects", icon: BookMarked },
   { label: "admin.library", href: "/admin/library", icon: Library },
   { label: "admin.content", href: "/admin/content", icon: FileText },
