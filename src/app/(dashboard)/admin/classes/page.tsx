@@ -6,11 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap } from "lucide-react";
+import { CreateClassForm, BulkCreateClassesForm, CreateAcademicYearForm } from "./class-forms";
 
 export default async function AdminClassesPage() {
   const admin = await requireAdmin();
   const t = await getTranslations();
   const supabase = await createServerClient();
+
+  const { data: yearsData } = await supabase
+    .from("academic_years" as never)
+    .select("id, name, is_current" as never)
+    .eq("school_id" as never, admin.schoolId)
+    .order("is_current" as never, { ascending: false })
+    .order("name" as never, { ascending: false });
+
+  const academicYears = ((yearsData ?? []) as Array<Record<string, unknown>>).map(y => ({
+    id: y.id as string,
+    name: y.name as string,
+    isCurrent: y.is_current as boolean,
+  }));
 
   const { data: classesData } = await supabase
     .from("classes" as never)
@@ -21,20 +35,47 @@ export default async function AdminClassesPage() {
 
   const classes = (classesData ?? []) as Array<Record<string, unknown>>;
 
+  const currentYear = academicYears.find(y => y.isCurrent);
+
   return (
     <div>
       <AdminNav />
       <div className="space-y-6 animate-in">
-        <h1 className="text-2xl font-bold text-neutral-900">{t("admin.classes")}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-neutral-900">{t("admin.classes")}</h1>
+          {currentYear && (
+            <Badge variant="default">{currentYear.name}</Badge>
+          )}
+        </div>
 
+        {/* Academic year creation (show if none exist) */}
+        {academicYears.length === 0 && (
+          <div className="max-w-md">
+            <p className="mb-4 text-sm text-neutral-600">{t("admin.noAcademicYear")}</p>
+            <CreateAcademicYearForm />
+          </div>
+        )}
+
+        {/* Class creation forms (show if academic year exists) */}
+        {academicYears.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <CreateClassForm academicYears={academicYears} />
+            <BulkCreateClassesForm academicYears={academicYears} />
+            {!currentYear && <CreateAcademicYearForm />}
+          </div>
+        )}
+
+        {/* Existing classes */}
         {classes.length === 0 ? (
-          <EmptyState
-            icon={<GraduationCap className="h-16 w-16" />}
-            title={t("admin.classes")}
-            description={t("common.noData")}
-          />
+          academicYears.length > 0 && (
+            <EmptyState
+              icon={<GraduationCap className="h-16 w-16" />}
+              title={t("admin.classes")}
+              description={t("common.noData")}
+            />
+          )
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {classes.map((cls) => {
               const year = cls.academic_years as Record<string, unknown> | null;
               const teacher = cls.users as Record<string, unknown> | null;
@@ -50,7 +91,7 @@ export default async function AdminClassesPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-1 text-sm text-neutral-600">
-                      <p>{t("admin.classes")}: {cls.grade_level as number}</p>
+                      <p>{t("admin.gradeLevel")}: {cls.grade_level as number}</p>
                       {year && <p>{year.name as string}</p>}
                       {teacher && (
                         <p>
