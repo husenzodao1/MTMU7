@@ -87,7 +87,8 @@
     "photoHint": "JPG, PNG ё WebP, то 2МБ",
     "registerSubmit": "Фиристодани аризаи бақайдгирӣ",
     "registrationPending": "Ариза фиристода шуд",
-    "alreadyPending": "Шумо аллакай ариза фиристодаед"
+    "alreadyPending": "Шумо аллакай ариза фиристодаед",
+    "registrationSuccess": "Бақайдгирӣ анҷом ёфт. Ворид шавед"
   },
   "pending": {
     "title": "Ариза фиристода шуд",
@@ -286,6 +287,18 @@
     "approvalDate": "Санаи тасдиқ",
     "enrollmentDate": "Санаи қабул",
     "homeroomTeacher": "Роҳбари синф",
+    "addClass": "Синф илова кардан",
+    "gradeLevel": "Рақами синф",
+    "letterDesignation": "Ҳарфи синф",
+    "createClassSuccess": "Синф сохта шуд",
+    "createClassError": "Хатои сохтани синф",
+    "noAcademicYear": "Соли таълимро созед",
+    "academicYear": "Соли таълимӣ",
+    "createAcademicYear": "Соли таълимӣ сохтан",
+    "yearName": "Ном (мас. 2025-2026)",
+    "startDate": "Санаи оғоз",
+    "endDate": "Санаи анҷом",
+    "yearCreated": "Соли таълимӣ сохта шуд",
     "assignHomeroomTeacher": "Роҳбари синфро таъин кардан",
     "changeAcademicYear": "Соли таълимро иваз кардан",
     "confirmReject": "Оё мутмаин ҳастед, ки ин аризаро рад мекунед? Ин амал сабаб талаб мекунад.",

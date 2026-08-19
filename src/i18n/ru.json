@@ -87,7 +87,8 @@
     "photoHint": "JPG, PNG или WebP, макс. 2МБ",
     "registerSubmit": "Отправить заявку",
     "registrationPending": "Заявка отправлена",
-    "alreadyPending": "У вас уже есть заявка на рассмотрении"
+    "alreadyPending": "У вас уже есть заявка на рассмотрении",
+    "registrationSuccess": "Регистрация завершена. Войдите в систему"
   },
   "pending": {
     "title": "Заявка отправлена",
@@ -286,6 +287,18 @@
     "approvalDate": "Дата одобрения",
     "enrollmentDate": "Дата поступления",
     "homeroomTeacher": "Классный руководитель",
+    "addClass": "Добавить класс",
+    "gradeLevel": "Номер класса",
+    "letterDesignation": "Буква класса",
+    "createClassSuccess": "Класс создан",
+    "createClassError": "Ошибка создания класса",
+    "noAcademicYear": "Создайте учебный год",
+    "academicYear": "Учебный год",
+    "createAcademicYear": "Создать учебный год",
+    "yearName": "Название (напр. 2025-2026)",
+    "startDate": "Дата начала",
+    "endDate": "Дата окончания",
+    "yearCreated": "Учебный год создан",
     "assignHomeroomTeacher": "Назначить классного руководителя",
     "changeAcademicYear": "Изменить учебный год",
     "confirmReject": "Вы уверены, что хотите отклонить эту заявку? Необходимо указать причину.",

@@ -87,7 +87,8 @@
     "photoHint": "JPG, PNG or WebP, max 2MB",
     "registerSubmit": "Submit Registration",
     "registrationPending": "Registration submitted",
-    "alreadyPending": "You already have a pending registration"
+    "alreadyPending": "You already have a pending registration",
+    "registrationSuccess": "Registration complete. Please log in"
   },
   "pending": {
     "title": "Registration Submitted",
@@ -286,6 +287,18 @@
     "approvalDate": "Approval Date",
     "enrollmentDate": "Enrollment Date",
     "homeroomTeacher": "Homeroom Teacher",
+    "addClass": "Add Class",
+    "gradeLevel": "Grade Level",
+    "letterDesignation": "Letter",
+    "createClassSuccess": "Class created",
+    "createClassError": "Error creating class",
+    "noAcademicYear": "Create an academic year first",
+    "academicYear": "Academic Year",
+    "createAcademicYear": "Create Academic Year",
+    "yearName": "Name (e.g. 2025-2026)",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "yearCreated": "Academic year created",
     "assignHomeroomTeacher": "Assign Homeroom Teacher",
     "changeAcademicYear": "Change Academic Year",
     "confirmReject": "Are you sure you want to reject this registration? This action requires a reason.",
