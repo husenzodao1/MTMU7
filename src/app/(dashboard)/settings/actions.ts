@@ -2,6 +2,7 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 export interface UserSettings {
@@ -103,5 +104,13 @@ export async function updateUserSettings(
     );
 
   if (error) return { error: error.message };
+
+  const cookieStore = await cookies();
+  cookieStore.set("NEXT_LOCALE", parsed.data.locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
   return { success: true };
 }

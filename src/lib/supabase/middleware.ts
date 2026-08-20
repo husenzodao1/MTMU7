@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   if (user && isAuthRoute) {
     const { data: profile } = await supabase
       .from("users" as never)
-      .select("id" as never)
+      .select("id, status" as never)
       .eq("id" as never, user.id)
       .single();
 
@@ -70,15 +70,7 @@ export async function updateSession(request: NextRequest) {
       return redirectResponse;
     }
 
-    // Check status column separately (may not exist if migration 00016 not applied)
-    const { data: statusData } = await supabase
-      .from("users" as never)
-      .select("status" as never)
-      .eq("id" as never, user.id)
-      .single();
-
-    const statusRow = statusData as Record<string, unknown> | null;
-    const userStatus = statusRow?.status as string | undefined;
+    const userStatus = profileRow.status as string | undefined;
 
     if (
       (userStatus === "pending" || userStatus === "rejected") &&

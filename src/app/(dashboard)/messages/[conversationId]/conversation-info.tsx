@@ -33,7 +33,7 @@ export function ConversationInfo({
   const t = useTranslations("messages");
 
   return (
-    <div className="w-72 border-l border-neutral-200 bg-white">
+    <div className="absolute inset-0 z-10 bg-white lg:static lg:inset-auto lg:z-auto lg:w-72 lg:border-l lg:border-neutral-200">
       <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
         <h3 className="text-sm font-semibold text-neutral-900">
           {t("conversationInfo")}

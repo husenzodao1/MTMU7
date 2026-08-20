@@ -14,9 +14,10 @@ interface MobileNavProps {
   onClose: () => void;
   enabledModules: string[];
   isAdmin: boolean;
+  school?: { name: string; logoUrl: string | null };
 }
 
-export function MobileNav({ isOpen, onClose, enabledModules, isAdmin }: MobileNavProps) {
+export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school }: MobileNavProps) {
   const pathname = usePathname();
   const t = useTranslations();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -65,10 +66,18 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin }: MobileNa
       >
         <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
-              М
-            </div>
-            <span className="font-semibold text-neutral-900">МТМУ №7</span>
+            {school?.logoUrl ? (
+              <img
+                src={school.logoUrl}
+                alt={school.name}
+                className="h-8 w-8 shrink-0 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+                {t("common.appName").charAt(0)}
+              </div>
+            )}
+            <span className="font-semibold text-neutral-900">{school?.name ?? t("common.appName")}</span>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />

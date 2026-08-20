@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "./user-menu";
 import type { UserWithRole } from "@/types/auth";
 
@@ -11,9 +12,10 @@ interface HeaderProps {
   user: UserWithRole;
   onMenuToggle?: () => void;
   notificationCount?: number;
+  locale?: string;
 }
 
-export function Header({ user, onMenuToggle, notificationCount = 0 }: HeaderProps) {
+export function Header({ user, onMenuToggle, notificationCount = 0, locale = "tg" }: HeaderProps) {
   const t = useTranslations();
 
   return (
@@ -30,13 +32,14 @@ export function Header({ user, onMenuToggle, notificationCount = 0 }: HeaderProp
         </Button>
         <div className="lg:hidden flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-600 text-xs font-bold text-white">
-            М
+            {t("common.appName").charAt(0)}
           </div>
-          <span className="font-semibold text-neutral-900 text-sm">МТМУ №7</span>
+          <span className="font-semibold text-neutral-900 text-sm">{t("common.appName")}</span>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
+        <LocaleSwitcher current={locale} />
         <Link
           href="/notifications"
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-100 hover:text-neutral-700 press-scale"

@@ -2,6 +2,7 @@
 
 import { requireAdmin } from "@/lib/admin/guard";
 import { createServerClient } from "@/lib/supabase/server";
+import { uploadPublicImage, deletePublicImage } from "@/lib/storage/public-images";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -13,7 +14,6 @@ const schoolSettingsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   website: z.string().max(255).optional(),
   idPrefix: z.string().min(1).max(5),
-  logoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function updateSchoolSettingsAction(
@@ -30,11 +30,24 @@ export async function updateSchoolSettingsAction(
     email: formData.get("email") || "",
     website: formData.get("website") || undefined,
     idPrefix: formData.get("idPrefix"),
-    logoUrl: formData.get("logoUrl") || "",
   });
 
   if (!parsed.success) {
     return { error: "invalidData", success: false };
+  }
+
+  let logoUrl: string | null = (formData.get("existingLogoUrl") as string) || null;
+
+  const logoFile = formData.get("logoFile") as File | null;
+  if (logoFile && logoFile.size > 0) {
+    try {
+      if (logoUrl) {
+        await deletePublicImage(logoUrl).catch(() => {});
+      }
+      logoUrl = await uploadPublicImage(user.schoolId, "logo", logoFile);
+    } catch {
+      return { error: "uploadFailed", success: false };
+    }
   }
 
   const supabase = await createServerClient();
@@ -48,7 +61,7 @@ export async function updateSchoolSettingsAction(
       email: parsed.data.email || null,
       website: parsed.data.website ?? null,
       id_prefix: parsed.data.idPrefix,
-      logo_url: parsed.data.logoUrl || null,
+      logo_url: logoUrl,
     } as never)
     .eq("id" as never, user.schoolId);
 
@@ -57,5 +70,6 @@ export async function updateSchoolSettingsAction(
   }
 
   revalidatePath("/admin/school");
+  revalidatePath("/dashboard");
   return { error: null, success: true };
 }
