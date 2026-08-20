@@ -46,7 +46,7 @@ CREATE INDEX idx_registration_requests_auth_user
 CREATE OR REPLACE FUNCTION public.check_registration_role_level()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.roles WHERE id = NEW.requested_role_id AND level <= 1) THEN
+  IF EXISTS (SELECT 1 FROM public.roles WHERE id = NEW.requested_role_id AND level <= 3) THEN
     RAISE EXCEPTION 'Registration cannot request admin-level roles';
   END IF;
   RETURN NEW;

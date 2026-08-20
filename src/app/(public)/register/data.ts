@@ -13,7 +13,7 @@ export async function getAvailableRoles(): Promise<
     .select("id, slug, name_tg, name_ru, level" as never)
     .eq("school_id" as never, DEFAULT_SCHOOL_ID)
     .eq("is_active" as never, true)
-    .gt("level" as never, 1)
+    .gt("level" as never, 3)
     .order("level" as never, { ascending: true });
 
   return ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({

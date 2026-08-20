@@ -64,7 +64,7 @@ export async function sendOtpAction(
     .single();
 
   const role = roleData as Record<string, unknown> | null;
-  if (!role || Number(role.level) <= 1) {
+  if (!role || Number(role.level) <= 3) {
     return { ...prevState, error: "invalidData" };
   }
 
