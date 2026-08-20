@@ -58,7 +58,13 @@ const initialState: RegistrationState = {
   error: null,
 };
 
+const ROLE_NAME_EN: Record<string, string> = {
+  teacher: "Teacher",
+  student: "Student",
+};
+
 function getRoleName(role: Role, locale: string): string {
+  if (locale === "en" && ROLE_NAME_EN[role.slug]) return ROLE_NAME_EN[role.slug]!;
   if (locale === "ru" && role.nameRu) return role.nameRu;
   return role.nameTg;
 }
