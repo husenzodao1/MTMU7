@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Camera, X } from "lucide-react";
 import { updateSchoolSettingsAction } from "./actions";
 
 interface SchoolData {
@@ -20,10 +21,24 @@ interface SchoolData {
 
 export function SchoolSettingsForm({ school }: { school: SchoolData }) {
   const t = useTranslations("admin");
+  const tb = useTranslations("branding");
   const [state, formAction, isPending] = useActionState(
     updateSchoolSettingsAction,
     { error: null, success: false }
   );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(school.logoUrl);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleClearLogo = () => {
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   return (
     <Card>
@@ -33,32 +48,49 @@ export function SchoolSettingsForm({ school }: { school: SchoolData }) {
       <CardContent>
         <form action={formAction} className="max-w-xl space-y-4">
           <div className="space-y-2">
-            <label
-              htmlFor="logoUrl"
-              className="text-sm font-medium text-neutral-700"
-            >
+            <label className="text-sm font-medium text-neutral-700">
               {t("schoolLogo")}
             </label>
             <div className="flex items-center gap-4">
-              {school.logoUrl ? (
-                <img
-                  src={school.logoUrl}
-                  alt="School logo"
-                  className="h-16 w-16 rounded-lg border border-neutral-200 object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary-100 text-xl font-bold text-primary-600">
-                  {school.shortName.charAt(0)}
-                </div>
-              )}
-              <Input
-                id="logoUrl"
-                name="logoUrl"
-                type="url"
-                defaultValue={school.logoUrl ?? ""}
-                placeholder="https://..."
-                className="flex-1"
+              <div
+                className="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 transition-colors hover:border-primary-400"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {preview ? (
+                  <img src={preview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <Camera className="h-6 w-6 text-neutral-400" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {preview ? tb("changePhoto") : tb("uploadPhoto")}
+                </button>
+                {preview && (
+                  <button
+                    type="button"
+                    className="block text-xs text-neutral-500 hover:text-error-600"
+                    onClick={handleClearLogo}
+                  >
+                    <X className="mr-0.5 inline h-3 w-3" />
+                    {tb("removePhoto")}
+                  </button>
+                )}
+                <p className="text-xs text-neutral-400">JPG, PNG, WebP — max 5MB</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                name="logoFile"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileChange}
               />
+              <input type="hidden" name="existingLogoUrl" value={school.logoUrl ?? ""} />
             </div>
           </div>
           <div className="space-y-2">

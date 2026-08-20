@@ -72,56 +72,95 @@ export function GraduatesList({ graduates }: { graduates: Graduate[] }) {
           description={t("noGraduatesDesc")}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50">
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userDetails")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("graduationYear")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("requestedClass")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("yearsInSchool")}</th>
-                <th className="px-4 py-3 text-right font-medium text-neutral-600" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((g) => (
-                <tr key={g.id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
-                        {g.avatarUrl ? (
-                          <img src={g.avatarUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="text-xs font-semibold text-primary-700">
-                            {g.firstName[0]}{g.lastName[0]}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-neutral-800">
-                          {g.firstName} {g.lastName} {g.middleName ?? ""}
-                        </p>
-                        <p className="text-xs text-neutral-500">{g.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge variant="secondary">{g.graduationYear ?? "—"}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-700">{g.lastClass ?? "—"}</td>
-                  <td className="px-4 py-3 text-neutral-700">{g.yearsInSchool ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/users/${g.id}`}>
-                      <Button variant="ghost" size="sm">
-                        {t("enrollmentHistory")}
-                      </Button>
-                    </Link>
-                  </td>
+        <>
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {filtered.map((g) => (
+              <Link
+                key={g.id}
+                href={`/admin/users/${g.id}`}
+                className="block rounded-xl border border-neutral-200 bg-white p-4 active:bg-neutral-50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
+                    {g.avatarUrl ? (
+                      <img src={g.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-semibold text-primary-700">
+                        {g.firstName[0]}{g.lastName[0]}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-neutral-800">
+                      {g.lastName} {g.firstName}
+                    </p>
+                    <p className="truncate text-xs text-neutral-500">{g.email}</p>
+                  </div>
+                  <Badge variant="secondary">{g.graduationYear ?? "—"}</Badge>
+                </div>
+                {(g.lastClass || g.yearsInSchool) && (
+                  <div className="mt-2 flex gap-3 text-xs text-neutral-500">
+                    {g.lastClass && <span>{g.lastClass}</span>}
+                    {g.yearsInSchool && <span>{g.yearsInSchool} {t("yearsInSchool")}</span>}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto rounded-xl border border-neutral-200 bg-white md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50">
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userDetails")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("graduationYear")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("requestedClass")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("yearsInSchool")}</th>
+                  <th className="px-4 py-3 text-right font-medium text-neutral-600" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((g) => (
+                  <tr key={g.id} className="border-b border-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
+                          {g.avatarUrl ? (
+                            <img src={g.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-semibold text-primary-700">
+                              {g.firstName[0]}{g.lastName[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-neutral-800">
+                            {g.firstName} {g.lastName} {g.middleName ?? ""}
+                          </p>
+                          <p className="text-xs text-neutral-500">{g.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary">{g.graduationYear ?? "—"}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-700">{g.lastClass ?? "—"}</td>
+                    <td className="px-4 py-3 text-neutral-700">{g.yearsInSchool ?? "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/admin/users/${g.id}`}>
+                        <Button variant="ghost" size="sm">
+                          {t("enrollmentHistory")}
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

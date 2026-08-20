@@ -38,55 +38,90 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50">
-            <th className="px-4 py-3 text-left font-medium text-neutral-600">
-              User
-            </th>
-            <th className="px-4 py-3 text-left font-medium text-neutral-600">
-              Action
-            </th>
-            <th className="px-4 py-3 text-left font-medium text-neutral-600">
-              Entity
-            </th>
-            <th className="px-4 py-3 text-left font-medium text-neutral-600">
-              Date
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr
-              key={entry.id}
-              className="border-b border-neutral-100 transition-colors duration-[var(--duration-fast)] hover:bg-neutral-50"
-            >
-              <td className="px-4 py-3 font-mono text-xs text-neutral-600">
-                {entry.userPublicId ?? "system"}
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${actionColors[entry.action] ?? "bg-neutral-50 text-neutral-700"}`}
-                >
-                  {entry.action}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-neutral-700">
-                {entry.entityType}
-                {entry.entityId && (
-                  <span className="ml-1 text-xs text-neutral-400">
-                    {entry.entityId.slice(0, 8)}
-                  </span>
-                )}
-              </td>
-              <td className="px-4 py-3 text-neutral-500">
+    <>
+      {/* Mobile: card layout */}
+      <div className="space-y-2 md:hidden">
+        {entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="rounded-xl border border-neutral-200 bg-white p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${actionColors[entry.action] ?? "bg-neutral-50 text-neutral-700"}`}
+              >
+                {entry.action}
+              </span>
+              <span className="text-xs text-neutral-500">
                 {new Date(entry.createdAt).toLocaleString()}
-              </td>
+              </span>
+            </div>
+            <p className="mt-1.5 text-sm text-neutral-700">
+              {entry.entityType}
+              {entry.entityId && (
+                <span className="ml-1 text-xs text-neutral-400">
+                  {entry.entityId.slice(0, 8)}
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 font-mono text-xs text-neutral-500">
+              {entry.userPublicId ?? "system"}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: table layout */}
+      <div className="hidden overflow-x-auto rounded-xl border border-neutral-200 bg-white md:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200 bg-neutral-50">
+              <th className="px-4 py-3 text-left font-medium text-neutral-600">
+                ID
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-neutral-600">
+                Action
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-neutral-600">
+                Entity
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-neutral-600">
+                Date
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr
+                key={entry.id}
+                className="border-b border-neutral-100 transition-colors hover:bg-neutral-50"
+              >
+                <td className="px-4 py-3 font-mono text-xs text-neutral-600">
+                  {entry.userPublicId ?? "system"}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${actionColors[entry.action] ?? "bg-neutral-50 text-neutral-700"}`}
+                  >
+                    {entry.action}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-neutral-700">
+                  {entry.entityType}
+                  {entry.entityId && (
+                    <span className="ml-1 text-xs text-neutral-400">
+                      {entry.entityId.slice(0, 8)}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-neutral-500">
+                  {new Date(entry.createdAt).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

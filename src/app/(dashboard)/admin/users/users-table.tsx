@@ -125,68 +125,111 @@ export function UsersTable({
       {filtered.length === 0 ? (
         <EmptyState icon={<Users className="h-12 w-12" />} title={tc("noData")} />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50">
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userDetails")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("roles")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("requestedClass")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userStatus")}</th>
-                <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("registrationDate")}</th>
-                <th className="px-4 py-3 text-right font-medium text-neutral-600" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((user) => (
-                <tr key={user.id} className="border-b border-neutral-100 transition-colors hover:bg-neutral-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
-                        {user.avatarUrl ? (
-                          <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="text-xs font-semibold text-primary-700">
-                            {user.firstName[0]}{user.lastName[0]}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-neutral-800">
-                          {user.lastName} {user.firstName} {user.middleName ?? ""}
-                        </p>
-                        <p className="text-xs text-neutral-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.map((role) => (
-                        <Badge key={role.slug} variant="secondary">{role.name}</Badge>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-700">{user.className ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={STATUS_VARIANTS[user.status] ?? "default"}>
-                      {t(`userStatus_${user.status}` as never)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-neutral-500">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/users/${user.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </td>
+        <>
+          {/* Mobile: card layout */}
+          <div className="space-y-3 md:hidden">
+            {filtered.map((user) => (
+              <Link
+                key={user.id}
+                href={`/admin/users/${user.id}`}
+                className="block rounded-xl border border-neutral-200 bg-white p-4 transition-colors active:bg-neutral-50"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-semibold text-primary-700">
+                        {user.firstName[0]}{user.lastName[0]}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-neutral-800">
+                      {user.lastName} {user.firstName}
+                    </p>
+                    <p className="truncate text-xs text-neutral-500">{user.email}</p>
+                  </div>
+                  <Badge variant={STATUS_VARIANTS[user.status] ?? "default"}>
+                    {t(`userStatus_${user.status}` as never)}
+                  </Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {user.roles.map((role) => (
+                    <Badge key={role.slug} variant="secondary" className="text-[10px]">{role.name}</Badge>
+                  ))}
+                  {user.className && (
+                    <span className="text-xs text-neutral-500">• {user.className}</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden overflow-x-auto rounded-xl border border-neutral-200 bg-white md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50">
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userDetails")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("roles")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("requestedClass")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("userStatus")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-neutral-600">{t("registrationDate")}</th>
+                  <th className="px-4 py-3 text-right font-medium text-neutral-600" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((user) => (
+                  <tr key={user.id} className="border-b border-neutral-100 transition-colors hover:bg-neutral-50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
+                          {user.avatarUrl ? (
+                            <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-semibold text-primary-700">
+                              {user.firstName[0]}{user.lastName[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-neutral-800">
+                            {user.lastName} {user.firstName} {user.middleName ?? ""}
+                          </p>
+                          <p className="text-xs text-neutral-500">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles.map((role) => (
+                          <Badge key={role.slug} variant="secondary">{role.name}</Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-700">{user.className ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={STATUS_VARIANTS[user.status] ?? "default"}>
+                        {t(`userStatus_${user.status}` as never)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-neutral-500">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/admin/users/${user.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

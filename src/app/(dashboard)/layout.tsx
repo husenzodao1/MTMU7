@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { getEnabledModulesForUser } from "@/lib/modules/get-enabled";
 import { getUnreadCount } from "./notifications/actions";
@@ -33,8 +34,11 @@ export default async function DashboardLayout({
     logoUrl: (schoolRow?.logo_url as string | null) ?? null,
   };
 
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "tg";
+
   return (
-    <DashboardShell user={user} enabledModules={enabledModules} notificationCount={notificationCount} school={schoolInfo}>
+    <DashboardShell user={user} enabledModules={enabledModules} notificationCount={notificationCount} school={schoolInfo} locale={locale}>
       {children}
     </DashboardShell>
   );

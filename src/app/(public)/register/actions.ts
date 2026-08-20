@@ -1,5 +1,6 @@
 "use server";
 
+import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { uploadAvatarAction } from "@/lib/supabase/storage";
 import { redirect } from "next/navigation";
@@ -7,66 +8,49 @@ import { z } from "zod";
 
 const DEFAULT_SCHOOL_ID = "00000000-0000-0000-0000-000000000001";
 
-const openRegistrationSchema = z.object({
+const emailSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8).max(128),
-  confirmPassword: z.string().min(8).max(128),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   middleName: z.string().max(100).optional(),
   roleId: z.string().uuid(),
-  classId: z.string().uuid().optional(),
-  enrollmentYear: z.coerce.number().int().min(2000).max(2100).optional(),
 });
 
-const invitationRegistrationSchema = z.object({
+const otpSchema = z.object({
   email: z.string().email(),
+  token: z.string().length(6).regex(/^\d+$/),
+});
+
+const passwordSchema = z.object({
   password: z.string().min(8).max(128),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  middleName: z.string().max(100).optional(),
-  invitationCode: z.string().min(6).max(10).regex(/^[A-Z0-9]+$/),
+  confirmPassword: z.string().min(8).max(128),
 });
 
 export type RegistrationState = {
-  mode: "open" | "invitation";
+  step: "info" | "otp" | "password" | "details";
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  middleName: string | null;
+  roleId: string | null;
+  roleSlug: string | null;
   error: string | null;
 };
 
-export async function registerAction(
+export async function sendOtpAction(
   prevState: RegistrationState,
   formData: FormData
 ): Promise<RegistrationState> {
-  const mode = (formData.get("registrationMode") as string) ?? "open";
-
-  if (mode === "invitation") {
-    return registerWithInvitation(prevState, formData);
-  }
-  return registerOpen(prevState, formData);
-}
-
-async function registerOpen(
-  prevState: RegistrationState,
-  formData: FormData
-): Promise<RegistrationState> {
-  const parsed = openRegistrationSchema.safeParse({
+  const parsed = emailSchema.safeParse({
     email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
     middleName: formData.get("middleName") || undefined,
     roleId: formData.get("roleId"),
-    classId: formData.get("classId") || undefined,
-    enrollmentYear: formData.get("enrollmentYear") || undefined,
   });
 
   if (!parsed.success) {
     return { ...prevState, error: "invalidData" };
-  }
-
-  if (parsed.data.password !== parsed.data.confirmPassword) {
-    return { ...prevState, error: "passwordMismatch" };
   }
 
   const admin = createAdminClient();
@@ -91,20 +75,124 @@ async function registerOpen(
     .single();
   if (existingUser) return { ...prevState, error: "alreadyRegistered" };
 
-  const { data: signUpData, error: signUpError } = await admin.auth.admin.createUser({
+  const supabase = await createServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: true,
+    options: { shouldCreateUser: true },
   });
 
-  if (signUpError || !signUpData.user) {
-    if (signUpError?.message?.includes("already been registered")) {
-      return { ...prevState, error: "alreadyRegistered" };
+  if (error) {
+    if (error.status === 429) {
+      return { ...prevState, error: "rateLimitExceeded" };
     }
-    return { ...prevState, error: "registrationFailed" };
+    return { ...prevState, error: "otpSendFailed" };
   }
 
-  const userId = signUpData.user.id;
+  return {
+    step: "otp",
+    email: parsed.data.email,
+    firstName: parsed.data.firstName,
+    lastName: parsed.data.lastName,
+    middleName: parsed.data.middleName ?? null,
+    roleId: parsed.data.roleId,
+    roleSlug: role.slug as string,
+    error: null,
+  };
+}
+
+export async function verifyOtpAction(
+  prevState: RegistrationState,
+  formData: FormData
+): Promise<RegistrationState> {
+  const email = prevState.email;
+  if (!email) {
+    return { ...prevState, step: "info", error: "sessionExpired" };
+  }
+
+  const parsed = otpSchema.safeParse({
+    email,
+    token: formData.get("token"),
+  });
+
+  if (!parsed.success) {
+    return { ...prevState, error: "invalidOtp" };
+  }
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.token,
+    type: "email",
+  });
+
+  if (error) {
+    return { ...prevState, error: "otpVerifyFailed" };
+  }
+
+  return { ...prevState, step: "password", error: null };
+}
+
+export async function setPasswordAction(
+  prevState: RegistrationState,
+  formData: FormData
+): Promise<RegistrationState> {
+  const parsed = passwordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) return { ...prevState, error: "invalidPassword" };
+  if (parsed.data.password !== parsed.data.confirmPassword) {
+    return { ...prevState, error: "passwordMismatch" };
+  }
+
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { ...prevState, step: "info", error: "sessionExpired" };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(user.id, {
+    password: parsed.data.password,
+  });
+
+  if (error) return { ...prevState, error: "passwordSetFailed" };
+
+  const roleSlug = prevState.roleSlug;
+  if (roleSlug === "student" || roleSlug === "teacher") {
+    return { ...prevState, step: "details", error: null };
+  }
+
+  return completeRegistration(prevState, user.id, new FormData());
+}
+
+export async function completeDetailsAction(
+  prevState: RegistrationState,
+  formData: FormData
+): Promise<RegistrationState> {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { ...prevState, step: "info", error: "sessionExpired" };
+  }
+
+  return completeRegistration(prevState, user.id, formData);
+}
+
+async function completeRegistration(
+  prevState: RegistrationState,
+  userId: string,
+  formData: FormData
+): Promise<RegistrationState> {
+  const admin = createAdminClient();
+
+  const { data: existingUser } = await admin
+    .from("users" as never)
+    .select("id" as never)
+    .eq("id" as never, userId)
+    .single();
+  if (existingUser) return { ...prevState, error: "alreadyRegistered" };
 
   let avatarUrl: string | null = null;
   const avatarFile = formData.get("avatar") as File | null;
@@ -116,29 +204,35 @@ async function registerOpen(
   }
 
   const additionalData: Record<string, unknown> = {};
+  const classId = formData.get("classId") as string | null;
+  const enrollmentYear = formData.get("enrollmentYear") as string | null;
   const subjectIds = formData.getAll("subjectIds");
-  if (subjectIds.length > 0) {
-    additionalData.subjectIds = subjectIds;
-  }
+  const education = formData.get("education") as string | null;
+  const university = formData.get("university") as string | null;
+  const workStartYear = formData.get("workStartYear") as string | null;
+
+  if (subjectIds.length > 0) additionalData.subjectIds = subjectIds;
+  if (education) additionalData.education = education;
+  if (university) additionalData.university = university;
+  if (workStartYear) additionalData.workStartYear = workStartYear;
 
   const { error: reqError } = await admin
     .from("registration_requests" as never)
     .insert({
       school_id: DEFAULT_SCHOOL_ID,
       auth_user_id: userId,
-      email: parsed.data.email,
-      first_name: parsed.data.firstName,
-      last_name: parsed.data.lastName,
-      middle_name: parsed.data.middleName ?? null,
+      email: prevState.email,
+      first_name: prevState.firstName,
+      last_name: prevState.lastName,
+      middle_name: prevState.middleName,
       avatar_url: avatarUrl,
-      requested_role_id: parsed.data.roleId,
-      requested_class_id: parsed.data.classId ?? null,
-      enrollment_year: parsed.data.enrollmentYear ?? null,
+      requested_role_id: prevState.roleId,
+      requested_class_id: classId || null,
+      enrollment_year: enrollmentYear ? Number(enrollmentYear) : null,
       additional_data: additionalData,
       status: "pending",
     } as never);
   if (reqError) {
-    await admin.auth.admin.deleteUser(userId);
     return { ...prevState, error: "registrationFailed" };
   }
 
@@ -147,10 +241,10 @@ async function registerOpen(
     .insert({
       id: userId,
       school_id: DEFAULT_SCHOOL_ID,
-      email: parsed.data.email,
-      first_name: parsed.data.firstName,
-      last_name: parsed.data.lastName,
-      middle_name: parsed.data.middleName ?? null,
+      email: prevState.email,
+      first_name: prevState.firstName,
+      last_name: prevState.lastName,
+      middle_name: prevState.middleName,
       avatar_url: avatarUrl,
       status: "pending",
       is_active: false,
@@ -160,87 +254,8 @@ async function registerOpen(
       .from("registration_requests" as never)
       .delete()
       .eq("auth_user_id" as never, userId);
-    await admin.auth.admin.deleteUser(userId);
     return { ...prevState, error: "registrationFailed" };
   }
 
   redirect("/pending");
-}
-
-async function registerWithInvitation(
-  prevState: RegistrationState,
-  formData: FormData
-): Promise<RegistrationState> {
-  const parsed = invitationRegistrationSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-    firstName: formData.get("firstName"),
-    lastName: formData.get("lastName"),
-    middleName: formData.get("middleName") || undefined,
-    invitationCode: formData.get("invitationCode"),
-  });
-
-  if (!parsed.success) {
-    return { ...prevState, error: "invalidData" };
-  }
-
-  const admin = createAdminClient();
-
-  const { data: invitation } = await admin
-    .from("invitation_codes" as never)
-    .select("id, school_id, role_id, max_uses, used_count, expires_at, is_active" as never)
-    .eq("code" as never, parsed.data.invitationCode)
-    .eq("is_active" as never, true)
-    .single();
-
-  const inv = invitation as Record<string, unknown> | null;
-  if (!inv) return { ...prevState, error: "invalidInvitationCode" };
-  if (Number(inv.used_count) >= Number(inv.max_uses)) return { ...prevState, error: "invitationCodeUsed" };
-  if (inv.expires_at && new Date(String(inv.expires_at)) < new Date()) return { ...prevState, error: "invitationCodeExpired" };
-
-  const { data: signUpData, error: signUpError } = await admin.auth.admin.createUser({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: true,
-  });
-
-  if (signUpError || !signUpData.user) {
-    if (signUpError?.message?.includes("already been registered")) {
-      return { ...prevState, error: "alreadyRegistered" };
-    }
-    return { ...prevState, error: "registrationFailed" };
-  }
-
-  const userId = signUpData.user.id;
-
-  const { error: userError } = await admin
-    .from("users" as never)
-    .insert({
-      id: userId,
-      school_id: String(inv.school_id),
-      email: parsed.data.email,
-      first_name: parsed.data.firstName,
-      last_name: parsed.data.lastName,
-      middle_name: parsed.data.middleName ?? null,
-      status: "active",
-    } as never);
-  if (userError) {
-    await admin.auth.admin.deleteUser(userId);
-    return { ...prevState, error: "registrationFailed" };
-  }
-
-  await admin
-    .from("user_roles" as never)
-    .insert({
-      user_id: userId,
-      role_id: String(inv.role_id),
-      school_id: String(inv.school_id),
-    } as never);
-
-  await admin
-    .from("invitation_codes" as never)
-    .update({ used_count: Number(inv.used_count) + 1 } as never)
-    .eq("id" as never, String(inv.id));
-
-  redirect("/login?registered=true");
 }
