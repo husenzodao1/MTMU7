@@ -62,7 +62,7 @@ export function MessageInput({
         </Button>
       </form>
       {state.error && (
-        <p className="mt-1 text-xs text-red-500">{state.error}</p>
+        <p className="mt-1 text-xs text-red-500">{t(state.error as never)}</p>
       )}
     </div>
   );

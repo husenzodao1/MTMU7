@@ -80,7 +80,7 @@ export async function getMessages(conversationId: string) {
       id: msg.id as string,
       conversationId,
       senderId: msg.sender_id as string | null,
-      senderName: sender ? `${sender.first_name} ${sender.last_name}` : "Система",
+      senderName: sender ? `${sender.first_name} ${sender.last_name}` : "System",
       senderAvatar: sender?.avatar_url as string | null,
       content: msg.content as string,
       type: msg.type as string,
@@ -121,11 +121,11 @@ export async function sendMessageAction(
   if (!user) redirect("/login");
 
   const canSend = await canPerformAction("messages", "messages.create");
-  if (!canSend) return { error: "Дастрасӣ манъ аст" };
+  if (!canSend) return { error: "accessDenied" };
 
   const content = formData.get("content") as string;
   const parsed = sendMessageSchema.safeParse({ content });
-  if (!parsed.success) return { error: "Паём холӣ аст" };
+  if (!parsed.success) return { error: "emptyMessage" };
 
   const supabase = await createServerClient();
 
@@ -136,7 +136,7 @@ export async function sendMessageAction(
     .eq("user_id" as never, user.id)
     .single();
 
-  if (!membership) return { error: "Шумо аъзои ин суҳбат нестед" };
+  if (!membership) return { error: "notMember" };
 
   const { error } = await supabase
     .from("messages" as never)
@@ -149,7 +149,7 @@ export async function sendMessageAction(
       reply_to_id: replyToId,
     } as never);
 
-  if (error) return { error: "Хатои фиристодан" };
+  if (error) return { error: "sendError" };
 
   await supabase
     .from("conversations" as never)
@@ -170,7 +170,7 @@ export async function editMessageAction(
 
   const content = formData.get("content") as string;
   const parsed = sendMessageSchema.safeParse({ content });
-  if (!parsed.success) return { error: "Паём холӣ аст" };
+  if (!parsed.success) return { error: "emptyMessage" };
 
   const supabase = await createServerClient();
 
@@ -184,7 +184,7 @@ export async function editMessageAction(
     .eq("id" as never, messageId)
     .eq("sender_id" as never, user.id);
 
-  if (error) return { error: "Хатои таҳрир" };
+  if (error) return { error: "editError" };
 
   revalidatePath("/messages");
   return { error: null };

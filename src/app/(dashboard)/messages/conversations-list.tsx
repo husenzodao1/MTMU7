@@ -65,7 +65,7 @@ function getConversationInitials(
     .join("");
 }
 
-function formatTime(dateStr: string): string {
+function formatTime(dateStr: string, yesterday: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -77,7 +77,7 @@ function formatTime(dateStr: string): string {
       minute: "2-digit",
     });
   }
-  if (diffDays === 1) return "Дирӯз";
+  if (diffDays === 1) return yesterday;
   if (diffDays < 7) {
     return date.toLocaleDateString([], { weekday: "short" });
   }
@@ -185,7 +185,7 @@ export function ConversationsList({
                           "shrink-0 text-[11px]",
                           conv.unreadCount > 0 ? "font-medium text-primary-500" : "text-neutral-400"
                         )}>
-                          {formatTime(conv.lastMessage.createdAt)}
+                          {formatTime(conv.lastMessage.createdAt, t("yesterday"))}
                         </span>
                       )}
                     </div>

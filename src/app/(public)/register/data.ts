@@ -1,13 +1,13 @@
 "use server";
 
-import { createAnonClient } from "@/lib/supabase/anon";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const DEFAULT_SCHOOL_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function getAvailableRoles(): Promise<
   Array<{ id: string; slug: string; nameTg: string; nameRu: string | null; level: number }>
 > {
-  const supabase = createAnonClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("roles" as never)
     .select("id, slug, name_tg, name_ru, level" as never)
@@ -28,7 +28,7 @@ export async function getAvailableRoles(): Promise<
 export async function getAvailableClasses(): Promise<
   Array<{ id: string; name: string; gradeLevel: number }>
 > {
-  const supabase = createAnonClient();
+  const supabase = createAdminClient();
 
   const { data: currentYear } = await supabase
     .from("academic_years" as never)
@@ -60,7 +60,7 @@ export async function getAvailableClasses(): Promise<
 export async function getAvailableSubjects(): Promise<
   Array<{ id: string; nameTg: string; nameRu: string | null }>
 > {
-  const supabase = createAnonClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("subjects" as never)
     .select("id, name_tg, name_ru" as never)

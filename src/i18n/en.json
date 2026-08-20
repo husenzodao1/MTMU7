@@ -435,7 +435,12 @@
     "moduleDisabled": "Messages module is disabled",
     "noAccess": "You don't have access to this section",
     "removeMember": "Remove",
-    "system": "System"
+    "system": "System",
+    "accessDenied": "Access denied",
+    "emptyMessage": "Message is empty",
+    "notMember": "You are not a member of this conversation",
+    "sendError": "Failed to send message",
+    "editError": "Failed to edit message"
   },
   "empty": {
     "noMessages": "No messages yet",

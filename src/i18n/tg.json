@@ -435,7 +435,12 @@
     "moduleDisabled": "Бахши паёмҳо ғайрифаъол аст",
     "noAccess": "Шумо ба ин бахш дастрасӣ надоред",
     "removeMember": "Хориҷ кардан",
-    "system": "Система"
+    "system": "Система",
+    "accessDenied": "Дастрасӣ манъ аст",
+    "emptyMessage": "Паём холӣ аст",
+    "notMember": "Шумо аъзои ин суҳбат нестед",
+    "sendError": "Хатои фиристодан",
+    "editError": "Хатои таҳрир"
   },
   "empty": {
     "noMessages": "Ҳоло паёме нест",
