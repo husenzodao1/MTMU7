@@ -580,7 +580,40 @@
     "roles": "Roles",
     "readOnly": "Read only",
     "personalInfo": "Personal Information",
-    "contactInfo": "Contact Information"
+    "contactInfo": "Contact Information",
+    "subjects": "Subjects",
+    "userProfile": "User Profile"
+  },
+  "friends": {
+    "title": "Friends",
+    "friends": "Friends",
+    "incoming": "Incoming",
+    "outgoing": "Outgoing",
+    "addFriend": "Add Friend",
+    "requestSent": "Request Sent",
+    "acceptRequest": "Accept",
+    "accept": "Accept",
+    "reject": "Reject",
+    "cancel": "Cancel",
+    "sendMessage": "Message",
+    "removeFriend": "Remove",
+    "noFriends": "No friends yet",
+    "noFriendsDesc": "Search for people and add them as friends",
+    "noIncoming": "No incoming requests",
+    "noIncomingDesc": "Friend requests will appear here",
+    "noOutgoing": "No outgoing requests",
+    "noOutgoingDesc": "Send friend requests to connect with people",
+    "findPeople": "Find People"
+  },
+  "search": {
+    "title": "Search People",
+    "searchPlaceholder": "Search by name...",
+    "filter_all": "All",
+    "filter_student": "Students",
+    "filter_teacher": "Teachers",
+    "noResults": "No one found",
+    "noResultsDesc": "Try a different search query",
+    "searchHint": "Enter at least 2 characters to search"
   },
   "about": {
     "title": "About the System",

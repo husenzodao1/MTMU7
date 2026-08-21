@@ -36,7 +36,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/messages") ||
     request.nextUrl.pathname.startsWith("/library") ||
     request.nextUrl.pathname.startsWith("/profile") ||
-    request.nextUrl.pathname.startsWith("/notifications");
+    request.nextUrl.pathname.startsWith("/notifications") ||
+    request.nextUrl.pathname.startsWith("/friends") ||
+    request.nextUrl.pathname.startsWith("/search");
 
   if (!user && isAuthRoute) {
     const url = request.nextUrl.clone();
