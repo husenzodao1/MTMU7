@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import type { UserWithRole } from "@/types/auth";
 
 interface SchoolInfo {
@@ -41,14 +42,21 @@ export function DashboardShell({ user, enabledModules, notificationCount, school
         enabledModules={enabledModules}
         isAdmin={isAdmin}
         school={school}
+        user={user}
+        notificationCount={notificationCount}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={user} onMenuToggle={handleMenuToggle} notificationCount={notificationCount} locale={locale} />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-4 pb-20 lg:p-6 lg:pb-6">
           {children}
         </main>
       </div>
+
+      <BottomNav
+        notificationCount={notificationCount}
+        onMenuToggle={handleMenuToggle}
+      />
     </div>
   );
 }

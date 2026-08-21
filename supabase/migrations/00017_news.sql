@@ -68,8 +68,8 @@ INSERT INTO public.permissions (slug, module, action, name_tg, name_ru) VALUES
   ('news.read', 'news', 'read', 'Хондани навидҳо', 'Просмотр новостей'),
   ('news.create', 'news', 'create', 'Эҷоди навид', 'Создание новости'),
   ('news.edit', 'news', 'update', 'Таҳрири навид', 'Редактирование новости'),
-  ('news.submit', 'news', 'submit', 'Ирсоли навид', 'Отправка новости'),
-  ('news.publish', 'news', 'publish', 'Нашри навид', 'Публикация новости'),
+  ('news.submit', 'news', 'manage', 'Ирсоли навид', 'Отправка новости'),
+  ('news.publish', 'news', 'manage', 'Нашри навид', 'Публикация новости'),
   ('news.delete', 'news', 'delete', 'Нест кардани навид', 'Удаление новости'),
   ('news.manage', 'news', 'manage', 'Идоракунии навидҳо', 'Управление новостями');
 
