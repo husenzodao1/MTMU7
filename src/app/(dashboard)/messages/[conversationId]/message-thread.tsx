@@ -89,7 +89,7 @@ function MessageBubble({
           className="mt-1"
         />
       )}
-      <div className={cn("max-w-[75%]", isOwn ? "items-end" : "items-start")}>
+      <div className={cn("max-w-[85%] lg:max-w-[65%]", isOwn ? "items-end" : "items-start")}>
         {!isOwn && (
           <span className="mb-0.5 block text-xs font-medium text-neutral-500">
             {message.senderName}

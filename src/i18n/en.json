@@ -123,7 +123,8 @@
     "admin": "Admin Panel",
     "notifications": "Notifications",
     "about": "About",
-    "news": "News"
+    "news": "News",
+    "menu": "Menu"
   },
   "errors": {
     "generic": "Oops. Something went wrong.",

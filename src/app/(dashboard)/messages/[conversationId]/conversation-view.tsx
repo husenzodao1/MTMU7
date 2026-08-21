@@ -80,7 +80,7 @@ export function ConversationView({
   const Icon = getTypeIcon(conversationType);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white">
+    <div className="flex h-[calc(100vh-4rem-5rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white lg:h-[calc(100vh-4rem)]">
       {/* Sidebar: conversation list (hidden on mobile) */}
       <div className="hidden w-80 flex-col border-r border-neutral-200 lg:flex xl:w-96">
         <ConversationsList
