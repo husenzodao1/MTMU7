@@ -14,6 +14,9 @@ export async function searchContacts(query: string) {
 
   if (!query || query.length < 2) return [];
 
+  const sanitized = query.replace(/[%_\\]/g, "");
+  if (!sanitized) return [];
+
   const supabase = await createServerClient();
 
   const { data: users } = await supabase
@@ -28,7 +31,7 @@ export async function searchContacts(query: string) {
     )
     .neq("id" as never, user.id)
     .eq("is_active" as never, true)
-    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%` as never)
+    .or(`first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%` as never)
     .limit(20);
 
   return ((users as Array<Record<string, unknown>>) ?? []).map((u) => {

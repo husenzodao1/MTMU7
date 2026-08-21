@@ -580,7 +580,40 @@
     "roles": "Роли",
     "readOnly": "Только для чтения",
     "personalInfo": "Личная информация",
-    "contactInfo": "Контактная информация"
+    "contactInfo": "Контактная информация",
+    "subjects": "Предметы",
+    "userProfile": "Профиль пользователя"
+  },
+  "friends": {
+    "title": "Друзья",
+    "friends": "Друзья",
+    "incoming": "Входящие",
+    "outgoing": "Исходящие",
+    "addFriend": "Добавить в друзья",
+    "requestSent": "Запрос отправлен",
+    "acceptRequest": "Принять",
+    "accept": "Принять",
+    "reject": "Отклонить",
+    "cancel": "Отменить",
+    "sendMessage": "Сообщение",
+    "removeFriend": "Удалить",
+    "noFriends": "Пока нет друзей",
+    "noFriendsDesc": "Найдите людей и добавьте их в друзья",
+    "noIncoming": "Нет входящих запросов",
+    "noIncomingDesc": "Запросы в друзья появятся здесь",
+    "noOutgoing": "Нет исходящих запросов",
+    "noOutgoingDesc": "Отправляйте запросы, чтобы подружиться",
+    "findPeople": "Найти людей"
+  },
+  "search": {
+    "title": "Поиск людей",
+    "searchPlaceholder": "Поиск по имени...",
+    "filter_all": "Все",
+    "filter_student": "Ученики",
+    "filter_teacher": "Учителя",
+    "noResults": "Никого не найдено",
+    "noResultsDesc": "Попробуйте другой запрос",
+    "searchHint": "Введите минимум 2 символа"
   },
   "about": {
     "title": "О системе",

@@ -580,7 +580,40 @@
     "roles": "Нақшҳо",
     "readOnly": "Танҳо барои хондан",
     "personalInfo": "Маълумоти шахсӣ",
-    "contactInfo": "Маълумоти тамос"
+    "contactInfo": "Маълумоти тамос",
+    "subjects": "Фанҳо",
+    "userProfile": "Профили корбар"
+  },
+  "friends": {
+    "title": "Дӯстон",
+    "friends": "Дӯстон",
+    "incoming": "Воридшаванда",
+    "outgoing": "Фиристодашуда",
+    "addFriend": "Дӯст илова кардан",
+    "requestSent": "Дархост фиристода шуд",
+    "acceptRequest": "Қабул кардан",
+    "accept": "Қабул",
+    "reject": "Рад",
+    "cancel": "Бекор",
+    "sendMessage": "Паём",
+    "removeFriend": "Нест кардан",
+    "noFriends": "Ҳанӯз дӯстон нест",
+    "noFriendsDesc": "Одамонро ҷустуҷӯ кунед ва ба дӯстон илова кунед",
+    "noIncoming": "Дархостҳои воридшаванда нест",
+    "noIncomingDesc": "Дархостҳои дӯстӣ дар ин ҷо пайдо мешаванд",
+    "noOutgoing": "Дархостҳои фиристодашуда нест",
+    "noOutgoingDesc": "Барои пайваст шудан дархостҳои дӯстӣ фиристед",
+    "findPeople": "Ҷустуҷӯи одамон"
+  },
+  "search": {
+    "title": "Ҷустуҷӯи одамон",
+    "searchPlaceholder": "Бо ном ҷустуҷӯ кунед...",
+    "filter_all": "Ҳама",
+    "filter_student": "Хонандагон",
+    "filter_teacher": "Омӯзгорон",
+    "noResults": "Касе ёфт нашуд",
+    "noResultsDesc": "Ибораи дигари ҷустуҷӯро озмоед",
+    "searchHint": "Ҳадди ақал 2 ҳарф ворид кунед"
   },
   "about": {
     "title": "Дар бораи система",
