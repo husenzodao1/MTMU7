@@ -2,7 +2,7 @@ import {
   LayoutDashboard, MessageSquare, BookOpen, GraduationCap,
   ClipboardCheck, FileText, Calendar, FolderOpen,
   PartyPopper, Megaphone, BarChart3, Settings, Shield, Info,
-  Newspaper,
+  Newspaper, Users,
 } from "lucide-react";
 
 export interface NavItem {
@@ -15,6 +15,7 @@ export interface NavItem {
 
 export const mainNavItems: NavItem[] = [
   { label: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "nav.friends", href: "/friends", icon: Users },
   { label: "nav.messages", href: "/messages", icon: MessageSquare, moduleSlug: "messages" },
   { label: "nav.library", href: "/library", icon: BookOpen, moduleSlug: "library" },
   { label: "nav.grades", href: "/grades", icon: GraduationCap, moduleSlug: "grades" },

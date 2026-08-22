@@ -16,12 +16,13 @@ interface DashboardShellProps {
   user: UserWithRole;
   enabledModules: string[];
   notificationCount?: number;
+  friendRequestCount?: number;
   school?: SchoolInfo;
   locale?: string;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ user, enabledModules, notificationCount, school, locale, children }: DashboardShellProps) {
+export function DashboardShell({ user, enabledModules, notificationCount, friendRequestCount, school, locale, children }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = user.roles.some((r) => r.slug === "admin");
 
@@ -35,7 +36,7 @@ export function DashboardShell({ user, enabledModules, notificationCount, school
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
-      <Sidebar enabledModules={enabledModules} isAdmin={isAdmin} school={school} />
+      <Sidebar enabledModules={enabledModules} isAdmin={isAdmin} school={school} friendRequestCount={friendRequestCount} />
       <MobileNav
         isOpen={mobileMenuOpen}
         onClose={handleMenuClose}
@@ -44,6 +45,7 @@ export function DashboardShell({ user, enabledModules, notificationCount, school
         school={school}
         user={user}
         notificationCount={notificationCount}
+        friendRequestCount={friendRequestCount}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">

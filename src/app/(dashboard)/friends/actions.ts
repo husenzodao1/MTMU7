@@ -1,14 +1,27 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 export async function sendFriendRequest(targetUserId: string) {
   const user = await getUserWithRole();
   if (!user) return { error: "unauthorized" };
   if (targetUserId === user.id) return { error: "cannotAddSelf" };
+
+  const admin = createAdminClient();
+
+  const { data: target } = await admin
+    .from("users" as never)
+    .select("id, school_id, is_active" as never)
+    .eq("id" as never, targetUserId)
+    .single();
+
+  const t = target as Record<string, unknown> | null;
+  if (!t) return { error: "userNotFound" };
+  if (!t.is_active) return { error: "userInactive" };
+  if (t.school_id !== user.schoolId) return { error: "differentSchool" };
 
   const supabase = await createServerClient();
 
@@ -22,6 +35,13 @@ export async function sendFriendRequest(targetUserId: string) {
 
   if (existing) return { error: "alreadyExists", status: "pending_sent" };
 
+  // Clean up old rejected/cancelled rows before re-inserting
+  await supabase
+    .from("friend_requests" as never)
+    .delete()
+    .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})` as never)
+    .in("status" as never, ["rejected", "cancelled"]);
+
   const { error } = await supabase
     .from("friend_requests" as never)
     .insert({
@@ -32,6 +52,16 @@ export async function sendFriendRequest(targetUserId: string) {
     } as never);
 
   if (error) return { error: error.message };
+
+  await admin.from("notifications" as never).insert({
+    user_id: targetUserId,
+    school_id: user.schoolId,
+    type: "friend",
+    module: "friends",
+    title: `${user.firstName} ${user.lastName}`,
+    body: "sent you a friend request",
+    data: { senderId: user.id },
+  } as never);
 
   revalidatePath(`/profile/${targetUserId}`);
   revalidatePath("/friends");
@@ -73,6 +103,17 @@ export async function acceptFriendRequest(senderUserId: string) {
 
   if (error) return { error: error.message };
 
+  const admin = createAdminClient();
+  await admin.from("notifications" as never).insert({
+    user_id: senderUserId,
+    school_id: user.schoolId,
+    type: "friend",
+    module: "friends",
+    title: `${user.firstName} ${user.lastName}`,
+    body: "accepted your friend request",
+    data: { accepterId: user.id },
+  } as never);
+
   revalidatePath(`/profile/${senderUserId}`);
   revalidatePath("/friends");
   return { status: "accepted" };
@@ -104,13 +145,23 @@ export async function removeFriend(targetUserId: string) {
 
   const supabase = await createServerClient();
 
-  const { error } = await supabase
+  // Change to cancelled instead of delete — the new RLS only allows updating to cancelled (sender) or rejected (receiver)
+  // We need to handle both directions: user could be sender or receiver
+  const { error: senderError } = await supabase
     .from("friend_requests" as never)
-    .delete()
-    .or(`and(sender_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user.id})` as never)
+    .update({ status: "cancelled", updated_at: new Date().toISOString() } as never)
+    .eq("sender_id" as never, user.id)
+    .eq("receiver_id" as never, targetUserId)
     .eq("status" as never, "accepted");
 
-  if (error) return { error: error.message };
+  const { error: receiverError } = await supabase
+    .from("friend_requests" as never)
+    .update({ status: "rejected", updated_at: new Date().toISOString() } as never)
+    .eq("sender_id" as never, targetUserId)
+    .eq("receiver_id" as never, user.id)
+    .eq("status" as never, "accepted");
+
+  if (senderError && receiverError) return { error: senderError.message };
 
   revalidatePath(`/profile/${targetUserId}`);
   revalidatePath("/friends");
@@ -231,75 +282,17 @@ export async function getOutgoingRequests(): Promise<FriendItem[]> {
   });
 }
 
-export async function startDirectMessage(targetUserId: string) {
+export async function getPendingFriendCount(): Promise<number> {
   const user = await getUserWithRole();
-  if (!user) redirect("/login");
+  if (!user) return 0;
 
   const supabase = await createServerClient();
 
-  const { data: existingMemberships } = await supabase
-    .from("conversation_members" as never)
-    .select("conversation_id" as never)
-    .eq("user_id" as never, user.id);
+  const { count } = await supabase
+    .from("friend_requests" as never)
+    .select("id" as never, { count: "exact", head: true })
+    .eq("receiver_id" as never, user.id)
+    .eq("status" as never, "pending");
 
-  const { data: targetMemberships } = await supabase
-    .from("conversation_members" as never)
-    .select("conversation_id" as never)
-    .eq("user_id" as never, targetUserId);
-
-  const myConvIds = new Set(
-    ((existingMemberships as Array<Record<string, unknown>>) ?? []).map(
-      (m) => m.conversation_id as string
-    )
-  );
-  const targetConvIds = (
-    (targetMemberships as Array<Record<string, unknown>>) ?? []
-  ).map((m) => m.conversation_id as string);
-  const sharedConvIds = targetConvIds.filter((id) => myConvIds.has(id));
-
-  if (sharedConvIds.length > 0) {
-    const { data: directConvs } = await supabase
-      .from("conversations" as never)
-      .select("id" as never)
-      .in("id" as never, sharedConvIds)
-      .eq("type" as never, "direct")
-      .eq("is_active" as never, true)
-      .limit(1);
-
-    if (directConvs && (directConvs as Array<Record<string, unknown>>).length > 0) {
-      const existing = (directConvs as Array<Record<string, unknown>>)[0]!;
-      redirect(`/messages/${existing.id}`);
-    }
-  }
-
-  const { data: newConv, error: convError } = await supabase
-    .from("conversations" as never)
-    .insert({
-      school_id: user.schoolId,
-      type: "direct",
-      created_by: user.id,
-    } as never)
-    .select("id" as never)
-    .single();
-
-  if (convError || !newConv) redirect("/messages?error=create_failed");
-
-  const convId = (newConv as Record<string, unknown>).id as string;
-
-  await supabase.from("conversation_members" as never).insert([
-    {
-      conversation_id: convId,
-      user_id: user.id,
-      school_id: user.schoolId,
-      role: "admin",
-    },
-    {
-      conversation_id: convId,
-      user_id: targetUserId,
-      school_id: user.schoolId,
-      role: "member",
-    },
-  ] as never);
-
-  redirect(`/messages/${convId}`);
+  return count ?? 0;
 }

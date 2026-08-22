@@ -10,9 +10,10 @@ interface SidebarProps {
   enabledModules: string[];
   isAdmin: boolean;
   school?: { name: string; logoUrl: string | null };
+  friendRequestCount?: number;
 }
 
-export function Sidebar({ enabledModules, isAdmin, school }: SidebarProps) {
+export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 0 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
 
@@ -45,9 +46,12 @@ export function Sidebar({ enabledModules, isAdmin, school }: SidebarProps) {
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
-          {filteredMain.map((item) => (
-            <NavLink key={item.href} item={item} isActive={pathname.startsWith(item.href)} t={t} />
-          ))}
+          {filteredMain.map((item) => {
+            const badge = item.href === "/friends" ? friendRequestCount : 0;
+            return (
+              <NavLink key={item.href} item={item} isActive={pathname.startsWith(item.href)} t={t} badge={badge} />
+            );
+          })}
         </ul>
       </nav>
 
@@ -63,7 +67,7 @@ export function Sidebar({ enabledModules, isAdmin, school }: SidebarProps) {
   );
 }
 
-function NavLink({ item, isActive, t }: { item: NavItem; isActive: boolean; t: ReturnType<typeof useTranslations> }) {
+function NavLink({ item, isActive, t, badge = 0 }: { item: NavItem; isActive: boolean; t: ReturnType<typeof useTranslations>; badge?: number }) {
   const Icon = item.icon;
   return (
     <li>
@@ -78,7 +82,12 @@ function NavLink({ item, isActive, t }: { item: NavItem; isActive: boolean; t: R
         )}
       >
         <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-600" : "text-neutral-400")} />
-        {t(item.label)}
+        <span className="flex-1">{t(item.label)}</span>
+        {badge > 0 && (
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1.5 text-[10px] font-medium text-white">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
       </Link>
     </li>
   );
