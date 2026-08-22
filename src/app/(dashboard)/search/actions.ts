@@ -24,15 +24,12 @@ export async function searchUsers(query: string, roleFilter?: string): Promise<S
 
   const supabase = await createServerClient();
 
-  const queryBuilder = supabase
+  const { data: users, error } = await supabase
     .from("users" as never)
     .select(`
       id, first_name, last_name, avatar_url,
       user_roles(
         roles:role_id(name_tg, slug)
-      ),
-      class_students!student_id(
-        classes:class_id(name)
       )
     ` as never)
     .neq("id" as never, user.id)
@@ -40,16 +37,11 @@ export async function searchUsers(query: string, roleFilter?: string): Promise<S
     .or(`first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%` as never)
     .limit(30);
 
-  const { data: users } = await queryBuilder;
-
-  if (!users) return [];
+  if (!users || error) return [];
 
   return ((users as Array<Record<string, unknown>>)).map((u) => {
     const roles = u.user_roles as Array<Record<string, unknown>> | null;
     const primaryRole = roles?.[0]?.roles as Record<string, unknown> | null;
-    const classStudents = u.class_students as Array<Record<string, unknown>> | null;
-    const cls = classStudents?.[0]?.classes as Record<string, unknown> | null;
-
     return {
       id: u.id as string,
       firstName: u.first_name as string,
@@ -57,7 +49,7 @@ export async function searchUsers(query: string, roleFilter?: string): Promise<S
       avatarUrl: u.avatar_url as string | null,
       roleName: (primaryRole?.name_tg as string) ?? "",
       roleSlug: (primaryRole?.slug as string) ?? "",
-      className: (cls?.name as string) ?? null,
+      className: null,
     };
   }).filter((u) => {
     if (!roleFilter || roleFilter === "all") return true;
