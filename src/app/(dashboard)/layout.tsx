@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { getEnabledModulesForUser } from "@/lib/modules/get-enabled";
 import { getUnreadCount } from "./notifications/actions";
+import { getPendingFriendCount } from "./friends/actions";
 import { createServerClient } from "@/lib/supabase/server";
 import { DashboardShell } from "./dashboard-shell";
 
@@ -18,9 +19,10 @@ export default async function DashboardLayout({
   }
 
   const supabase = await createServerClient();
-  const [enabledModules, notificationCount, schoolResult] = await Promise.all([
+  const [enabledModules, notificationCount, friendRequestCount, schoolResult] = await Promise.all([
     getEnabledModulesForUser(),
     getUnreadCount(),
+    getPendingFriendCount(),
     supabase
       .from("schools" as never)
       .select("short_name, logo_url" as never)
@@ -38,7 +40,7 @@ export default async function DashboardLayout({
   const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "tg";
 
   return (
-    <DashboardShell user={user} enabledModules={enabledModules} notificationCount={notificationCount} school={schoolInfo} locale={locale}>
+    <DashboardShell user={user} enabledModules={enabledModules} notificationCount={notificationCount} friendRequestCount={friendRequestCount} school={schoolInfo} locale={locale}>
       {children}
     </DashboardShell>
   );

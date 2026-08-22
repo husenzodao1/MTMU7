@@ -20,9 +20,10 @@ interface MobileNavProps {
   school?: { name: string; logoUrl: string | null };
   user?: UserWithRole;
   notificationCount?: number;
+  friendRequestCount?: number;
 }
 
-export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, user, notificationCount = 0 }: MobileNavProps) {
+export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, user, notificationCount = 0, friendRequestCount = 0 }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations();
@@ -130,7 +131,7 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
             {filteredMain.map((item) => {
               const Icon = item.icon;
               const active = pathname.startsWith(item.href);
-              const badge = item.href === "/notifications" ? notificationCount : 0;
+              const badge = item.href === "/notifications" ? notificationCount : item.href === "/friends" ? friendRequestCount : 0;
               return (
                 <li key={item.href}>
                   <Link

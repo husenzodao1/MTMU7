@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import Link from "next/link";
 import {
   Users,
@@ -25,6 +25,7 @@ import {
   removeFriend,
   type FriendItem,
 } from "./actions";
+import { createDirectConversation } from "../messages/new/actions";
 
 type Tab = "friends" | "incoming" | "outgoing";
 
@@ -160,6 +161,9 @@ function OutgoingList({ items }: { items: FriendItem[] }) {
 
 function FriendCard({ friend, type }: { friend: FriendItem; type: "friend" | "incoming" | "outgoing" }) {
   const t = useTranslations("friends");
+  const tc = useTranslations("common");
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
 
   const [acceptResult, acceptAction, acceptPending] = useActionState(
     () => acceptFriendRequest(friend.id),
@@ -182,64 +186,95 @@ function FriendCard({ friend, type }: { friend: FriendItem; type: "friend" | "in
   if (isHandled) return null;
 
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 py-3">
-        <Link href={`/profile/${friend.id}`}>
-          <Avatar
-            src={friend.avatarUrl}
-            fallback={`${friend.firstName[0]}${friend.lastName[0]}`}
-            size="lg"
-            className="cursor-pointer"
-          />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <Link href={`/profile/${friend.id}`} className="hover:underline">
-            <p className="truncate font-medium text-neutral-800">
-              {friend.lastName} {friend.firstName}
-            </p>
+    <>
+      <Card>
+        <CardContent className="flex items-center gap-3 py-3">
+          <Link href={`/profile/${friend.id}`}>
+            <Avatar
+              src={friend.avatarUrl}
+              fallback={`${friend.firstName[0]}${friend.lastName[0]}`}
+              size="lg"
+              className="cursor-pointer"
+            />
           </Link>
-          <p className="truncate text-xs text-neutral-500">{friend.roleName}</p>
-        </div>
-        <div className="flex shrink-0 gap-1.5">
-          {type === "incoming" && (
-            <>
-              <form action={acceptAction}>
-                <Button type="submit" size="sm" loading={acceptPending}>
-                  <UserCheck className="mr-1 h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t("accept")}</span>
-                </Button>
-              </form>
-              <form action={rejectAction}>
-                <Button type="submit" variant="outline" size="sm" loading={rejectPending}>
+          <div className="min-w-0 flex-1">
+            <Link href={`/profile/${friend.id}`} className="hover:underline">
+              <p className="truncate font-medium text-neutral-800">
+                {friend.lastName} {friend.firstName}
+              </p>
+            </Link>
+            <p className="truncate text-xs text-neutral-500">{friend.roleName}</p>
+          </div>
+          <div className="flex shrink-0 gap-1.5">
+            {type === "incoming" && (
+              <>
+                <form action={acceptAction}>
+                  <Button type="submit" size="sm" loading={acceptPending}>
+                    <UserCheck className="mr-1 h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{t("accept")}</span>
+                  </Button>
+                </form>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmReject(true)}
+                >
                   <UserX className="mr-1 h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{t("reject")}</span>
                 </Button>
-              </form>
-            </>
-          )}
-          {type === "outgoing" && (
-            <form action={cancelAction}>
-              <Button type="submit" variant="outline" size="sm" loading={cancelPending}>
-                {t("cancel")}
-              </Button>
-            </form>
-          )}
-          {type === "friend" && (
-            <>
-              <Link href={`/profile/${friend.id}`}>
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="h-3.5 w-3.5" />
+              </>
+            )}
+            {type === "outgoing" && (
+              <form action={cancelAction}>
+                <Button type="submit" variant="outline" size="sm" loading={cancelPending}>
+                  {t("cancel")}
                 </Button>
-              </Link>
-              <form action={removeAction}>
-                <Button type="submit" variant="ghost" size="sm" loading={removePending}>
+              </form>
+            )}
+            {type === "friend" && (
+              <>
+                <form action={async () => { await createDirectConversation(friend.id); }}>
+                  <Button type="submit" variant="outline" size="sm">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </Button>
+                </form>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmRemove(true)}
+                  loading={removePending}
+                >
                   <UserX className="h-3.5 w-3.5 text-neutral-400" />
                 </Button>
-              </form>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={confirmRemove}
+        onOpenChange={setConfirmRemove}
+        title={t("confirmRemoveTitle")}
+        description={t("confirmRemoveDesc")}
+        confirmLabel={t("removeFriend")}
+        onConfirm={async () => {
+          await removeFriend(friend.id);
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmReject}
+        onOpenChange={setConfirmReject}
+        title={t("confirmRejectTitle")}
+        description={t("confirmRejectDesc")}
+        confirmLabel={t("reject")}
+        onConfirm={async () => {
+          await rejectFriendRequest(friend.id);
+        }}
+      />
+    </>
   );
 }

@@ -123,6 +123,7 @@
     "admin": "Admin Panel",
     "notifications": "Notifications",
     "about": "About",
+    "friends": "Friends",
     "news": "News",
     "menu": "Menu"
   },
@@ -603,7 +604,11 @@
     "noIncomingDesc": "Friend requests will appear here",
     "noOutgoing": "No outgoing requests",
     "noOutgoingDesc": "Send friend requests to connect with people",
-    "findPeople": "Find People"
+    "findPeople": "Find People",
+    "confirmRemoveTitle": "Remove Friend",
+    "confirmRemoveDesc": "Are you sure you want to remove this person from your friends?",
+    "confirmRejectTitle": "Reject Request",
+    "confirmRejectDesc": "Are you sure you want to reject this friend request?"
   },
   "search": {
     "title": "Search People",

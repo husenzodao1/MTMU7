@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useActionState } from "react";
 import { sendFriendRequest, cancelFriendRequest, removeFriend, acceptFriendRequest } from "../../friends/actions";
-import { startDirectMessage } from "../../friends/actions";
+import { createDirectConversation } from "../../messages/new/actions";
 
 export function PublicProfileView({
   profile,
@@ -121,7 +121,7 @@ export function PublicProfileView({
                   </form>
                 )}
 
-                <form action={async () => { await startDirectMessage(profile.id); }}>
+                <form action={async () => { await createDirectConversation(profile.id); }}>
                   <Button type="submit" variant="outline" size="sm">
                     <MessageSquare className="mr-1.5 h-4 w-4" />
                     {tf("sendMessage")}
