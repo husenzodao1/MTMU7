@@ -31,7 +31,7 @@ export async function searchUsers(query: string, roleFilter?: string): Promise<S
       user_roles(
         roles:role_id(name_tg, slug)
       ),
-      class_students(
+      class_students!student_id(
         classes:class_id(name)
       )
     ` as never)
