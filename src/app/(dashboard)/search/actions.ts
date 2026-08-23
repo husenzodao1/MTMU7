@@ -77,3 +77,4 @@ export async function searchUsers(query: string, roleFilter?: string): Promise<S
     return u.roleSlug === roleFilter;
   });
 }
+
