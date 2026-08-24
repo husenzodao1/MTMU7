@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { loginAction } from "./actions";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({ redirect }: { redirect?: string }) {
   const t = useTranslations("auth");
   const [state, formAction, isPending] = useActionState(loginAction, { error: null });
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -39,14 +42,25 @@ export function LoginForm({ redirect }: { redirect?: string }) {
             {t("forgotPassword")}
           </Link>
         </div>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          error={!!state.error}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            autoComplete="current-password"
+            error={!!state.error}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {state.error && (
