@@ -177,6 +177,39 @@ export interface FriendItem {
   requestId: string;
 }
 
+async function fetchUserDetails(userIds: string[]): Promise<Map<string, { first_name: string; last_name: string; avatar_url: string | null; role_name: string }>> {
+  if (userIds.length === 0) return new Map();
+  const admin = createAdminClient();
+  const { data: users } = await admin
+    .from("users" as never)
+    .select("id, first_name, last_name, avatar_url" as never)
+    .in("id" as never, userIds);
+  const { data: rolesData } = await admin
+    .from("user_roles" as never)
+    .select("user_id, roles:role_id(name_tg)" as never)
+    .in("user_id" as never, userIds);
+
+  const rolesMap = new Map<string, string>();
+  for (const r of (rolesData as Array<Record<string, unknown>>) ?? []) {
+    const uid = r.user_id as string;
+    if (!rolesMap.has(uid)) {
+      const role = r.roles as Record<string, unknown> | null;
+      if (role) rolesMap.set(uid, (role.name_tg as string) ?? "");
+    }
+  }
+
+  const result = new Map<string, { first_name: string; last_name: string; avatar_url: string | null; role_name: string }>();
+  for (const u of (users as Array<Record<string, unknown>>) ?? []) {
+    result.set(u.id as string, {
+      first_name: u.first_name as string,
+      last_name: u.last_name as string,
+      avatar_url: u.avatar_url as string | null,
+      role_name: rolesMap.get(u.id as string) ?? "",
+    });
+  }
+  return result;
+}
+
 export async function getFriendsList(): Promise<FriendItem[]> {
   const user = await getUserWithRole();
   if (!user) return [];
@@ -185,46 +218,36 @@ export async function getFriendsList(): Promise<FriendItem[]> {
 
   const { data: sent } = await supabase
     .from("friend_requests" as never)
-    .select("id, receiver_id, users!friend_requests_receiver_id_fkey(id, first_name, last_name, avatar_url, user_roles(roles:role_id(name_tg)))" as never)
+    .select("id, receiver_id" as never)
     .eq("sender_id" as never, user.id)
     .eq("status" as never, "accepted");
 
   const { data: received } = await supabase
     .from("friend_requests" as never)
-    .select("id, sender_id, users!friend_requests_sender_id_fkey(id, first_name, last_name, avatar_url, user_roles(roles:role_id(name_tg)))" as never)
+    .select("id, sender_id" as never)
     .eq("receiver_id" as never, user.id)
     .eq("status" as never, "accepted");
 
+  const sentRows = (sent as Array<Record<string, unknown>>) ?? [];
+  const receivedRows = (received as Array<Record<string, unknown>>) ?? [];
+  const allUserIds = [
+    ...sentRows.map((r) => r.receiver_id as string),
+    ...receivedRows.map((r) => r.sender_id as string),
+  ];
+
+  const details = await fetchUserDetails(allUserIds);
+
   const friends: FriendItem[] = [];
-
-  for (const row of (sent as Array<Record<string, unknown>>) ?? []) {
-    const u = row.users as Record<string, unknown>;
-    const roles = u.user_roles as Array<Record<string, unknown>> | null;
-    const primaryRole = roles?.[0]?.roles as Record<string, unknown> | null;
-    friends.push({
-      id: u.id as string,
-      firstName: u.first_name as string,
-      lastName: u.last_name as string,
-      avatarUrl: u.avatar_url as string | null,
-      roleName: (primaryRole?.name_tg as string) ?? "",
-      requestId: row.id as string,
-    });
+  for (const row of sentRows) {
+    const d = details.get(row.receiver_id as string);
+    if (!d) continue;
+    friends.push({ id: row.receiver_id as string, firstName: d.first_name, lastName: d.last_name, avatarUrl: d.avatar_url, roleName: d.role_name, requestId: row.id as string });
   }
-
-  for (const row of (received as Array<Record<string, unknown>>) ?? []) {
-    const u = row.users as Record<string, unknown>;
-    const roles = u.user_roles as Array<Record<string, unknown>> | null;
-    const primaryRole = roles?.[0]?.roles as Record<string, unknown> | null;
-    friends.push({
-      id: u.id as string,
-      firstName: u.first_name as string,
-      lastName: u.last_name as string,
-      avatarUrl: u.avatar_url as string | null,
-      roleName: (primaryRole?.name_tg as string) ?? "",
-      requestId: row.id as string,
-    });
+  for (const row of receivedRows) {
+    const d = details.get(row.sender_id as string);
+    if (!d) continue;
+    friends.push({ id: row.sender_id as string, firstName: d.first_name, lastName: d.last_name, avatarUrl: d.avatar_url, roleName: d.role_name, requestId: row.id as string });
   }
-
   return friends;
 }
 
@@ -236,20 +259,22 @@ export async function getIncomingRequests(): Promise<FriendItem[]> {
 
   const { data } = await supabase
     .from("friend_requests" as never)
-    .select("id, sender_id, users!friend_requests_sender_id_fkey(id, first_name, last_name, avatar_url, user_roles(roles:role_id(name_tg)))" as never)
+    .select("id, sender_id" as never)
     .eq("receiver_id" as never, user.id)
     .eq("status" as never, "pending");
 
-  return ((data as Array<Record<string, unknown>>) ?? []).map((row) => {
-    const u = row.users as Record<string, unknown>;
-    const roles = u.user_roles as Array<Record<string, unknown>> | null;
-    const primaryRole = roles?.[0]?.roles as Record<string, unknown> | null;
+  const rows = (data as Array<Record<string, unknown>>) ?? [];
+  const userIds = rows.map((r) => r.sender_id as string);
+  const details = await fetchUserDetails(userIds);
+
+  return rows.map((row) => {
+    const d = details.get(row.sender_id as string);
     return {
-      id: u.id as string,
-      firstName: u.first_name as string,
-      lastName: u.last_name as string,
-      avatarUrl: u.avatar_url as string | null,
-      roleName: (primaryRole?.name_tg as string) ?? "",
+      id: row.sender_id as string,
+      firstName: d?.first_name ?? "",
+      lastName: d?.last_name ?? "",
+      avatarUrl: d?.avatar_url ?? null,
+      roleName: d?.role_name ?? "",
       requestId: row.id as string,
     };
   });
@@ -263,20 +288,22 @@ export async function getOutgoingRequests(): Promise<FriendItem[]> {
 
   const { data } = await supabase
     .from("friend_requests" as never)
-    .select("id, receiver_id, users!friend_requests_receiver_id_fkey(id, first_name, last_name, avatar_url, user_roles(roles:role_id(name_tg)))" as never)
+    .select("id, receiver_id" as never)
     .eq("sender_id" as never, user.id)
     .eq("status" as never, "pending");
 
-  return ((data as Array<Record<string, unknown>>) ?? []).map((row) => {
-    const u = row.users as Record<string, unknown>;
-    const roles = u.user_roles as Array<Record<string, unknown>> | null;
-    const primaryRole = roles?.[0]?.roles as Record<string, unknown> | null;
+  const rows = (data as Array<Record<string, unknown>>) ?? [];
+  const userIds = rows.map((r) => r.receiver_id as string);
+  const details = await fetchUserDetails(userIds);
+
+  return rows.map((row) => {
+    const d = details.get(row.receiver_id as string);
     return {
-      id: u.id as string,
-      firstName: u.first_name as string,
-      lastName: u.last_name as string,
-      avatarUrl: u.avatar_url as string | null,
-      roleName: (primaryRole?.name_tg as string) ?? "",
+      id: row.receiver_id as string,
+      firstName: d?.first_name ?? "",
+      lastName: d?.last_name ?? "",
+      avatarUrl: d?.avatar_url ?? null,
+      roleName: d?.role_name ?? "",
       requestId: row.id as string,
     };
   });
