@@ -1,7 +1,10 @@
-import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 
 export async function isModuleEnabled(moduleSlug: string): Promise<boolean> {
+  const user = await getUserWithRole();
+  if (!user) return false;
+
   const admin = createAdminClient();
 
   const { data: mod } = await admin
@@ -16,15 +19,14 @@ export async function isModuleEnabled(moduleSlug: string): Promise<boolean> {
     .from("school_modules" as never)
     .select("is_enabled" as never)
     .eq("module_id" as never, (mod as Record<string, unknown>).id as never)
+    .eq("school_id" as never, user.schoolId)
     .single();
 
   return (sm as Record<string, unknown> | null)?.is_enabled === true;
 }
 
 export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
-  const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getUserWithRole();
   if (!user) return false;
 
   const admin = createAdminClient();
@@ -42,6 +44,7 @@ export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
     .from("school_modules" as never)
     .select("is_enabled" as never)
     .eq("module_id" as never, moduleId as never)
+    .eq("school_id" as never, user.schoolId)
     .single();
 
   if ((sm as Record<string, unknown> | null)?.is_enabled !== true) return false;
