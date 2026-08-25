@@ -3,15 +3,11 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
-import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
 
 export async function searchContacts(query: string) {
   const user = await getUserWithRole();
   if (!user) return [];
-
-  const canRead = await canPerformAction("messages", "messages.read");
-  if (!canRead) return [];
 
   if (!query || query.length < 2) return [];
 
@@ -58,9 +54,6 @@ export async function searchContacts(query: string) {
 export async function createDirectConversation(targetUserId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
-
-  const canCreate = await canPerformAction("messages", "messages.create");
-  if (!canCreate) redirect("/messages?error=forbidden");
 
   const admin = createAdminClient();
 

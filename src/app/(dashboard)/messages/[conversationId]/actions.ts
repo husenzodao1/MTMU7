@@ -3,7 +3,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
-import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -15,9 +14,6 @@ const sendMessageSchema = z.object({
 export async function getMessages(conversationId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
-
-  const canRead = await canPerformAction("messages", "messages.read");
-  if (!canRead) return { messages: [], conversationName: "", conversationType: "direct" as const, members: [] };
 
   const supabase = await createServerClient();
 
@@ -140,9 +136,6 @@ export async function sendMessageAction(
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const canSend = await canPerformAction("messages", "messages.create");
-  if (!canSend) return { error: "accessDenied" };
-
   const content = formData.get("content") as string;
   const parsed = sendMessageSchema.safeParse({ content });
   if (!parsed.success) return { error: "emptyMessage" };
@@ -233,9 +226,6 @@ export async function pinMessageAction(messageId: string, isPinned: boolean) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const canManage = await canPerformAction("messages", "messages.manage");
-  if (!canManage) return;
-
   const supabase = await createServerClient();
 
   await supabase
@@ -249,9 +239,6 @@ export async function pinMessageAction(messageId: string, isPinned: boolean) {
 export async function addMemberAction(conversationId: string, userId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
-
-  const canManage = await canPerformAction("messages", "messages.manage");
-  if (!canManage) return;
 
   const supabase = await createServerClient();
 
@@ -270,9 +257,6 @@ export async function addMemberAction(conversationId: string, userId: string) {
 export async function removeMemberAction(conversationId: string, userId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
-
-  const canManage = await canPerformAction("messages", "messages.manage");
-  if (!canManage) return;
 
   const supabase = await createServerClient();
 

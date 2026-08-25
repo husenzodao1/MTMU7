@@ -3,15 +3,11 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
-import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
 
 export async function getConversations() {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
-
-  const canRead = await canPerformAction("messages", "messages.read");
-  if (!canRead) return [];
 
   const supabase = await createServerClient();
 
