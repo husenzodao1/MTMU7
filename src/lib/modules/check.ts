@@ -2,15 +2,23 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function isModuleEnabled(moduleSlug: string): Promise<boolean> {
-  const supabase = await createServerClient();
+  const admin = createAdminClient();
 
-  const { data } = await supabase
-    .from("school_modules" as never)
-    .select("is_enabled, modules!inner(slug)" as never)
-    .eq("modules.slug" as never, moduleSlug)
+  const { data: mod } = await admin
+    .from("modules" as never)
+    .select("id" as never)
+    .eq("slug" as never, moduleSlug)
     .single();
 
-  return (data as Record<string, unknown> | null)?.is_enabled === true;
+  if (!mod) return false;
+
+  const { data: sm } = await admin
+    .from("school_modules" as never)
+    .select("is_enabled" as never)
+    .eq("module_id" as never, (mod as Record<string, unknown>).id as never)
+    .single();
+
+  return (sm as Record<string, unknown> | null)?.is_enabled === true;
 }
 
 export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
@@ -19,10 +27,24 @@ export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
 
   if (!user) return false;
 
-  const enabled = await isModuleEnabled(moduleSlug);
-  if (!enabled) return false;
-
   const admin = createAdminClient();
+
+  const { data: mod } = await admin
+    .from("modules" as never)
+    .select("id" as never)
+    .eq("slug" as never, moduleSlug)
+    .single();
+
+  if (!mod) return false;
+  const moduleId = (mod as Record<string, unknown>).id as string;
+
+  const { data: sm } = await admin
+    .from("school_modules" as never)
+    .select("is_enabled" as never)
+    .eq("module_id" as never, moduleId as never)
+    .single();
+
+  if ((sm as Record<string, unknown> | null)?.is_enabled !== true) return false;
 
   const { data: userRoles } = await admin
     .from("user_roles" as never)
@@ -34,19 +56,10 @@ export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
   );
   if (roleIds.length === 0) return false;
 
-  const { data: moduleData } = await admin
-    .from("modules" as never)
-    .select("id" as never)
-    .eq("slug" as never, moduleSlug)
-    .single();
-
-  const mod = moduleData as Record<string, unknown> | null;
-  if (!mod) return false;
-
   const { data: access } = await admin
     .from("module_role_access" as never)
     .select("id" as never)
-    .eq("module_id" as never, mod.id as never)
+    .eq("module_id" as never, moduleId as never)
     .in("role_id" as never, roleIds)
     .eq("is_visible" as never, true)
     .limit(1);
