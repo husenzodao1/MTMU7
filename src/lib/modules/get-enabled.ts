@@ -37,6 +37,7 @@ export async function getEnabledModulesForUser(): Promise<string[]> {
     .from("school_modules" as never)
     .select("module_id" as never)
     .eq("is_enabled" as never, true)
+    .eq("school_id" as never, user.schoolId)
     .in("module_id" as never, visibleModuleIds);
 
   const enabledIds = new Set(

@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
@@ -29,59 +30,78 @@ export async function getMessages(conversationId: string) {
 
   if (!membership) return { messages: [], conversationName: "", conversationType: "direct" as const, members: [] };
 
-  const { data: conv } = await supabase
-    .from("conversations" as never)
-    .select("name, type, class_id" as never)
-    .eq("id" as never, conversationId)
-    .single();
+  const admin = createAdminClient();
 
-  const { data: messages } = await supabase
-    .from("messages" as never)
-    .select(`
-      id, content, type, sender_id, reply_to_id,
-      is_pinned, is_edited, is_deleted,
-      created_at, edited_at,
-      users:sender_id(first_name, last_name, avatar_url)
-    ` as never)
-    .eq("conversation_id" as never, conversationId)
-    .order("created_at" as never, { ascending: true })
-    .limit(100);
+  const [convResult, messagesResult, membersResult] = await Promise.all([
+    admin
+      .from("conversations" as never)
+      .select("name, type, class_id" as never)
+      .eq("id" as never, conversationId)
+      .single(),
+    admin
+      .from("messages" as never)
+      .select("id, content, type, sender_id, reply_to_id, is_pinned, is_edited, is_deleted, created_at, edited_at" as never)
+      .eq("conversation_id" as never, conversationId)
+      .eq("is_deleted" as never, false)
+      .order("created_at" as never, { ascending: true })
+      .limit(100),
+    admin
+      .from("conversation_members" as never)
+      .select("user_id, role" as never)
+      .eq("conversation_id" as never, conversationId),
+  ]);
 
-  const { data: members } = await supabase
-    .from("conversation_members" as never)
-    .select(`
-      user_id, role,
-      users!inner(first_name, last_name, avatar_url)
-    ` as never)
-    .eq("conversation_id" as never, conversationId);
-
-  // Update last_read_at
-  await supabase
+  // Update last_read_at in background
+  supabase
     .from("conversation_members" as never)
     .update({ last_read_at: new Date().toISOString() } as never)
     .eq("conversation_id" as never, conversationId)
-    .eq("user_id" as never, user.id);
+    .eq("user_id" as never, user.id)
+    .then(() => {});
 
-  const convData = conv as Record<string, unknown> | null;
+  const msgs = (messagesResult.data as Array<Record<string, unknown>>) ?? [];
+  const memberRows = (membersResult.data as Array<Record<string, unknown>>) ?? [];
+
+  const allUserIds = new Set<string>();
+  for (const msg of msgs) {
+    if (msg.sender_id) allUserIds.add(msg.sender_id as string);
+  }
+  for (const m of memberRows) {
+    allUserIds.add(m.user_id as string);
+  }
+
+  const { data: usersData } = await admin
+    .from("users" as never)
+    .select("id, first_name, last_name, avatar_url" as never)
+    .in("id" as never, Array.from(allUserIds));
+
+  const usersMap = new Map<string, { first_name: string; last_name: string; avatar_url: string | null }>();
+  for (const u of (usersData as Array<Record<string, unknown>>) ?? []) {
+    usersMap.set(u.id as string, {
+      first_name: u.first_name as string,
+      last_name: u.last_name as string,
+      avatar_url: u.avatar_url as string | null,
+    });
+  }
+
+  const convData = convResult.data as Record<string, unknown> | null;
   let conversationName = (convData?.name as string) || "";
   if (!conversationName && convData?.type === "direct") {
-    const otherMember = (members as Array<Record<string, unknown>> | null)?.find(
-      (m) => m.user_id !== user.id
-    );
+    const otherMember = memberRows.find((m) => m.user_id !== user.id);
     if (otherMember) {
-      const u = otherMember.users as Record<string, unknown>;
-      conversationName = `${u.first_name} ${u.last_name}`;
+      const u = usersMap.get(otherMember.user_id as string);
+      if (u) conversationName = `${u.first_name} ${u.last_name}`;
     }
   }
 
-  const formattedMessages = ((messages as Array<Record<string, unknown>>) ?? []).map((msg) => {
-    const sender = msg.users as Record<string, unknown> | null;
+  const formattedMessages = msgs.map((msg) => {
+    const sender = usersMap.get(msg.sender_id as string);
     return {
       id: msg.id as string,
       conversationId,
       senderId: msg.sender_id as string | null,
       senderName: sender ? `${sender.first_name} ${sender.last_name}` : "System",
-      senderAvatar: sender?.avatar_url as string | null,
+      senderAvatar: sender?.avatar_url ?? null,
       content: msg.content as string,
       type: msg.type as string,
       replyToId: msg.reply_to_id as string | null,
@@ -92,13 +112,13 @@ export async function getMessages(conversationId: string) {
     };
   });
 
-  const membersList = ((members as Array<Record<string, unknown>>) ?? []).map((m) => {
-    const u = m.users as Record<string, unknown>;
+  const membersList = memberRows.map((m) => {
+    const u = usersMap.get(m.user_id as string);
     return {
       userId: m.user_id as string,
-      firstName: u.first_name as string,
-      lastName: u.last_name as string,
-      avatarUrl: u.avatar_url as string | null,
+      firstName: u?.first_name ?? "",
+      lastName: u?.last_name ?? "",
+      avatarUrl: u?.avatar_url ?? null,
       role: m.role as string,
     };
   });
@@ -138,23 +158,24 @@ export async function sendMessageAction(
 
   if (!membership) return { error: "notMember" };
 
-  const { error } = await supabase
-    .from("messages" as never)
-    .insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      school_id: user.schoolId,
-      content: parsed.data.content,
-      type: "text",
-      reply_to_id: replyToId,
-    } as never);
+  const [insertResult] = await Promise.all([
+    supabase
+      .from("messages" as never)
+      .insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        school_id: user.schoolId,
+        content: parsed.data.content,
+        type: "text",
+        reply_to_id: replyToId,
+      } as never),
+    supabase
+      .from("conversations" as never)
+      .update({ updated_at: new Date().toISOString() } as never)
+      .eq("id" as never, conversationId),
+  ]);
 
-  if (error) return { error: "sendError" };
-
-  await supabase
-    .from("conversations" as never)
-    .update({ updated_at: new Date().toISOString() } as never)
-    .eq("id" as never, conversationId);
+  if (insertResult.error) return { error: "sendError" };
 
   revalidatePath("/messages");
   return { error: null };
