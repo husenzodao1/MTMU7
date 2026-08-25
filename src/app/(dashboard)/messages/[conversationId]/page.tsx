@@ -1,5 +1,4 @@
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
-import { canPerformAction } from "@/lib/modules/check";
 import { redirect } from "next/navigation";
 import { getMessages } from "./actions";
 import { getConversations } from "../actions";
@@ -14,10 +13,11 @@ export default async function ConversationPage({
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const [messageData, conversations, canManage] = await Promise.all([
+  const isAdmin = user.roles.some((r) => r.slug === "admin");
+
+  const [messageData, conversations] = await Promise.all([
     getMessages(conversationId),
     getConversations(),
-    canPerformAction("messages", "messages.manage"),
   ]);
 
   return (
@@ -29,7 +29,7 @@ export default async function ConversationPage({
       conversationType={messageData.conversationType}
       members={messageData.members}
       conversations={conversations}
-      canManage={canManage}
+      canManage={isAdmin}
     />
   );
 }

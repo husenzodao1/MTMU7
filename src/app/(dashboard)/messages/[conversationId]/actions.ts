@@ -15,18 +15,17 @@ export async function getMessages(conversationId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const supabase = await createServerClient();
+  const admin = createAdminClient();
 
-  const { data: membership } = await supabase
+  const { data: membership } = await admin
     .from("conversation_members" as never)
     .select("id" as never)
     .eq("conversation_id" as never, conversationId)
     .eq("user_id" as never, user.id)
+    .eq("school_id" as never, user.schoolId)
     .single();
 
   if (!membership) return { messages: [], conversationName: "", conversationType: "direct" as const, members: [] };
-
-  const admin = createAdminClient();
 
   const [convResult, messagesResult, membersResult] = await Promise.all([
     admin
@@ -48,7 +47,7 @@ export async function getMessages(conversationId: string) {
   ]);
 
   // Update last_read_at in background
-  supabase
+  admin
     .from("conversation_members" as never)
     .update({ last_read_at: new Date().toISOString() } as never)
     .eq("conversation_id" as never, conversationId)
