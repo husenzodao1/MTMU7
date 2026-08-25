@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createServerClient } from "@/lib/supabase/server";
 import type { UserWithRole, UserRole } from "@/types/auth";
 
@@ -14,7 +15,7 @@ interface UserRow {
   is_active: boolean;
 }
 
-export async function getUserWithRole(): Promise<UserWithRole | null> {
+export const getUserWithRole = cache(async function getUserWithRole(): Promise<UserWithRole | null> {
   const supabase = await createServerClient();
   const { data: { user: authUser } } = await supabase.auth.getUser();
 
@@ -69,4 +70,4 @@ export async function getUserWithRole(): Promise<UserWithRole | null> {
     isActive: profile.is_active,
     roles,
   };
-}
+});
