@@ -61,7 +61,7 @@ export async function isModuleAccessible(moduleSlug: string): Promise<boolean> {
 
   const { data: access } = await admin
     .from("module_role_access" as never)
-    .select("id" as never)
+    .select("role_id" as never)
     .eq("module_id" as never, moduleId as never)
     .in("role_id" as never, roleIds)
     .eq("is_visible" as never, true)
