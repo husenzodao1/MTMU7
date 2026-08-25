@@ -1,6 +1,5 @@
 "use server";
 
-import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { redirect } from "next/navigation";
@@ -9,12 +8,13 @@ export async function getConversations() {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const supabase = await createServerClient();
+  const admin = createAdminClient();
 
-  const { data: memberships } = await supabase
+  const { data: memberships } = await admin
     .from("conversation_members" as never)
     .select("conversation_id, last_read_at" as never)
-    .eq("user_id" as never, user.id);
+    .eq("user_id" as never, user.id)
+    .eq("school_id" as never, user.schoolId);
 
   if (!memberships || memberships.length === 0) return [];
 
@@ -24,8 +24,6 @@ export async function getConversations() {
   for (const m of myMemberships) {
     lastReadMap.set(m.conversation_id, m.last_read_at);
   }
-
-  const admin = createAdminClient();
 
   const [convResult, membersResult] = await Promise.all([
     admin
