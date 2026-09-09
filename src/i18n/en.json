@@ -20,7 +20,8 @@
     "retry": "Retry",
     "refresh": "Refresh",
     "noData": "No data",
-    "required": "Required"
+    "required": "Required",
+    "viewAll": "View All"
   },
   "auth": {
     "login": "Login",
