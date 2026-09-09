@@ -35,7 +35,7 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
           border: "1px solid rgba(226, 232, 240, 0.8)",
         }}
       >
-        <div className="flex items-center justify-around px-1 py-2">
+        <div className="flex items-center justify-around px-2 py-1.5">
           {items.map((item) => {
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
@@ -43,37 +43,33 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none active:scale-90 transition-transform duration-150"
+                className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none transition-transform duration-150 active:scale-[0.88]"
               >
                 <span className="relative">
                   <span
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-                      active
-                        ? "scale-110 shadow-[0_2px_16px_rgba(79,70,229,0.32)]"
-                        : "scale-100"
-                    )}
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
                     style={active ? {
-                      background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                      background: "linear-gradient(145deg, #818cf8 0%, #4f46e5 100%)",
+                      boxShadow: "0 3px 14px rgba(79,70,229,0.38), 0 1px 4px rgba(79,70,229,0.2)",
                     } : {}}
                   >
                     <Icon
                       className={cn(
-                        "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-                        active ? "h-[18px] w-[18px] text-white rotate-0" : "h-5 w-5 text-slate-400"
+                        "transition-colors duration-300",
+                        active ? "h-[17px] w-[17px] text-white" : "h-[18px] w-[18px] text-slate-400"
                       )}
                     />
                   </span>
                   {(item.badge ?? 0) > 0 && (
-                    <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white ring-2 ring-white animate-bounce">
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white ring-2 ring-white">
                       {item.badge! > 99 ? "99+" : item.badge}
                     </span>
                   )}
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] font-semibold leading-none transition-all duration-300",
-                    active ? "text-indigo-600 translate-y-0 opacity-100" : "text-slate-400 translate-y-0 opacity-70"
+                    "text-[9.5px] font-bold leading-none tracking-tight transition-colors duration-300",
+                    active ? "text-indigo-500" : "text-slate-400"
                   )}
                 >
                   {item.label}
@@ -83,13 +79,13 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
           })}
           <button
             onClick={onMenuToggle}
-            className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none cursor-pointer"
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none cursor-pointer transition-transform duration-150 active:scale-[0.88]"
             type="button"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl">
-              <Menu className="h-5 w-5 text-slate-400" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-full">
+              <Menu className="h-[18px] w-[18px] text-slate-400" />
             </span>
-            <span className="text-[10px] font-semibold leading-none text-slate-400">
+            <span className="text-[9.5px] font-bold leading-none tracking-tight text-slate-400">
               {t("menu")}
             </span>
           </button>
