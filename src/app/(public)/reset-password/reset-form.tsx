@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   sendResetOtpAction,
   verifyResetOtpAction,
@@ -26,25 +27,30 @@ export function ResetForm() {
     { step: "email", email: null, error: null } as ResetState
   );
 
+  const icon = state.step === "otp" ? (
+    <ShieldCheck className="h-5 w-5 text-white" />
+  ) : state.step === "new-password" ? (
+    <KeyRound className="h-5 w-5 text-white" />
+  ) : (
+    <Mail className="h-5 w-5 text-white" />
+  );
+
+  const subtitle = state.step === "email"
+    ? t("resetEmailStep")
+    : state.step === "otp"
+    ? t("resetOtpStep")
+    : t("resetNewPasswordStep");
+
   return (
-    <div className="w-full max-w-sm space-y-6 animate-in">
-      <div className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50">
-          {state.step === "otp" ? (
-            <ShieldCheck className="h-6 w-6 text-primary-600" />
-          ) : state.step === "new-password" ? (
-            <KeyRound className="h-6 w-6 text-primary-600" />
-          ) : (
-            <Mail className="h-6 w-6 text-primary-600" />
-          )}
+    <Card className="w-full rounded-[28px] border border-neutral-200/80 bg-white/90 shadow-xl backdrop-blur-md animate-in">
+      <CardHeader className="text-center pb-2">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white shadow-md">
+          {icon}
         </div>
-        <h1 className="text-2xl font-bold text-neutral-900">{t("resetTitle")}</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          {state.step === "email" && t("resetEmailStep")}
-          {state.step === "otp" && t("resetOtpStep")}
-          {state.step === "new-password" && t("resetNewPasswordStep")}
-        </p>
-      </div>
+        <CardTitle className="text-xl font-extrabold tracking-tight text-neutral-900">{t("resetTitle")}</CardTitle>
+        <CardDescription className="text-sm text-neutral-500">{subtitle}</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-2">
 
       <form action={formAction} className="space-y-4">
         {state.step === "email" && (
@@ -139,6 +145,8 @@ export function ResetForm() {
           {t("backToLogin")}
         </Link>
       </p>
-    </div>
+
+      </CardContent>
+    </Card>
   );
 }
