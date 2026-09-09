@@ -139,19 +139,21 @@ export async function sendMessageAction(
   const parsed = sendMessageSchema.safeParse({ content });
   if (!parsed.success) return { error: "emptyMessage" };
 
-  const supabase = await createServerClient();
+  // Use admin client to bypass RLS for membership check and message insert
+  const admin = createAdminClient();
 
-  const { data: membership } = await supabase
+  const { data: membership } = await admin
     .from("conversation_members" as never)
     .select("id" as never)
     .eq("conversation_id" as never, conversationId)
     .eq("user_id" as never, user.id)
+    .eq("school_id" as never, user.schoolId)
     .single();
 
   if (!membership) return { error: "notMember" };
 
   const [insertResult] = await Promise.all([
-    supabase
+    admin
       .from("messages" as never)
       .insert({
         conversation_id: conversationId,
@@ -161,7 +163,7 @@ export async function sendMessageAction(
         type: "text",
         reply_to_id: replyToId,
       } as never),
-    supabase
+    admin
       .from("conversations" as never)
       .update({ updated_at: new Date().toISOString() } as never)
       .eq("id" as never, conversationId),

@@ -1,16 +1,10 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Pin, Reply, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Pin, Reply, Trash2, Copy, Pencil } from "lucide-react";
 import { deleteMessageAction, pinMessageAction } from "./actions";
 
 export interface MessageItem {
@@ -28,11 +22,18 @@ export interface MessageItem {
   createdAt: string;
 }
 
-function formatMessageTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+interface ContextMenuState {
+  messageId: string;
+  isOwn: boolean;
+  canManage: boolean;
+  content: string;
+  isPinned: boolean;
+  x: number;
+  y: number;
 }
 
 function MessageBubble({
@@ -40,21 +41,37 @@ function MessageBubble({
   isOwn,
   canManage,
   onReply,
-  onEdit,
   allMessages,
+  onContextMenu,
 }: {
   message: MessageItem;
   isOwn: boolean;
   canManage: boolean;
   onReply: (id: string) => void;
-  onEdit: (id: string) => void;
   allMessages: MessageItem[];
+  onContextMenu: (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean) => void;
 }) {
   const t = useTranslations("messages");
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const replyTarget = message.replyToId
     ? allMessages.find((m) => m.id === message.replyToId)
     : null;
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    longPressTimer.current = setTimeout(() => {
+      onContextMenu(e, message, isOwn);
+    }, 500);
+  }, [message, isOwn, onContextMenu]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    onContextMenu(e, message, isOwn);
+  }, [message, isOwn, onContextMenu]);
 
   if (message.isDeleted) {
     return (
@@ -68,107 +85,66 @@ function MessageBubble({
 
   if (message.type === "system") {
     return (
-      <div className="py-2 text-center text-xs text-neutral-400">
-        {message.content}
+      <div className="py-1 text-center">
+        <span className="rounded-full bg-neutral-100 px-3 py-1 text-[11px] text-neutral-400">{message.content}</span>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "group flex gap-2",
-        isOwn ? "flex-row-reverse" : "flex-row"
-      )}
-    >
+    <div className={cn("flex items-end gap-2", isOwn ? "flex-row-reverse" : "flex-row")}>
       {!isOwn && (
-        <Avatar
-          fallback={message.senderName.slice(0, 2)}
-          src={message.senderAvatar}
-          size="sm"
-          className="mt-1"
-        />
+        <Avatar fallback={message.senderName.slice(0, 2)} src={message.senderAvatar} size="sm" className="mb-1 shrink-0" />
       )}
-      <div className={cn("max-w-[85%] lg:max-w-[65%]", isOwn ? "items-end" : "items-start")}>
+
+      <div className={cn("max-w-[78%] sm:max-w-[65%]", isOwn ? "items-end" : "items-start", "flex flex-col")}>
         {!isOwn && (
-          <span className="mb-0.5 block text-xs font-medium text-neutral-500">
+          <span className="mb-0.5 ml-1 text-[11px] font-semibold text-indigo-500">
             {message.senderName}
           </span>
         )}
+
         {replyTarget && (
-          <div className="mb-1 rounded-lg border-l-2 border-primary-300 bg-primary-50 px-3 py-1 text-xs text-neutral-500">
-            <span className="font-medium">{replyTarget.senderName}:</span>{" "}
-            {replyTarget.content.slice(0, 80)}
+          <div className={cn(
+            "mb-1 max-w-full rounded-xl border-l-[3px] px-2.5 py-1.5 text-xs",
+            isOwn
+              ? "border-white/60 bg-indigo-400/30 text-white/80"
+              : "border-indigo-400 bg-indigo-50 text-neutral-500"
+          )}>
+            <span className="block font-semibold">{replyTarget.senderName}</span>
+            <span className="line-clamp-1">{replyTarget.content}</span>
           </div>
         )}
-        <div
-          className={cn(
-            "rounded-2xl px-4 py-2 text-sm transition-shadow duration-[var(--duration-fast)]",
-            isOwn
-              ? "bg-primary-500 text-white"
-              : "bg-neutral-100 text-neutral-800"
-          )}
-        >
-          {message.content}
-        </div>
-        <div
-          className={cn(
-            "mt-0.5 flex items-center gap-1 text-[10px] text-neutral-400",
-            isOwn ? "justify-end" : "justify-start"
-          )}
-        >
-          {formatMessageTime(message.createdAt)}
-          {message.isEdited && <span>· {t("edited")}</span>}
-          {message.isPinned && <Pin className="h-3 w-3" />}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="ml-1 rounded p-0.5 opacity-0 transition-opacity duration-[var(--duration-fast)] group-hover:opacity-100"
-              >
-                <MoreHorizontal className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isOwn ? "end" : "start"}>
-              <DropdownMenuItem onClick={() => onReply(message.id)}>
-                <Reply className="mr-2 h-3 w-3" />
-                {t("reply")}
-              </DropdownMenuItem>
-              {isOwn && !message.isDeleted && (
-                <>
-                  <DropdownMenuItem onClick={() => onEdit(message.id)}>
-                    <Pencil className="mr-2 h-3 w-3" />
-                    {t("edit")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <form action={deleteMessageAction.bind(null, message.id)}>
-                      <button type="submit" className="flex w-full items-center text-red-500">
-                        <Trash2 className="mr-2 h-3 w-3" />
-                        {t("delete")}
-                      </button>
-                    </form>
-                  </DropdownMenuItem>
-                </>
-              )}
-              {canManage && (
-                <DropdownMenuItem asChild>
-                  <form
-                    action={pinMessageAction.bind(
-                      null,
-                      message.id,
-                      !message.isPinned
-                    )}
-                  >
-                    <button type="submit" className="flex w-full items-center">
-                      <Pin className="mr-2 h-3 w-3" />
-                      {message.isPinned ? t("unpin") : t("pin")}
-                    </button>
-                  </form>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div
+          onContextMenu={handleContextMenu}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchEnd}
+          className={cn(
+            "relative cursor-pointer select-none rounded-[18px] px-3.5 py-2 text-sm leading-relaxed active:opacity-80",
+            isOwn
+              ? "rounded-br-[4px] text-white"
+              : "rounded-bl-[4px] bg-neutral-100 text-neutral-800"
+          )}
+          style={isOwn ? { background: "linear-gradient(135deg, #818cf8 0%, #4f46e5 100%)" } : {}}
+        >
+          {/* Message text + time trick (float right spacer) */}
+          <span className="break-words">
+            {message.content}
+            {/* Invisible spacer so time doesn't overlap text */}
+            <span className="ml-10 inline-block" aria-hidden />
+          </span>
+
+          {/* Time + status inside bubble, bottom-right */}
+          <span className={cn(
+            "absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[10px] leading-none select-none",
+            isOwn ? "text-white/60" : "text-neutral-400"
+          )}>
+            {message.isEdited && <span className="italic">{t("edited")}</span>}
+            {message.isPinned && <Pin className="h-2.5 w-2.5" />}
+            {formatTime(message.createdAt)}
+          </span>
         </div>
       </div>
     </div>
@@ -188,17 +164,53 @@ export function MessageThread({
   onReply: (id: string) => void;
   onEdit: (id: string) => void;
 }) {
+  const t = useTranslations("messages");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("touchstart", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("touchstart", close);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean) => {
+      if ("preventDefault" in e && (e as React.MouseEvent).preventDefault) {
+        (e as React.MouseEvent).preventDefault();
+      }
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setContextMenu({
+        messageId: msg.id,
+        isOwn,
+        canManage,
+        content: msg.content,
+        isPinned: msg.isPinned,
+        x: rect.left,
+        y: rect.top,
+      });
+    },
+    [canManage]
+  );
+
+  const closeMenu = () => setContextMenu(null);
+
   return (
-    <div
-      ref={scrollRef}
-      className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
-    >
+    <div ref={scrollRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
       {messages.map((msg) => (
         <MessageBubble
           key={msg.id}
@@ -206,10 +218,65 @@ export function MessageThread({
           isOwn={msg.senderId === currentUserId}
           canManage={canManage}
           onReply={onReply}
-          onEdit={onEdit}
           allMessages={messages}
+          onContextMenu={handleContextMenu}
         />
       ))}
+
+      {/* Context menu overlay */}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px]" onClick={closeMenu} />
+          <div
+            ref={menuRef}
+            className="fixed z-50 min-w-[200px] overflow-hidden rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-neutral-100"
+            style={{
+              top: Math.min(contextMenu.y, window.innerHeight - 280),
+              left: Math.max(8, Math.min(contextMenu.x, window.innerWidth - 216)),
+            }}
+          >
+            {[
+              {
+                icon: Reply, label: t("reply"), action: () => { onReply(contextMenu.messageId); closeMenu(); }
+              },
+              {
+                icon: Copy, label: t("delete").replace("Удалить", "Копировать") || "Копировать", action: () => {
+                  navigator.clipboard?.writeText(contextMenu.content).catch(() => {});
+                  closeMenu();
+                }
+              },
+              ...(contextMenu.canManage ? [{
+                icon: Pin, label: contextMenu.isPinned ? t("unpin") : t("pin"), action: () => {
+                  void pinMessageAction(contextMenu.messageId, !contextMenu.isPinned);
+                  closeMenu();
+                }
+              }] : []),
+              ...(contextMenu.isOwn ? [{
+                icon: Trash2,
+                label: t("delete"),
+                danger: true,
+                action: () => {
+                  void deleteMessageAction(contextMenu.messageId);
+                  closeMenu();
+                }
+              }] : []),
+            ].map((item, i) => (
+              <button
+                key={i}
+                onClick={item.action}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-neutral-50 active:bg-neutral-100",
+                  (item as { danger?: boolean }).danger ? "text-red-500" : "text-neutral-800",
+                  i > 0 && "border-t border-neutral-100"
+                )}
+              >
+                <item.icon className={cn("h-4 w-4", (item as { danger?: boolean }).danger ? "text-red-400" : "text-neutral-400")} />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

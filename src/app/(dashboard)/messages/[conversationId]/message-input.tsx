@@ -2,7 +2,6 @@
 
 import { useActionState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import { sendMessageAction } from "./actions";
 import { Send, X } from "lucide-react";
 
@@ -63,15 +62,14 @@ export function MessageInput({
           required
           className="flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-1 focus:ring-indigo-100"
         />
-        <Button
+        <button
           type="submit"
-          size="icon"
-          loading={isPending}
-          className="h-10 w-10 shrink-0 rounded-full"
+          disabled={isPending}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 disabled:opacity-60"
           style={{ background: "linear-gradient(135deg, #818cf8 0%, #4f46e5 100%)" }}
         >
           <Send className="h-4 w-4 text-white" />
-        </Button>
+        </button>
       </form>
       {state.error && (
         <p className="mt-1 text-xs text-red-500">{t(state.error as never)}</p>
