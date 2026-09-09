@@ -35,7 +35,7 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
           border: "1px solid rgba(226, 232, 240, 0.8)",
         }}
       >
-        <div className="flex items-center justify-around px-2 py-1.5">
+        <div className="flex items-end justify-around px-2 py-1.5">
           {items.map((item) => {
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
@@ -68,7 +68,7 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
                 </span>
                 <span
                   className={cn(
-                    "text-[9.5px] font-bold leading-none tracking-tight transition-colors duration-300",
+                    "w-full text-center text-[9px] font-bold leading-none tracking-tight transition-colors duration-300 truncate px-0.5",
                     active ? "text-indigo-500" : "text-slate-400"
                   )}
                 >
@@ -85,7 +85,7 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
             <span className="flex h-9 w-9 items-center justify-center rounded-full">
               <Menu className="h-[18px] w-[18px] text-slate-400" />
             </span>
-            <span className="text-[9.5px] font-bold leading-none tracking-tight text-slate-400">
+            <span className="w-full text-center text-[9px] font-bold leading-none tracking-tight text-slate-400 truncate px-0.5">
               {t("menu")}
             </span>
           </button>
