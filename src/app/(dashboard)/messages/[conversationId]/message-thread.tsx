@@ -34,21 +34,30 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+// WhatsApp-identical checkmarks
+// Sent:  single white tick
+// Read:  double cyan tick — cyan contrasts well against indigo/purple bubble
 function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead: boolean }) {
   if (isOptimistic) {
-    return <Clock className="h-3 w-3 shrink-0" style={{ color: "rgba(255,255,255,0.85)" }} />;
+    return <Clock className="h-3 w-3 shrink-0" style={{ color: "rgba(255,255,255,0.55)" }} />;
   }
+
   if (isRead) {
+    // Double tick — cyan, clearly visible on indigo
     return (
-      <svg width="18" height="11" viewBox="0 0 18 11" fill="none" className="shrink-0">
-        <path d="M1 5.5L5 9.5L11 1.5" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M7 9.5L17 1.5" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <svg width="19" height="11" viewBox="0 0 19 11" fill="none" className="shrink-0" aria-label="read">
+        {/* First tick — full V */}
+        <path d="M1.5 5.5L5 9L12 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+        {/* Second tick — only the right stroke, merging at the valley */}
+        <path d="M7 9L17.5 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
   }
+
+  // Single tick — white, sent but not yet read
   return (
-    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" className="shrink-0">
-      <path d="M1 5.5L5 9.5L11 1.5" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="none" className="shrink-0" aria-label="sent">
+      <path d="M1.5 5.5L5 9L12 1.5" stroke="rgba(255,255,255,0.65)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
