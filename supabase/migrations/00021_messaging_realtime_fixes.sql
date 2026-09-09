@@ -112,13 +112,41 @@ CREATE POLICY messages_select ON public.messages FOR SELECT TO authenticated
 -- ──────────────────────────────────────────────────────────────
 -- 4. Supabase Realtime publication
 --
--- Ensure all tables needed by Realtime postgres_changes are
--- in the supabase_realtime publication.  ALTER PUBLICATION is
--- idempotent for tables already present.
+-- ALTER PUBLICATION ADD TABLE raises ERROR if table already present
+-- in pg15. Each block checks pg_publication_tables first.
 -- ──────────────────────────────────────────────────────────────
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.message_favorites;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.message_deletions;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='messages') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.messages';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='conversation_members') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_members';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='conversations') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='notifications') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='message_favorites') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.message_favorites';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='message_deletions') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.message_deletions';
+  END IF;
+END $$;
