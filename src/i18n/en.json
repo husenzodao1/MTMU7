@@ -448,7 +448,13 @@
     "emptyMessage": "Message is empty",
     "notMember": "You are not a member of this conversation",
     "sendError": "Failed to send message",
-    "editError": "Failed to edit message"
+    "editError": "Failed to edit message",
+    "deleteForMe": "Delete for me",
+    "deleteForEveryone": "Delete for everyone",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "empty": {
     "noMessages": "No messages yet",

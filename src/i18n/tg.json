@@ -448,7 +448,13 @@
     "emptyMessage": "Паём холӣ аст",
     "notMember": "Шумо аъзои ин суҳбат нестед",
     "sendError": "Хатои фиристодан",
-    "editError": "Хатои таҳрир"
+    "editError": "Хатои таҳрир",
+    "deleteForMe": "Барои худам нест кардан",
+    "deleteForEveryone": "Барои ҳама нест кардан",
+    "favorite": "Ба дӯстдоштаҳо",
+    "unfavorite": "Аз дӯстдоштаҳо",
+    "save": "Захира кардан",
+    "cancel": "Бекор кардан"
   },
   "empty": {
     "noMessages": "Ҳоло паёме нест",
