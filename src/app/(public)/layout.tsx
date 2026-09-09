@@ -33,8 +33,8 @@ export default async function PublicLayout({ children }: { children: React.React
       </div>
 
       {/* Bottom ambient */}
-      <p className="relative z-10 mt-8 text-[11px] font-medium text-neutral-400">
-        © {new Date().getFullYear()} МТМУ №7 · Платформа 2030
+      <p className="relative z-10 mt-8 text-[11px] font-medium text-neutral-400 text-center">
+        Mehrovar Nosirzoda, Ilyos Juraev, Ruslan Huseinzoda
       </p>
     </div>
   );
