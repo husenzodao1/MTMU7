@@ -81,14 +81,17 @@ function MessageBubble({
 }) {
   const t = useTranslations("messages");
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   const replyTarget = message.replyToId
     ? allMessages.find((m) => m.id === message.replyToId)
     : null;
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const el = e.currentTarget as HTMLElement;
+    e.persist?.();
+    const el = bubbleRef.current;
     longPressTimer.current = setTimeout(() => {
+      if (!el) return;
       onContextMenu(e, message, isOwn, el.getBoundingClientRect());
     }, 500);
   }, [message, isOwn, onContextMenu]);
@@ -99,7 +102,9 @@ function MessageBubble({
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onContextMenu(e, message, isOwn, (e.currentTarget as HTMLElement).getBoundingClientRect());
+    const el = bubbleRef.current;
+    if (!el) return;
+    onContextMenu(e, message, isOwn, el.getBoundingClientRect());
   }, [message, isOwn, onContextMenu]);
 
   if (message.isDeleted) {
@@ -146,6 +151,7 @@ function MessageBubble({
         )}
 
         <div
+          ref={bubbleRef}
           onContextMenu={handleContextMenu}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
