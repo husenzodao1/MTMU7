@@ -125,7 +125,8 @@
     "about": "О системе",
     "friends": "Друзья",
     "news": "Новости",
-    "menu": "Меню"
+    "menu": "Меню",
+    "search": "Поиск"
   },
   "errors": {
     "generic": "Ой. Что-то пошло не так.",
@@ -237,6 +238,7 @@
     "currentDirector": "Нынешний",
     "sortOrder": "Порядок",
     "photoUrl": "URL фото",
+    "systemStatus": "Статус системы",
     "pendingUsers": "Ожидающие",
     "pendingUsersDesc": "Просмотр и одобрение заявок на регистрацию",
     "noPendingUsers": "Нет заявок на рассмотрении",
@@ -538,7 +540,10 @@
     "totalUsers": "Пользователи",
     "totalMessages": "Сообщения",
     "totalLibrary": "Книги",
-    "unreadNotifications": "Непрочитанные"
+    "unreadNotifications": "Непрочитанные",
+    "welcomeSubtitle": "Добро пожаловать на школьную платформу",
+    "overviewStatus": "Общий статус",
+    "quickAccess": "Быстрый доступ"
   },
   "settings": {
     "title": "Настройки",

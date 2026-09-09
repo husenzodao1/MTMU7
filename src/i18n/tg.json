@@ -125,7 +125,8 @@
     "about": "Дар бораи система",
     "friends": "Дӯстон",
     "news": "Навидҳо",
-    "menu": "Меню"
+    "menu": "Меню",
+    "search": "Ҷустуҷӯ"
   },
   "errors": {
     "generic": "Ой. Чизе хато шуд.",
@@ -237,6 +238,7 @@
     "currentDirector": "Ҳозира",
     "sortOrder": "Тартиб",
     "photoUrl": "URL-и сурат",
+    "systemStatus": "Ҳолати система",
     "pendingUsers": "Интизоршавандагон",
     "pendingUsersDesc": "Баррасӣ ва тасдиқи аризаҳои бақайдгирӣ",
     "noPendingUsers": "Аризаи интизорӣ нест",
@@ -538,7 +540,10 @@
     "totalUsers": "Корбарон",
     "totalMessages": "Паёмҳо",
     "totalLibrary": "Китобҳо",
-    "unreadNotifications": "Нахонда"
+    "unreadNotifications": "Нахонда",
+    "welcomeSubtitle": "Хуш омадед ба Платформаи мактабӣ",
+    "overviewStatus": "Ҳолати умумӣ",
+    "quickAccess": "Дастрасии зуд"
   },
   "settings": {
     "title": "Танзимот",

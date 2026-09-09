@@ -63,15 +63,17 @@ export function Header({ user, onMenuToggle, notificationCount = 0, locale = "tg
       </div>
 
       {/* Right Controls: Language, Notifications, User Profile */}
-      <div className="flex items-center gap-2.5">
-        <LocaleSwitcher current={locale} />
+      <div className="flex items-center gap-2">
+        <div className="hidden sm:block">
+          <LocaleSwitcher current={locale} />
+        </div>
 
         <Link
           href="/notifications"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200/80 bg-white text-neutral-600 shadow-2xs transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300 press-scale"
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200/80 bg-white/90 text-neutral-600 shadow-2xs transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300 press-scale"
           aria-label={t("nav.notifications")}
         >
-          <Bell className="h-4.5 w-4.5" />
+          <Bell className="h-4 w-4" />
           {notificationCount > 0 && (
             <span
               className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[9px] font-bold text-white ring-2 ring-white animate-scale-in"

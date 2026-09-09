@@ -125,7 +125,8 @@
     "about": "About",
     "friends": "Friends",
     "news": "News",
-    "menu": "Menu"
+    "menu": "Menu",
+    "search": "Search"
   },
   "errors": {
     "generic": "Oops. Something went wrong.",
@@ -237,6 +238,7 @@
     "currentDirector": "Current",
     "sortOrder": "Sort Order",
     "photoUrl": "Photo URL",
+    "systemStatus": "System Status",
     "pendingUsers": "Pending Users",
     "pendingUsersDesc": "Review and approve user registration requests",
     "noPendingUsers": "No pending registration requests",
@@ -538,7 +540,10 @@
     "totalUsers": "Users",
     "totalMessages": "Messages",
     "totalLibrary": "Books",
-    "unreadNotifications": "Unread"
+    "unreadNotifications": "Unread",
+    "welcomeSubtitle": "Welcome to the School Platform",
+    "overviewStatus": "Overall Status",
+    "quickAccess": "Quick Access"
   },
   "settings": {
     "title": "Settings",

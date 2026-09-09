@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDashboardStats } from "./actions";
 import { redirect } from "next/navigation";
@@ -34,9 +33,6 @@ export default async function DashboardPage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">
               {t("nav.dashboard")}
             </h1>
-            <Badge variant="pill" className="font-semibold text-[11px]">
-              2030 Edition
-            </Badge>
           </div>
           <p className="text-xs sm:text-sm text-neutral-500 font-medium mt-0.5">
             {t("common.appName")} • {t("dashboard.welcomeSubtitle")}
