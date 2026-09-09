@@ -19,6 +19,7 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats | null> {
+  try {
   const user = await getUserWithRole();
   if (!user) return null;
 
@@ -134,4 +135,22 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
     totalStudents: 0,
     totalTeachers: 0,
   };
+  } catch {
+    // DB temporarily unavailable — return minimal safe stats
+    const user = await getUserWithRole().catch(() => null);
+    if (!user) return null;
+    return {
+      role: "other" as const,
+      userName: user.firstName ?? "",
+      unreadNotifications: 0,
+      totalMessages: null,
+      totalLibraryItems: null,
+      totalUsers: 0,
+      totalClasses: 0,
+      pendingRegistrations: 0,
+      studentClass: null,
+      totalStudents: 0,
+      totalTeachers: 0,
+    };
+  }
 }
