@@ -29,7 +29,7 @@ export function CreateArticleForm() {
   return (
     <form action={formAction}>
       <Card>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-4 p-4 sm:p-6">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-neutral-700">
               {t("news.articleTitle")} *
@@ -51,7 +51,7 @@ export function CreateArticleForm() {
             <textarea
               name="content"
               required
-              rows={12}
+              rows={10}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder={t("news.articleContent")}
             />
@@ -60,36 +60,39 @@ export function CreateArticleForm() {
           <input ref={statusRef} type="hidden" name="status" value="draft" />
 
           {state.error && (
-            <p className="text-sm text-red-600">{state.error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{state.error}</p>
           )}
 
-          <div className="flex items-center justify-between pt-2">
+          {/* Mobile-friendly button row */}
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <Link href="/news">
-              <Button type="button" variant="ghost" className="gap-1.5">
+              <Button type="button" variant="ghost" size="sm" className="w-full sm:w-auto gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
                 {t("common.back")}
               </Button>
             </Link>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="submit"
                 variant="outline"
+                size="sm"
                 disabled={isPending}
                 onClick={() => {
                   if (statusRef.current) statusRef.current.value = "draft";
                 }}
-                className="gap-1.5"
+                className="w-full sm:w-auto gap-1.5"
               >
                 <Save className="h-4 w-4" />
                 {t("news.saveDraft")}
               </Button>
               <Button
                 type="submit"
+                size="sm"
                 disabled={isPending}
                 onClick={() => {
                   if (statusRef.current) statusRef.current.value = "submitted";
                 }}
-                className="gap-1.5"
+                className="w-full sm:w-auto gap-1.5"
               >
                 <Send className="h-4 w-4" />
                 {t("news.submitForReview")}

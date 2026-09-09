@@ -32,16 +32,18 @@ export default async function ArticlePage({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 animate-in">
+    <div className="mx-auto max-w-2xl space-y-5 animate-in pb-6">
+      {/* Back button */}
       <Link href="/news">
-        <Button variant="ghost" size="sm" className="gap-1.5">
+        <Button variant="ghost" size="sm" className="gap-1.5 -ml-2">
           <ArrowLeft className="h-4 w-4" />
           {t("common.back")}
         </Button>
       </Link>
 
+      {/* Cover image */}
       {article.coverImageUrl && (
-        <div className="aspect-video w-full overflow-hidden rounded-xl bg-neutral-100">
+        <div className="aspect-video w-full overflow-hidden rounded-[20px] bg-neutral-100">
           <img
             src={article.coverImageUrl}
             alt={article.title}
@@ -50,8 +52,10 @@ export default async function ArticlePage({
         </div>
       )}
 
-      <div>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Article header */}
+      <div className="space-y-3">
+        {/* Badges */}
+        <div className="flex flex-wrap items-center gap-2">
           {article.isPinned && (
             <Badge className="gap-1">
               <Pin className="h-3 w-3" />
@@ -63,36 +67,45 @@ export default async function ArticlePage({
           </Badge>
         </div>
 
-        <h1 className="text-3xl font-bold text-neutral-900">{article.title}</h1>
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-snug">
+          {article.title}
+        </h1>
 
-        <div className="mt-4 flex items-center gap-4 text-sm text-neutral-500">
+        {/* Meta row — wraps on mobile */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-neutral-500">
           <div className="flex items-center gap-2">
             <Avatar
               fallback={`${article.author.firstName.charAt(0)}${article.author.lastName.charAt(0)}`}
+              className="h-6 w-6 text-[9px]"
             />
-            <span>{article.author.firstName} {article.author.lastName}</span>
+            <span className="font-medium">
+              {article.author.firstName} {article.author.lastName}
+            </span>
           </div>
           {article.publishedAt && (
             <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-3.5 w-3.5" />
               {new Date(article.publishedAt).toLocaleDateString()}
             </span>
           )}
           <span className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3.5 w-3.5" />
             {article.viewCount}
           </span>
         </div>
-
-        {article.rejectionReason && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-700">{t("news.rejectionReason")}</p>
-            <p className="mt-1 text-sm text-red-600">{article.rejectionReason}</p>
-          </div>
-        )}
       </div>
 
-      <div className="prose prose-neutral max-w-none whitespace-pre-wrap text-neutral-700">
+      {/* Rejection reason */}
+      {article.rejectionReason && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-semibold text-red-700">{t("news.rejectionReason")}</p>
+          <p className="mt-1 text-sm text-red-600">{article.rejectionReason}</p>
+        </div>
+      )}
+
+      {/* Article body */}
+      <div className="prose prose-neutral max-w-none whitespace-pre-wrap text-neutral-700 text-[15px] leading-relaxed">
         {article.content}
       </div>
     </div>
