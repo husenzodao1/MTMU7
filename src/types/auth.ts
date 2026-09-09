@@ -9,6 +9,7 @@ export interface UserProfile {
   avatarUrl: string | null;
   phone: string | null;
   isActive: boolean;
+  status: string;
 }
 
 export interface UserRole {

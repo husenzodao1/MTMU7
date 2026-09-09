@@ -24,7 +24,7 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
+    <nav className="fixed bottom-3 left-3 right-3 z-50 rounded-full border border-neutral-200/80 bg-white/90 p-1.5 shadow-lg backdrop-blur-lg pb-[calc(0.375rem+env(safe-area-inset-bottom))] lg:hidden">
       <div className="flex items-center justify-around">
         {items.map((item) => {
           const active = pathname.startsWith(item.href);
@@ -34,29 +34,34 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
-                active ? "text-primary-600" : "text-neutral-400"
+                "flex flex-1 flex-col items-center justify-center rounded-full py-1.5 text-[10px] font-semibold transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale select-none",
+                active ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-900"
               )}
             >
               <span className="relative">
-                <Icon className="h-5 w-5" />
+                <Icon className={cn("h-4.5 w-4.5", active ? "text-white" : "text-neutral-500")} />
                 {(item.badge ?? 0) > 0 && (
-                  <span className="absolute -right-1.5 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-error-500 px-0.5 text-[9px] font-medium text-white">
+                  <span
+                    className={cn(
+                      "absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[9px] font-bold",
+                      active ? "bg-white text-neutral-900" : "bg-error-500 text-white"
+                    )}
+                  >
                     {item.badge! > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </span>
-              <span className="truncate">{item.label}</span>
+              <span className="mt-0.5 truncate text-[10px]">{item.label}</span>
             </Link>
           );
         })}
         <button
           onClick={onMenuToggle}
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-neutral-400 transition-colors active:text-neutral-600"
+          className="flex flex-1 flex-col items-center justify-center rounded-full py-1.5 text-[10px] font-semibold text-neutral-500 transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:text-neutral-900 press-scale select-none cursor-pointer"
           type="button"
         >
-          <Menu className="h-5 w-5" />
-          <span>{t("menu")}</span>
+          <Menu className="h-4.5 w-4.5 text-neutral-500" />
+          <span className="mt-0.5 truncate text-[10px]">{t("menu")}</span>
         </button>
       </div>
     </nav>

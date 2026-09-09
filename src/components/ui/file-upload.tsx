@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { Camera, Loader2, X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 
 interface FileUploadProps {
   name: string;
@@ -12,7 +12,7 @@ interface FileUploadProps {
   className?: string;
 }
 
-export function FileUpload({ name, currentUrl, onUploaded, className }: FileUploadProps) {
+export function FileUpload({ name, currentUrl, className }: FileUploadProps) {
   const t = useTranslations("auth");
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentUrl ?? null);

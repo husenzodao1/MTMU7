@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getBookDetail } from "./actions";
 import { BookDetailView } from "./book-detail";
 import { ErrorState } from "@/components/ui/error-state";

@@ -135,16 +135,16 @@ export function NotificationList({ notifications }: NotificationListProps) {
                 <form key={item.id} action={markAction}>
                   <button
                     type="submit"
-                    className={`flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-100 press-scale animate-list-item ${
-                      item.isRead ? "bg-white" : "bg-primary-50/60"
+                    className={`flex w-full items-start gap-3 rounded-[20px] px-4 py-3.5 text-left transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-100/80 press-scale animate-list-item ${
+                      item.isRead ? "bg-white" : "bg-primary-50/50"
                     }`}
                     style={{ animationDelay: `${index * 30}ms` }}
                   >
                     <div
-                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                         item.isRead
                           ? "bg-neutral-100 text-neutral-400"
-                          : "bg-primary-100 text-primary-600"
+                          : "bg-neutral-900 text-white shadow-sm"
                       }`}
                     >
                       <Icon className="h-4 w-4" />

@@ -58,15 +58,15 @@ export function SearchView() {
         />
       </div>
 
-      <div className="flex gap-1">
+      <div className="flex gap-1.5">
         {ROLE_FILTERS.map((filter) => (
           <button
             key={filter}
             onClick={() => handleFilterChange(filter)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 press-scale ${
               roleFilter === filter
-                ? "bg-primary-100 text-primary-700"
-                : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                ? "bg-neutral-900 text-white shadow-sm"
+                : "bg-neutral-100/80 text-neutral-600 hover:bg-neutral-200/80"
             }`}
           >
             {t(`filter_${filter}`)}
@@ -92,7 +92,7 @@ export function SearchView() {
             <Link
               key={user.id}
               href={`/profile/${user.id}`}
-              className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+              className="flex items-center gap-3 rounded-[20px] border border-neutral-200/70 bg-white p-3.5 transition-all duration-150 hover:border-neutral-300 hover:shadow-sm press-scale"
             >
               <Avatar
                 src={user.avatarUrl}

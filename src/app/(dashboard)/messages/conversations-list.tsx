@@ -109,7 +109,7 @@ export function ConversationsList({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-200 bg-neutral-50/50 px-4 py-3">
+      <div className="border-b border-neutral-200/70 bg-white px-4 py-3.5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-neutral-900">
             {t("title")}

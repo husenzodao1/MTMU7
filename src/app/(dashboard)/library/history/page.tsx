@@ -46,7 +46,7 @@ export default async function ReadingHistoryPage() {
     .map((h) => (h.library_items as Record<string, unknown>).cover_url as string | null)
     .filter((p): p is string => !!p);
 
-  let signedCoverMap = new Map<string, string>();
+  const signedCoverMap = new Map<string, string>();
   if (coverPaths.length > 0) {
     const adminClient = createAdminClient();
     const { data: signedUrls } = await adminClient.storage

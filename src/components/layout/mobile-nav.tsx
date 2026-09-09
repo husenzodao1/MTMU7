@@ -70,7 +70,7 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
       <div
         ref={overlayRef}
         className={cn(
-          "fixed inset-0 z-[200] bg-black/50 transition-opacity duration-[var(--duration-slow)] lg:hidden",
+          "fixed inset-0 z-[200] bg-neutral-950/40 backdrop-blur-sm transition-opacity duration-[var(--duration-slow)] lg:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={onClose}
@@ -79,55 +79,55 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-[201] flex w-72 flex-col bg-white shadow-xl transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out)] lg:hidden",
+          "fixed inset-y-0 left-0 z-[201] flex w-80 max-w-[85vw] flex-col rounded-r-[28px] border-r border-neutral-200/80 bg-white/95 shadow-2xl backdrop-blur-md transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out)] lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* School header */}
-        <div className="flex h-14 items-center justify-between border-b border-neutral-200 px-4">
-          <div className="flex items-center gap-2">
+        <div className="flex h-16 items-center justify-between border-b border-neutral-200/60 px-5">
+          <div className="flex items-center gap-2.5">
             {school?.logoUrl ? (
               <img
                 src={school.logoUrl}
                 alt={school.name}
-                className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                className="h-9 w-9 shrink-0 rounded-2xl object-cover ring-2 ring-white shadow-2xs"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
-                {t("common.appName").charAt(0)}
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-neutral-900 text-sm font-bold text-white shadow-xs">
+                {(school?.name ?? "М").charAt(0)}
               </div>
             )}
-            <span className="font-semibold text-neutral-900 text-sm">{school?.name ?? t("common.appName")}</span>
+            <span className="font-bold text-neutral-900 text-sm tracking-tight">{school?.name ?? t("common.appName")}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">
+            <X className="h-4.5 w-4.5" />
           </Button>
         </div>
 
-        {/* User info */}
+        {/* User Profile Summary */}
         {user && (
-          <div className="border-b border-neutral-200 px-4 py-3">
-            <div className="flex items-center gap-3">
+          <div className="border-b border-neutral-200/60 p-4 mx-2">
+            <div className="flex items-center gap-3 rounded-2xl bg-[#EEF2F8]/70 p-3">
               <Avatar
                 src={user.avatarUrl}
                 fallback={`${user.firstName[0]}${user.lastName[0]}`}
                 size="md"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-neutral-900">
+                <p className="truncate text-sm font-bold text-neutral-900">
                   {user.firstName} {user.lastName}
                 </p>
                 {primaryRole && (
-                  <p className="truncate text-xs text-neutral-500">{primaryRole.nameTg}</p>
+                  <p className="truncate text-xs font-medium text-neutral-500">{primaryRole.nameTg}</p>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Main nav */}
-        <nav className="flex-1 overflow-y-auto p-3">
-          <ul className="space-y-0.5">
+        {/* Main Nav Items */}
+        <nav className="flex-1 overflow-y-auto px-4 py-3">
+          <ul className="space-y-1">
             {filteredMain.map((item) => {
               const Icon = item.icon;
               const active = pathname.startsWith(item.href);
@@ -137,16 +137,21 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale select-none",
                       active
-                        ? "bg-primary-50 text-primary-700"
-                        : "text-neutral-600 hover:bg-neutral-100"
+                        ? "bg-neutral-900 text-white shadow-xs"
+                        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
                     )}
                   >
-                    <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-600" : "text-neutral-400")} />
-                    <span className="flex-1">{t(item.label)}</span>
+                    <Icon className={cn("h-4.5 w-4.5 shrink-0", active ? "text-white" : "text-neutral-500")} />
+                    <span className="flex-1 truncate">{t(item.label)}</span>
                     {badge > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1.5 text-[10px] font-medium text-white">
+                      <span
+                        className={cn(
+                          "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
+                          active ? "bg-white text-neutral-900" : "bg-error-500 text-white"
+                        )}
+                      >
                         {badge > 99 ? "99+" : badge}
                       </span>
                     )}
@@ -156,9 +161,9 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
             })}
           </ul>
 
-          <div className="my-2 border-t border-neutral-200" />
+          <div className="my-3 border-t border-neutral-200/60" />
 
-          <ul className="space-y-0.5">
+          <ul className="space-y-1">
             {filteredBottom.map((item) => {
               const Icon = item.icon;
               const active = pathname.startsWith(item.href);
@@ -167,14 +172,14 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale select-none",
                       active
-                        ? "bg-primary-50 text-primary-700"
-                        : "text-neutral-600 hover:bg-neutral-100"
+                        ? "bg-neutral-900 text-white shadow-xs"
+                        : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
                     )}
                   >
-                    <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-600" : "text-neutral-400")} />
-                    {t(item.label)}
+                    <Icon className={cn("h-4.5 w-4.5 shrink-0", active ? "text-white" : "text-neutral-500")} />
+                    <span className="truncate">{t(item.label)}</span>
                   </Link>
                 </li>
               );
@@ -182,15 +187,15 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
           </ul>
         </nav>
 
-        {/* Logout */}
-        <div className="border-t border-neutral-200 p-3">
+        {/* Logout Footer */}
+        <div className="border-t border-neutral-200/60 p-4">
           <button
             onClick={handleLogout}
             disabled={isPending}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200/80 bg-neutral-50 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] hover:bg-neutral-100 hover:text-neutral-900 press-scale cursor-pointer"
           >
-            <LogOut className="h-5 w-5 shrink-0 text-neutral-400" />
-            {t("auth.logout")}
+            <LogOut className="h-4 w-4 text-neutral-500" />
+            <span>{t("auth.logout")}</span>
           </button>
         </div>
       </div>

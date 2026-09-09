@@ -14,7 +14,7 @@ export default async function MessagesPage() {
   const conversations = await getConversations();
 
   return (
-    <div className="flex h-[calc(100vh-4rem-5rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white animate-in lg:h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem-5rem)] overflow-hidden rounded-[26px] border border-neutral-200/70 bg-white shadow-card animate-in lg:h-[calc(100vh-4rem)]">
       <div className="flex w-full flex-col lg:w-80 xl:w-96">
         <ConversationsList
           conversations={conversations}

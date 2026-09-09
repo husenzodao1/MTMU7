@@ -13,6 +13,7 @@ interface UserRow {
   avatar_url: string | null;
   phone: string | null;
   is_active: boolean;
+  status: string;
 }
 
 export const getUserWithRole = cache(async function getUserWithRole(): Promise<UserWithRole | null> {
@@ -68,6 +69,7 @@ export const getUserWithRole = cache(async function getUserWithRole(): Promise<U
     avatarUrl: profile.avatar_url,
     phone: profile.phone,
     isActive: profile.is_active,
+    status: profile.status,
     roles,
   };
 });

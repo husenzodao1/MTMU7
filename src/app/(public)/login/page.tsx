@@ -11,27 +11,27 @@ export default async function LoginPage({
   const { redirect, message, error, registered } = await searchParams;
 
   return (
-    <Card className="w-full max-w-md animate-in">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-2 text-2xl font-bold text-primary-600">
-          МТМУ №7
+    <Card className="w-full rounded-[28px] border border-neutral-200/80 bg-white/90 shadow-xl backdrop-blur-md animate-in">
+      <CardHeader className="text-center pb-2">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white text-sm font-black shadow-md">
+          М7
         </div>
-        <CardTitle>{t("loginTitle")}</CardTitle>
-        <CardDescription>{t("loginDescription")}</CardDescription>
+        <CardTitle className="text-xl font-extrabold tracking-tight text-neutral-900">{t("loginTitle")}</CardTitle>
+        <CardDescription className="text-sm text-neutral-500">{t("loginDescription")}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-2">
         {error === "noProfile" && (
-          <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+          <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200/70 p-3 text-sm text-amber-700">
             {t("noProfile")}
           </div>
         )}
         {registered === "true" && (
-          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+          <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200/70 p-3 text-sm text-emerald-700">
             {t("registrationSuccess")}
           </div>
         )}
         {message === "passwordReset" && (
-          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+          <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200/70 p-3 text-sm text-emerald-700">
             {t("passwordReset")}
           </div>
         )}

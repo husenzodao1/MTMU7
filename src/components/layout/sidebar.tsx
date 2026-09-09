@@ -26,26 +26,33 @@ export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 
   );
 
   return (
-    <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200 lg:bg-white">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b border-neutral-200 px-6">
+    <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200/70 lg:bg-[#EEF2F8]/95 lg:backdrop-blur-sm">
+      {/* Brand Identity / Logo Header */}
+      <div className="flex h-20 items-center gap-3 px-6">
         {school?.logoUrl ? (
           <img
             src={school.logoUrl}
             alt={school.name}
-            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+            className="h-10 w-10 shrink-0 rounded-2xl object-cover ring-2 ring-white/80 shadow-xs"
           />
         ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-900 text-base font-bold text-white shadow-sm ring-2 ring-white/80">
             {(school?.name ?? "М").charAt(0)}
           </div>
         )}
-        <span className="font-semibold text-neutral-900">{school?.name ?? "МТМУ №7"}</span>
+        <div className="min-w-0 flex-1">
+          <span className="block truncate font-bold text-neutral-900 text-sm tracking-tight">
+            {school?.name ?? "МТМУ №7"}
+          </span>
+          <span className="block text-[11px] font-medium text-neutral-500 tracking-normal">
+            Digital Platform
+          </span>
+        </div>
       </div>
 
-      {/* Main nav */}
-      <nav className="flex-1 overflow-y-auto p-3">
-        <ul className="space-y-1">
+      {/* Main Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3.5 py-2">
+        <ul className="space-y-1.5">
           {filteredMain.map((item) => {
             const badge = item.href === "/friends" ? friendRequestCount : 0;
             return (
@@ -55,9 +62,9 @@ export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 
         </ul>
       </nav>
 
-      {/* Bottom nav */}
-      <div className="border-t border-neutral-200 p-3">
-        <ul className="space-y-1">
+      {/* Bottom Navigation / Settings / Admin */}
+      <div className="border-t border-neutral-200/60 p-3.5">
+        <ul className="space-y-1.5">
           {filteredBottom.map((item) => (
             <NavLink key={item.href} item={item} isActive={pathname.startsWith(item.href)} t={t} />
           ))}
@@ -75,16 +82,21 @@ function NavLink({ item, isActive, t, badge = 0 }: { item: NavItem; isActive: bo
         href={item.href}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale",
+          "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale select-none",
           isActive
-            ? "bg-primary-50 text-primary-700"
-            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+            ? "bg-neutral-900 text-white shadow-sm font-semibold"
+            : "text-neutral-600 hover:bg-neutral-200/60 hover:text-neutral-900"
         )}
       >
-        <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-600" : "text-neutral-400")} />
-        <span className="flex-1">{t(item.label)}</span>
+        <Icon className={cn("h-4.5 w-4.5 shrink-0 transition-colors", isActive ? "text-white" : "text-neutral-500")} />
+        <span className="flex-1 truncate">{t(item.label)}</span>
         {badge > 0 && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1.5 text-[10px] font-medium text-white">
+          <span
+            className={cn(
+              "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
+              isActive ? "bg-white text-neutral-900" : "bg-error-500 text-white"
+            )}
+          >
             {badge > 99 ? "99+" : badge}
           </span>
         )}

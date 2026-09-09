@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Globe } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const LOCALES = [
   { code: "tg", label: "Тҷ" },
@@ -22,19 +23,22 @@ export function LocaleSwitcher({ current }: { current: string }) {
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <Globe className="h-4 w-4 text-neutral-400" />
+    <div className="flex items-center gap-1 rounded-full border border-neutral-200/80 bg-white/90 p-1 shadow-2xs">
+      <div className="pl-1.5 pr-0.5 text-neutral-400">
+        <Globe className="h-3.5 w-3.5" />
+      </div>
       {LOCALES.map(({ code, label }) => (
         <button
           key={code}
           type="button"
           disabled={isPending}
           onClick={() => handleChange(code)}
-          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-bold transition-all duration-[var(--duration-fast)] ease-[var(--ease-default)] press-scale cursor-pointer select-none",
             current === code
-              ? "bg-primary-100 text-primary-700"
-              : "text-neutral-500 hover:text-neutral-700"
-          }`}
+              ? "bg-neutral-900 text-white shadow-2xs"
+              : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
+          )}
         >
           {label}
         </button>

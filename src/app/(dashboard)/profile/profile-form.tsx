@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { FileUpload } from "@/components/ui/file-upload";
 import { updateProfile } from "./actions";
 import type { FullProfile } from "./actions";
-import { GraduationCap, BookOpen, Mail, Phone, School, Hash } from "lucide-react";
+import { GraduationCap, BookOpen, Mail, Phone, School, Hash, Check } from "lucide-react";
 
 interface ProfileFormProps {
   profile: FullProfile;
@@ -21,7 +21,6 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   const [state, formAction, isPending] = useActionState(updateProfile, null);
 
   const isTeacher = profile.roles.some((r) => r.slug === "teacher");
-  const isStudent = profile.roles.some((r) => r.slug === "student");
 
   const getRoleName = (role: { slug: string; nameTg: string; nameRu: string | null }) => {
     if (locale === "ru" && role.nameRu) return role.nameRu;
@@ -30,47 +29,56 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <Avatar
-              src={profile.avatarUrl}
-              fallback={`${profile.firstName[0]}${profile.lastName[0]}`}
-              size="xl"
-              className="h-24 w-24 text-2xl"
-            />
-            <div className="text-center sm:text-left">
-              <h2 className="text-xl font-bold text-neutral-900">
+      {/* Profile Header Capsule */}
+      <div className="relative overflow-hidden rounded-[28px] border border-neutral-200/70 bg-gradient-to-br from-[#E8EEFB] via-[#EEF2FC] to-[#DBE7FC] p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
+          <Avatar
+            src={profile.avatarUrl}
+            fallback={`${profile.firstName[0]}${profile.lastName[0]}`}
+            size="2xl"
+            className="h-24 w-24 ring-4 ring-white/90 shadow-md"
+          />
+          <div className="text-center sm:text-left min-w-0 flex-1">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
                 {profile.lastName} {profile.firstName}
                 {profile.middleName ? ` ${profile.middleName}` : ""}
               </h2>
-              <div className="mt-1 flex flex-wrap justify-center gap-1.5 sm:justify-start">
-                {profile.roles.map((role) => (
-                  <Badge key={role.slug} variant="secondary">
-                    {role.slug === "student" && <GraduationCap className="mr-1 h-3 w-3" />}
-                    {role.slug === "teacher" && <BookOpen className="mr-1 h-3 w-3" />}
-                    {getRoleName(role)}
-                  </Badge>
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-neutral-500 sm:justify-start">
-                <span className="flex items-center gap-1">
-                  <Mail className="h-3.5 w-3.5" /> {profile.email}
+            </div>
+
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5 sm:justify-start">
+              {profile.roles.map((role) => (
+                <Badge key={role.slug} variant="default" className="text-xs font-bold py-1">
+                  {role.slug === "student" && <GraduationCap className="mr-1 h-3.5 w-3.5" />}
+                  {role.slug === "teacher" && <BookOpen className="mr-1 h-3.5 w-3.5" />}
+                  {getRoleName(role)}
+                </Badge>
+              ))}
+              {profile.className && (
+                <Badge variant="pill" className="text-xs font-bold py-1">
+                  {profile.className}
+                </Badge>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3.5 text-xs font-medium text-neutral-600 sm:justify-start">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 shadow-2xs">
+                <Mail className="h-3.5 w-3.5 text-neutral-500" /> {profile.email}
+              </span>
+              {profile.phone && (
+                <span className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 shadow-2xs">
+                  <Phone className="h-3.5 w-3.5 text-neutral-500" /> {profile.phone}
                 </span>
-                {profile.phone && (
-                  <span className="flex items-center gap-1">
-                    <Phone className="h-3.5 w-3.5" /> {profile.phone}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
+      {/* Personal Information */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("personalInfo")}</CardTitle>
+          <CardTitle className="text-base">{t("personalInfo")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -100,30 +108,18 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         </CardContent>
       </Card>
 
-      {isStudent && profile.className && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" /> {t("class")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge variant="default" className="text-sm">{profile.className}</Badge>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Teacher subjects */}
       {isTeacher && profile.subjects.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" /> {t("subjects")}
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BookOpen className="h-4.5 w-4.5 text-primary-600" /> {t("subjects")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {profile.subjects.map((s) => (
-                <Badge key={s.nameTg} variant="secondary">
+                <Badge key={s.nameTg} variant="secondary" className="px-3 py-1">
                   {locale === "ru" && s.nameRu ? s.nameRu : s.nameTg}
                 </Badge>
               ))}
@@ -132,51 +128,53 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         </Card>
       )}
 
+      {/* Editable Contact Info */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("contactInfo")}</CardTitle>
+          <CardTitle className="text-base">{t("contactInfo")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="space-y-4">
+          <form action={formAction} className="space-y-5">
             <FileUpload name="avatar" currentUrl={profile.avatarUrl} />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-neutral-700">
+                <label className="mb-1.5 block text-xs font-bold text-neutral-700 uppercase tracking-wider">
                   {t("phone")}
                 </label>
                 <input
                   name="phone"
                   defaultValue={profile.phone ?? ""}
                   placeholder="+992 ..."
-                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary-300 focus:ring-2 focus:ring-primary-100"
+                  className="h-11 w-full rounded-xl border border-neutral-200/80 bg-white px-4 text-sm outline-none transition-all focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 placeholder:text-neutral-400"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-neutral-700">
+                <label className="mb-1.5 block text-xs font-bold text-neutral-700 uppercase tracking-wider">
                   {t("middleName")}
                 </label>
                 <input
                   name="middle_name"
                   defaultValue={profile.middleName ?? ""}
-                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary-300 focus:ring-2 focus:ring-primary-100"
+                  className="h-11 w-full rounded-xl border border-neutral-200/80 bg-white px-4 text-sm outline-none transition-all focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 placeholder:text-neutral-400"
                 />
               </div>
             </div>
 
             {(state as { error?: string } | null)?.error && (
-              <p className="text-sm text-error-600">
+              <p className="text-xs font-semibold text-error-600">
                 {String((state as { error?: string }).error)}
               </p>
             )}
 
             {(state as { success?: boolean } | null)?.success && (
-              <p className="text-sm text-success-600 animate-fade-in">
-                {t("profileUpdated")}
-              </p>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 animate-fade-in">
+                <Check className="h-4 w-4" />
+                <span>{t("profileUpdated")}</span>
+              </div>
             )}
 
-            <Button type="submit" loading={isPending}>
+            <Button type="submit" loading={isPending} variant="default" size="default">
               {t("saveChanges")}
             </Button>
           </form>
@@ -196,9 +194,9 @@ function ReadOnlyField({
   icon?: React.ReactNode;
 }) {
   return (
-    <div>
-      <p className="text-xs font-medium text-neutral-400">{label}</p>
-      <p className="mt-0.5 flex items-center gap-1 text-sm text-neutral-800">
+    <div className="rounded-xl border border-neutral-100 bg-[#F8FAFD]/70 p-3">
+      <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">{label}</p>
+      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-neutral-900">
         {icon}
         {value}
       </p>

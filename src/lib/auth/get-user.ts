@@ -12,6 +12,7 @@ interface UserRow {
   avatar_url: string | null;
   phone: string | null;
   is_active: boolean;
+  status: string;
 }
 
 export async function getUser(): Promise<UserProfile | null> {
@@ -40,5 +41,6 @@ export async function getUser(): Promise<UserProfile | null> {
     avatarUrl: profile.avatar_url,
     phone: profile.phone,
     isActive: profile.is_active,
+    status: profile.status,
   };
 }
