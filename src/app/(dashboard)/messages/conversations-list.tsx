@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +86,7 @@ function formatTime(dateStr: string, yesterday: string): string {
 }
 
 export function ConversationsList({
-  conversations,
+  conversations: initialConversations,
   currentUserId,
   activeConversationId,
 }: {
@@ -95,6 +96,51 @@ export function ConversationsList({
 }) {
   const t = useTranslations("messages");
   const [search, setSearch] = useState("");
+  const [conversations, setConversations] = useState(initialConversations);
+
+  // Sync with server-refreshed data (revalidatePath)
+  useEffect(() => {
+    setConversations(initialConversations);
+  }, [initialConversations]);
+
+  // Real-time: update list when new messages arrive
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("conv-list-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as Record<string, unknown>;
+          const convId = msg.conversation_id as string;
+          setConversations((prev) => {
+            const idx = prev.findIndex((c) => c.id === convId);
+            if (idx === -1) return prev;
+            const updated = [...prev];
+            const conv = { ...updated[idx] };
+            conv.lastMessage = {
+              content: msg.content as string,
+              senderId: msg.sender_id as string,
+              createdAt: msg.created_at as string,
+              type: msg.type as string,
+            };
+            if (convId !== activeConversationId && msg.sender_id !== currentUserId) {
+              conv.unreadCount = (conv.unreadCount ?? 0) + 1;
+            }
+            updated[idx] = conv;
+            updated.sort((a, b) => {
+              const aTime = a.lastMessage?.createdAt ?? a.updatedAt;
+              const bTime = b.lastMessage?.createdAt ?? b.updatedAt;
+              return new Date(bTime).getTime() - new Date(aTime).getTime();
+            });
+            return updated;
+          });
+        }
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [currentUserId, activeConversationId]);
 
   const filtered = search.trim()
     ? conversations.filter((conv) => {

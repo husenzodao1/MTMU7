@@ -27,29 +27,23 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// WhatsApp-style status icon
+// WhatsApp-style status icon — inline SVG, no absolute positioning
 function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead: boolean }) {
   if (isOptimistic) {
-    return <Clock className="h-2.5 w-2.5 opacity-60" />;
+    return <Clock className="h-3 w-3 shrink-0 opacity-70" />;
   }
   if (isRead) {
-    // Double overlapping checks (blue)
     return (
-      <span className="relative inline-flex" style={{ width: 14, height: 10 }}>
-        <svg viewBox="0 0 16 11" fill="none" width="16" height="11" style={{ position: "absolute", left: 0, top: 0 }}>
-          <path d="M1 5.5L5 9.5L11 1.5" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M5 9.5L15 1.5" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </span>
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none" className="shrink-0">
+        <path d="M1 5.5L5 9.5L11 1.5" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 9.5L17 1.5" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
     );
   }
-  // Single check (gray/white) — sent
   return (
-    <span className="relative inline-flex" style={{ width: 10, height: 10 }}>
-      <svg viewBox="0 0 12 11" fill="none" width="12" height="11" style={{ position: "absolute", left: 0, top: 0 }}>
-        <path d="M1 5.5L5 9.5L11 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </span>
+    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" className="shrink-0 opacity-80">
+      <path d="M1 5.5L5 9.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   );
 }
 
