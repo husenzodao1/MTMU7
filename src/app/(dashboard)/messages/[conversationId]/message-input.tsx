@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { sendMessageAction } from "./actions";
 import { Send, X } from "lucide-react";
 
@@ -19,6 +20,7 @@ export function MessageInput({
   onOptimisticSend: (content: string, replyToId: string | null) => void;
 }) {
   const t = useTranslations("messages");
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,8 +32,10 @@ export function MessageInput({
       formRef.current?.reset();
       onCancelReply();
       inputRef.current?.focus();
+      // Refresh server data so conversations list shows the new last message
+      router.refresh();
     }
-  }, [state, isPending, onCancelReply]);
+  }, [state, isPending, onCancelReply, router]);
 
   return (
     <div className="shrink-0 border-t border-neutral-100 bg-white px-3 py-2.5">

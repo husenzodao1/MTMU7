@@ -43,13 +43,11 @@ function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead
   }
 
   if (isRead) {
-    // Double tick — cyan, clearly visible on indigo
+    // Double tick — two identical V shapes offset by 5px, cyan on indigo
     return (
-      <svg width="19" height="11" viewBox="0 0 19 11" fill="none" className="shrink-0" aria-label="read">
-        {/* First tick — full V */}
+      <svg width="20" height="11" viewBox="0 0 20 11" fill="none" className="shrink-0" aria-label="read">
         <path d="M1.5 5.5L5 9L12 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-        {/* Second tick — only the right stroke, merging at the valley */}
-        <path d="M7 9L17.5 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M6.5 5.5L10 9L17 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
   }
@@ -73,6 +71,7 @@ interface ContextMenuState {
   bubbleTop: number;
   bubbleRight: number;
   bubbleWidth: number;
+  bubbleBottom: number;
   showDeleteOptions: boolean;
 }
 
@@ -336,6 +335,7 @@ export function MessageThread({
         bubbleTop: rect.top,
         bubbleRight: rect.right,
         bubbleWidth: rect.width,
+        bubbleBottom: rect.bottom,
         showDeleteOptions: false,
       });
     },
@@ -378,69 +378,75 @@ export function MessageThread({
         );
       })}
 
-      {/* Floating action bar above the bubble */}
+      {/* WhatsApp-style vertical context menu */}
       {contextMenu && (
         <>
-          <div className="fixed inset-0 z-40" onClick={closeMenu} />
+          <div className="fixed inset-0 z-40 bg-black/10" onClick={closeMenu} />
           <div
             ref={menuRef}
-            className="fixed z-50 rounded-2xl bg-white shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-neutral-100 overflow-hidden"
+            className="fixed z-50 w-52 overflow-hidden rounded-2xl bg-white shadow-[0_8px_32px_rgba(0,0,0,0.22)] border border-neutral-100"
             style={(() => {
+              const MENU_W = 208;
               const GAP = 8;
-              const BAR_HEIGHT = contextMenu.showDeleteOptions ? 96 : 48;
-              // Count visible buttons: Reply, Copy, Favorite, [Edit if own], [Pin if canManage], Delete
-              const btnCount = 3 + (contextMenu.isOwn ? 1 : 0) + (contextMenu.canManage ? 1 : 0);
-              const BAR_WIDTH = btnCount * 44 + 16;
-              const top = Math.max(GAP, contextMenu.bubbleTop - BAR_HEIGHT - GAP);
-              const center = contextMenu.bubbleLeft + contextMenu.bubbleWidth / 2;
-              const left = Math.max(GAP, Math.min(center - BAR_WIDTH / 2, window.innerWidth - BAR_WIDTH - GAP));
-              return { top, left, width: BAR_WIDTH };
+              const sw = typeof window !== "undefined" ? window.innerWidth : 375;
+              const sh = typeof window !== "undefined" ? window.innerHeight : 812;
+              const itemCount = 4 + (contextMenu.isOwn ? 1 : 0) + (contextMenu.canManage ? 1 : 0);
+              const MENU_H = contextMenu.showDeleteOptions ? 97 : itemCount * 46;
+              // Horizontal: right-align for own, left-align for others, clamped to screen
+              let left = contextMenu.isOwn
+                ? contextMenu.bubbleRight - MENU_W
+                : contextMenu.bubbleLeft;
+              left = Math.max(GAP, Math.min(left, sw - MENU_W - GAP));
+              // Vertical: below bubble if space, else above
+              const spaceBelow = sh - contextMenu.bubbleBottom;
+              let top = spaceBelow >= MENU_H + GAP
+                ? contextMenu.bubbleBottom + GAP
+                : contextMenu.bubbleTop - MENU_H - GAP;
+              top = Math.max(GAP, Math.min(top, sh - MENU_H - GAP));
+              return { top, left };
             })()}
           >
             {!contextMenu.showDeleteOptions ? (
-              <div className="flex items-center gap-1 px-2 py-1.5">
+              <div className="flex flex-col py-1">
                 {/* Reply */}
                 <button
                   onClick={() => { onReply(contextMenu.messageId); closeMenu(); }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                  title={t("reply")}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                 >
-                  <Reply className="h-4 w-4 text-neutral-600" />
+                  <Reply className="h-4 w-4 shrink-0 text-neutral-500" />
+                  {t("reply")}
                 </button>
 
                 {/* Copy */}
                 <button
                   onClick={() => { navigator.clipboard?.writeText(contextMenu.content).catch(() => {}); closeMenu(); }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                  title={t("copy") || "Copy"}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                 >
-                  <Copy className="h-4 w-4 text-neutral-600" />
+                  <Copy className="h-4 w-4 shrink-0 text-neutral-500" />
+                  {t("copy") || "Копировать"}
                 </button>
 
                 {/* Favorite */}
                 <button
-                  onClick={() => {
-                    void toggleFavoriteAction(contextMenu.messageId, contextMenu.isFavorited);
-                    closeMenu();
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                  title={contextMenu.isFavorited ? (t("unfavorite") || "Unfavorite") : (t("favorite") || "Favorite")}
+                  onClick={() => { void toggleFavoriteAction(contextMenu.messageId, contextMenu.isFavorited); closeMenu(); }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                 >
                   <Star
-                    className="h-4 w-4"
-                    style={{ color: contextMenu.isFavorited ? "#f59e0b" : undefined }}
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: contextMenu.isFavorited ? "#f59e0b" : "#737373" }}
                     fill={contextMenu.isFavorited ? "#f59e0b" : "none"}
                   />
+                  {contextMenu.isFavorited ? (t("unfavorite") || "Из избранного") : (t("favorite") || "В избранное")}
                 </button>
 
                 {/* Edit — own messages only */}
                 {contextMenu.isOwn && (
                   <button
                     onClick={() => startEdit(contextMenu.messageId)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                    title={t("edit") || "Edit"}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                   >
-                    <Pencil className="h-4 w-4 text-neutral-600" />
+                    <Pencil className="h-4 w-4 shrink-0 text-neutral-500" />
+                    {t("edit") || "Редактировать"}
                   </button>
                 )}
 
@@ -448,12 +454,14 @@ export function MessageThread({
                 {contextMenu.canManage && (
                   <button
                     onClick={() => { void pinMessageAction(contextMenu.messageId, !contextMenu.isPinned); closeMenu(); }}
-                    className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
-                    title={contextMenu.isPinned ? t("unpin") : t("pin")}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                   >
-                    <Pin className={cn("h-4 w-4", contextMenu.isPinned ? "text-indigo-500" : "text-neutral-600")} />
+                    <Pin className={cn("h-4 w-4 shrink-0", contextMenu.isPinned ? "text-indigo-500" : "text-neutral-500")} />
+                    {contextMenu.isPinned ? t("unpin") : t("pin")}
                   </button>
                 )}
+
+                <div className="mx-4 my-0.5 h-px bg-neutral-100" />
 
                 {/* Delete */}
                 <button
@@ -465,35 +473,29 @@ export function MessageThread({
                       closeMenu();
                     }
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-red-50 active:bg-red-100"
-                  title={t("delete")}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  {t("delete")}
                 </button>
               </div>
             ) : (
               /* Delete sub-options */
-              <div className="flex flex-col">
+              <div className="flex flex-col py-1">
                 <button
-                  onClick={() => {
-                    void deleteForMeAction(contextMenu.messageId);
-                    closeMenu();
-                  }}
-                  className="flex items-center gap-2.5 px-4 py-3 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                  onClick={() => { void deleteForMeAction(contextMenu.messageId); closeMenu(); }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                 >
-                  <Trash2 className="h-4 w-4 text-neutral-500 shrink-0" />
-                  {t("deleteForMe") || "Delete for me"}
+                  <Trash2 className="h-4 w-4 shrink-0 text-neutral-500" />
+                  {t("deleteForMe") || "Удалить у себя"}
                 </button>
-                <div className="h-px bg-neutral-100" />
+                <div className="mx-4 my-0.5 h-px bg-neutral-100" />
                 <button
-                  onClick={() => {
-                    void deleteMessageAction(contextMenu.messageId);
-                    closeMenu();
-                  }}
-                  className="flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                  onClick={() => { void deleteMessageAction(contextMenu.messageId); closeMenu(); }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" />
-                  {t("deleteForEveryone") || "Delete for everyone"}
+                  {t("deleteForEveryone") || "Удалить у всех"}
                 </button>
               </div>
             )}
