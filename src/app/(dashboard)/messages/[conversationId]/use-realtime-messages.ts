@@ -42,7 +42,7 @@ export function useRealtimeMessages(
               const tempIdx = prev.findIndex((m) => m.isOptimistic);
               if (tempIdx === -1) return prev;
               const updated = [...prev];
-              updated[tempIdx] = { ...updated[tempIdx], id: newMsg.id as string, isOptimistic: false, createdAt: newMsg.created_at as string };
+              updated[tempIdx] = { ...updated[tempIdx], id: newMsg.id as string, isOptimistic: false, createdAt: newMsg.created_at as string } as MessageItem;
               return updated;
             });
             return;

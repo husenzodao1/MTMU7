@@ -118,7 +118,7 @@ export function ConversationsList({
             const idx = prev.findIndex((c) => c.id === convId);
             if (idx === -1) return prev;
             const updated = [...prev];
-            const conv = { ...updated[idx] };
+            const conv = { ...updated[idx] } as typeof updated[0];
             conv.lastMessage = {
               content: msg.content as string,
               senderId: msg.sender_id as string,
