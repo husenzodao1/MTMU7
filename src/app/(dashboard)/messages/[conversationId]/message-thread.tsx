@@ -27,22 +27,24 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// WhatsApp-style status icon — inline SVG, no absolute positioning
+// WhatsApp-style status icon — explicit colors, always visible on indigo bubble
 function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead: boolean }) {
   if (isOptimistic) {
-    return <Clock className="h-3 w-3 shrink-0 opacity-70" />;
+    return <Clock className="h-3 w-3 shrink-0" style={{ color: "rgba(255,255,255,0.85)" }} />;
   }
   if (isRead) {
+    // Double overlapping checks — blue (WhatsApp style)
     return (
       <svg width="18" height="11" viewBox="0 0 18 11" fill="none" className="shrink-0">
-        <path d="M1 5.5L5 9.5L11 1.5" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M7 9.5L17 1.5" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M1 5.5L5 9.5L11 1.5" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M7 9.5L17 1.5" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
   }
+  // Single white check — sent & delivered
   return (
-    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" className="shrink-0 opacity-80">
-      <path d="M1 5.5L5 9.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" className="shrink-0">
+      <path d="M1 5.5L5 9.5L11 1.5" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -155,8 +157,8 @@ function MessageBubble({
           {/* Message text + time trick (float right spacer) */}
           <span className="break-words">
             {message.content}
-            {/* Invisible spacer so time doesn't overlap text */}
-            <span className="ml-10 inline-block" aria-hidden />
+            {/* Invisible spacer: wider for own messages (time + status icon) */}
+            <span className={cn("inline-block align-middle", isOwn ? "ml-16" : "ml-10")} aria-hidden />
           </span>
 
           {/* Time + status inside bubble, bottom-right */}
