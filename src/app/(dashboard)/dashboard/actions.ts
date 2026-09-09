@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserWithRole } from "@/lib/auth/get-user-with-role";
 import { isModuleAccessible } from "@/lib/modules/check";
 
@@ -69,11 +70,28 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
   if (canAccessMessages) {
     promises.push(
       (async () => {
-        const { count } = await supabase
-          .from("messages" as never)
-          .select("id" as never, { count: "exact", head: true })
+        const admin = createAdminClient();
+        const { data: memberships } = await admin
+          .from("conversation_members" as never)
+          .select("conversation_id, last_read_at" as never)
+          .eq("user_id" as never, user.id)
           .eq("school_id" as never, user.schoolId);
-        totalMessages = count ?? 0;
+        const rows = (memberships as Array<{ conversation_id: string; last_read_at: string | null }>) ?? [];
+        if (rows.length === 0) { totalMessages = 0; return; }
+        const counts = await Promise.all(
+          rows.map(async (m) => {
+            const since = m.last_read_at ?? "2000-01-01T00:00:00Z";
+            const { count } = await admin
+              .from("messages" as never)
+              .select("id" as never, { count: "exact", head: true })
+              .eq("conversation_id" as never, m.conversation_id)
+              .neq("sender_id" as never, user.id)
+              .eq("is_deleted" as never, false)
+              .gt("created_at" as never, since);
+            return count ?? 0;
+          })
+        );
+        totalMessages = counts.reduce((a, b) => a + b, 0);
       })()
     );
   }

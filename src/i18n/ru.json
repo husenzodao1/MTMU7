@@ -543,7 +543,7 @@
   },
   "dashboard": {
     "totalUsers": "Пользователи",
-    "totalMessages": "Сообщения",
+    "totalMessages": "Непрочитанных",
     "totalLibrary": "Книги",
     "unreadNotifications": "Непрочитанные",
     "welcomeSubtitle": "Добро пожаловать на школьную платформу",
