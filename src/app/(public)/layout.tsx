@@ -6,11 +6,37 @@ export default async function PublicLayout({ children }: { children: React.React
   const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "tg";
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-neutral-50 p-4">
-      <div className="absolute right-4 top-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#F6F8FC] p-4">
+      {/* Soft ambient background blobs */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-gradient-to-br from-[#DDE6FC]/60 via-[#EBF0FB]/40 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-gradient-to-tl from-[#E8E4F8]/50 to-transparent blur-3xl" />
+      </div>
+
+      {/* Top bar */}
+      <div className="relative z-10 mb-8 flex w-full max-w-md items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-white text-[10px] font-black tracking-tighter shadow-sm">
+            М7
+          </div>
+          <span className="text-sm font-bold text-neutral-700 tracking-tight">МТМУ №7</span>
+        </div>
         <LocaleSwitcher current={locale} />
       </div>
-      {children}
+
+      {/* Content card */}
+      <div className="relative z-10 w-full max-w-md">
+        {children}
+      </div>
+
+      {/* Bottom ambient */}
+      <p className="relative z-10 mt-8 text-[11px] font-medium text-neutral-400">
+        © {new Date().getFullYear()} МТМУ №7 · Платформа 2030
+      </p>
     </div>
   );
 }
+

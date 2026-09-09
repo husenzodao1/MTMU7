@@ -5,6 +5,7 @@ import { getCategories, getLibraryItems } from "./actions";
 import { CategoryNav } from "./category-nav";
 import { BookCard } from "./book-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
 
 export default async function LibraryPage({
   searchParams,
@@ -25,62 +26,69 @@ export default async function LibraryPage({
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 py-6 animate-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-in pb-8">
+      {/* Header with Title & Quick Tabs */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900">
             {t("title")}
           </h1>
+          <p className="text-xs sm:text-sm font-medium text-neutral-500 mt-0.5">
+            {t("subtitle") || "Digital Knowledge Hub"}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href="/library/favorites"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-100"
-          >
-            <Heart className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("favorites")}</span>
-          </Link>
-          <Link
-            href="/library/history"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-100"
-          >
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("readingHistory")}</span>
-          </Link>
+
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/library/favorites" className="flex items-center gap-1.5">
+              <Heart className="h-4 w-4 text-rose-500" />
+              <span>{t("favorites")}</span>
+            </Link>
+          </Button>
+
+          <Button asChild variant="outline" size="sm">
+            <Link href="/library/history" className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-primary-600" />
+              <span>{t("readingHistory")}</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
-      <form className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+      {/* Pill Search Input */}
+      <form className="relative max-w-xl">
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
         <input
           type="text"
           name="search"
           defaultValue={search ?? ""}
           placeholder={t("search")}
-          className="w-full rounded-lg border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-4 text-sm outline-none transition-colors duration-[var(--duration-fast)] focus:border-primary-300 focus:bg-white"
+          className="h-12 w-full rounded-full border border-neutral-200/80 bg-white/90 py-2 pl-11 pr-5 text-sm text-neutral-900 shadow-2xs outline-none transition-all duration-[var(--duration-fast)] focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 placeholder:text-neutral-400"
         />
         {categoryId && (
           <input type="hidden" name="category" value={categoryId} />
         )}
       </form>
 
+      {/* Category Pills Navigation */}
       <CategoryNav categories={categories} activeCategoryId={categoryId} />
 
+      {/* Books Grid */}
       {items.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((item) => (
             <BookCard key={item.id} item={item} />
           ))}
         </div>
       ) : search ? (
         <EmptyState
-          icon={<Search className="h-12 w-12" />}
+          icon={<Search className="h-8 w-8" />}
           title={t("noResults")}
           description={t("noResultsDesc")}
         />
       ) : (
         <EmptyState
-          icon={<BookOpen className="h-12 w-12" />}
+          icon={<BookOpen className="h-8 w-8" />}
           title={t("noBooks")}
           description={t("noBooksDesc")}
         />

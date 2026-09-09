@@ -18,6 +18,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Status enforcement moved from middleware (caused timeout) to server component.
+  if (user.status === "pending" || user.status === "rejected") {
+    redirect("/pending");
+  }
+
   const supabase = await createServerClient();
   const [enabledModules, notificationCount, friendRequestCount, schoolResult] = await Promise.all([
     getEnabledModulesForUser(),

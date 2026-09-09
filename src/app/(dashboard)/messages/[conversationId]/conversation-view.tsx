@@ -18,20 +18,12 @@ interface Member {
   role: string;
 }
 
-function getTypeIcon(type: string) {
-  switch (type) {
-    case "direct":
-      return User;
-    case "group":
-      return Users;
-    case "announcement":
-      return Megaphone;
-    case "class_group":
-      return Users;
-    default:
-      return MessageSquare;
-  }
-}
+const typeIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  direct: User,
+  group: Users,
+  announcement: Megaphone,
+  class_group: Users,
+};
 
 export function ConversationView({
   conversationId,
@@ -77,12 +69,12 @@ export function ConversationView({
 
   void editingId;
 
-  const Icon = getTypeIcon(conversationType);
+  const IconComponent = typeIconMap[conversationType] || MessageSquare;
 
   return (
-    <div className="flex h-[calc(100vh-4rem-5rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white lg:h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-6rem-5rem)] overflow-hidden rounded-[26px] border border-neutral-200/70 bg-white/95 shadow-card backdrop-blur-md lg:h-[calc(100vh-7.5rem)]">
       {/* Sidebar: conversation list (hidden on mobile) */}
-      <div className="hidden w-80 flex-col border-r border-neutral-200 lg:flex xl:w-96">
+      <div className="hidden w-80 flex-col border-r border-neutral-200/70 bg-[#F8FAFD]/60 lg:flex xl:w-96">
         <ConversationsList
           conversations={conversations}
           currentUserId={currentUserId}
@@ -91,28 +83,31 @@ export function ConversationView({
       </div>
 
       {/* Main: message thread */}
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3">
+      <div className="flex flex-1 flex-col bg-white">
+        <div className="flex h-16 items-center gap-3 border-b border-neutral-200/70 px-5 bg-white/80 backdrop-blur-sm">
           <Link href="/messages" className="lg:hidden">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="ghost" size="icon-sm">
+              <ArrowLeft className="h-4.5 w-4.5 text-neutral-700" />
             </Button>
           </Link>
-          <Icon className="h-5 w-5 text-neutral-400" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EEF2F8] text-neutral-800 shadow-2xs">
+            <IconComponent className="h-4.5 w-4.5" />
+          </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-semibold text-neutral-900">
+            <h2 className="truncate text-sm font-bold text-neutral-900 tracking-tight">
               {conversationName}
             </h2>
-            <p className="text-xs text-neutral-400">
+            <p className="text-[11px] font-medium text-neutral-400">
               {members.length} {t("members")}
             </p>
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={() => setShowInfo(!showInfo)}
+            aria-label="Conversation Info"
           >
-            <Info className="h-5 w-5" />
+            <Info className="h-4.5 w-4.5 text-neutral-600" />
           </Button>
         </div>
 

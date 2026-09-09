@@ -4,12 +4,11 @@ import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { approveUserAction, rejectUserAction } from "./actions";
-import { Check, X, UserPlus, Clock } from "lucide-react";
+import { Check, X, UserPlus } from "lucide-react";
 
 interface PendingRequest {
   id: string;
@@ -39,16 +38,14 @@ interface AvailableClass {
 
 export function PendingList({
   requests,
-  roles,
-  classes,
 }: {
   requests: PendingRequest[];
-  roles: AvailableRole[];
-  classes: AvailableClass[];
+  roles?: AvailableRole[];
+  classes?: AvailableClass[];
 }) {
   const t = useTranslations("admin");
   const [rejectDialogId, setRejectDialogId] = useState<string | null>(null);
-  const [approveState, approveAction, isApproving] = useActionState(approveUserAction, {
+  const [, approveAction, isApproving] = useActionState(approveUserAction, {
     error: null,
     success: false,
   });
@@ -71,47 +68,47 @@ export function PendingList({
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {requests.map((req) => (
-          <Card key={req.id}>
-            <CardContent className="p-4">
-              <div className="mb-3 flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-100">
+          <Card key={req.id} className="overflow-hidden rounded-[24px] border border-neutral-200/70 bg-white/95 shadow-card transition-all hover:shadow-md">
+            <CardContent className="p-5">
+              <div className="mb-4 flex items-center gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 text-neutral-800 font-bold shadow-2xs">
                   {req.avatarUrl ? (
                     <img src={req.avatarUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-sm font-semibold text-primary-700">
+                    <span>
                       {req.firstName[0]}{req.lastName[0]}
                     </span>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-neutral-900">
+                  <p className="truncate font-bold text-sm text-neutral-900 tracking-tight">
                     {req.firstName} {req.lastName}
                     {req.middleName ? ` ${req.middleName}` : ""}
                   </p>
-                  <p className="truncate text-xs text-neutral-500">{req.email}</p>
+                  <p className="truncate text-xs font-medium text-neutral-400">{req.email}</p>
                 </div>
               </div>
 
-              <div className="mb-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-neutral-500">{t("requestedRole")}</span>
-                  <Badge variant="secondary">{req.requestedRoleName}</Badge>
+              <div className="mb-4 space-y-2 rounded-xl bg-[#F8FAFD]/80 p-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-neutral-500">{t("requestedRole")}</span>
+                  <Badge variant="pill" className="text-[10px] font-bold">{req.requestedRoleName}</Badge>
                 </div>
                 {req.requestedClassName && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">{t("requestedClass")}</span>
-                    <span className="text-neutral-700">{req.requestedClassName}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-neutral-500">{t("requestedClass")}</span>
+                    <span className="font-bold text-neutral-800">{req.requestedClassName}</span>
                   </div>
                 )}
                 {req.enrollmentYear && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">{t("enrollmentYear")}</span>
-                    <span className="text-neutral-700">{req.enrollmentYear}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-neutral-500">{t("enrollmentYear")}</span>
+                    <span className="font-bold text-neutral-800">{req.enrollmentYear}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-neutral-500">{t("registrationDate")}</span>
-                  <span className="text-neutral-700">
+                <div className="flex items-center justify-between border-t border-neutral-100 pt-1.5">
+                  <span className="font-medium text-neutral-400">{t("registrationDate")}</span>
+                  <span className="font-medium text-neutral-600">
                     {new Date(req.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -127,10 +124,11 @@ export function PendingList({
                   <Button
                     type="submit"
                     size="sm"
-                    className="w-full"
+                    variant="default"
+                    className="w-full font-bold"
                     loading={isApproving}
                   >
-                    <Check className="mr-1 h-3 w-3" />
+                    <Check className="mr-1 h-3.5 w-3.5" />
                     {t("approveUser")}
                   </Button>
                 </form>
@@ -138,8 +136,9 @@ export function PendingList({
                   variant="destructive"
                   size="sm"
                   onClick={() => setRejectDialogId(req.id)}
+                  className="font-bold"
                 >
-                  <X className="mr-1 h-3 w-3" />
+                  <X className="mr-1 h-3.5 w-3.5" />
                   {t("rejectUser")}
                 </Button>
               </div>

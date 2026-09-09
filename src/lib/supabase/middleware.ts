@@ -26,94 +26,57 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Use getSession() instead of getUser() — reads JWT from cookie locally,
+  // no network round-trip to Supabase Auth API. Prevents middleware timeout.
+  // RLS and server components still use getUser() for authoritative validation.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const isAuthRoute =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/admin") ||
-    request.nextUrl.pathname.startsWith("/messages") ||
-    request.nextUrl.pathname.startsWith("/library") ||
-    request.nextUrl.pathname.startsWith("/profile") ||
-    request.nextUrl.pathname.startsWith("/notifications") ||
-    request.nextUrl.pathname.startsWith("/friends") ||
-    request.nextUrl.pathname.startsWith("/search");
+  const user = session?.user ?? null;
+  const pathname = request.nextUrl.pathname;
 
-  if (!user && isAuthRoute) {
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/messages") ||
+    pathname.startsWith("/library") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/notifications") ||
+    pathname.startsWith("/friends") ||
+    pathname.startsWith("/search") ||
+    pathname.startsWith("/grades") ||
+    pathname.startsWith("/attendance") ||
+    pathname.startsWith("/homework") ||
+    pathname.startsWith("/schedule") ||
+    pathname.startsWith("/documents") ||
+    pathname.startsWith("/events") ||
+    pathname.startsWith("/announcements") ||
+    pathname.startsWith("/reports") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/news") ||
+    pathname.startsWith("/pending");
+
+  const isPublicOnlyRoute =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/register/") ||
+    pathname === "/verify" ||
+    pathname === "/reset-password";
+
+  // Not authenticated → redirect to login for protected routes
+  if (!user && isProtectedRoute && !pathname.startsWith("/pending")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
+    url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
-    const { data: profile } = await supabase
-      .from("users" as never)
-      .select("id, status" as never)
-      .eq("id" as never, user.id)
-      .single();
-
-    const profileRow = profile as Record<string, unknown> | null;
-
-    if (!profileRow) {
-      await supabase.auth.signOut();
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.search = "";
-      url.searchParams.set("error", "noProfile");
-
-      const redirectResponse = NextResponse.redirect(url);
-      supabaseResponse.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie.name, cookie.value, {
-          ...cookie,
-        });
-      });
-      return redirectResponse;
-    }
-
-    const userStatus = profileRow.status as string | undefined;
-
-    if (
-      (userStatus === "pending" || userStatus === "rejected") &&
-      !request.nextUrl.pathname.startsWith("/pending")
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/pending";
-      return NextResponse.redirect(url);
-    }
-  }
-
-  const isPublicAuthRoute =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname === "/register" ||
-    request.nextUrl.pathname.startsWith("/register/") ||
-    request.nextUrl.pathname === "/verify" ||
-    request.nextUrl.pathname === "/pending";
-
-  if (user && isPublicAuthRoute) {
-    let redirectToDashboard = true;
-
-    if (request.nextUrl.pathname === "/pending") {
-      const { data: pendingProfile } = await supabase
-        .from("users" as never)
-        .select("status" as never)
-        .eq("id" as never, user.id)
-        .single();
-
-      const pendingRow = pendingProfile as Record<string, unknown> | null;
-      const status = pendingRow?.status as string | undefined;
-
-      if (status === "pending" || status === "rejected") {
-        redirectToDashboard = false;
-      }
-    }
-
-    if (redirectToDashboard) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
+  // Authenticated → redirect away from login/register
+  if (user && isPublicOnlyRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

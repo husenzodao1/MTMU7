@@ -104,8 +104,8 @@ export function RegisterForm({
   return (
     <div className="w-full max-w-md space-y-6 animate-in">
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50">
-          <Icon className="h-6 w-6 text-primary-600" />
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100">
+          <Icon className="h-6 w-6 text-neutral-700" />
         </div>
         <h1 className="text-2xl font-bold text-neutral-900">{t("registerTitle")}</h1>
         <p className="mt-1 text-sm text-neutral-500">
@@ -117,12 +117,12 @@ export function RegisterForm({
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-1.5">
         {[1, 2, 3, 4].map((s) => (
           <div
             key={s}
-            className={`h-2 rounded-full transition-all ${
-              s === stepNumber ? "w-8 bg-primary-500" : s < stepNumber ? "w-2 bg-primary-300" : "w-2 bg-neutral-200"
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              s === stepNumber ? "w-10 bg-neutral-900" : s < stepNumber ? "w-4 bg-neutral-400" : "w-4 bg-neutral-200"
             }`}
           />
         ))}
@@ -175,10 +175,10 @@ export function RegisterForm({
                   return (
                     <label
                       key={role.id}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 transition-colors ${
+                      className={`flex cursor-pointer items-center gap-2 rounded-[14px] border-2 p-3.5 transition-all duration-150 press-scale ${
                         selectedRoleSlug === role.slug
-                          ? "border-primary-500 bg-primary-50"
-                          : "border-neutral-200 hover:border-neutral-300"
+                          ? "border-neutral-900 bg-neutral-900 text-white"
+                          : "border-neutral-200 hover:border-neutral-300 bg-white"
                       }`}
                     >
                       <input
@@ -189,8 +189,8 @@ export function RegisterForm({
                         className="hidden"
                         onChange={() => setSelectedRoleSlug(role.slug)}
                       />
-                      <RoleIcon className="h-4 w-4 shrink-0 text-neutral-600" />
-                      <span className="text-sm font-medium">{getRoleName(role, locale)}</span>
+                      <RoleIcon className={`h-4 w-4 shrink-0 ${selectedRoleSlug === role.slug ? "text-white" : "text-neutral-600"}`} />
+                      <span className="text-sm font-semibold">{getRoleName(role, locale)}</span>
                     </label>
                   );
                 })}

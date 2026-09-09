@@ -35,7 +35,7 @@ export function DashboardShell({ user, enabledModules, notificationCount, friend
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
+    <div className="flex h-screen overflow-hidden bg-[#F6F8FC]">
       <Sidebar enabledModules={enabledModules} isAdmin={isAdmin} school={school} friendRequestCount={friendRequestCount} />
       <MobileNav
         isOpen={mobileMenuOpen}
@@ -50,8 +50,10 @@ export function DashboardShell({ user, enabledModules, notificationCount, friend
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={user} onMenuToggle={handleMenuToggle} notificationCount={notificationCount} locale={locale} />
-        <main className="flex-1 overflow-y-auto p-4 pb-20 lg:p-6 lg:pb-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8">
+          <div className="mx-auto max-w-7xl">
+            {children}
+          </div>
         </main>
       </div>
 

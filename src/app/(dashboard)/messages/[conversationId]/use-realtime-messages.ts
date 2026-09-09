@@ -11,10 +11,12 @@ export function useRealtimeMessages(
   currentUserId: string
 ) {
   const [messages, setMessages] = useState(initialMessages);
+  const [prevId, setPrevId] = useState(conversationId);
 
-  useEffect(() => {
+  if (prevId !== conversationId) {
+    setPrevId(conversationId);
     setMessages(initialMessages);
-  }, [conversationId, initialMessages]);
+  }
 
   useEffect(() => {
     const supabase = createClient();
