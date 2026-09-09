@@ -29,11 +29,12 @@ export function useRealtimeMessages(
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           const newMsg = payload.new as Record<string, unknown>;
           if (!newMsg.id) return;
+          // Client-side filter — only process messages for this conversation
+          if (newMsg.conversation_id !== conversationId) return;
 
           if (newMsg.sender_id === currentUserId) {
             // Replace oldest optimistic message with confirmed one
@@ -81,11 +82,11 @@ export function useRealtimeMessages(
           event: "UPDATE",
           schema: "public",
           table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           const updated = payload.new as Record<string, unknown>;
           if (!updated.id) return;
+          if (updated.conversation_id !== conversationId) return;
 
           setMessages((prev) =>
             prev.map((msg) =>
