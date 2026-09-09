@@ -55,8 +55,11 @@ interface ContextMenuState {
   canManage: boolean;
   content: string;
   isPinned: boolean;
-  x: number;
-  y: number;
+  // bubble rect (viewport-relative) for positioning the action bar above the bubble
+  bubbleLeft: number;
+  bubbleTop: number;
+  bubbleRight: number;
+  bubbleWidth: number;
 }
 
 function MessageBubble({
@@ -73,7 +76,7 @@ function MessageBubble({
   canManage: boolean;
   onReply: (id: string) => void;
   allMessages: MessageItem[];
-  onContextMenu: (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean) => void;
+  onContextMenu: (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean, rect: DOMRect) => void;
   otherMembersLastRead: string | null;
 }) {
   const t = useTranslations("messages");
@@ -84,8 +87,9 @@ function MessageBubble({
     : null;
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const el = e.currentTarget as HTMLElement;
     longPressTimer.current = setTimeout(() => {
-      onContextMenu(e, message, isOwn);
+      onContextMenu(e, message, isOwn, el.getBoundingClientRect());
     }, 500);
   }, [message, isOwn, onContextMenu]);
 
@@ -95,7 +99,7 @@ function MessageBubble({
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    onContextMenu(e, message, isOwn);
+    onContextMenu(e, message, isOwn, (e.currentTarget as HTMLElement).getBoundingClientRect());
   }, [message, isOwn, onContextMenu]);
 
   if (message.isDeleted) {
@@ -222,19 +226,20 @@ export function MessageThread({
   }, [contextMenu]);
 
   const handleContextMenu = useCallback(
-    (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean) => {
+    (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean, rect: DOMRect) => {
       if ("preventDefault" in e && (e as React.MouseEvent).preventDefault) {
         (e as React.MouseEvent).preventDefault();
       }
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       setContextMenu({
         messageId: msg.id,
         isOwn,
         canManage,
         content: msg.content,
         isPinned: msg.isPinned,
-        x: rect.left,
-        y: rect.top,
+        bubbleLeft: rect.left,
+        bubbleTop: rect.top,
+        bubbleRight: rect.right,
+        bubbleWidth: rect.width,
       });
     },
     [canManage]
@@ -257,57 +262,57 @@ export function MessageThread({
         />
       ))}
 
-      {/* Context menu overlay */}
+      {/* WhatsApp-style floating action bar above the bubble */}
       {contextMenu && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px]" onClick={closeMenu} />
+          <div className="fixed inset-0 z-40" onClick={closeMenu} />
           <div
             ref={menuRef}
-            className="fixed z-50 min-w-[200px] overflow-hidden rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-neutral-100"
-            style={{
-              top: Math.min(contextMenu.y, window.innerHeight - 280),
-              left: Math.max(8, Math.min(contextMenu.x, window.innerWidth - 216)),
-            }}
+            className="fixed z-50 flex items-center gap-1 rounded-full bg-white shadow-[0_4px_24px_rgba(0,0,0,0.18)] border border-neutral-100 px-2 py-1.5"
+            style={(() => {
+              const BAR_HEIGHT = 48;
+              const BAR_WIDTH = (1 + 1 + (contextMenu.canManage ? 1 : 0) + (contextMenu.isOwn ? 1 : 0)) * 44;
+              const GAP = 8;
+              // Position above the bubble, centered horizontally over it
+              const top = Math.max(GAP, contextMenu.bubbleTop - BAR_HEIGHT - GAP);
+              // Center over bubble, but clamp to screen
+              const center = contextMenu.bubbleLeft + contextMenu.bubbleWidth / 2;
+              const left = Math.max(GAP, Math.min(center - BAR_WIDTH / 2, window.innerWidth - BAR_WIDTH - GAP));
+              return { top, left };
+            })()}
           >
-            {[
-              {
-                icon: Reply, label: t("reply"), action: () => { onReply(contextMenu.messageId); closeMenu(); }
-              },
-              {
-                icon: Copy, label: t("copy") || "Копировать", action: () => {
-                  navigator.clipboard?.writeText(contextMenu.content).catch(() => {});
-                  closeMenu();
-                }
-              },
-              ...(contextMenu.canManage ? [{
-                icon: Pin, label: contextMenu.isPinned ? t("unpin") : t("pin"), action: () => {
-                  void pinMessageAction(contextMenu.messageId, !contextMenu.isPinned);
-                  closeMenu();
-                }
-              }] : []),
-              ...(contextMenu.isOwn ? [{
-                icon: Trash2,
-                label: t("delete"),
-                danger: true,
-                action: () => {
-                  void deleteMessageAction(contextMenu.messageId);
-                  closeMenu();
-                }
-              }] : []),
-            ].map((item, i) => (
+            <button
+              onClick={() => { onReply(contextMenu.messageId); closeMenu(); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+              title={t("reply")}
+            >
+              <Reply className="h-4 w-4 text-neutral-600" />
+            </button>
+            <button
+              onClick={() => { navigator.clipboard?.writeText(contextMenu.content).catch(() => {}); closeMenu(); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+              title={t("copy") || "Copy"}
+            >
+              <Copy className="h-4 w-4 text-neutral-600" />
+            </button>
+            {contextMenu.canManage && (
               <button
-                key={i}
-                onClick={item.action}
-                className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors hover:bg-neutral-50 active:bg-neutral-100",
-                  (item as { danger?: boolean }).danger ? "text-red-500" : "text-neutral-800",
-                  i > 0 && "border-t border-neutral-100"
-                )}
+                onClick={() => { void pinMessageAction(contextMenu.messageId, !contextMenu.isPinned); closeMenu(); }}
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-neutral-100 active:bg-neutral-200"
+                title={contextMenu.isPinned ? t("unpin") : t("pin")}
               >
-                <item.icon className={cn("h-4 w-4", (item as { danger?: boolean }).danger ? "text-red-400" : "text-neutral-400")} />
-                {item.label}
+                <Pin className={cn("h-4 w-4", contextMenu.isPinned ? "text-indigo-500" : "text-neutral-600")} />
               </button>
-            ))}
+            )}
+            {contextMenu.isOwn && (
+              <button
+                onClick={() => { void deleteMessageAction(contextMenu.messageId); closeMenu(); }}
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-red-50 active:bg-red-100"
+                title={t("delete")}
+              >
+                <Trash2 className="h-4 w-4 text-red-500" />
+              </button>
+            )}
           </div>
         </>
       )}
