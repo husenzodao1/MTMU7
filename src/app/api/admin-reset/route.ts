@@ -14,9 +14,18 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
 
   // List all auth users
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasUrl = !!url && !url.includes('placeholder');
+  const hasKey = !!key && !key.includes('placeholder');
+
+  if (!hasUrl || !hasKey) {
+    return NextResponse.json({ error: "Missing env vars", hasUrl, hasKey, url: url?.substring(0,30) }, { status: 500 });
+  }
+
   const { data, error } = await admin.auth.admin.listUsers({ perPage: 50 });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: error.message, url: url?.substring(0,30) }, { status: 500 });
 
   const users = data.users.map(u => ({
     id: u.id,
