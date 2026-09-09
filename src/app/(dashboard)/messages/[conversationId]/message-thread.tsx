@@ -43,20 +43,17 @@ function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead
   }
 
   if (isRead) {
-    // WhatsApp double tick: full first V + only the right leg of the second tick
-    // The right leg of tick 1 visually serves as the left leg of tick 2
     return (
       <svg width="19" height="11" viewBox="0 0 19 11" fill="none" className="shrink-0" aria-label="read">
-        <path d="M1.5 5.5L5 9L11.5 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M6.5 9L17 1.5" stroke="#5eead4" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M1 6L4 9.5L12 1" stroke="#5eead4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M5.5 9.5L18 1" stroke="#5eead4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     );
   }
 
-  // Single tick — white, sent but not yet read
   return (
-    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" className="shrink-0" aria-label="sent">
-      <path d="M1.5 5.5L5 9L11.5 1.5" stroke="rgba(255,255,255,0.65)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="none" className="shrink-0" aria-label="sent">
+      <path d="M1 6L4 9.5L12 1" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
