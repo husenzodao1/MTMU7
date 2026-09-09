@@ -169,6 +169,7 @@ export async function sendMessageAction(
 
   if (insertResult.error) return { error: "sendError" };
 
+  revalidatePath(`/messages/${conversationId}`);
   revalidatePath("/messages");
   return { error: null };
 }

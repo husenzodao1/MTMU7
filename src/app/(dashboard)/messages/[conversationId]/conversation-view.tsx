@@ -6,6 +6,7 @@ import { MessageThread, type MessageItem } from "./message-thread";
 import { MessageInput } from "./message-input";
 import { ConversationsList, type ConversationItem } from "../conversations-list";
 import { ConversationInfo } from "./conversation-info";
+import { useRealtimeMessages } from "./use-realtime-messages";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Megaphone, User, MessageSquare, Info } from "lucide-react";
 import Link from "next/link";
@@ -28,7 +29,7 @@ const typeIconMap: Record<string, React.ComponentType<{ className?: string }>> =
 export function ConversationView({
   conversationId,
   currentUserId,
-  messages,
+  messages: initialMessages,
   conversationName,
   conversationType,
   members,
@@ -46,8 +47,14 @@ export function ConversationView({
 }) {
   const t = useTranslations("messages");
   const [replyToId, setReplyToId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+
+  // ✅ Wire up realtime updates — this was missing before
+  const { messages, addOptimisticMessage } = useRealtimeMessages(
+    conversationId,
+    initialMessages,
+    currentUserId
+  );
 
   const replyToMessage = replyToId
     ? messages.find((m) => m.id === replyToId)
@@ -55,21 +62,13 @@ export function ConversationView({
 
   const handleReply = useCallback((id: string) => {
     setReplyToId(id);
-    setEditingId(null);
-  }, []);
-
-  const handleEdit = useCallback((id: string) => {
-    setEditingId(id);
-    setReplyToId(null);
   }, []);
 
   const handleCancelReply = useCallback(() => {
     setReplyToId(null);
   }, []);
 
-  void editingId;
-
-  const IconComponent = typeIconMap[conversationType] || MessageSquare;
+  const IconComponent = typeIconMap[conversationType] ?? MessageSquare;
 
   return (
     <div className="flex h-[calc(100vh-6rem-5rem)] overflow-hidden rounded-[26px] border border-neutral-200/70 bg-white/95 shadow-card backdrop-blur-md lg:h-[calc(100vh-7.5rem)]">
@@ -83,21 +82,22 @@ export function ConversationView({
       </div>
 
       {/* Main: message thread */}
-      <div className="flex flex-1 flex-col bg-white">
-        <div className="flex h-16 items-center gap-3 border-b border-neutral-200/70 px-5 bg-white/80 backdrop-blur-sm">
+      <div className="flex flex-1 flex-col bg-white min-w-0">
+        {/* Header */}
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-neutral-100 px-4 bg-white">
           <Link href="/messages" className="lg:hidden">
             <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4.5 w-4.5 text-neutral-700" />
+              <ArrowLeft className="h-4 w-4 text-neutral-600" />
             </Button>
           </Link>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EEF2F8] text-neutral-800 shadow-2xs">
-            <IconComponent className="h-4.5 w-4.5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700">
+            <IconComponent className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-bold text-neutral-900 tracking-tight">
+            <h2 className="truncate text-sm font-bold text-neutral-900">
               {conversationName}
             </h2>
-            <p className="text-[11px] font-medium text-neutral-400">
+            <p className="text-[11px] text-neutral-400">
               {members.length} {t("members")}
             </p>
           </div>
@@ -105,9 +105,8 @@ export function ConversationView({
             variant="ghost"
             size="icon-sm"
             onClick={() => setShowInfo(!showInfo)}
-            aria-label="Conversation Info"
           >
-            <Info className="h-4.5 w-4.5 text-neutral-600" />
+            <Info className="h-4 w-4 text-neutral-500" />
           </Button>
         </div>
 
@@ -116,7 +115,7 @@ export function ConversationView({
           currentUserId={currentUserId}
           canManage={canManage}
           onReply={handleReply}
-          onEdit={handleEdit}
+          onEdit={() => {}}
         />
 
         <MessageInput
@@ -124,6 +123,7 @@ export function ConversationView({
           replyToId={replyToId}
           replyToContent={replyToMessage?.content ?? null}
           onCancelReply={handleCancelReply}
+          onOptimisticSend={addOptimisticMessage}
         />
       </div>
 

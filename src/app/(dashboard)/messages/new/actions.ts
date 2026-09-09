@@ -51,6 +51,41 @@ export async function searchContacts(query: string) {
   }));
 }
 
+export async function createGroupConversation(memberIds: string[], groupName: string) {
+  const user = await getUserWithRole();
+  if (!user) redirect("/login");
+  if (!groupName.trim() || memberIds.length === 0) redirect("/messages/new");
+
+  const admin = createAdminClient();
+
+  const { data: newConv, error: convError } = await admin
+    .from("conversations" as never)
+    .insert({
+      school_id: user.schoolId,
+      type: "group",
+      name: groupName.trim(),
+      created_by: user.id,
+    } as never)
+    .select("id" as never)
+    .single();
+
+  if (convError || !newConv) redirect("/messages?error=create_failed");
+
+  const convId = (newConv as Record<string, unknown>).id as string;
+
+  const allMembers = [user.id, ...memberIds.filter((id) => id !== user.id)];
+  await admin.from("conversation_members" as never).insert(
+    allMembers.map((uid, i) => ({
+      conversation_id: convId,
+      user_id: uid,
+      school_id: user.schoolId,
+      role: i === 0 ? "admin" : "member",
+    })) as never
+  );
+
+  redirect(`/messages/${convId}`);
+}
+
 export async function createDirectConversation(targetUserId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
