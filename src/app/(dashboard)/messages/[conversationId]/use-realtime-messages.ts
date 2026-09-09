@@ -35,7 +35,17 @@ export function useRealtimeMessages(
           const newMsg = payload.new as Record<string, unknown>;
           if (!newMsg.id) return;
 
-          if (newMsg.sender_id === currentUserId) return;
+          if (newMsg.sender_id === currentUserId) {
+            // Replace oldest optimistic message with confirmed one
+            setMessages((prev) => {
+              const tempIdx = prev.findIndex((m) => m.isOptimistic);
+              if (tempIdx === -1) return prev;
+              const updated = [...prev];
+              updated[tempIdx] = { ...updated[tempIdx], id: newMsg.id as string, isOptimistic: false, createdAt: newMsg.created_at as string };
+              return updated;
+            });
+            return;
+          }
 
           const { data: sender } = await supabase
             .from("users" as never)
@@ -114,6 +124,7 @@ export function useRealtimeMessages(
         isEdited: false,
         isDeleted: false,
         createdAt: new Date().toISOString(),
+        isOptimistic: true,
       };
       setMessages((prev) => [...prev, optimistic]);
     },

@@ -42,7 +42,7 @@ export async function getMessages(conversationId: string) {
       .limit(100),
     admin
       .from("conversation_members" as never)
-      .select("user_id, role" as never)
+      .select("user_id, role, last_read_at" as never)
       .eq("conversation_id" as never, conversationId),
   ]);
 
@@ -115,6 +115,7 @@ export async function getMessages(conversationId: string) {
       lastName: u?.last_name ?? "",
       avatarUrl: u?.avatar_url ?? null,
       role: m.role as string,
+      lastReadAt: m.last_read_at as string | null,
     };
   });
 

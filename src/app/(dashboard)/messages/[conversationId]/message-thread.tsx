@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Pin, Reply, Trash2, Copy, Pencil } from "lucide-react";
+import { Pin, Reply, Trash2, Copy, Clock } from "lucide-react";
 import { deleteMessageAction, pinMessageAction } from "./actions";
 
 export interface MessageItem {
@@ -20,10 +20,37 @@ export interface MessageItem {
   isEdited: boolean;
   isDeleted: boolean;
   createdAt: string;
+  isOptimistic?: boolean;
 }
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+// WhatsApp-style status icon
+function MessageStatus({ isOptimistic, isRead }: { isOptimistic: boolean; isRead: boolean }) {
+  if (isOptimistic) {
+    return <Clock className="h-2.5 w-2.5 opacity-60" />;
+  }
+  if (isRead) {
+    // Double overlapping checks (blue)
+    return (
+      <span className="relative inline-flex" style={{ width: 14, height: 10 }}>
+        <svg viewBox="0 0 16 11" fill="none" width="16" height="11" style={{ position: "absolute", left: 0, top: 0 }}>
+          <path d="M1 5.5L5 9.5L11 1.5" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M5 9.5L15 1.5" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </span>
+    );
+  }
+  // Single check (gray/white) — sent
+  return (
+    <span className="relative inline-flex" style={{ width: 10, height: 10 }}>
+      <svg viewBox="0 0 12 11" fill="none" width="12" height="11" style={{ position: "absolute", left: 0, top: 0 }}>
+        <path d="M1 5.5L5 9.5L11 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </span>
+  );
 }
 
 interface ContextMenuState {
@@ -43,6 +70,7 @@ function MessageBubble({
   onReply,
   allMessages,
   onContextMenu,
+  otherMembersLastRead,
 }: {
   message: MessageItem;
   isOwn: boolean;
@@ -50,6 +78,7 @@ function MessageBubble({
   onReply: (id: string) => void;
   allMessages: MessageItem[];
   onContextMenu: (e: React.MouseEvent | React.TouchEvent, msg: MessageItem, isOwn: boolean) => void;
+  otherMembersLastRead: string | null;
 }) {
   const t = useTranslations("messages");
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -139,11 +168,17 @@ function MessageBubble({
           {/* Time + status inside bubble, bottom-right */}
           <span className={cn(
             "absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[10px] leading-none select-none",
-            isOwn ? "text-white/60" : "text-neutral-400"
+            isOwn ? "text-white/70" : "text-neutral-400"
           )}>
             {message.isEdited && <span className="italic">{t("edited")}</span>}
             {message.isPinned && <Pin className="h-2.5 w-2.5" />}
             {formatTime(message.createdAt)}
+            {isOwn && (
+              <MessageStatus
+                isOptimistic={!!message.isOptimistic}
+                isRead={!message.isOptimistic && !!otherMembersLastRead && otherMembersLastRead >= message.createdAt}
+              />
+            )}
           </span>
         </div>
       </div>
@@ -157,12 +192,14 @@ export function MessageThread({
   canManage,
   onReply,
   onEdit,
+  otherMembersLastRead,
 }: {
   messages: MessageItem[];
   currentUserId: string;
   canManage: boolean;
   onReply: (id: string) => void;
   onEdit: (id: string) => void;
+  otherMembersLastRead?: string | null;
 }) {
   const t = useTranslations("messages");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -220,6 +257,7 @@ export function MessageThread({
           onReply={onReply}
           allMessages={messages}
           onContextMenu={handleContextMenu}
+          otherMembersLastRead={otherMembersLastRead ?? null}
         />
       ))}
 
@@ -240,7 +278,7 @@ export function MessageThread({
                 icon: Reply, label: t("reply"), action: () => { onReply(contextMenu.messageId); closeMenu(); }
               },
               {
-                icon: Copy, label: t("delete").replace("Удалить", "Копировать") || "Копировать", action: () => {
+                icon: Copy, label: t("copy") || "Копировать", action: () => {
                   navigator.clipboard?.writeText(contextMenu.content).catch(() => {});
                   closeMenu();
                 }

@@ -412,6 +412,7 @@
     "typeMessage": "Type a message...",
     "send": "Send",
     "reply": "Reply",
+    "copy": "Copy",
     "edit": "Edit",
     "delete": "Delete",
     "pin": "Pin",

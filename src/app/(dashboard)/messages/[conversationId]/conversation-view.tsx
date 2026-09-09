@@ -17,6 +17,7 @@ interface Member {
   lastName: string;
   avatarUrl: string | null;
   role: string;
+  lastReadAt?: string | null;
 }
 
 const typeIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -48,6 +49,13 @@ export function ConversationView({
   const t = useTranslations("messages");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+
+  // Max lastReadAt of all other members → used for read receipts
+  const otherMembersLastRead = members
+    .filter((m) => m.userId !== currentUserId && m.lastReadAt)
+    .map((m) => m.lastReadAt as string)
+    .sort()
+    .at(-1) ?? null;
 
   // ✅ Wire up realtime updates — this was missing before
   const { messages, addOptimisticMessage } = useRealtimeMessages(
@@ -116,6 +124,7 @@ export function ConversationView({
           canManage={canManage}
           onReply={handleReply}
           onEdit={() => {}}
+          otherMembersLastRead={otherMembersLastRead}
         />
 
         <MessageInput
