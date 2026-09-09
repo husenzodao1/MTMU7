@@ -43,15 +43,15 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none"
+                className="flex flex-1 flex-col items-center justify-center gap-1 py-1 select-none active:scale-90 transition-transform duration-150"
               >
                 <span className="relative">
                   <span
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300",
+                      "flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
                       active
-                        ? "shadow-[0_2px_12px_rgba(79,70,229,0.28)]"
-                        : ""
+                        ? "scale-110 shadow-[0_2px_16px_rgba(79,70,229,0.32)]"
+                        : "scale-100"
                     )}
                     style={active ? {
                       background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
@@ -59,21 +59,21 @@ export function BottomNav({ notificationCount = 0, unreadMessages = 0, onMenuTog
                   >
                     <Icon
                       className={cn(
-                        "transition-all duration-300",
-                        active ? "h-[18px] w-[18px] text-white" : "h-5 w-5 text-slate-400"
+                        "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+                        active ? "h-[18px] w-[18px] text-white rotate-0" : "h-5 w-5 text-slate-400"
                       )}
                     />
                   </span>
                   {(item.badge ?? 0) > 0 && (
-                    <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white ring-2 ring-white">
+                    <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white ring-2 ring-white animate-bounce">
                       {item.badge! > 99 ? "99+" : item.badge}
                     </span>
                   )}
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] font-semibold leading-none transition-colors duration-300",
-                    active ? "text-indigo-600" : "text-slate-400"
+                    "text-[10px] font-semibold leading-none transition-all duration-300",
+                    active ? "text-indigo-600 translate-y-0 opacity-100" : "text-slate-400 translate-y-0 opacity-70"
                   )}
                 >
                   {item.label}
