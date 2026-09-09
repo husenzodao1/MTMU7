@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MessageThread, type MessageItem } from "./message-thread";
 import { MessageInput } from "./message-input";
 import { ConversationsList, type ConversationItem } from "../conversations-list";
 import { ConversationInfo } from "./conversation-info";
 import { useRealtimeMessages } from "./use-realtime-messages";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Megaphone, User, MessageSquare, Info } from "lucide-react";
 import Link from "next/link";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 interface Member {
   userId: string;
@@ -33,7 +35,7 @@ export function ConversationView({
   messages: initialMessages,
   conversationName,
   conversationType,
-  members,
+  members: initialMembers,
   conversations,
   canManage,
 }: {
@@ -50,31 +52,62 @@ export function ConversationView({
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
 
-  // Max lastReadAt of all other members → used for read receipts
-  const otherMembersLastRead = members
-    .filter((m) => m.userId !== currentUserId && m.lastReadAt)
-    .map((m) => m.lastReadAt as string)
-    .sort()
-    .at(-1) ?? null;
+  // Mutable members state — updated via realtime when other users read messages
+  const [prevConvId, setPrevConvId] = useState(conversationId);
+  const [members, setMembers] = useState(initialMembers);
 
-  // ✅ Wire up realtime updates — this was missing before
+  // Reset members state when navigating to a different conversation
+  if (prevConvId !== conversationId) {
+    setPrevConvId(conversationId);
+    setMembers(initialMembers);
+  }
+
+  // Realtime: update otherMembersLastRead when any member's last_read_at changes
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`conv-members:${conversationId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversation_members" },
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+          const updated = payload.new as Record<string, unknown>;
+          if (!updated.conversation_id || updated.conversation_id !== conversationId) return;
+          // Skip own updates (we already know our own read status)
+          if (updated.user_id === currentUserId) return;
+
+          setMembers((prev) =>
+            prev.map((m) =>
+              m.userId === (updated.user_id as string)
+                ? { ...m, lastReadAt: updated.last_read_at as string | null }
+                : m
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [conversationId, currentUserId]);
+
+  // Max lastReadAt of all OTHER members — drives read receipt display (blue double-checks)
+  const otherMembersLastRead =
+    members
+      .filter((m) => m.userId !== currentUserId && m.lastReadAt)
+      .map((m) => m.lastReadAt as string)
+      .sort()
+      .at(-1) ?? null;
+
   const { messages, addOptimisticMessage } = useRealtimeMessages(
     conversationId,
     initialMessages,
     currentUserId
   );
 
-  const replyToMessage = replyToId
-    ? messages.find((m) => m.id === replyToId)
-    : null;
+  const replyToMessage = replyToId ? messages.find((m) => m.id === replyToId) : null;
 
-  const handleReply = useCallback((id: string) => {
-    setReplyToId(id);
-  }, []);
-
-  const handleCancelReply = useCallback(() => {
-    setReplyToId(null);
-  }, []);
+  const handleReply = useCallback((id: string) => { setReplyToId(id); }, []);
+  const handleCancelReply = useCallback(() => { setReplyToId(null); }, []);
 
   const IconComponent = typeIconMap[conversationType] ?? MessageSquare;
 
@@ -102,18 +135,10 @@ export function ConversationView({
             <IconComponent className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-bold text-neutral-900">
-              {conversationName}
-            </h2>
-            <p className="text-[11px] text-neutral-400">
-              {members.length} {t("members")}
-            </p>
+            <h2 className="truncate text-sm font-bold text-neutral-900">{conversationName}</h2>
+            <p className="text-[11px] text-neutral-400">{members.length} {t("members")}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setShowInfo(!showInfo)}
-          >
+          <Button variant="ghost" size="icon-sm" onClick={() => setShowInfo(!showInfo)}>
             <Info className="h-4 w-4 text-neutral-500" />
           </Button>
         </div>
@@ -136,7 +161,6 @@ export function ConversationView({
         />
       </div>
 
-      {/* Info panel */}
       {showInfo && (
         <ConversationInfo
           conversationId={conversationId}

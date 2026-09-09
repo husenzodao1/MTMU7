@@ -88,6 +88,12 @@ export function useRealtimeMessages(
           if (!updated.id) return;
           if (updated.conversation_id !== conversationId) return;
 
+          // If deleted-for-everyone, remove from local state immediately
+          if (updated.is_deleted === true) {
+            setMessages((prev) => prev.filter((msg) => msg.id !== updated.id));
+            return;
+          }
+
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === updated.id

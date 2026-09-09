@@ -89,7 +89,24 @@ export async function getMessages(conversationId: string) {
     }
   }
 
-  const formattedMessages = msgs.map((msg) => {
+  // Fetch favorites and per-user deletions (requires migration 00021)
+  const msgIds = msgs.map((m) => m.id as string);
+  let favoritedIds = new Set<string>();
+  let myDeletedIds = new Set<string>();
+  if (msgIds.length > 0) {
+    const [favResult, delResult] = await Promise.all([
+      admin.from("message_favorites" as never).select("message_id" as never)
+        .eq("user_id" as never, user.id).in("message_id" as never, msgIds),
+      admin.from("message_deletions" as never).select("message_id" as never)
+        .eq("user_id" as never, user.id).in("message_id" as never, msgIds),
+    ]);
+    favoritedIds = new Set(((favResult.data ?? []) as Array<{ message_id: string }>).map((f) => f.message_id));
+    myDeletedIds = new Set(((delResult.data ?? []) as Array<{ message_id: string }>).map((d) => d.message_id));
+  }
+
+  const formattedMessages = msgs
+    .filter((msg) => !myDeletedIds.has(msg.id as string))
+    .map((msg) => {
     const sender = usersMap.get(msg.sender_id as string);
     return {
       id: msg.id as string,
@@ -103,6 +120,7 @@ export async function getMessages(conversationId: string) {
       isPinned: msg.is_pinned as boolean,
       isEdited: msg.is_edited as boolean,
       isDeleted: msg.is_deleted as boolean,
+      isFavorited: favoritedIds.has(msg.id as string),
       createdAt: msg.created_at as string,
     };
   });
@@ -172,6 +190,31 @@ export async function sendMessageAction(
 
   if (insertResult.error) return { error: "sendError" };
 
+  // Create notifications for all other conversation members (best-effort)
+  try {
+    const { data: otherMembers } = await admin
+      .from("conversation_members" as never)
+      .select("user_id, school_id" as never)
+      .eq("conversation_id" as never, conversationId)
+      .neq("user_id" as never, user.id);
+    if (otherMembers && (otherMembers as Array<Record<string, unknown>>).length > 0) {
+      const senderName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User";
+      await admin.from("notifications" as never).insert(
+        (otherMembers as Array<{ user_id: string; school_id: string }>).map((m) => ({
+          user_id: m.user_id,
+          school_id: m.school_id,
+          type: "message",
+          module: "messages",
+          title: senderName,
+          body: parsed.data.content.slice(0, 200),
+          data: { conversation_id: conversationId },
+        })) as never
+      );
+    }
+  } catch {
+    // Non-critical — message was sent, notification creation is best-effort
+  }
+
   revalidatePath(`/messages/${conversationId}`);
   revalidatePath("/messages");
   return { error: null };
@@ -207,13 +250,14 @@ export async function editMessageAction(
   return { error: null };
 }
 
+// Delete for everyone (only own messages) — sets is_deleted on the message row
 export async function deleteMessageAction(messageId: string) {
   const user = await getUserWithRole();
   if (!user) redirect("/login");
 
-  const supabase = await createServerClient();
+  const admin = createAdminClient();
 
-  await supabase
+  await admin
     .from("messages" as never)
     .update({
       is_deleted: true,
@@ -223,6 +267,38 @@ export async function deleteMessageAction(messageId: string) {
     .eq("sender_id" as never, user.id);
 
   revalidatePath("/messages");
+}
+
+// Delete for me only — inserts into message_deletions (requires migration 00021)
+export async function deleteForMeAction(messageId: string) {
+  const user = await getUserWithRole();
+  if (!user) redirect("/login");
+
+  const admin = createAdminClient();
+
+  await admin
+    .from("message_deletions" as never)
+    .insert({ user_id: user.id, message_id: messageId } as never);
+}
+
+// Toggle favorite (requires migration 00021)
+export async function toggleFavoriteAction(messageId: string, isFavorited: boolean) {
+  const user = await getUserWithRole();
+  if (!user) redirect("/login");
+
+  const admin = createAdminClient();
+
+  if (isFavorited) {
+    await admin
+      .from("message_favorites" as never)
+      .delete()
+      .eq("user_id" as never, user.id)
+      .eq("message_id" as never, messageId);
+  } else {
+    await admin
+      .from("message_favorites" as never)
+      .insert({ user_id: user.id, message_id: messageId, school_id: user.schoolId } as never);
+  }
 }
 
 export async function pinMessageAction(messageId: string, isPinned: boolean) {

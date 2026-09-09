@@ -96,12 +96,14 @@ export function ConversationsList({
 }) {
   const t = useTranslations("messages");
   const [search, setSearch] = useState("");
+  const [prevInitial, setPrevInitial] = useState(initialConversations);
   const [conversations, setConversations] = useState(initialConversations);
 
-  // Sync with server-refreshed data (revalidatePath)
-  useEffect(() => {
+  // Sync with server-refreshed data (revalidatePath) — inline derived-state pattern
+  if (prevInitial !== initialConversations) {
+    setPrevInitial(initialConversations);
     setConversations(initialConversations);
-  }, [initialConversations]);
+  }
 
   // Real-time: update list when new messages arrive
   useEffect(() => {
