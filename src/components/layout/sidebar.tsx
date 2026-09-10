@@ -32,7 +32,7 @@ export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 
         <img
           src={school?.logoUrl ?? "/school.png"}
           alt={school?.name ?? "МТМУ №7"}
-          className="h-10 w-10 shrink-0 rounded-2xl object-cover ring-2 ring-white/80 shadow-xs"
+          className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow-xs"
         />
         <div className="min-w-0 flex-1">
           <span className="block truncate font-bold text-neutral-900 text-sm tracking-tight">

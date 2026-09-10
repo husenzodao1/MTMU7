@@ -16,7 +16,7 @@ export default async function LoginPage({
         <img
           src="/school.png"
           alt="МТМУ №7"
-          className="mx-auto mb-3 h-12 w-12 rounded-full object-cover shadow-md ring-2 ring-neutral-100"
+          className="mx-auto mb-3 h-20 w-20 rounded-full object-cover shadow-md"
         />
         <CardTitle className="text-xl font-extrabold tracking-tight text-neutral-900">{t("loginTitle")}</CardTitle>
         <CardDescription className="text-sm text-neutral-500">{t("loginDescription")}</CardDescription>

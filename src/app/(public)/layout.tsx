@@ -22,7 +22,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <img
             src="/school.png"
             alt="МТМУ №7"
-            className="h-8 w-8 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-neutral-200"
+            className="h-8 w-8 shrink-0 rounded-full object-cover shadow-sm"
           />
           <span className="text-sm font-bold text-neutral-700 tracking-tight">МТМУ №7</span>
         </div>

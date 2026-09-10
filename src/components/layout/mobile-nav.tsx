@@ -89,7 +89,7 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
             <img
               src={school?.logoUrl ?? "/school.png"}
               alt={school?.name ?? "МТМУ №7"}
-              className="h-9 w-9 shrink-0 rounded-2xl object-cover ring-2 ring-white shadow-2xs"
+              className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-2xs"
             />
             <span className="font-bold text-neutral-900 text-sm tracking-tight">{school?.name ?? t("common.appName")}</span>
           </div>
