@@ -13,11 +13,13 @@ export default async function LoginPage({
   return (
     <Card className="w-full rounded-[28px] border border-neutral-200/80 bg-white/90 shadow-xl backdrop-blur-md animate-in">
       <CardHeader className="text-center pb-2">
-        <img
-          src="/school.png"
-          alt="МТМУ №7"
-          className="mx-auto mb-3 h-20 w-20 rounded-full object-cover shadow-md"
-        />
+        <div className="mx-auto mb-4 h-28 w-28 overflow-hidden rounded-full shadow-lg">
+          <img
+            src="/school.png"
+            alt="МТМУ №7"
+            className="h-full w-full object-cover"
+          />
+        </div>
         <CardTitle className="text-xl font-extrabold tracking-tight text-neutral-900">{t("loginTitle")}</CardTitle>
         <CardDescription className="text-sm text-neutral-500">{t("loginDescription")}</CardDescription>
       </CardHeader>
