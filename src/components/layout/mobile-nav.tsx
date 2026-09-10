@@ -90,7 +90,7 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
               <X className="h-4.5 w-4.5" />
             </Button>
           </div>
-          <div className="overflow-hidden rounded-2xl" style={{width:112,height:112}}>
+          <div className="overflow-hidden rounded-2xl" style={{width:90,height:90}}>
             <img
               src={school?.logoUrl ?? "/school.png"}
               alt={school?.name ?? "МТМУ №7"}

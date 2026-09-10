@@ -29,7 +29,7 @@ export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200/70 lg:bg-[#EEF2F8]/95 lg:backdrop-blur-sm">
       {/* Brand Identity / Logo Header */}
       <div className="flex flex-col items-center gap-2 px-6 py-5 border-b border-neutral-200/60">
-        <div className="overflow-hidden rounded-2xl" style={{width:112,height:112}}>
+        <div className="overflow-hidden rounded-2xl" style={{width:90,height:90}}>
           <img
             src={school?.logoUrl ?? "/school.png"}
             alt={school?.name ?? "МТМУ №7"}
