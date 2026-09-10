@@ -86,17 +86,11 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
         {/* School header */}
         <div className="flex h-16 items-center justify-between border-b border-neutral-200/60 px-5">
           <div className="flex items-center gap-2.5">
-            {school?.logoUrl ? (
-              <img
-                src={school.logoUrl}
-                alt={school.name}
-                className="h-9 w-9 shrink-0 rounded-2xl object-cover ring-2 ring-white shadow-2xs"
-              />
-            ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-neutral-900 text-sm font-bold text-white shadow-xs">
-                {(school?.name ?? "М").charAt(0)}
-              </div>
-            )}
+            <img
+              src={school?.logoUrl ?? "/school.png"}
+              alt={school?.name ?? "МТМУ №7"}
+              className="h-9 w-9 shrink-0 rounded-2xl object-cover ring-2 ring-white shadow-2xs"
+            />
             <span className="font-bold text-neutral-900 text-sm tracking-tight">{school?.name ?? t("common.appName")}</span>
           </div>
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">

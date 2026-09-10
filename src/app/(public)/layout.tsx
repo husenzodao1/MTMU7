@@ -19,9 +19,11 @@ export default async function PublicLayout({ children }: { children: React.React
       {/* Top bar */}
       <div className="relative z-10 mb-8 flex w-full max-w-md items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-white text-[10px] font-black tracking-tighter shadow-sm">
-            М7
-          </div>
+          <img
+            src="/school.png"
+            alt="МТМУ №7"
+            className="h-8 w-8 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-neutral-200"
+          />
           <span className="text-sm font-bold text-neutral-700 tracking-tight">МТМУ №7</span>
         </div>
         <LocaleSwitcher current={locale} />

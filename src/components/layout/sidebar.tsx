@@ -29,17 +29,11 @@ export function Sidebar({ enabledModules, isAdmin, school, friendRequestCount = 
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-neutral-200/70 lg:bg-[#EEF2F8]/95 lg:backdrop-blur-sm">
       {/* Brand Identity / Logo Header */}
       <div className="flex h-20 items-center gap-3 px-6">
-        {school?.logoUrl ? (
-          <img
-            src={school.logoUrl}
-            alt={school.name}
-            className="h-10 w-10 shrink-0 rounded-2xl object-cover ring-2 ring-white/80 shadow-xs"
-          />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-900 text-base font-bold text-white shadow-sm ring-2 ring-white/80">
-            {(school?.name ?? "М").charAt(0)}
-          </div>
-        )}
+        <img
+          src={school?.logoUrl ?? "/school.png"}
+          alt={school?.name ?? "МТМУ №7"}
+          className="h-10 w-10 shrink-0 rounded-2xl object-cover ring-2 ring-white/80 shadow-xs"
+        />
         <div className="min-w-0 flex-1">
           <span className="block truncate font-bold text-neutral-900 text-sm tracking-tight">
             {school?.name ?? "МТМУ №7"}
