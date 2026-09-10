@@ -32,9 +32,11 @@ export function Header({ user, onMenuToggle, notificationCount = 0, locale = "tg
           <Menu className="h-5 w-5 text-neutral-700" />
         </Button>
         <div className="lg:hidden flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-neutral-900 text-xs font-bold text-white shadow-xs">
-            {t("common.appName").charAt(0)}
-          </div>
+          <img
+            src="/school.png"
+            alt="МТМУ №7"
+            className="h-8 w-8 shrink-0 rounded-xl object-cover shadow-xs"
+          />
           <span className="font-bold text-neutral-900 text-sm tracking-tight">{t("common.appName")}</span>
         </div>
 
