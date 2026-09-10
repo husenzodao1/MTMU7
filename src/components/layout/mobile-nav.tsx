@@ -84,18 +84,20 @@ export function MobileNav({ isOpen, onClose, enabledModules, isAdmin, school, us
         )}
       >
         {/* School header */}
-        <div className="flex h-16 items-center justify-between border-b border-neutral-200/60 px-5">
-          <div className="flex items-center gap-2.5">
+        <div className="flex flex-col items-center gap-2 border-b border-neutral-200/60 px-5 py-5">
+          <div className="flex w-full items-start justify-end">
+            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">
+              <X className="h-4.5 w-4.5" />
+            </Button>
+          </div>
+          <div className="overflow-hidden rounded-2xl" style={{width:112,height:112}}>
             <img
               src={school?.logoUrl ?? "/school.png"}
               alt={school?.name ?? "МТМУ №7"}
-              className="h-9 w-9 shrink-0 rounded-2xl object-cover shadow-2xs"
+              className="h-full w-full object-cover"
             />
-            <span className="font-bold text-neutral-900 text-sm tracking-tight">{school?.name ?? t("common.appName")}</span>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">
-            <X className="h-4.5 w-4.5" />
-          </Button>
+          <span className="font-bold text-neutral-900 text-sm tracking-tight">{school?.name ?? t("common.appName")}</span>
         </div>
 
         {/* User Profile Summary */}

@@ -13,7 +13,7 @@ export default async function LoginPage({
   return (
     <Card className="w-full rounded-[28px] border border-neutral-200/80 bg-white/90 shadow-xl backdrop-blur-md animate-in">
       <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 h-28 w-28 overflow-hidden rounded-full shadow-lg">
+        <div className="mx-auto mb-4 overflow-hidden rounded-full" style={{width:140,height:140}}>
           <img
             src="/school.png"
             alt="МТМУ №7"
