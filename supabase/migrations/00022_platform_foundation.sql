@@ -323,6 +323,8 @@ AS $$
 $$;
 
 -- The single authorization predicate used by RLS policies and RPCs.
+-- Always returns true or false, never NULL: callers write IF NOT app.can(...)
+-- and a NULL (e.g. an account without an active school) must mean "denied".
 CREATE OR REPLACE FUNCTION app.can(p_school uuid, p_permission text)
 RETURNS boolean
 LANGUAGE sql
@@ -330,9 +332,10 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT
-    (p_school IS NOT NULL AND p_school = app.current_school_id() AND app.has_own_permission(p_permission))
-    OR (app.has_admin_scope() AND app.scope_permission(p_school, p_permission))
+  SELECT coalesce(
+    (p_school IS NOT NULL AND p_school IS NOT DISTINCT FROM app.current_school_id() AND app.has_own_permission(p_permission))
+    OR (app.has_admin_scope() AND app.scope_permission(p_school, p_permission)),
+    false)
 $$;
 
 -- Read access to a school's non-public data at all (member or scoped admin).
@@ -343,9 +346,10 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT
-    (p_school IS NOT NULL AND p_school = app.current_school_id())
-    OR (app.has_admin_scope() AND app.scope_permission(p_school, 'schools.view'))
+  SELECT coalesce(
+    (p_school IS NOT NULL AND p_school IS NOT DISTINCT FROM app.current_school_id())
+    OR (app.has_admin_scope() AND app.scope_permission(p_school, 'schools.view')),
+    false)
 $$;
 
 CREATE OR REPLACE FUNCTION app.has_role(p_role_slug text)

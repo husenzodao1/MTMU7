@@ -27,6 +27,7 @@ export interface Tenants {
     staffA: string;
     pendingA: string;
     blockedA: string;
+    formerAdminA: string;
     adminB: string;
     teacherB: string;
     studentB: string;
@@ -94,6 +95,7 @@ export async function seedTenants(db: Db): Promise<Tenants> {
     staffA: await createUser(db, SCHOOL_A, "staff", "staffA"),
     pendingA: await createUser(db, SCHOOL_A, null, "pendingA", { status: "pending", active: false }),
     blockedA: await createUser(db, SCHOOL_A, "student", "blockedA", { status: "blocked", active: false }),
+    formerAdminA: await createUser(db, SCHOOL_A, "admin", "formerAdminA", { status: "blocked", active: false }),
     adminB: await createUser(db, SCHOOL_B, "admin", "adminB"),
     teacherB: await createUser(db, SCHOOL_B, "teacher", "teacherB"),
     studentB: await createUser(db, SCHOOL_B, "student", "studentB"),

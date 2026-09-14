@@ -225,6 +225,52 @@ describe("account administration RPCs", () => {
   });
 });
 
+describe("deactivated administrators (NULL-safe authorization)", () => {
+  it("cannot use administrative RPCs after being blocked", async () => {
+    const teacherRole = await one<{ id: string }>(db, `SELECT id FROM public.roles WHERE school_id = $1 AND slug = 'teacher'`, [t.schoolA]);
+    const calls: Array<[string, unknown[]]> = [
+      [`SELECT public.admin_set_user_status($1, 'blocked')`, [t.users.studentA]],
+      [`SELECT public.admin_set_user_roles($1, $2)`, [t.users.staffA, [teacherRole!.id]]],
+      [`SELECT * FROM public.admin_search_users()`, []],
+      [`SELECT public.import_students('[{"first_name":"a","last_name":"b"}]'::jsonb, false)`, []],
+      [`SELECT public.admin_dashboard()`, []],
+    ];
+    for (const [sql, params] of calls) {
+      const error = await errorOf(() => asUser(db, t.users.formerAdminA, (tx) => tx.query(sql, params)));
+      assert.ok(error && /forbidden/.test(error), `blocked admin must be refused: ${sql} -> ${error}`);
+    }
+  });
+
+  it("refuses administrators of an archived school (app.can must not return NULL)", async () => {
+    const school = "0000000c-0000-0000-0000-00000000000c";
+    await db.query(`INSERT INTO public.schools (id, short_name, full_name, slug, id_prefix) VALUES ($1, 'C', 'School C', 'school-c', 'SC')`, [school]);
+    const ids = ["c0000000-0000-4000-8000-000000000001", "c0000000-0000-4000-8000-000000000002"];
+    for (const [i, role] of [[0, "admin"], [1, "student"]] as const) {
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [ids[i], `c${i}@example.test`]);
+      await db.query(`INSERT INTO public.users (id, school_id, email, first_name, last_name) VALUES ($1, $2, $3, 'C', 'User')`, [ids[i], school, `c${i}@example.test`]);
+      await db.query(`INSERT INTO public.user_roles (user_id, role_id, school_id) SELECT $1, id, school_id FROM public.roles WHERE school_id = $2 AND slug = $3`, [ids[i], school, role]);
+    }
+    await db.query(`UPDATE public.schools SET status = 'archived' WHERE id = $1`, [school]);
+    const error = await errorOf(() => asUser(db, ids[0]!, (tx) => tx.query(`SELECT public.admin_set_user_status($1, 'blocked')`, [ids[1]])));
+    assert.match(error ?? "", /forbidden/);
+    const can = await asUser(db, ids[0]!, (tx) => one<{ ok: boolean | null }>(tx, `SELECT app.can($1, 'users.deactivate') AS ok`, [school]));
+    assert.strictEqual(can!.ok, false);
+  });
+
+  it("sees no school data and cannot write through RLS", async () => {
+    const users = await asUser(db, t.users.formerAdminA, (tx) => rows(tx, `SELECT id FROM public.users WHERE id <> $1`, [t.users.formerAdminA]));
+    assert.equal(users.length, 0);
+    const update = await asUser(db, t.users.formerAdminA, (tx) => tx.query(`UPDATE public.schools SET phone = '0' WHERE id = $1`, [t.schoolA]));
+    assert.equal(update.affectedRows, 0);
+    const adminRole = await one<{ id: string }>(db, `SELECT id FROM public.roles WHERE school_id = $1 AND slug = 'admin'`, [t.schoolA]);
+    const grant = await asUser(db, t.users.formerAdminA, (tx) =>
+      one<{ ok: boolean }>(tx, `SELECT app.can_grant_role($1) AS ok`, [adminRole!.id]));
+    assert.equal(grant!.ok, false);
+    const can = await asUser(db, t.users.formerAdminA, (tx) => one<{ ok: boolean | null }>(tx, `SELECT app.can($1, 'users.view') AS ok`, [t.schoolA]));
+    assert.strictEqual(can!.ok, false, "app.can must never return NULL");
+  });
+});
+
 describe("audit logging (SEC-012)", () => {
   it("records role changes with the real actor", async () => {
     const librarianRole = await one<{ id: string }>(db, `SELECT id FROM public.roles WHERE school_id = $1 AND slug = 'librarian'`, [t.schoolA]);
