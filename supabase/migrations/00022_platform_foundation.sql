@@ -593,11 +593,13 @@ AS $$
       'timetable.view','timetable.manage','news.view','news.create','announcements.view','announcements.create',
       'announcements.publish','events.view','events.manage','library.view','documents.view','documents.create',
       'media.upload','messages.use','notifications.send','reports.view','reports.export','analytics.view']),
+    -- Teachers get no school-wide grades/attendance/homework view: RLS scopes
+    -- them to the class subjects they teach and the classes they lead.
     ('teacher', ARRAY[
       'dashboard.view','schools.view','students.view','staff.view','academic_years.view','classes.view',
-      'subjects.view','grades.view','grades.enter','attendance.view','attendance.mark','homework.view',
-      'homework.create','homework.review','timetable.view','news.view','news.create','announcements.view',
-      'announcements.create','events.view','library.view','documents.view','media.upload','messages.use']),
+      'subjects.view','grades.enter','attendance.mark','homework.create','homework.review','timetable.view',
+      'news.view','news.create','announcements.view','announcements.create','events.view','library.view',
+      'documents.view','media.upload','messages.use']),
     ('librarian', ARRAY[
       'dashboard.view','schools.view','academic_years.view','subjects.view','news.view','announcements.view',
       'events.view','library.view','library.create','library.update','library.publish','library.archive',
@@ -610,7 +612,7 @@ AS $$
       'library.view','documents.view','messages.use','timetable.view']),
     ('parent', ARRAY[
       'dashboard.view','schools.view','academic_years.view','news.view','announcements.view','events.view',
-      'documents.view','messages.use'])
+      'documents.view','messages.use','timetable.view'])
   ) AS d(role_slug, perms), unnest(d.perms) AS slug
   WHERE d.role_slug = p_role_slug
 $$;
