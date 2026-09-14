@@ -94,7 +94,7 @@ export function SubmitButton({ children, ...props }: ButtonProps) {
  * A button that runs a destructive or important Server Action after an
  * explicit confirmation dialog (spec §45, §62).
  */
-export function ConfirmAction({
+export function ConfirmAction<T>({
   action,
   fields,
   trigger,
@@ -105,7 +105,7 @@ export function ConfirmAction({
   requireReason,
   reasonLabel,
 }: {
-  action: ServerAction<unknown>;
+  action: ServerAction<T>;
   fields: Record<string, string>;
   trigger: ReactNode;
   title: string;

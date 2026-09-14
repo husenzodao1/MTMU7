@@ -105,10 +105,10 @@ function renderBlock(block: Block, index: number): ReactNode {
 }
 
 /** Renders editorial text safely (no HTML is ever interpreted). */
-export function Markdown({ source, className }: { source: string | null | undefined; className?: string }) {
+export function Markdown({ source, className, lang }: { source: string | null | undefined; className?: string; lang?: string }) {
   const blocks = parseMarkdown(source);
   if (blocks.length === 0) return null;
-  return <div className={cn("prose-official text-base leading-relaxed text-ink", className)}>{blocks.map(renderBlock)}</div>;
+  return <div lang={lang} className={cn("prose-official text-base leading-relaxed text-ink", className)}>{blocks.map(renderBlock)}</div>;
 }
 
 export function VisuallyHidden({ children }: { children: ReactNode }) {
