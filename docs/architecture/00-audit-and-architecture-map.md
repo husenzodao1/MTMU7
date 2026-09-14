@@ -78,7 +78,7 @@ Severity: **P0** = exploitable / data exposure / broken core flow ·
 | SEC-007 | P1 | No security headers (CSP, HSTS, frame protection, Referrer-Policy, nosniff, Permissions-Policy). | `next.config.ts` |
 | SEC-008 | P0 | Open redirect: `/auth/callback?next=@evil.example` → `https://host@evil.example`. | `app/auth/callback/route.ts` |
 | SEC-009 | P1 | User enumeration: registration answers `alreadyRegistered` for any email before OTP. | `register/actions.ts` |
-| SEC-010 | P0 | **`messages_select` (00011) cross-tenant read**: unqualified `conversation_id` inside the sub-select resolves to `cm.conversation_id`, so any user who belongs to any conversation could read every message of every school. Replaced in 00021 — any database that ran 00011 without 00021 is exposed. Same defect in `conv_members_select` (still active). | `00011_rls.sql:737-763` |
+| SEC-010 | P0 | **Broken messaging RLS.** `messages_select` (00011) compares the sub-select's own column (`cm.conversation_id = conversation_id`), i.e. no row binding; `conv_members_select` queries `conversation_members` from its own policy. **Verified on PGlite:** every user-scoped read/insert on `conversation_members`, `messages` or `conversations` fails with `infinite recursion detected in policy for relation "conversation_members"` (with and without 00021). The defect is not a data leak today only because it errors first; it is the reason all chat code bypasses RLS with `service_role`, and Realtime delivery under RLS cannot work. | `00011_rls.sql:716-763`, `tests/db` probe |
 | SEC-011 | P0 | `"use server"` on library storage helpers exports `uploadLibraryFile(itemId, fileName, file)` / `deleteLibraryFile(path)` as client-callable actions with unsanitized path segments (`../`) executed with service role. | `lib/storage/library.ts` |
 | SEC-012 | P1 | Audit logging silently never worked: inserts go through the user client and `audit_logs` has no INSERT policy. | `admin/users/[userId]/actions.ts` |
 | SEC-013 | P1 | Admin authorization is a role-slug check (`slug === 'admin'`), not permissions; `requireSuperAdmin` gates normal school operations. | `lib/admin/guard.ts` |
@@ -104,6 +104,11 @@ Severity: **P0** = exploitable / data exposure / broken core flow ·
 | FUN-012 | P2 | `removeMemberAction`/`pinMessageAction` silently fail (no matching RLS policy). |
 | FUN-013 | P2 | Book form allows no category but column is `NOT NULL`. |
 | FUN-014 | P2 | Registration writes `registration_requests` then `users` without a transaction. |
+| FUN-015 | P0 | Multi-school blocker: `users.public_id` is globally unique but `schools.id_prefix` defaults to `MT` and `id_sequence` to 10000 for every school, so the first user of a second school collides with `MT10001` (verified on PGlite). |
+
+Empirically verified on a fresh PGlite database with all 21 migrations:
+SEC-004 (pending user self-activates: `UPDATE users SET status='active', is_active=true` succeeds),
+SEC-010 (recursive policy), SEC-012 (audit insert rejected), FUN-001, FUN-015.
 
 ### 4.3 Design / UX (spec §70)
 
