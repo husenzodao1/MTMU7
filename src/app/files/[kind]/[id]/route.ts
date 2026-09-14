@@ -29,11 +29,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     path = data?.storage_path ?? null;
     fileName = data?.file_name ?? null;
   } else if (kind === "library") {
-    const { data } = await supabase.from("library_items").select("file_url, file_name").eq("id", id).maybeSingle();
+    const { data } = await supabase.from("library_items").select("file_url, file_name, school_id").eq("id", id).maybeSingle();
     bucket = "library-files";
     path = data?.file_url ?? null;
     fileName = data?.file_name ?? null;
-    if (path) await supabase.rpc("record_library_view", { p_item_id: id });
+    if (data && path) {
+      await supabase.rpc("record_library_view", { p_item_id: id });
+      const { data: claims } = await supabase.auth.getClaims();
+      const userId = claims?.claims.sub;
+      if (userId) {
+        // Reading history is best effort: RLS limits it to the user's own school and visible books.
+        await supabase
+          .from("library_reading_history")
+          .upsert({ user_id: userId, item_id: id, school_id: data.school_id, opened_at: new Date().toISOString() }, { onConflict: "user_id,item_id" });
+      }
+    }
   } else if (kind === "announcements") {
     const { data } = await supabase.from("announcements").select("attachment_path, attachment_name").eq("id", id).maybeSingle();
     bucket = "documents";

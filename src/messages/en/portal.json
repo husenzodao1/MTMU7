@@ -1,1 +1,563 @@
-{}
+{
+  "portal": {
+    "upload": {
+      "limit": "Maximum file size: {size}."
+    },
+    "dashboard": {
+      "greeting": "Hello, {name}",
+      "welcome": "Your school information in one place.",
+      "openAdmin": "Open Admin Control Center",
+      "all": "View all",
+      "news": "School news",
+      "announcements": "Announcements",
+      "events": "Upcoming events",
+      "teacher": {
+        "title": "Today's lessons",
+        "description": "{count, plural, =0 {No lessons today} one {# lesson today} other {# lessons today}}",
+        "open": "Open teaching workspace",
+        "markDaily": "Daily attendance",
+        "dailyPending": "{className}: daily attendance not taken yet",
+        "noLessons": "You have no lessons today.",
+        "substitution": "Substitution",
+        "covered": "Covered by a substitute",
+        "marked": "Attendance taken",
+        "mark": "Take attendance",
+        "toReview": "{count, plural, one {# submission to review} other {# submissions to review}}"
+      },
+      "student": {
+        "today": "Today's lessons",
+        "noLessons": "No lessons today.",
+        "homework": "Upcoming homework",
+        "grades": "Latest grades",
+        "attendance": "Attendance this term"
+      },
+      "parent": {
+        "title": "My children",
+        "noChildren": "No children are linked to your account yet. Please contact the school administration.",
+        "latestGrades": "Latest grades: {name}",
+        "attendance": "Attendance this term"
+      },
+      "admin": {
+        "title": "School overview",
+        "year": "Academic year {year}",
+        "students": "Students",
+        "teachers": "Teachers",
+        "classes": "Classes",
+        "pending": "Pending approvals"
+      }
+    },
+    "lessons": {
+      "period": "Period {number}",
+      "room": "Room {room}",
+      "substitution": "Substitution"
+    },
+    "schedule": {
+      "title": "Timetable",
+      "teaching": "My teaching timetable",
+      "empty": "The timetable is not available yet",
+      "emptyHint": "The timetable appears here once the school publishes it.",
+      "today": "Today",
+      "noLessons": "No lessons",
+      "room": "Room {room}"
+    },
+    "grades": {
+      "title": "Grades",
+      "noStudent": "No student record is linked to this account.",
+      "terms": "Terms",
+      "none": "No grades have been recorded for this term yet.",
+      "average": "Weighted average: {value}%",
+      "noRegular": "No regular grades yet.",
+      "list": "Grades in {subject}"
+    },
+    "attendance": {
+      "title": "Attendance",
+      "noStudent": "No student record is linked to this account.",
+      "termSummary": "This term",
+      "rate": "Attendance rate",
+      "exceptions": "Absences and late arrivals",
+      "exceptionsHint": "Most recent records first.",
+      "noExceptions": "No absences or late arrivals recorded.",
+      "daily": "Daily attendance",
+      "period": "period {number}",
+      "minutesLate": "{minutes, plural, one {# minute late} other {# minutes late}}"
+    },
+    "homework": {
+      "title": "Homework",
+      "noStudent": "No student record is linked to this account.",
+      "views": "Homework views",
+      "current": "Current",
+      "past": "Past",
+      "nothingDue": "No homework is due.",
+      "assignment": "Assignment",
+      "subject": "Subject",
+      "dueLabel": "Due",
+      "due": "Due {date}",
+      "status": "Status",
+      "breadcrumb": "Breadcrumb",
+      "instructions": "Instructions",
+      "noInstructions": "The teacher has not added instructions.",
+      "yourWork": "Submission",
+      "submittedAt": "Submitted",
+      "score": "Score",
+      "feedback": "Teacher feedback",
+      "answer": "Your answer",
+      "attachment": "Attachment",
+      "submit": "Submit",
+      "resubmit": "Submit again",
+      "noSubmissions": "This assignment does not accept online submissions.",
+      "notSubmittedYet": "No work has been submitted yet.",
+      "backToList": "Back to homework",
+      "submitted": "Your work has been submitted."
+    },
+    "children": {
+      "title": "My children",
+      "description": "Students linked to your guardian account.",
+      "empty": "No children are linked to your account",
+      "emptyHint": "The school administration links guardians to students after verification.",
+      "class": "Class {name}",
+      "noClass": "Not enrolled in a class",
+      "breadcrumb": "Breadcrumb",
+      "switcher": "Choose a child",
+      "allGrades": "All grades",
+      "allAttendance": "Attendance",
+      "allHomework": "Homework",
+      "relationship": {
+        "mother": "Mother",
+        "father": "Father",
+        "guardian": "Guardian",
+        "grandparent": "Grandparent",
+        "sibling": "Sibling",
+        "other": "Relative"
+      }
+    },
+    "announcements": {
+      "title": "Announcements",
+      "description": "Official announcements from the school administration.",
+      "empty": "There are no current announcements.",
+      "until": "Valid until {date}",
+      "attachment": "Attachment",
+      "priority": {
+        "normal": "Announcement",
+        "important": "Important",
+        "critical": "Urgent"
+      }
+    },
+    "events": {
+      "title": "Events",
+      "description": "School calendar of meetings, exams, competitions and holidays.",
+      "upcoming": "Upcoming",
+      "past": "Recent",
+      "empty": "No events to show.",
+      "cancelled": "Cancelled",
+      "categories": {
+        "academic": "Academic",
+        "competition": "Competition",
+        "meeting": "Meeting",
+        "parent_meeting": "Parent meeting",
+        "school": "School event",
+        "exam": "Exam",
+        "holiday": "Holiday",
+        "other": "Other"
+      }
+    },
+    "documents": {
+      "title": "Documents",
+      "description": "Regulations, forms and official school documents.",
+      "search": "Search documents",
+      "category": "Category",
+      "empty": "No documents found.",
+      "document": "Document",
+      "folder": "Folder",
+      "published": "Published",
+      "file": "File",
+      "download": "Download ({size})",
+      "categories": {
+        "regulation": "Regulation",
+        "instruction": "Instruction",
+        "form": "Form",
+        "policy": "Policy",
+        "schedule": "Schedule",
+        "notice": "Notice",
+        "educational": "Educational material",
+        "report": "Report",
+        "other": "Other"
+      }
+    },
+    "news": {
+      "title": "News",
+      "description": "News from the school community.",
+      "breadcrumb": "Breadcrumb",
+      "search": "Search news",
+      "category": "Category",
+      "language": "Language",
+      "empty": "No news has been published yet.",
+      "featured": "Featured",
+      "notPublished": "This article is not published.",
+      "edit": "Edit",
+      "myArticles": "My articles",
+      "myArticlesDescription": "Drafts and articles you have written. Articles are published after review by an editor.",
+      "newArticle": "New article",
+      "editArticle": "Edit article",
+      "noArticles": "You have not written any articles yet.",
+      "articleTitle": "Title",
+      "status": "Status",
+      "updated": "Updated",
+      "returnedShort": "Returned for changes",
+      "delete": "Delete draft",
+      "deleteTitle": "Delete this draft?",
+      "deleteDescription": "The draft will be removed permanently.",
+      "saved": {
+        "draft": "The article has been saved.",
+        "review": "The article has been sent for review.",
+        "deleted": "The draft has been deleted."
+      }
+    },
+    "newsEditor": {
+      "sections": {
+        "content": "Content",
+        "media": "Cover image",
+        "seo": "Address and search",
+        "publishing": "Publishing"
+      },
+      "title": "Title",
+      "summary": "Summary",
+      "summaryHint": "One or two sentences shown in news lists.",
+      "body": "Article text",
+      "write": "Write",
+      "preview": "Preview",
+      "previewEmpty": "Nothing to preview yet.",
+      "formatting": "Formatting: ## heading, **bold**, *italic*, - list item, > quote, [link text](https://…).",
+      "keepCover": "Keep the current cover image",
+      "cover": "New cover image",
+      "coverHint": "JPEG, PNG or WebP, landscape orientation recommended.",
+      "slug": "Web address",
+      "slugHint": "Latin letters, numbers and hyphens. Generated from the title when empty.",
+      "seoTitle": "Search title",
+      "seoDescription": "Search description",
+      "returned": "Returned by the editor: {reason}",
+      "visibility": "Visibility",
+      "visibilityOptions": {
+        "public": "Public website",
+        "school": "School members",
+        "staff": "Staff only"
+      },
+      "language": "Language",
+      "category": "Category",
+      "noCategory": "No category",
+      "tags": "Tags",
+      "tagsHint": "Separate tags with commas.",
+      "publishAt": "Publication date",
+      "publishAtHint": "Leave empty to publish immediately. A future date schedules the article.",
+      "expiresAt": "Hide after",
+      "featured": "Feature on the home page",
+      "currentStatus": "Current status: {status}",
+      "status": {
+        "draft": "Draft",
+        "review": "In review",
+        "approved": "Approved",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "actions": {
+        "saveDraft": "Save draft",
+        "unpublishSave": "Unpublish and save as draft",
+        "submitReview": "Submit for review",
+        "publish": "Publish",
+        "update": "Save published article",
+        "archive": "Archive",
+        "restore": "Restore as draft"
+      },
+      "publishHint": "Publishing makes the article visible to its audience at the publication date.",
+      "reviewHint": "An editor reviews the article before it is published."
+    },
+    "library": {
+      "title": "Library",
+      "description": "Books, textbooks and learning materials of the school library.",
+      "manage": "Manage library",
+      "views": "Library sections",
+      "view": {
+        "catalog": "Catalog",
+        "favorites": "Favorites",
+        "history": "Recently opened"
+      },
+      "search": "Search by title, author or ISBN",
+      "category": "Category",
+      "language": "Language",
+      "format": "Format",
+      "sort": "Sort",
+      "sorts": {
+        "recent": "Newest first",
+        "title": "Title",
+        "popular": "Most viewed"
+      },
+      "empty": {
+        "catalog": "No books match the selected filters.",
+        "favorites": "You have no favorite books yet.",
+        "history": "You have not opened any books yet."
+      },
+      "fileTypes": {
+        "pdf": "PDF",
+        "epub": "EPUB",
+        "audio": "Audio",
+        "image": "Image",
+        "document": "Document"
+      },
+      "onShelf": "Available",
+      "allOnLoan": "All copies on loan",
+      "breadcrumb": "Breadcrumb",
+      "editBook": "Edit book",
+      "notPublished": "This book is not published.",
+      "coverOf": "Cover of {title}",
+      "read": "Read online",
+      "download": "Download ({size})",
+      "printOnly": "This book is available in print at the school library.",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "favoriteAdded": "Added to favorites.",
+      "favoriteRemoved": "Removed from favorites.",
+      "lastOpened": "Last opened {date}",
+      "author": "Author",
+      "subject": "Subject",
+      "gradeLevel": "Grade",
+      "grade": "Grade {grade}",
+      "publisher": "Publisher",
+      "year": "Year",
+      "pages": "Pages",
+      "copies": "Printed copies",
+      "copiesValue": "{available} of {total} available",
+      "shelf": "Shelf"
+    },
+    "messages": {
+      "title": "Messages",
+      "new": "New conversation",
+      "mode": {
+        "direct": "Person",
+        "group": "Group"
+      },
+      "groupName": "Group name",
+      "selectedMembers": "Selected members",
+      "removeSelected": "Remove {name}",
+      "createGroup": "{count, plural, =0 {Create group} one {Create group with # person} other {Create group with # people}}",
+      "searchPeople": "Find a person",
+      "searchPlaceholder": "Type at least two letters of a name",
+      "searchHint": "Only people you are allowed to contact under school rules are shown.",
+      "noContacts": "No one found.",
+      "filter": "Filter conversations",
+      "noConversations": "No conversations yet.",
+      "noMatches": "No conversations match.",
+      "noMessagesYet": "No messages yet",
+      "deletedMessage": "Message deleted",
+      "you": "You",
+      "muted": "Notifications muted",
+      "unread": "{count, plural, one {# unread message} other {# unread messages}}",
+      "unknownUser": "Former member",
+      "selectConversation": "Select a conversation",
+      "selectConversationHint": "Choose a conversation from the list or start a new one.",
+      "back": "Back to conversations",
+      "memberCount": "{count, plural, one {# member} other {# members}}",
+      "conversationMenu": "Conversation options",
+      "mute": "Mute notifications",
+      "unmute": "Unmute notifications",
+      "mutedToast": "Notifications for this conversation are muted.",
+      "unmutedToast": "Notifications for this conversation are on.",
+      "members": "Members",
+      "groupAdmin": "Administrator",
+      "addMembers": "Add members",
+      "addSelected": "{count, plural, =0 {Add} one {Add # person} other {Add # people}}",
+      "membersAdded": "Members added.",
+      "removeMember": "Remove {name} from the group",
+      "memberRemoved": "Member removed.",
+      "block": "Block user",
+      "unblock": "Unblock",
+      "blocked": "The user is blocked. They can no longer message you.",
+      "unblocked": "The user is unblocked.",
+      "youBlocked": "You have blocked this user.",
+      "leave": "Leave group",
+      "pinned": "Pinned messages",
+      "pinnedMessage": "Pinned",
+      "history": "Conversation history",
+      "loadOlder": "Load earlier messages",
+      "emptyThread": "No messages yet. Write the first one.",
+      "replyEarlier": "Reply to an earlier message",
+      "edited": "edited",
+      "favorite": "Save to favorites",
+      "unfavorite": "Remove from favorites",
+      "messageActions": "Message options",
+      "reply": "Reply",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "deleteForMe": "Delete for me",
+      "deleteForEveryone": "Delete for everyone",
+      "report": "Report",
+      "readOnlyChannel": "Only channel administrators can post here.",
+      "editing": "Editing message",
+      "replyingTo": "Replying to {name}",
+      "composer": "Message",
+      "composerPlaceholder": "Write a message…",
+      "composerHint": "Press Enter to send, Shift+Enter for a new line.",
+      "send": "Send",
+      "reportTitle": "Report message",
+      "reportDescription": "The report is sent to the school's moderators. Only the reported message and nearby messages are reviewed.",
+      "reportReason": "Reason",
+      "reportDetails": "Details",
+      "sendReport": "Send report",
+      "reported": "Thank you. The report has been sent to the moderators.",
+      "reasons": {
+        "abuse": "Abuse or threats",
+        "bullying": "Bullying",
+        "spam": "Spam",
+        "inappropriate": "Inappropriate content",
+        "privacy": "Personal information",
+        "other": "Other"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Updates about grades, homework, messages and school announcements.",
+      "markAllRead": "Mark all as read",
+      "allRead": "All notifications are marked as read.",
+      "clearRead": "Delete read",
+      "cleared": "Read notifications deleted.",
+      "views": "Notification filters",
+      "all": "All",
+      "unread": "Unread",
+      "unreadLabel": "Unread",
+      "type": "Category",
+      "empty": "You have no notifications.",
+      "emptyUnread": "You have no unread notifications.",
+      "types": {
+        "message": "Messages",
+        "grade": "Grades",
+        "homework": "Homework",
+        "schedule": "Timetable",
+        "attendance": "Attendance",
+        "announcement": "Announcements",
+        "document": "Documents",
+        "library": "Library",
+        "system": "System",
+        "friend": "Contacts",
+        "event": "Events",
+        "news": "News",
+        "registration": "Registrations",
+        "moderation": "Moderation",
+        "broadcast": "School notices"
+      },
+      "templates": {
+        "message_new": {
+          "title": "{count, plural, one {New message from {sender}} other {# new messages from {sender}}}",
+          "body": "Open the conversation to read it."
+        },
+        "grade_new": {
+          "title": "New grade: {subject}",
+          "body": "Score {score} out of {max}."
+        },
+        "attendance_absent": {
+          "title": "Absence recorded: {student}",
+          "body": "Marked absent on {date}."
+        },
+        "attendance_late": {
+          "title": "Late arrival recorded: {student}",
+          "body": "Marked late on {date}."
+        },
+        "homework_published": {
+          "title": "New homework: {title}",
+          "body": "Due {due}."
+        },
+        "announcement_published": {
+          "title": "New announcement",
+          "body": "{title}"
+        },
+        "registration_pending": {
+          "title": "New registration request",
+          "body": "{name} is waiting for approval."
+        },
+        "moderation_report": {
+          "title": "{count, plural, one {A message was reported} other {# messages were reported}}",
+          "body": "Reason: {reason}."
+        },
+        "friend_request": {
+          "title": "Contact request",
+          "body": "{name} wants to add you to contacts."
+        },
+        "friend_accepted": {
+          "title": "Contact request accepted",
+          "body": "{name} accepted your request."
+        }
+      }
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your account details at the school.",
+      "publicId": "Account ID",
+      "email": "Email",
+      "dateOfBirth": "Date of birth",
+      "memberSince": "Member since",
+      "officialFieldsHint": "Your name, date of birth and roles are maintained by the school administration. Contact them to correct these details.",
+      "contact": "Contact details and photo",
+      "contactHint": "The phone number is visible only to school staff with access to personal records.",
+      "phone": "Phone",
+      "photo": "Profile photo",
+      "photoHint": "JPEG, PNG or WebP up to 2 MB.",
+      "removePhoto": "Remove current photo",
+      "saveContact": "Save",
+      "saved": "Your profile has been updated.",
+      "password": "Password",
+      "passwordHint": "For your security, enter your current password first.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "passwordRules": "At least 10 characters, including letters and numbers.",
+      "confirmPassword": "Repeat new password",
+      "changePassword": "Change password",
+      "passwordChanged": "Your password has been changed."
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Language and notification preferences.",
+      "language": "Interface language",
+      "languageHint": "Applies to this device and your account.",
+      "notifications": "Notifications",
+      "notificationsHint": "Choose which notifications you receive. Important school notices may still be delivered.",
+      "enableAll": "Receive notifications",
+      "enableAllHint": "Turn off to pause all personal notifications.",
+      "categories": "Categories",
+      "save": "Save preferences"
+    },
+    "friends": {
+      "title": "Contacts",
+      "description": "People from your school you are connected with.",
+      "breadcrumb": "Breadcrumb",
+      "views": "Contact lists",
+      "view": {
+        "friends": "Contacts",
+        "incoming": "Requests",
+        "outgoing": "Sent",
+        "find": "Find people"
+      },
+      "empty": {
+        "friends": "You have no contacts yet.",
+        "incoming": "No incoming requests.",
+        "outgoing": "No pending requests sent."
+      },
+      "search": "Search people by name",
+      "searchHint": "Type at least two letters of a name to search.",
+      "noResults": "No one found.",
+      "unknown": "Former member",
+      "add": "Add to contacts",
+      "alreadyConnected": "Already connected or requested",
+      "accept": "Accept",
+      "decline": "Decline",
+      "cancelRequest": "Cancel request",
+      "remove": "Remove",
+      "message": "Send message",
+      "requestPending": "Request sent",
+      "connected": "In your contacts",
+      "requestSent": "Contact request sent.",
+      "done": {
+        "accept": "Request accepted.",
+        "reject": "Request declined.",
+        "cancel": "Request cancelled.",
+        "remove": "Contact removed."
+      }
+    }
+  }
+}

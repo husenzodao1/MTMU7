@@ -51,6 +51,17 @@ export function ilikePattern(query: string): string {
   return `%${query.replace(/[\\%_,()]/g, (c) => `\\${c}`)}%`;
 }
 
+/**
+ * Builds a multi-column PostgREST `or` ilike filter. Characters that carry
+ * meaning in the `or` grammar or in LIKE patterns are removed from the term,
+ * so user input can never add conditions.
+ */
+export function ilikeAny(columns: readonly string[], query: string): string | null {
+  const term = query.replace(/[\\%_,()"'*:.]/g, " ").replace(/\s+/g, " ").trim();
+  if (!term) return null;
+  return columns.map((column) => `${column}.ilike.%${term}%`).join(",");
+}
+
 export function buildQueryString(base: SearchParams, patch: Record<string, string | number | null | undefined>): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(base)) {

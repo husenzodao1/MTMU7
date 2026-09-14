@@ -46,6 +46,19 @@ export function formatDateTime(value: string | Date | null | undefined, locale: 
   ).format(date);
 }
 
+/** Hours and minutes of an instant in the given time zone. */
+export function formatClock(value: string | Date | null | undefined, locale: Locale, timeZone = DEFAULT_TIME_ZONE): string {
+  const date = toDate(value);
+  if (!date) return "";
+  return safeFormatter((l) => new Intl.DateTimeFormat(l, { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone }), locale).format(date);
+}
+
+/** Calendar day (YYYY-MM-DD) of an instant in the given time zone, for grouping. */
+export function dayKey(value: string | Date, timeZone = DEFAULT_TIME_ZONE): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
 export function formatTime(value: string | null | undefined): string {
   if (!value) return "";
   return value.slice(0, 5);

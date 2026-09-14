@@ -68,7 +68,8 @@
     "rate_limited": "Too many attempts. Please wait and try again.",
     "invalid_credentials": "The email or password is incorrect.",
     "invalid_code": "The code is incorrect or has expired.",
-    "account_inactive": "This account is not active. Contact the school administrator."
+    "account_inactive": "This account is not active. Contact the school administrator.",
+    "friend_request_exists": "A contact request between you already exists."
   },
   "validation": {
     "required": "This field is required.",
@@ -87,6 +88,8 @@
     "slug": "Use lowercase Latin letters, numbers and hyphens.",
     "phone": "Enter a valid phone number.",
     "url": "Enter a valid web address starting with https://.",
-    "score": "The score must be between 0 and the maximum."
+    "score": "The score must be between 0 and the maximum.",
+    "currentPassword": "The current password is incorrect.",
+    "passwordSame": "The new password must be different from the current one."
   }
 }

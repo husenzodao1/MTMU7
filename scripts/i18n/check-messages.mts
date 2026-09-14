@@ -20,7 +20,10 @@ function flatten(value: unknown, prefix = "", out = new Map<string, string>()): 
 }
 
 function placeholders(message: string): string[] {
-  const names = [...message.matchAll(/\{\s*([a-zA-Z0-9_]+)\s*(?:\}|,\s*(?:plural|select|selectordinal|number|date|time)\b)/g)].map((m) => m[1]!);
+  // A `{word}` right after a plural/select branch selector is branch text, not an argument.
+  const names = [
+    ...message.matchAll(/(?<!(?:=\d+|zero|one|two|few|many|other)\s*)\{\s*([a-zA-Z0-9_]+)\s*(?:\}|,\s*(?:plural|select|selectordinal|number|date|time)\b)/g),
+  ].map((m) => m[1]!);
   return [...new Set(names)].sort();
 }
 

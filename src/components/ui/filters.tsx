@@ -11,6 +11,8 @@ export interface FilterDefinition {
   name: string;
   label: string;
   options: Array<{ value: string; label: string }>;
+  /** Label of the empty choice (defaults to "All"). */
+  emptyLabel?: string;
 }
 
 /**
@@ -65,7 +67,7 @@ export function FilterBar({ searchLabel, filters = [], searchPlaceholder }: { se
             {filter.label}
           </label>
           <Select id={`filter-${filter.name}`} value={params.get(filter.name) ?? ""} onChange={(e) => navigate({ [filter.name]: e.target.value || null })}>
-            <option value="">{t("all")}</option>
+            <option value="">{filter.emptyLabel ?? t("all")}</option>
             {filter.options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
