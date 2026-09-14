@@ -1,0 +1,12 @@
+export const DOCUMENT_CATEGORIES = ["regulation", "instruction", "form", "policy", "schedule", "notice", "educational", "report", "other"] as const;
+export const DOCUMENT_ACCESS = ["public", "school", "staff", "roles"] as const;
+export const EVENT_CATEGORIES = ["academic", "competition", "meeting", "parent_meeting", "school", "exam", "holiday", "other"] as const;
+export const EVENT_AUDIENCES = ["public", "school", "staff", "students", "parents"] as const;
+export const ANNOUNCEMENT_AUDIENCES = ["school", "staff", "students", "parents", "roles", "classes", "users", "public"] as const;
+export const ANNOUNCEMENT_PRIORITIES = ["normal", "important", "critical"] as const;
+export const NEWS_STATUSES = ["draft", "review", "approved", "published", "archived"] as const;
+export const NEWS_VISIBILITY = ["public", "school", "staff"] as const;
+export const CONTENT_LANGUAGES = ["tg", "ru", "en"] as const;
+export const LIBRARY_VISIBILITY = ["public", "all", "teachers", "admin", "specific"] as const;
+export const LIBRARY_STATUSES = ["draft", "published", "archived"] as const;
+export const ROLE_SLUGS = ["admin", "director", "vice_principal", "teacher", "librarian", "staff", "student", "parent"] as const;

@@ -4715,6 +4715,7 @@ export type Database = {
       admin_set_user_status: { Args: { p_user_id: string; p_status: string; p_reason?: string }; Returns: undefined };
       analytics_overview: { Args: { p_school_id?: string }; Returns: Json };
       change_student_status: { Args: { p_student_ids: string[]; p_status: string; p_effective_date?: string; p_reason?: string }; Returns: number };
+      class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };
       create_group_conversation: { Args: { p_name: string; p_member_ids: string[] }; Returns: string };
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
@@ -4735,6 +4736,7 @@ export type Database = {
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };
+      my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       promote_students: { Args: { p_from_class_id: string; p_to_class_id: string; p_student_ids: string[] }; Returns: number };
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };
       record_news_view: { Args: { p_article_id: string }; Returns: undefined };
