@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { mapDbError } from "@/lib/actions/errors";
-import { done, failure, formDataToObject, parseInput, type FormState } from "@/lib/actions/result";
+import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, canAny, getAccess } from "@/lib/auth/access";
 import { localInputToIso } from "@/lib/i18n/zoned";
 import { isValidStoragePath } from "@/lib/storage/files";
@@ -108,6 +108,8 @@ export async function saveArticleAction(_state: FormState, formData: FormData): 
     publish_at: publishAt,
     expires_at: expiresAt,
     status,
+    // A resubmitted or published article no longer carries the editor's return note.
+    ...(v.intent === "review" || v.intent === "publish" || v.intent === "approve" ? { rejection_reason: null } : {}),
     ...(isEditor ? { is_featured: v.isFeatured } : {}),
     ...(coverImageUrl !== undefined ? { cover_image_url: coverImageUrl } : {}),
   };
@@ -152,4 +154,56 @@ export async function deleteDraftArticleAction(_state: FormState, formData: Form
   revalidatePath("/admin/news");
   const returnTo = formData.get("returnTo") === "admin" ? "/admin/news" : "/news/mine";
   redirect(`${returnTo}?saved=deleted`);
+}
+
+/** Editor returns an article in review to its author with a note. */
+export async function returnArticleAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const access = await getAccess();
+  if (!access?.school) return done(failure("errors.not_authenticated"));
+  if (!can(access, "news.publish")) return done(failure("errors.forbidden"));
+  const parsed = z
+    .object({ id: z.string().uuid(), reason: z.string().trim().min(3, "validation.too_small").max(500, "validation.too_big") })
+    .safeParse({ id: formData.get("id"), reason: formData.get("reason") });
+  if (!parsed.success) return done(failure("errors.validation", { reason: ["validation.required"] }));
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("news_articles")
+    .update({ status: "draft", rejection_reason: parsed.data.reason }, { count: "exact" })
+    .eq("id", parsed.data.id)
+    .eq("status", "review");
+  if (error) return done(mapDbError(error));
+  if (!count) return done(failure("errors.conflict"));
+  revalidatePath("/admin/news");
+  redirect("/admin/news?saved=returned");
+}
+
+const categorySchema = z.object({
+  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  nameTg: z.string().trim().min(1, "validation.required").max(100, "validation.too_big"),
+  nameRu: z.string().trim().max(100).optional().transform((v) => v || null),
+  nameEn: z.string().trim().max(100).optional().transform((v) => v || null),
+  sortOrder: z.coerce.number().int().min(0).max(1000).default(0),
+  isActive: z.string().optional().transform((v) => v === "on"),
+});
+
+export async function saveNewsCategoryAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const access = await getAccess();
+  if (!access?.school) return done(failure("errors.not_authenticated"));
+  if (!canAny(access, ["news.publish", "news.update"])) return done(failure("errors.forbidden"));
+  const input = parseInput(categorySchema, formDataToObject(formData));
+  if (!input.ok) return done(input.result);
+  const v = input.data;
+  const supabase = await createClient();
+  const row = { name_tg: v.nameTg, name_ru: v.nameRu, name_en: v.nameEn, sort_order: v.sortOrder };
+  const { error } = v.id
+    ? await supabase.from("news_categories").update({ ...row, is_active: v.isActive }).eq("id", v.id)
+    : await supabase.from("news_categories").insert({
+        ...row,
+        school_id: access.school.id,
+        slug: `${(v.nameEn ?? v.nameRu ?? v.nameTg).toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "category"}-${Math.random().toString(36).slice(2, 6)}`,
+      });
+  if (error) return done(error.code === "23505" ? failure("errors.duplicate") : mapDbError(error));
+  revalidatePath("/admin/news");
+  revalidatePath("/news");
+  return done(success(v.id ? "common.saved" : "common.created"));
 }
