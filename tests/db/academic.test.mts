@@ -152,7 +152,7 @@ describe("gradebook", () => {
 });
 
 describe("attendance", () => {
-  const mark = (userId: string, classId: string, classSubject: string | null, student: string, date = "current_date") =>
+  const mark = (userId: string, classId: string, classSubject: string | null, student: string, date = "app.school_today($1)") =>
     asUser(db, userId, (tx) =>
       tx.query(
         `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, status)
@@ -173,11 +173,64 @@ describe("attendance", () => {
   it("prevents duplicate marks, future dates and late corrections by teachers", async () => {
     const duplicate = await errorOf(() => mark(t.users.teacherA, a.class9A, a.mathA, a.students.studentA));
     assert.match(duplicate ?? "", /attendance_unique/);
-    const future = await errorOf(() => mark(t.users.teacherA, a.class9A, a.mathA, a.students.unlinkedA, "current_date + 1"));
+    const future = await errorOf(() => mark(t.users.teacherA, a.class9A, a.mathA, a.students.unlinkedA, "app.school_today($1) + 1"));
     assert.match(future ?? "", /future date/);
-    const late = await errorOf(() => mark(t.users.teacherA, a.class9A, a.mathA, a.students.unlinkedA, "current_date - 20"));
+    const late = await errorOf(() => mark(t.users.teacherA, a.class9A, a.mathA, a.students.unlinkedA, "app.school_today($1) - 20"));
     assert.match(late ?? "", /correction window/);
-    await mark(t.users.adminA, a.class9A, a.mathA, a.students.unlinkedA, "current_date - 20");
+    await mark(t.users.adminA, a.class9A, a.mathA, a.students.unlinkedA, "app.school_today($1) - 20");
+  });
+
+  it("lets a substitute teacher mark attendance only for the covered lesson", async () => {
+    const day = (await one<{ d: string; dow: number }>(
+      db,
+      `SELECT (app.school_today($1) - CASE WHEN extract(isodow FROM app.school_today($1)) = 7 THEN 1 ELSE 0 END)::text AS d`,
+      [SCHOOL_A]
+    ))!.d;
+    const dow = (await one<{ dow: number }>(db, `SELECT extract(isodow FROM $1::date)::int AS dow`, [day]))!.dow;
+    const entry = (await asUser(db, t.users.adminA, (tx) =>
+      one<{ id: string }>(tx,
+        `INSERT INTO public.timetable_entries (school_id, academic_year_id, class_id, class_subject_id, teacher_id, day_of_week, period_number)
+         VALUES ($1, $2, $3, $4, $5, $6, 7) RETURNING id`,
+        [SCHOOL_A, a.yearA, a.class9A, a.mathA, a.staff.teacherA, dow])))!.id;
+    const markAs = (period: number) =>
+      asUser(db, t.users.teacher2A, (tx) =>
+        tx.query(
+          `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, period_number, status)
+           VALUES ($1, $2, $3, $4, $5::date, $6, 'present')`,
+          [SCHOOL_A, a.students.unlinkedA, a.class9A, a.mathA, day, period]));
+
+    const before = await errorOf(() => markAs(7));
+    assert.match(before ?? "", /row-level security/);
+    await asUser(db, t.users.adminA, (tx) =>
+      tx.query(`INSERT INTO public.substitutions (school_id, timetable_entry_id, substitution_date, substitute_teacher_id) VALUES ($1, $2, $3::date, $4)`,
+        [SCHOOL_A, entry, day, a.staff.teacher2A]));
+    await markAs(7);
+    const otherPeriod = await errorOf(() => markAs(8));
+    assert.match(otherPeriod ?? "", /row-level security/);
+    const grade = await errorOf(() => insertGrade(t.users.teacher2A, a.mathA, a.students.unlinkedA));
+    assert.match(grade ?? "", /row-level security/);
+    await db.query(`DELETE FROM public.attendance_records WHERE class_subject_id = $1 AND period_number = 7`, [a.mathA]);
+    await db.query(`DELETE FROM public.timetable_entries WHERE id = $1`, [entry]);
+  });
+
+  it("resolves 'today' in the school's time zone and rejects unknown zones", async () => {
+    const zones = await one<{ utc: string; school: string; expected: string }>(
+      db,
+      `SELECT (now() AT TIME ZONE 'UTC')::date::text AS utc, app.school_today($1)::text AS school,
+              (now() AT TIME ZONE 'Asia/Dushanbe')::date::text AS expected`,
+      [SCHOOL_A]
+    );
+    assert.equal(zones!.school, zones!.expected);
+    const invalid = await errorOf(() => db.query(`UPDATE public.schools SET timezone = 'Mars/Olympus' WHERE id = $1`, [SCHOOL_A]));
+    assert.match(invalid ?? "", /invalid time zone/);
+    await db.query(`UPDATE public.schools SET timezone = 'Pacific/Kiritimati' WHERE id = $1`, [SCHOOL_A]);
+    const far = await one<{ school: string; expected: string }>(
+      db,
+      `SELECT app.school_today($1)::text AS school, (now() AT TIME ZONE 'Pacific/Kiritimati')::date::text AS expected`,
+      [SCHOOL_A]
+    );
+    assert.equal(far!.school, far!.expected);
+    await db.query(`UPDATE public.schools SET timezone = 'Asia/Dushanbe' WHERE id = $1`, [SCHOOL_A]);
   });
 
   it("shows attendance to the family and not to other students", async () => {
