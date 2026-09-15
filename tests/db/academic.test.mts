@@ -180,6 +180,23 @@ describe("attendance", () => {
     await mark(t.users.adminA, a.class9A, a.mathA, a.students.unlinkedA, "app.school_today($1) - 20");
   });
 
+  it("supports register upserts on the nullable natural key (daily and lesson registers)", async () => {
+    const upsert = (status: string) =>
+      asUser(db, t.users.teacherA, (tx) =>
+        tx.query(
+          `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, period_number, status)
+           VALUES ($1, $2, $3, NULL, app.school_today($1) - 1, NULL, $4)
+           ON CONFLICT (student_id, attendance_date, class_subject_id, period_number)
+           DO UPDATE SET status = EXCLUDED.status`,
+          [SCHOOL_A, a.students.unlinkedA, a.class9A, status]));
+    await upsert("present");
+    await upsert("absent");
+    const stored = await rows<{ status: string }>(db,
+      `SELECT status FROM public.attendance_records WHERE student_id = $1 AND class_subject_id IS NULL AND attendance_date = app.school_today($2) - 1`,
+      [a.students.unlinkedA, SCHOOL_A]);
+    assert.deepEqual(stored.map((r) => r.status), ["absent"]);
+  });
+
   it("lets a substitute teacher mark attendance only for the covered lesson", async () => {
     const day = (await one<{ d: string; dow: number }>(
       db,

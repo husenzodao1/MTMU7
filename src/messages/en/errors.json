@@ -90,6 +90,8 @@
     "url": "Enter a valid web address starting with https://.",
     "score": "The score must be between 0 and the maximum.",
     "currentPassword": "The current password is incorrect.",
-    "passwordSame": "The new password must be different from the current one."
+    "passwordSame": "The new password must be different from the current one.",
+    "dueInPast": "The due date has already passed.",
+    "minutesLate": "Enter minutes between 1 and 240."
   }
 }
