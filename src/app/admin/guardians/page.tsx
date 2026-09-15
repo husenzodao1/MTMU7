@@ -24,19 +24,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("guardians") };
 }
 
-function GuardianFields({ values, t }: { values?: { last_name: string; first_name: string; middle_name: string | null; phone: string | null; email: string | null; address: string | null }; t: (key: string) => string }) {
+function GuardianFields({ values, label }: { values?: { last_name: string; first_name: string; middle_name: string | null; phone: string | null; email: string | null; address: string | null }; label: (key: string) => string }) {
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-3">
-        <TextField name="lastName" label={t("lastName")} defaultValue={values?.last_name} required maxLength={100} />
-        <TextField name="firstName" label={t("firstName")} defaultValue={values?.first_name} required maxLength={100} />
-        <TextField name="middleName" label={t("middleName")} defaultValue={values?.middle_name ?? ""} maxLength={100} />
+        <TextField name="lastName" label={label("lastName")} defaultValue={values?.last_name} required maxLength={100} />
+        <TextField name="firstName" label={label("firstName")} defaultValue={values?.first_name} required maxLength={100} />
+        <TextField name="middleName" label={label("middleName")} defaultValue={values?.middle_name ?? ""} maxLength={100} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <TextField name="phone" type="tel" label={t("phone")} defaultValue={values?.phone ?? ""} maxLength={50} />
-        <TextField name="email" type="email" label={t("email")} defaultValue={values?.email ?? ""} maxLength={255} />
+        <TextField name="phone" type="tel" label={label("phone")} defaultValue={values?.phone ?? ""} maxLength={50} />
+        <TextField name="email" type="email" label={label("email")} defaultValue={values?.email ?? ""} maxLength={255} />
       </div>
-      <TextField name="address" label={t("address")} defaultValue={values?.address ?? ""} maxLength={500} />
+      <TextField name="address" label={label("address")} defaultValue={values?.address ?? ""} maxLength={500} />
     </>
   );
 }
@@ -81,7 +81,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
         description={t("description")}
         actions={manage ? (
           <FormDialog action={saveGuardianAction} trigger={<Button><Plus aria-hidden />{t("new")}</Button>} title={t("new")} description={t("newHint")} submitLabel={tp("save")} size="md">
-            <GuardianFields t={tp} />
+            <GuardianFields label={tp} />
           </FormDialog>
         ) : null}
       />
@@ -129,7 +129,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
             {manage ? (
               <FormDialog action={saveGuardianAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: fullName(r) })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tp("save")} size="md">
                 <input type="hidden" name="id" value={r.id} />
-                <GuardianFields t={tp} values={r} />
+                <GuardianFields label={tp} values={r} />
               </FormDialog>
             ) : null}
             {can(access, "invitations.manage") && !r.user_id && !codeFor.get(r.id) && r.status === "active" ? (

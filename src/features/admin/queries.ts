@@ -44,3 +44,14 @@ export const getStaffOptions = cache(async (schoolId: string) => {
 export function fullName(p: { last_name: string; first_name: string; middle_name?: string | null }): string {
   return [p.last_name, p.first_name, p.middle_name].filter(Boolean).join(" ");
 }
+
+export const getSchoolRoles = cache(async (schoolId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("roles")
+    .select("id, slug, name_tg, name_ru, name_en, level, is_system, is_active")
+    .eq("school_id", schoolId)
+    .order("level")
+    .order("slug");
+  return data ?? [];
+});
