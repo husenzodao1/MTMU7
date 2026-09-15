@@ -44,6 +44,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .upsert({ user_id: userId, item_id: id, school_id: data.school_id, opened_at: new Date().toISOString() }, { onConflict: "user_id,item_id" });
       }
     }
+  } else if (kind === "document-versions") {
+    // Earlier versions are readable only by document managers (document_versions RLS).
+    const { data } = await supabase.from("document_versions").select("storage_path, file_name").eq("id", id).maybeSingle();
+    bucket = "documents";
+    path = data?.storage_path ?? null;
+    fileName = data?.file_name ?? null;
   } else if (kind === "announcements") {
     const { data } = await supabase.from("announcements").select("attachment_path, attachment_name").eq("id", id).maybeSingle();
     bucket = "documents";

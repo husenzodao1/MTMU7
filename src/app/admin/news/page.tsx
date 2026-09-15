@@ -140,9 +140,9 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
             ),
           },
           { key: "publish", header: t("publishAt"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{r.publish_at ? formatDateTime(r.publish_at, locale, timeZone) : "—"}</span> },
-          { key: "views", header: t("views"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
+          { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
         ]}
-        actions={(r) => (r.status === "published" && can(access, "news.view") ? <Link href={`/news/${r.slug}`} className={buttonClasses("ghost", "sm")}>{t("view")}</Link> : null)}
+        actions={(r) => (r.status === "published" && can(access, "news.view") ? <Link href={`/news/${r.slug}`} className={buttonClasses("ghost", "sm")}>{t("openArticle")}</Link> : null)}
       />
       <Pagination pathname="/admin/news" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
     </>

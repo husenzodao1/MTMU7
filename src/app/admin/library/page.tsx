@@ -130,7 +130,7 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
           },
           { key: "format", header: t("format"), cell: (r) => (r.file_type ? <Badge tone="brand">{r.file_type.toUpperCase()}</Badge> : <Badge>{t("printOnly")}</Badge>) },
           { key: "copies", header: t("copies"), hideOnMobile: true, cell: (r) => <span className="tabular">{r.quantity > 0 ? `${r.available_quantity} / ${r.quantity}` : "—"}</span> },
-          { key: "views", header: t("views"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
+          { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
           { key: "status", header: t("status"), cell: (r) => <span className="flex flex-wrap gap-1"><StatusBadge status={r.status} label={ts(r.status as "draft")} />{r.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}</span> },
         ]}
         actions={(r) => (canAny(access, ["library.update", "library.publish"]) ? <Link href={`/admin/library/${r.id}`} className={buttonClasses("ghost", "sm")}>{tc("edit")}</Link> : null)}

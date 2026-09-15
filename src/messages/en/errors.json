@@ -100,6 +100,9 @@
     "periodOverlap": "The period starts before the previous one ends.",
     "termOutsideYear": "The term must lie within the academic year.",
     "time": "Enter a time as HH:MM.",
-    "timeRange": "Enter a start and an end time; the end must be later."
+    "timeRange": "Enter a start and an end time; the end must be later.",
+    "altText": "Describe the image in at least 3 characters.",
+    "chooseOne": "Select at least one option.",
+    "isbn": "Enter a valid ISBN (10–17 digits, X or hyphens)."
   }
 }
