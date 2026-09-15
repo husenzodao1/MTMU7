@@ -94,6 +94,12 @@
     "dueInPast": "The due date has already passed.",
     "minutesLate": "Enter minutes between 1 and 240.",
     "duplicateNumber": "This number is already used by another record.",
-    "hours": "Enter hours between 1 and 60."
+    "hours": "Enter hours between 1 and 60.",
+    "code": "Use Latin letters, digits and underscores.",
+    "duplicateName": "This name is already used.",
+    "periodOverlap": "The period starts before the previous one ends.",
+    "termOutsideYear": "The term must lie within the academic year.",
+    "time": "Enter a time as HH:MM.",
+    "timeRange": "Enter a start and an end time; the end must be later."
   }
 }
