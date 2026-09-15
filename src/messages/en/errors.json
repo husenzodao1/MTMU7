@@ -103,6 +103,9 @@
     "timeRange": "Enter a start and an end time; the end must be later.",
     "altText": "Describe the image in at least 3 characters.",
     "chooseOne": "Select at least one option.",
-    "isbn": "Enter a valid ISBN (10–17 digits, X or hyphens)."
+    "isbn": "Enter a valid ISBN (10–17 digits, X or hyphens).",
+    "futureDate": "Choose a time in the future.",
+    "idPrefix": "Use 2–6 Latin capital letters.",
+    "internalLink": "Use an address inside the portal, starting with /."
   }
 }
