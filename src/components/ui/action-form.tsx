@@ -90,6 +90,46 @@ export function SubmitButton({ children, ...props }: ButtonProps) {
   );
 }
 
+/** A dialog containing a small form bound to a Server Action; closes on success. */
+export function FormDialog<T>({
+  action,
+  trigger,
+  title,
+  description,
+  submitLabel,
+  tone = "primary",
+  size = "sm",
+  children,
+}: {
+  action: ServerAction<T>;
+  trigger: ReactNode;
+  title: string;
+  description?: string;
+  submitLabel: string;
+  tone?: "danger" | "primary";
+  size?: "sm" | "md" | "lg";
+  children: ReactNode;
+}) {
+  const t = useTranslations("common");
+  const [open, setOpen] = useState(false);
+  return (
+    <Overlay.Dialog open={open} onOpenChange={setOpen}>
+      <Overlay.DialogTrigger asChild>{trigger}</Overlay.DialogTrigger>
+      <Overlay.DialogContent title={title} description={description} closeLabel={t("close")} size={size}>
+        <ActionForm action={action} onSuccess={() => setOpen(false)} className="space-y-4">
+          {children}
+          <div className="flex flex-wrap justify-end gap-2">
+            <Overlay.DialogClose asChild>
+              <Button variant="secondary">{t("cancel")}</Button>
+            </Overlay.DialogClose>
+            <SubmitButton variant={tone === "danger" ? "danger" : "primary"}>{submitLabel}</SubmitButton>
+          </div>
+        </ActionForm>
+      </Overlay.DialogContent>
+    </Overlay.Dialog>
+  );
+}
+
 /**
  * A button that runs a destructive or important Server Action after an
  * explicit confirmation dialog (spec §45, §62).
