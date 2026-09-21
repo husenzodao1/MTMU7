@@ -9,7 +9,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       <OfficialStrip />
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-          <Link href="/" className="text-base font-semibold text-ink hover:text-brand-700">
+          <Link href="/" className="text-base font-semibold text-ink hover:text-brand-text">
             {t("platformName")}
           </Link>
         </div>

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { Alert, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatShortDate } from "@/lib/i18n/format";
+import { formatMonth, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,25 +22,41 @@ const analyticsSchema = z.object({
   registrations_monthly: z.array(z.object({ month: z.string(), count: num })),
 });
 
-/** A labelled horizontal bar list: values are printed, so the chart is readable without colour or hover. */
+/**
+ * A labelled horizontal bar list with a printed value and a light scale, so it
+ * is readable without colour, hover or a charting library.
+ */
 function BarList({ items, max, unit, emptyLabel }: { items: Array<{ label: string; value: number; note?: string }>; max: number; unit?: string; emptyLabel: string }) {
   if (items.length === 0) return <p className="text-sm text-ink-muted">{emptyLabel}</p>;
+  const ticks = [0, max / 2, max];
   return (
-    <ul className="space-y-2">
-      {items.map((item) => (
-        <li key={item.label} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
-          <span className="truncate text-ink-secondary" title={item.label}>{item.label}</span>
-          <span className="h-2.5 rounded-full bg-surface-muted" aria-hidden>
-            <span className="block h-full rounded-full bg-brand-600" style={{ width: `${max > 0 ? Math.max(2, (item.value / max) * 100) : 0}%` }} />
-          </span>
-          <span className="tabular font-medium">
-            {item.value}
-            {unit}
-            {item.note ? <span className="ms-1 font-normal text-ink-muted">{item.note}</span> : null}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={item.label} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
+            <span className="truncate text-ink-secondary" title={item.label}>{item.label}</span>
+            <span className="relative h-2.5 rounded-full bg-surface-muted" aria-hidden>
+              <span className="absolute inset-y-0 left-1/2 w-px bg-line-strong/60" />
+              <span className="block h-full rounded-full bg-brand-solid" style={{ width: `${max > 0 ? Math.max(2, (item.value / max) * 100) : 0}%` }} />
+            </span>
+            <span className="tabular font-medium">
+              {item.value}
+              {unit}
+              {item.note ? <span className="ms-1 font-normal text-ink-muted">{item.note}</span> : null}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 grid grid-cols-[minmax(0,9rem)_1fr_auto] gap-3" aria-hidden>
+        <span />
+        <span className="flex justify-between text-xs tabular text-ink-muted">
+          {ticks.map((tick, index) => (
+            <span key={index}>{Math.round(tick)}{unit}</span>
+          ))}
+        </span>
+        <span />
+      </div>
+    </div>
   );
 }
 
@@ -114,7 +130,7 @@ export default async function AnalyticsPage() {
           <CardHeader title={t("registrations.title")} description={t("registrations.question")} />
           <CardBody>
             <BarList
-              items={a.registrations_monthly.map((m) => ({ label: formatShortDate(m.month, locale).slice(3), value: m.count }))}
+              items={a.registrations_monthly.map((m) => ({ label: formatMonth(m.month, locale), value: m.count }))}
               max={Math.max(0, ...a.registrations_monthly.map((m) => m.count))}
               emptyLabel={t("noData")}
             />

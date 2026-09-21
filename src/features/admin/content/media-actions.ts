@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { can, canAny, getAccess } from "@/lib/auth/access";
@@ -50,7 +51,7 @@ export async function deleteMediaAction(_state: FormState, formData: FormData): 
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
   if (!can(access, "media.manage")) return done(failure("errors.forbidden"));
-  const id = z.string().uuid().safeParse(formData.get("id"));
+  const id = uuid.safeParse(formData.get("id"));
   if (!id.success) return done(failure("errors.invalid"));
   const supabase = await createClient();
   const { data: asset } = await supabase.from("media_assets").select("id, bucket, storage_path").eq("id", id.data).maybeSingle();

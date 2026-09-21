@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-const uuid = z.string().uuid();
 const optionalUuid = uuid.optional().or(z.literal("")).transform((v) => v || null);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "validation.date");
 const checkbox = z.string().optional().transform((v) => v === "on");

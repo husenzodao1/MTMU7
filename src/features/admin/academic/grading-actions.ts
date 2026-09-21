@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-const uuid = z.string().uuid();
 
 /** Approves recorded grades; the grade trigger requires grades.approve and records who approved. */
 export async function approveGradesAction(_state: FormState, formData: FormData): Promise<FormState> {

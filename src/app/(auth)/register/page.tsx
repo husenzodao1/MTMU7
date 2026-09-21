@@ -30,7 +30,7 @@ function Steps({ current, labels }: { current: number; labels: string[] }) {
         const state = index < current ? "done" : index === current ? "current" : "todo";
         return (
           <li key={label} aria-current={state === "current" ? "step" : undefined} className="min-w-0">
-            <span className={`block h-1 rounded-full ${state === "todo" ? "bg-surface-sunken" : "bg-brand-600"}`} aria-hidden />
+            <span className={`block h-1 rounded-full ${state === "todo" ? "bg-surface-sunken" : "bg-brand-solid"}`} aria-hidden />
             <span className={`mt-1.5 block truncate text-xs ${state === "current" ? "font-semibold text-ink" : "text-ink-muted"}`}>{label}</span>
           </li>
         );
@@ -44,12 +44,29 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   const step = firstValue((await searchParams).step) ?? "details";
   const labels = [t("steps.details"), t("steps.verify"), t("steps.password")];
 
+  // A session may exist while the account has no profile row yet; that visitor
+  // belongs on the profile step, and anyone with a profile belongs in the
+  // portal. The proxy leaves this page alone so the two cannot bounce.
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const signedIn = Boolean(claims?.claims?.sub);
+  if (signedIn && (await getAccess())) redirect("/dashboard");
+  if (signedIn) {
+    // A submitted request waits for approval; do not ask for the profile again.
+    const { data: request } = await supabase
+      .from("registration_requests")
+      .select("status")
+      .eq("auth_user_id", claims!.claims.sub)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (request && request.status !== "rejected") redirect("/pending");
+    if (step !== "profile") redirect("/register?step=profile");
+  }
+
   if (step === "profile") {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getClaims();
-    if (!data?.claims?.sub) redirect("/login");
-    if (await getAccess()) redirect("/dashboard");
-    const email = typeof data.claims.email === "string" ? data.claims.email : "";
+    if (!signedIn) redirect("/login");
+    const email = typeof claims?.claims?.email === "string" ? claims.claims.email : "";
     return (
       <Card as="div">
         <CardBody className="p-6 sm:p-8">
@@ -106,7 +123,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         )}
         <p className="mt-5 border-t border-line pt-4 text-center text-sm text-ink-secondary">
           {t("haveAccount")}{" "}
-          <Link href="/login" className="font-medium text-brand-700 hover:underline">
+          <Link href="/login" className="font-medium text-brand-text hover:underline">
             {t("signIn")}
           </Link>
         </p>

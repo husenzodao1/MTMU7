@@ -6,6 +6,7 @@ import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { getClassOptions } from "@/features/admin/queries";
 import { isReportKey, readReportParams, REPORT_KEYS, runReport } from "@/features/admin/reports/definitions";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { PrintButton } from "@/components/ui/print-button";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
@@ -53,7 +54,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   return (
     <>
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
-      <nav aria-label={t("choose")} className="mb-5">
+      <nav aria-label={t("choose")} className="mb-5 print:hidden">
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {REPORT_KEYS.map((key) => (
             <li key={key}>
@@ -74,15 +75,20 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Card>
           <CardHeader
             title={t(`kinds.${report}.name`)}
-            actions={can(access, "reports.export") && result.rows.length > 0 ? (
-              <a href={`/admin/reports/export?${exportQuery.toString()}`} className={buttonClasses("secondary", "sm")}>
-                <Download aria-hidden />
-                {tc("exportCsv")}
-              </a>
-            ) : null}
+            actions={
+              <span className="flex flex-wrap items-center gap-2 print:hidden">
+                {result.rows.length > 0 ? <PrintButton /> : null}
+                {can(access, "reports.export") && result.rows.length > 0 ? (
+                  <a href={`/admin/reports/export?${exportQuery.toString()}`} className={buttonClasses("secondary", "sm")}>
+                    <Download aria-hidden />
+                    {tc("exportCsv")}
+                  </a>
+                ) : null}
+              </span>
+            }
           />
           <CardBody className="space-y-4">
-            <form method="get" className="flex flex-wrap items-end gap-3">
+            <form method="get" className="flex flex-wrap items-end gap-3 print:hidden">
               <input type="hidden" name="report" value={report} />
               {report === "attendance" || report === "content" ? (
                 <>

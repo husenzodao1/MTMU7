@@ -100,7 +100,7 @@ export function ContactPicker({
                       <span className="block truncate text-sm font-medium text-ink">{name}</span>
                       {roles ? <span className="block truncate text-xs text-ink-muted">{roles}</span> : null}
                     </span>
-                    {multiple && isSelected ? <Check className="size-4 text-brand-700" aria-hidden /> : null}
+                    {multiple && isSelected ? <Check className="size-4 text-brand-text" aria-hidden /> : null}
                   </button>
                 </li>
               );

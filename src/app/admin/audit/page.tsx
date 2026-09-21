@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ScrollText } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
+import { getSchoolRoles } from "@/features/admin/queries";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/fields";
 import { Pagination } from "@/components/ui/pagination";
 import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
-import type { Locale } from "@/lib/i18n/text";
+import { pickText, type Locale } from "@/lib/i18n/text";
+import { localDayRangeIso } from "@/lib/i18n/zoned";
 import { firstValue, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,9 +50,12 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
     .range(list.offset, list.offset + list.pageSize - 1);
   if (action && SAFE_KEY.test(action)) query = query.eq("action", action);
   if (entity && SAFE_KEY.test(entity)) query = query.eq("entity_type", entity);
-  if (list.filters.from) query = query.gte("created_at", `${list.filters.from}T00:00:00Z`);
-  if (list.filters.to) query = query.lte("created_at", `${list.filters.to}T23:59:59Z`);
-  const { data, count } = await query;
+  // The filter dates are the school's calendar days, not UTC days.
+  const range = localDayRangeIso(list.filters.from, list.filters.to, timeZone);
+  if (range.start) query = query.gte("created_at", range.start);
+  if (range.end) query = query.lt("created_at", range.end);
+  const [{ data, count }, roles] = await Promise.all([query, getSchoolRoles(access.school!.id)]);
+  const roleNames = new Map(roles.map((role) => [role.slug, pickText({ tg: role.name_tg, ru: role.name_ru, en: role.name_en }, locale)]));
 
   return (
     <>
@@ -63,7 +68,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
         <Button type="submit" variant="secondary">{t("filter")}</Button>
       </form>
       {!data || data.length === 0 ? (
-        <Card as="div"><EmptyState icon={<ScrollText />} title={t("empty")} /></Card>
+        <Card as="div"><EmptyState icon={<ScrollText />} title={t("empty")} description={t("emptyHint")} /></Card>
       ) : (
         <Card as="div">
           <CardBody className="p-0">
@@ -77,7 +82,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
                     <div className="min-w-0">
                       <p className="text-sm">
                         <span className="font-medium">{actor ? `${actor.last_name} ${actor.first_name}` : t("system")}</span>
-                        {entry.actor_role ? <span className="text-ink-muted"> ({entry.actor_role})</span> : null}{" "}
+                        {entry.actor_role ? <span className="text-ink-muted"> ({roleNames.get(entry.actor_role) || entry.actor_role})</span> : null}{" "}
                         <span>{ta.has(entry.action) ? ta(entry.action) : entry.action}</span>{" "}
                         <span className="font-mono text-ink-secondary">{entry.entity_type}</span>
                       </p>

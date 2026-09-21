@@ -77,7 +77,7 @@ export function NewsEditor({
                     role="tab"
                     aria-selected={tab === key}
                     onClick={() => setTab(key)}
-                    className={cn("rounded px-2.5 py-1 text-sm", tab === key ? "bg-brand-50 font-medium text-brand-800" : "text-ink-secondary hover:text-ink")}
+                    className={cn("rounded px-2.5 py-1 text-sm", tab === key ? "bg-brand-50 font-medium text-brand-text-strong" : "text-ink-secondary hover:text-ink")}
                   >
                     {t(key)}
                   </button>

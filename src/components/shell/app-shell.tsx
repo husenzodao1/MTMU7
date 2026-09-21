@@ -51,7 +51,7 @@ function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: strin
         // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
         <img src={school.logoUrl} alt="" className="size-9 shrink-0 rounded-md border border-line object-cover" />
       ) : (
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-600 text-sm font-semibold text-ink-inverse" aria-hidden>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-solid text-sm font-semibold text-ink-inverse" aria-hidden>
           {school.name.slice(0, 2).toUpperCase()}
         </span>
       )}
@@ -86,10 +86,10 @@ function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[];
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
-                      active ? "bg-brand-50 font-semibold text-brand-800" : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
+                      active ? "bg-brand-50 font-semibold text-brand-text-strong" : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
                     )}
                   >
-                    <span className={cn(active ? "text-brand-700" : "text-ink-muted")}>
+                    <span className={cn(active ? "text-brand-text" : "text-ink-muted")}>
                       <NavIcon name={item.icon} />
                     </span>
                     <span className="truncate">{t(item.label)}</span>
@@ -184,7 +184,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16.5rem_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex print:hidden">
         <div className="flex h-16 shrink-0 items-center border-b border-line px-4">
           <Link href={variant === "admin" ? "/admin" : "/dashboard"} className="min-w-0 rounded-md">
             <SchoolMark school={school} subtitle={subtitle} />
@@ -194,7 +194,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur-[2px] sm:px-5 safe-top">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur-[2px] sm:px-5 safe-top print:hidden">
           <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DialogPrimitive.Trigger asChild>
               <button
@@ -261,7 +261,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                       aria-pressed={locale === code}
                       className={cn(
                         "rounded-md border px-2.5 py-1 text-xs font-medium",
-                        locale === code ? "border-brand-600 bg-brand-50 text-brand-800" : "border-line text-ink-secondary hover:bg-surface-muted"
+                        locale === code ? "border-brand-600 bg-brand-50 text-brand-text-strong" : "border-line text-ink-secondary hover:bg-surface-muted"
                       )}
                     >
                       {t(`common.locales.${code}`)}
@@ -286,7 +286,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       </div>
 
       {mobileBar && mobileBar.length > 0 ? (
-        <nav aria-label={t("nav.quick")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:hidden safe-bottom">
+        <nav aria-label={t("nav.quick")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:hidden safe-bottom print:hidden">
           <ul className="grid" style={{ gridTemplateColumns: `repeat(${mobileBar.length}, minmax(0, 1fr))` }}>
             {mobileBar.map((item) => {
               const active = isActive(pathname, item.href);
@@ -295,7 +295,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={cn("relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs", active ? "font-semibold text-brand-700" : "text-ink-muted")}
+                    className={cn("relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs", active ? "font-semibold text-brand-text" : "text-ink-muted")}
                   >
                     <span className="relative">
                       <NavIcon name={item.icon} className="size-5" />

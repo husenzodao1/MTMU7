@@ -7,11 +7,31 @@ import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface"
 import { can, isPlatformAdmin } from "@/lib/auth/access";
 import { requireAdminArea } from "@/lib/auth/guards";
 import { isSupabaseConfigured, publicEnv } from "@/lib/env";
+import { requestTimeMinus } from "@/lib/request-time";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin.nav");
   return { title: t("system") };
+}
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/** Round trip to the database, timed on this server. */
+async function probeDatabase(supabase: ServerClient) {
+  const started = performance.now();
+  const { error } = await supabase.from("schools").select("id", { head: true, count: "exact" }).limit(1);
+  return { ok: !error, latencyMs: Math.round(performance.now() - started) };
+}
+
+/** Deliveries that should have been dispatched more than 15 minutes ago. */
+async function countOverdueDeliveries(supabase: ServerClient) {
+  const cutoff = requestTimeMinus(15 * 60_000);
+  const [{ count: pendingBroadcasts }, { count: unsentAnnouncements }] = await Promise.all([
+    supabase.from("notification_broadcasts").select("id", { head: true, count: "exact" }).eq("status", "scheduled").lt("scheduled_at", cutoff),
+    supabase.from("announcements").select("id", { head: true, count: "exact" }).eq("status", "published").is("notified_at", null).lt("publish_at", cutoff),
+  ]);
+  return (pendingBroadcasts ?? 0) + (unsentAnnouncements ?? 0);
 }
 
 /**
@@ -24,21 +44,16 @@ export default async function SystemStatusPage() {
   const t = await getTranslations("admin.system");
   const supabase = await createClient();
 
-  const started = Date.now();
-  const { error: dbError } = await supabase.from("schools").select("id", { head: true, count: "exact" }).limit(1);
-  const dbLatency = Date.now() - started;
-  const [{ count: pendingBroadcasts }, { count: unsentAnnouncements }] = await Promise.all([
-    supabase.from("notification_broadcasts").select("id", { head: true, count: "exact" }).eq("status", "scheduled").lt("scheduled_at", new Date(Date.now() - 15 * 60_000).toISOString()),
-    supabase.from("announcements").select("id", { head: true, count: "exact" }).eq("status", "published").is("notified_at", null).lt("publish_at", new Date(Date.now() - 15 * 60_000).toISOString()),
-  ]);
+  const database = await probeDatabase(supabase);
+  const overdue = await countOverdueDeliveries(supabase);
 
   const checks: Array<{ key: string; ok: boolean; detail?: string }> = [
     { key: "supabaseConfigured", ok: isSupabaseConfigured },
-    { key: "database", ok: !dbError, detail: dbError ? undefined : t("latency", { ms: dbLatency }) },
+    { key: "database", ok: database.ok, detail: database.ok ? t("latency", { ms: database.latencyMs }) : undefined },
     { key: "appUrl", ok: /^https:\/\//.test(publicEnv.NEXT_PUBLIC_APP_URL ?? "") || (process.env.NODE_ENV !== "production" && Boolean(publicEnv.NEXT_PUBLIC_APP_URL)), detail: publicEnv.NEXT_PUBLIC_APP_URL },
     { key: "serviceRole", ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) },
     { key: "cronSecret", ok: (process.env.CRON_SECRET ?? "").length >= 32 },
-    { key: "scheduler", ok: (pendingBroadcasts ?? 0) === 0 && (unsentAnnouncements ?? 0) === 0, detail: t("overdue", { count: (pendingBroadcasts ?? 0) + (unsentAnnouncements ?? 0) }) },
+    { key: "scheduler", ok: overdue === 0, detail: t("overdue", { count: overdue }) },
   ];
 
   return (

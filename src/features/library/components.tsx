@@ -30,7 +30,7 @@ export async function BookGrid({ items }: { items: BookCardItem[] }) {
                 <BookOpen className="size-10 text-ink-muted" aria-hidden />
               )}
             </div>
-            <p className="line-clamp-2 font-medium leading-snug text-ink group-hover:text-brand-700">{book.title}</p>
+            <p className="line-clamp-2 font-medium leading-snug text-ink group-hover:text-brand-text">{book.title}</p>
             {book.author ? <p className="mt-0.5 line-clamp-1 text-sm text-ink-secondary">{book.author}</p> : null}
             <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
               {book.file_type ? <Badge tone="brand">{t(`fileTypes.${book.file_type}`)}</Badge> : null}

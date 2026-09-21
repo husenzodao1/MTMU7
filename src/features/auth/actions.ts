@@ -6,7 +6,7 @@ import { z } from "zod";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { mapDbError } from "@/lib/actions/errors";
 import { getAccess } from "@/lib/auth/access";
-import { safeRedirectPath } from "@/lib/security/redirect";
+import { postSignInPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 import { DRAFT_COOKIE, RESET_COOKIE, readDraft, readResetEmail, writeShortLivedCookie as writeCookie } from "@/features/auth/draft";
 import {
@@ -37,14 +37,15 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
     return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.invalid_credentials"));
   }
 
+  // Signing in always ends on the dashboard: an unfinished registration or a
+  // request still under review is explained by a banner there, not by sending
+  // the visitor to another page.
   const access = await getAccess();
-  if (!access) redirect("/register?step=profile");
-  if (access.status === "pending" || access.status === "rejected") redirect("/pending");
-  if (!access.isActive || access.status === "blocked") {
+  if (access && (!access.isActive || access.status === "blocked")) {
     await supabase.auth.signOut();
     return done(failure("errors.account_inactive"));
   }
-  redirect(safeRedirectPath(input.data.next, "/dashboard"));
+  redirect(postSignInPath(input.data.next));
 }
 
 // ---------------------------------------------------------------------------
@@ -123,7 +124,7 @@ export async function verifyRegistrationCodeAction(_state: FormState, formData: 
   const access = await getAccess();
   if (access) {
     (await cookies()).delete(DRAFT_COOKIE);
-    redirect(access.status === "pending" || access.status === "rejected" ? "/pending" : "/dashboard");
+    redirect("/dashboard");
   }
   redirect("/register?step=password");
 }
@@ -146,7 +147,8 @@ async function submitRegistration(draft: RegistrationDraft): Promise<FormState |
   }
   (await cookies()).delete(DRAFT_COOKIE);
   const status = (data as { status?: string } | null)?.status;
-  redirect(status === "active" ? "/dashboard?welcome=1" : "/pending");
+  // Either way the dashboard opens; a request awaiting approval says so there.
+  redirect(status === "active" ? "/dashboard?welcome=1" : "/dashboard");
 }
 
 /** Step 3: set the password and create the account row atomically in the database. */
@@ -176,11 +178,24 @@ export async function completeProfileAction(_state: FormState, formData: FormDat
   const raw = { ...formDataToObject(formData), email };
   const details = parseInput(registrationDetailsSchema, raw);
   if (!details.ok) return done(details.result);
-  const passwords = parseInput(passwordPairSchema, raw);
-  if (!passwords.ok) return done(passwords.result);
 
-  const { error } = await supabase.auth.updateUser({ password: passwords.data.password });
-  if (error) return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.unexpected"));
+  // This visitor already has a session, so they may already have a password.
+  // Setting one is optional here; an empty pair simply keeps the current one.
+  const fields = raw as Record<string, unknown>;
+  const wantsNewPassword = Boolean(fields.password) || Boolean(fields.confirmPassword);
+  if (wantsNewPassword) {
+    const passwords = parseInput(passwordPairSchema, raw);
+    if (!passwords.ok) return done(passwords.result);
+    const { error } = await supabase.auth.updateUser({ password: passwords.data.password });
+    if (error) {
+      if (isRateLimited(error)) return done(failure("errors.rate_limited"));
+      // Supabase refuses a password identical to the current one; say so.
+      if (/different from the old password|same_password/i.test(`${error.code ?? ""} ${error.message}`)) {
+        return done(failure("errors.validation", { password: ["validation.passwordSame"] }));
+      }
+      return done(failure("errors.unexpected"));
+    }
+  }
   return (await submitRegistration(details.data)) ?? done(failure("errors.unexpected"));
 }
 

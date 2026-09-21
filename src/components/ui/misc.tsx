@@ -17,7 +17,7 @@ export function Avatar({ name, src, size = "md", className }: { name: string; sr
     return <img src={src} alt="" className={cn("shrink-0 rounded-full object-cover", dimension, className)} loading="lazy" />;
   }
   return (
-    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-800", dimension, className)} aria-hidden>
+    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-text-strong", dimension, className)} aria-hidden>
       {initials || "?"}
     </span>
   );
@@ -35,7 +35,7 @@ export function TabNav({ items, label }: { items: Array<{ href: string; label: s
               aria-current={item.active ? "page" : undefined}
               className={cn(
                 "inline-flex h-10 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors",
-                item.active ? "border-brand-600 text-brand-700" : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
+                item.active ? "border-brand-600 text-brand-text" : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
               )}
             >
               {item.label}
@@ -65,7 +65,7 @@ function renderInline(nodes: Inline[], keyPrefix: string): ReactNode[] {
       case "link": {
         const external = /^https?:/i.test(node.href);
         return (
-          <a key={key} href={node.href} className="font-medium text-brand-700 underline underline-offset-2 hover:text-brand-800" {...(external ? { rel: "noopener noreferrer nofollow", target: "_blank" } : {})}>
+          <a key={key} href={node.href} className="font-medium text-brand-text underline underline-offset-2 hover:text-brand-text-strong" {...(external ? { rel: "noopener noreferrer nofollow", target: "_blank" } : {})}>
             {renderInline(node.children, key)}
           </a>
         );

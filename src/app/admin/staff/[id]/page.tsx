@@ -109,7 +109,7 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
                 <p className="mb-3 text-sm">
                   {t("homeroomOf")}{" "}
                   {(homerooms ?? []).map((c, i) => (
-                    <span key={c.id}>{i > 0 ? ", " : ""}<Link href={`/admin/classes/${c.id}`} className="font-medium text-brand-700 hover:underline">{c.name}</Link></span>
+                    <span key={c.id}>{i > 0 ? ", " : ""}<Link href={`/admin/classes/${c.id}`} className="font-medium text-brand-text hover:underline">{c.name}</Link></span>
                   ))}
                 </p>
               ) : null}
@@ -122,7 +122,7 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
                     const subject = a.subjects as { name_tg: string; name_ru: string | null; name_en: string | null } | null;
                     return (
                       <li key={a.id} className="flex justify-between gap-2 py-2">
-                        <Link href={`/admin/classes/${klass.id}`} className="hover:text-brand-700 hover:underline">{klass.name} · {subject ? pickName(subject, locale) : ""}</Link>
+                        <Link href={`/admin/classes/${klass.id}`} className="hover:text-brand-text hover:underline">{klass.name} · {subject ? pickName(subject, locale) : ""}</Link>
                         <span className="text-ink-muted tabular">{a.weekly_hours ?? "—"}</span>
                       </li>
                     );
@@ -137,7 +137,7 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
               {account ? (
                 <>
                   <p className="text-sm">{tStudents("accountLinkedHint", { id: account.public_id })}</p>
-                  {can(access, "users.view") ? <Link href={`/admin/users/${account.id}`} className="text-sm font-medium text-brand-700 hover:underline">{tStudents("openAccount")}</Link> : null}
+                  {can(access, "users.view") ? <Link href={`/admin/users/${account.id}`} className="text-sm font-medium text-brand-text hover:underline">{tStudents("openAccount")}</Link> : null}
                 </>
               ) : (
                 <>

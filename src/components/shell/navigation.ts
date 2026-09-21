@@ -7,7 +7,7 @@ export type IconName =
   | "announcements" | "events" | "documents" | "messages" | "notifications" | "admin" | "contacts"
   | "students" | "staff" | "guardians" | "users" | "approvals" | "invitations" | "years" | "classes" | "subjects"
   | "gradebook" | "timetable" | "media" | "website" | "broadcasts" | "moderation" | "school" | "roles" | "modules"
-  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status";
+  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status" | "search";
 
 export interface NavItem {
   key: string;
@@ -74,7 +74,10 @@ const ADMIN_GROUPS: Array<{ key: string; label: string; rules: Rule[] }> = [
   {
     key: "overview",
     label: "admin.nav.groups.overview",
-    rules: [{ item: { key: "admin", href: "/admin", icon: "dashboard", label: "admin.nav.dashboard" }, visible: anyOf("students.view", "users.view", "reports.view") }],
+    rules: [
+      { item: { key: "admin", href: "/admin", icon: "dashboard", label: "admin.nav.dashboard" }, visible: anyOf("students.view", "users.view", "reports.view") },
+      { item: { key: "search", href: "/admin/search", icon: "search", label: "admin.nav.globalSearch" }, visible: anyOf("students.view", "staff.view", "users.view", "classes.view", "news.view", "library.view", "documents.view") },
+    ],
   },
   {
     key: "people",
@@ -105,7 +108,7 @@ const ADMIN_GROUPS: Array<{ key: string; label: string; rules: Rule[] }> = [
     label: "admin.nav.groups.content",
     rules: [
       { item: { key: "news", href: "/admin/news", icon: "news", label: "admin.nav.news" }, visible: anyOf("news.publish", "news.update", "news.archive") },
-      { item: { key: "announcements", href: "/admin/announcements", icon: "announcements", label: "admin.nav.announcements" }, visible: anyOf("announcements.publish") },
+      { item: { key: "announcements", href: "/admin/announcements", icon: "announcements", label: "admin.nav.announcements" }, visible: anyOf("announcements.publish", "announcements.create") },
       { item: { key: "events", href: "/admin/events", icon: "events", label: "admin.nav.events" }, visible: anyOf("events.manage") },
       { item: { key: "library", href: "/admin/library", icon: "library", label: "admin.nav.library" }, visible: anyOf("library.create", "library.update", "library.publish", "library.archive") },
       { item: { key: "documents", href: "/admin/documents", icon: "documents", label: "admin.nav.documents" }, visible: anyOf("documents.create", "documents.publish") },

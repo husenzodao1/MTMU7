@@ -72,7 +72,7 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<BookMarked />} title={t("empty")} />}
+        empty={<EmptyState icon={<BookMarked />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           { key: "name", header: t("name"), primary: true, cell: (r) => <span className="font-medium">{pickName(r, locale)}</span> },
           { key: "code", header: t("code"), cell: (r) => (r.code ? <Badge>{r.code}</Badge> : "—") },

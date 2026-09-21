@@ -37,6 +37,17 @@ export function formatShortDate(value: string | Date | null | undefined, locale:
   ).format(isDateOnly ? new Date(`${value}T00:00:00Z`) : date);
 }
 
+/** "Sep 2026" — month and year, for series grouped by month. */
+export function formatMonth(value: string | Date | null | undefined, locale: Locale, timeZone = DEFAULT_TIME_ZONE): string {
+  const date = toDate(value);
+  if (!date) return "—";
+  const isDateOnly = typeof value === "string" && value.length === 10;
+  return safeFormatter(
+    (l) => new Intl.DateTimeFormat(l, { month: "short", year: "numeric", timeZone: isDateOnly ? "UTC" : timeZone }),
+    locale
+  ).format(isDateOnly ? new Date(`${value}T00:00:00Z`) : date);
+}
+
 export function formatDateTime(value: string | Date | null | undefined, locale: Locale, timeZone = DEFAULT_TIME_ZONE): string {
   const date = toDate(value);
   if (!date) return "—";

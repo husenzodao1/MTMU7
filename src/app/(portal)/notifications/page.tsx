@@ -80,7 +80,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             {items.map((item) => {
               const content = (
                 <>
-                  <span className={cn("mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full", item.is_read ? "bg-surface-muted text-ink-muted" : "bg-brand-50 text-brand-700")} aria-hidden>
+                  <span className={cn("mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full", item.is_read ? "bg-surface-muted text-ink-muted" : "bg-brand-50 text-brand-text")} aria-hidden>
                     {item.is_read ? <Bell className="size-4" /> : <BellRing className="size-4" />}
                   </span>
                   <span className="min-w-0 flex-1">

@@ -90,7 +90,7 @@ export default async function TeachAssignmentPage({ params, searchParams }: { pa
                 <ul className="space-y-2">
                   {attachments.map((file) => (
                     <li key={file.id} className="flex items-center justify-between gap-2">
-                      <a href={`/files/homework/${file.id}`} className="inline-flex min-w-0 items-center gap-1.5 text-sm text-brand-700 hover:underline">
+                      <a href={`/files/homework/${file.id}`} className="inline-flex min-w-0 items-center gap-1.5 text-sm text-brand-text hover:underline">
                         <Paperclip className="size-4 shrink-0" aria-hidden />
                         <span className="truncate">{file.file_name}</span>
                         <span className="shrink-0 text-ink-muted">({formatBytes(file.size_bytes)})</span>
@@ -145,7 +145,7 @@ export default async function TeachAssignmentPage({ params, searchParams }: { pa
                           <ul className="space-y-1">
                             {files.map((file) => (
                               <li key={file.id}>
-                                <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline">
+                                <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm text-brand-text hover:underline">
                                   <Paperclip className="size-4" aria-hidden />
                                   {file.file_name} ({formatBytes(file.size_bytes)})
                                 </a>

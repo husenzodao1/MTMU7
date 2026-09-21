@@ -62,7 +62,7 @@ export async function SiteFooter({ schoolName }: { schoolName?: string | null })
           {identity.supportEmail ? (
             <p className="mt-2">
               {t("support")}:{" "}
-              <a className="text-brand-700 hover:underline" href={`mailto:${identity.supportEmail}`}>
+              <a className="text-brand-text hover:underline" href={`mailto:${identity.supportEmail}`}>
                 {identity.supportEmail}
               </a>
             </p>

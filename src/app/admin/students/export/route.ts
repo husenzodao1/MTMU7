@@ -6,6 +6,7 @@ import { ilikeAny } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 const STATUSES = ["active", "inactive", "transferred", "graduated", "archived"];
+const GENDERS = ["male", "female"];
 
 /** CSV export of the student register under the caller's RLS; every export is audited. */
 export async function GET(request: NextRequest) {
@@ -26,6 +27,13 @@ export async function GET(request: NextRequest) {
     .limit(10000);
   const status = params.get("status");
   query = status && STATUSES.includes(status) ? query.eq("status", status) : query.neq("status", "archived");
+  const gender = params.get("gender");
+  if (gender && GENDERS.includes(gender)) query = query.eq("gender", gender);
+  const classFilter = params.get("class");
+  if (classFilter === "none") query = query.is("enrollments", null);
+  else if (classFilter && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classFilter)) {
+    query = query.eq("enrollments.class_id", classFilter);
+  }
   const search = ilikeAny(["last_name", "first_name", "middle_name", "student_number"], (params.get("q") ?? "").slice(0, 100));
   if (search) query = query.or(search);
   const { data, error } = await query;
@@ -34,7 +42,7 @@ export async function GET(request: NextRequest) {
   await supabase.rpc("write_audit_log", {
     p_action: "export",
     p_entity_type: "students",
-    p_metadata: { rows: data?.length ?? 0, status: status ?? null, query: params.get("q") ? "filtered" : null },
+    p_metadata: { rows: data?.length ?? 0, status: status ?? null, gender: gender ?? null, class: classFilter ?? null, query: params.get("q") ? "filtered" : null },
   });
 
   type Row = NonNullable<typeof data>[number];

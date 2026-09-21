@@ -40,7 +40,7 @@ export const ADMIN_ENTRY_PERMISSIONS: Permission[] = [
   "users.view", "users.approve", "roles.view", "settings.view", "cms.manage", "modules.manage",
   "students.create", "staff.create", "guardians.manage", "classes.create", "subjects.manage", "enrollments.manage",
   "academic_years.manage", "timetable.manage", "assessments.manage", "grades.approve", "attendance.update",
-  "news.publish", "announcements.publish", "events.manage", "library.create", "library.update",
+  "news.publish", "announcements.publish", "announcements.create", "events.manage", "library.create", "library.update",
   "documents.create", "media.manage", "notifications.send", "messages.moderate", "invitations.manage",
   "reports.view", "analytics.view", "audit.view",
 ];

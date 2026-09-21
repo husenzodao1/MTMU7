@@ -19,7 +19,7 @@ export async function ChildSwitcher({ context, pathname }: { context: StudentCon
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm",
-                  active ? "border-brand-600 bg-brand-50 font-semibold text-brand-800" : "border-line bg-surface text-ink-secondary hover:bg-surface-muted"
+                  active ? "border-brand-600 bg-brand-50 font-semibold text-brand-text-strong" : "border-line bg-surface text-ink-secondary hover:bg-surface-muted"
                 )}
               >
                 {child.firstName} {child.lastName}

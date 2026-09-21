@@ -51,7 +51,7 @@ export default async function AdminBroadcastsPage() {
           <CardHeader title={t("history")} />
           <CardBody className="p-0">
             {!data || data.length === 0 ? (
-              <EmptyState icon={<Send />} title={t("empty")} />
+              <EmptyState icon={<Send />} title={t("empty")} description={t("emptyHint")} />
             ) : (
               <ul className="divide-y divide-line">
                 {data.map((b) => (

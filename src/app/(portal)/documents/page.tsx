@@ -63,7 +63,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
               <div className="flex items-start gap-2">
                 <FileText className="mt-0.5 size-4 shrink-0 text-ink-muted" aria-hidden />
                 <div className="min-w-0">
-                  <a href={`/files/documents/${d.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline" target="_blank" rel="noopener">
+                  <a href={`/files/documents/${d.id}`} className="font-medium text-ink hover:text-brand-text hover:underline" target="_blank" rel="noopener">
                     {d.title}
                   </a>
                   {d.description ? <p className="line-clamp-2 text-sm text-ink-muted">{d.description}</p> : null}
@@ -79,7 +79,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
             header: t("file"),
             align: "end",
             cell: (d) => (
-              <a href={`/files/documents/${d.id}?download=1`} className="text-sm font-medium text-brand-700 hover:underline">
+              <a href={`/files/documents/${d.id}?download=1`} className="text-sm font-medium text-brand-text hover:underline">
                 {t("download", { size: formatBytes(d.size_bytes) })}
               </a>
             ),

@@ -12,6 +12,7 @@ import { requireModule } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
+import { getRequestTime, requestTimeMinus } from "@/lib/request-time";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,7 +39,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
   }
 
   const supabase = await createClient();
-  const nowIso = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const nowIso = requestTimeMinus(24 * 3600 * 1000);
   let query = supabase
     .from("homework_assignments")
     .select("id, title, due_at, published_at, class_subjects!inner(class_id, subjects!inner(name_tg, name_ru, name_en)), homework_submissions(status, student_id)")
@@ -52,7 +53,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
 
   const rows = (assignments ?? []).map((a) => {
     const submission = a.homework_submissions.find((s) => s.student_id === context.studentId);
-    const overdue = Boolean(a.due_at && new Date(a.due_at).getTime() < Date.now() && !submission);
+    const overdue = Boolean(a.due_at && new Date(a.due_at).getTime() < getRequestTime() && !submission);
     return {
       id: a.id,
       title: a.title,
@@ -86,7 +87,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
             header: t("assignment"),
             primary: true,
             cell: (r) => (
-              <Link href={`/homework/${r.id}${childQuery}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+              <Link href={`/homework/${r.id}${childQuery}`} className="font-medium text-ink hover:text-brand-text hover:underline">
                 {r.title}
               </Link>
             ),

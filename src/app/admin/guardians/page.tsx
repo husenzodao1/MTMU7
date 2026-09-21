@@ -96,7 +96,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<UsersRound />} title={t("empty")} />}
+        empty={<EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           { key: "name", header: tp("name"), primary: true, cell: (r) => <span className="font-medium">{fullName(r)}</span> },
           { key: "contact", header: tp("contact"), cell: (r) => <span className="text-sm">{[r.phone, r.email].filter(Boolean).join(" · ") || "—"}</span> },
@@ -110,7 +110,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
               ) : (
                 <span className="flex flex-wrap gap-1">
                   {links.map((l) => l.students ? (
-                    <Link key={l.students.id} href={`/admin/students/${l.students.id}`} className="text-sm text-brand-700 hover:underline">{l.students.last_name} {l.students.first_name}</Link>
+                    <Link key={l.students.id} href={`/admin/students/${l.students.id}`} className="text-sm text-brand-text hover:underline">{l.students.last_name} {l.students.first_name}</Link>
                   ) : null)}
                 </span>
               );

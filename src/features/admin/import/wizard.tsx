@@ -95,7 +95,7 @@ export function ImportWizard({ kind }: { kind: ImportKind }) {
     <div className="space-y-5">
       <ol className="flex flex-wrap gap-2 text-sm" aria-label={t("steps")}>
         {(["upload", "preview", "done"] as const).map((key, index) => (
-          <li key={key} aria-current={step === key ? "step" : undefined} className={cn("rounded-md border px-3 py-1.5", step === key ? "border-brand-600 bg-brand-50 font-medium text-brand-800" : "border-line text-ink-muted")}>
+          <li key={key} aria-current={step === key ? "step" : undefined} className={cn("rounded-md border px-3 py-1.5", step === key ? "border-brand-600 bg-brand-50 font-medium text-brand-text-strong" : "border-line text-ink-muted")}>
             {index + 1}. {t(`step.${key}`)}
           </li>
         ))}

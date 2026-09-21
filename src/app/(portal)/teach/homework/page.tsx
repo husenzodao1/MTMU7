@@ -96,7 +96,7 @@ export default async function TeachHomeworkPage({ searchParams }: { searchParams
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/teach/homework/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{r.title}</Link>
+                <Link href={`/teach/homework/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
                 <p className="text-sm text-ink-muted">{labelById.get(r.class_subject_id)}</p>
               </div>
             ),

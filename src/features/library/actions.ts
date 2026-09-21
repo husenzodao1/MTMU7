@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function toggleFavoriteAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
-  const itemId = z.string().uuid().safeParse(formData.get("itemId"));
+  const itemId = uuid.safeParse(formData.get("itemId"));
   if (!itemId.success) return done(failure("errors.invalid"));
   const supabase = await createClient();
 

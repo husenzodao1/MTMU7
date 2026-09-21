@@ -79,7 +79,7 @@ export default async function TeachPage() {
                   <ul className="divide-y divide-line">
                     {teacher.homework_due_soon.map((h) => (
                       <li key={h.id} className="py-2.5">
-                        <Link href={`/teach/homework/${h.id}`} className="font-medium hover:text-brand-700 hover:underline">{h.title}</Link>
+                        <Link href={`/teach/homework/${h.id}`} className="font-medium hover:text-brand-text hover:underline">{h.title}</Link>
                         <p className="text-sm text-ink-muted">{h.class_name} · {formatDateTime(h.due_at, locale, timeZone)}</p>
                       </li>
                     ))}

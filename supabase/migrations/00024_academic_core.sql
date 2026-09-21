@@ -11,6 +11,11 @@
 -- migrated into enrollments/class_subjects and become read-only.
 -- ============================================================================
 
+-- Trigram search backs the student name index below. Supabase ships the
+-- extension but does not enable it in a new project, and the test harness
+-- created it separately, so the migration that needs it now declares it.
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+
 -- ----------------------------------------------------------------------------
 -- 1. People
 -- ----------------------------------------------------------------------------

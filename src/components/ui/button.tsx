@@ -3,12 +3,12 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const variants = {
-  primary: "bg-brand-600 text-ink-inverse hover:bg-brand-700 active:bg-brand-800 shadow-xs",
+  primary: "bg-brand-solid text-ink-inverse hover:bg-brand-solid-hover active:bg-brand-solid-active shadow-xs",
   secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-muted shadow-xs",
   ghost: "text-ink-secondary hover:bg-surface-muted hover:text-ink",
   danger: "bg-danger-600 text-ink-inverse hover:bg-danger-700 shadow-xs",
   "danger-outline": "bg-surface text-danger-700 border border-danger-600/40 hover:bg-danger-50",
-  link: "text-brand-700 underline-offset-4 hover:underline px-0 h-auto",
+  link: "text-brand-text underline-offset-4 hover:underline px-0 h-auto",
 } as const;
 
 const sizes = {

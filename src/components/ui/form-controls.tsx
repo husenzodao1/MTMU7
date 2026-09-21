@@ -42,7 +42,7 @@ export function Checkbox({ label, description, className, ...props }: InputHTMLA
     <label className={cn("flex cursor-pointer items-start gap-3 py-1", props.disabled && "cursor-not-allowed opacity-60", className)}>
       <input
         type="checkbox"
-        className="mt-0.5 size-4 shrink-0 rounded border-line-strong text-brand-600 accent-brand-600 focus-visible:outline-2"
+        className="mt-0.5 size-4 shrink-0 rounded border-line-strong text-brand-text accent-brand-600 focus-visible:outline-2"
         {...props}
       />
       <span className="min-w-0">

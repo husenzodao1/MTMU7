@@ -4,6 +4,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/surface";
 import { formatDateTime, formatNumber, formatShortDate, formatTime } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
+import { getRequestTime } from "@/lib/request-time";
 import type { StudentOverview } from "@/features/academic/queries";
 import { CalendarDays, NotebookPen, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -45,11 +46,11 @@ export async function HomeworkDueList({ items, hrefBase = "/homework" }: { items
   return (
     <ul className="divide-y divide-line">
       {items.map((item) => {
-        const overdue = item.due_at ? new Date(item.due_at).getTime() < Date.now() : false;
+        const overdue = item.due_at ? new Date(item.due_at).getTime() < getRequestTime() : false;
         return (
           <li key={item.id} className="flex items-start justify-between gap-3 py-2.5">
             <div className="min-w-0">
-              <Link href={`${hrefBase}/${item.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+              <Link href={`${hrefBase}/${item.id}`} className="font-medium text-ink hover:text-brand-text hover:underline">
                 {item.title}
               </Link>
               <p className="text-sm text-ink-muted">{pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale)}</p>

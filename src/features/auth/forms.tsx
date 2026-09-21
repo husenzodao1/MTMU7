@@ -31,7 +31,7 @@ export function SignInForm({ next }: { next?: string }) {
       <TextField name="email" type="email" label={t("email")} autoComplete="email" inputMode="email" required />
       <TextField name="password" type="password" label={t("password")} autoComplete="current-password" required />
       <div className="flex items-center justify-end">
-        <Link href="/reset-password" className="text-sm font-medium text-brand-700 hover:underline">
+        <Link href="/reset-password" className="text-sm font-medium text-brand-text hover:underline">
           {t("forgot")}
         </Link>
       </div>
@@ -42,12 +42,20 @@ export function SignInForm({ next }: { next?: string }) {
   );
 }
 
-function PasswordFields() {
+function PasswordFields({ optional = false }: { optional?: boolean }) {
   const t = useTranslations("auth.password");
   return (
     <>
-      <TextField name="password" type="password" label={t("new")} hint={t("rules")} autoComplete="new-password" required minLength={10} />
-      <TextField name="confirmPassword" type="password" label={t("confirm")} autoComplete="new-password" required />
+      <TextField
+        name="password"
+        type="password"
+        label={optional ? t("newOptional") : t("new")}
+        hint={optional ? t("keepCurrent") : t("rules")}
+        autoComplete="new-password"
+        required={!optional}
+        minLength={10}
+      />
+      <TextField name="confirmPassword" type="password" label={t("confirm")} autoComplete="new-password" required={!optional} />
     </>
   );
 }
@@ -144,7 +152,7 @@ export function RegistrationDetailsForm({
       ) : (
         <>
           <p className="text-sm text-ink-secondary">{t("signedInAs", { email: email ?? "" })}</p>
-          <PasswordFields />
+          <PasswordFields optional />
         </>
       )}
 

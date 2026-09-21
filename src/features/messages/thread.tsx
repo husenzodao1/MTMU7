@@ -114,6 +114,12 @@ export function Thread({
   const [sending, startSending] = useTransition();
   const [loadingOlder, startLoadingOlder] = useTransition();
   const [, startAction] = useTransition();
+  // Clock for the edit window, refreshed so the edit option disappears once it expires.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -289,8 +295,20 @@ export function Thread({
   const senderName = (m: Pick<ThreadMessage, "sender_first_name" | "sender_last_name">) =>
     `${m.sender_first_name ?? ""} ${m.sender_last_name ?? ""}`.trim() || t("unknownUser");
 
-  let previousDay = "";
-  let previousSender: string | null = null;
+  // Day separators and sender labels depend on the preceding message.
+  const rows = useMemo(
+    () =>
+      messages.map((message, index) => {
+        const previous = index > 0 ? messages[index - 1] : undefined;
+        const day = dayKey(message.created_at, timeZone);
+        return {
+          message,
+          showDay: !previous || dayKey(previous.created_at, timeZone) !== day,
+          previousSenderId: previous?.sender_id ?? null,
+        };
+      }),
+    [messages, timeZone]
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -371,15 +389,11 @@ export function Thread({
         ) : null}
         {messages.length === 0 ? <p className="py-10 text-center text-sm text-ink-muted">{t("emptyThread")}</p> : null}
         <ol className="space-y-1">
-          {messages.map((m) => {
-            const day = dayKey(m.created_at, timeZone);
-            const showDay = day !== previousDay;
+          {rows.map(({ message: m, showDay, previousSenderId }) => {
             const mine = m.sender_id === currentUserId;
-            const showSender = !mine && conversation.type !== "direct" && (showDay || previousSender !== m.sender_id);
-            previousDay = day;
-            previousSender = m.sender_id;
+            const showSender = !mine && conversation.type !== "direct" && (showDay || previousSenderId !== m.sender_id);
             const reply = m.reply_to_id ? byId.get(m.reply_to_id) : undefined;
-            const canEdit = mine && !m.is_deleted && Date.now() - new Date(m.created_at).getTime() < EDIT_WINDOW_MS;
+            const canEdit = mine && !m.is_deleted && now - new Date(m.created_at).getTime() < EDIT_WINDOW_MS;
             const canPin = !m.is_deleted && (conversation.type === "direct" || myRole === "admin");
 
             return (
@@ -398,7 +412,7 @@ export function Thread({
                         m.is_deleted && "border-dashed bg-surface text-ink-muted"
                       )}
                     >
-                      {showSender ? <p className="mb-0.5 text-xs font-semibold text-brand-800">{senderName(m)}</p> : null}
+                      {showSender ? <p className="mb-0.5 text-xs font-semibold text-brand-text-strong">{senderName(m)}</p> : null}
                       {reply || m.reply_to_id ? (
                         <p className="mb-1 truncate border-s-2 border-brand-300 ps-2 text-xs text-ink-secondary">
                           {reply ? `${senderName(reply)}: ${reply.is_deleted ? t("deletedMessage") : reply.content}` : t("replyEarlier")}

@@ -115,7 +115,7 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<BookOpen />} title={t("empty")} />}
+        empty={<EmptyState icon={<BookOpen />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "title",
@@ -123,7 +123,7 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/library/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{r.title}</Link>
+                <Link href={`/admin/library/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
                 <p className="text-xs text-ink-muted">{[r.author, r.category_id ? categoryName.get(r.category_id) : null].filter(Boolean).join(" · ")}</p>
               </div>
             ),

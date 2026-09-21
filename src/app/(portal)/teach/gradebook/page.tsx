@@ -28,8 +28,8 @@ export default async function GradebookIndexPage() {
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {classSubjects.map((cs) => (
             <li key={cs.id}>
-              <Link href={`/teach/gradebook/${cs.id}`} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 font-medium shadow-xs hover:border-brand-300 hover:text-brand-700">
-                <BookOpenCheck className="size-5 text-brand-700" aria-hidden />
+              <Link href={`/teach/gradebook/${cs.id}`} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 font-medium shadow-xs hover:border-brand-300 hover:text-brand-text">
+                <BookOpenCheck className="size-5 text-brand-text" aria-hidden />
                 {cs.label}
               </Link>
             </li>

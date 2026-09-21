@@ -3,18 +3,21 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowRight, ClipboardCheck } from "lucide-react";
 import { AttendanceSummary, GradeList, HomeworkDueList, LessonList } from "@/features/academic/components";
+import { RegistrationNotice } from "@/features/auth/registration-notice";
 import { getMyChildren, getStudentOverview, getTeacherToday } from "@/features/academic/queries";
 import { getAdminDashboard } from "@/features/admin/dashboard-query";
+import { SetupGuide } from "@/features/admin/setup-guide";
 import { AnnouncementList, EventList, NewsCompactList } from "@/features/content/components";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Alert, Card, CardBody, CardHeader, Metric, PageHeader } from "@/components/ui/surface";
 import { can, canAny, canEnterAdmin, hasModule, hasRole } from "@/lib/auth/access";
-import { requireAccess } from "@/lib/auth/guards";
+import { getPortalSession } from "@/lib/auth/guards";
 import { formatDate, todayIso } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
+import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("nav");
@@ -22,8 +25,32 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const access = await requireAccess();
+  const session = await getPortalSession();
   const t = await getTranslations("portal.dashboard");
+
+  // An unfinished registration still reaches this page: the banner explains the
+  // remaining step instead of bouncing the visitor between forms.
+  if (session.stage !== "member" || !session.access) {
+    const supabase = await createClient();
+    const { data: request } = await supabase
+      .from("registration_requests")
+      .select("status, rejection_reason, first_name")
+      .eq("auth_user_id", session.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const stage: "profile_missing" | "pending" | "rejected" =
+      session.stage === "member" ? "profile_missing" : session.stage === "profile_missing" && request && request.status !== "rejected" ? "pending" : session.stage;
+    const name = session.access?.firstName ?? request?.first_name ?? "";
+    return (
+      <>
+        <PageHeader title={name ? t("greeting", { name }) : t("greetingNoName")} />
+        <RegistrationNotice stage={stage} rejectionReason={request?.rejection_reason} />
+      </>
+    );
+  }
+
+  const access = session.access;
   const locale = (await getLocale()) as Locale;
   const schoolId = access.school!.id;
   const today = todayIso(access.school?.timezone);
@@ -120,7 +147,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 )}
                 {teacher.submissions_to_review > 0 ? (
                   <p className="mt-3 text-sm">
-                    <Link href="/teach/homework" className="font-medium text-brand-700 hover:underline">
+                    <Link href="/teach/homework" className="font-medium text-brand-text hover:underline">
                       {t("teacher.toReview", { count: teacher.submissions_to_review })}
                     </Link>
                   </p>
@@ -139,11 +166,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               </Card>
               <div className="grid gap-5 lg:grid-cols-2">
                 <Card>
-                  <CardHeader title={t("student.homework")} actions={<Link href="/homework" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+                  <CardHeader title={t("student.homework")} actions={<Link href="/homework" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
                   <CardBody><HomeworkDueList items={student.homework_due.slice(0, 5)} /></CardBody>
                 </Card>
                 <Card>
-                  <CardHeader title={t("student.grades")} actions={<Link href="/grades" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+                  <CardHeader title={t("student.grades")} actions={<Link href="/grades" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
                   <CardBody><GradeList grades={student.latest_grades.slice(0, 5)} /></CardBody>
                 </Card>
               </div>
@@ -152,7 +179,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
           {isParent ? (
             <Card>
-              <CardHeader title={t("parent.title")} actions={<Link href="/children" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+              <CardHeader title={t("parent.title")} actions={<Link href="/children" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
               <CardBody>
                 {children.length === 0 ? (
                   <p className="text-sm text-ink-muted">{t("parent.noChildren")}</p>
@@ -186,6 +213,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           ) : null}
 
+          {admin ? <SetupGuide data={admin} /> : null}
+
           {admin ? (
             <Card>
               <CardHeader title={t("admin.title")} description={admin.academic_year ? t("admin.year", { year: admin.academic_year.name }) : undefined}
@@ -203,7 +232,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
           {news.length > 0 ? (
             <Card>
-              <CardHeader title={t("news")} actions={<Link href="/news" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+              <CardHeader title={t("news")} actions={<Link href="/news" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
               <CardBody><NewsCompactList items={news} /></CardBody>
             </Card>
           ) : null}
@@ -218,13 +247,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           ) : null}
           {hasModule(access, "announcements") ? (
             <Card>
-              <CardHeader title={t("announcements")} actions={<Link href="/announcements" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+              <CardHeader title={t("announcements")} actions={<Link href="/announcements" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
               <CardBody><AnnouncementList items={announcements} compact /></CardBody>
             </Card>
           ) : null}
           {hasModule(access, "events") ? (
             <Card>
-              <CardHeader title={t("events")} actions={<Link href="/events" className="text-sm font-medium text-brand-700 hover:underline">{t("all")}</Link>} />
+              <CardHeader title={t("events")} actions={<Link href="/events" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
               <CardBody><EventList items={events} /></CardBody>
             </Card>
           ) : null}

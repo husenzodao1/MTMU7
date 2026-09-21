@@ -88,7 +88,7 @@ export function PageHeader({
 }
 
 const alertTones = {
-  info: { box: "border-brand-200 bg-info-50 text-brand-800", Icon: Info },
+  info: { box: "border-brand-200 bg-info-50 text-brand-text-strong", Icon: Info },
   success: { box: "border-success-600/30 bg-success-50 text-success-700", Icon: CircleCheck },
   warning: { box: "border-warning-600/30 bg-warning-50 text-warning-700", Icon: TriangleAlert },
   danger: { box: "border-danger-600/30 bg-danger-50 text-danger-700", Icon: CircleAlert },

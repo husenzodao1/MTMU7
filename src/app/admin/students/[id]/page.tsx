@@ -133,7 +133,7 @@ export default async function AdminStudentPage({ params, searchParams }: { param
             <CardBody className="space-y-4">
               <DescriptionList
                 items={[
-                  { term: tp("class"), description: activeClass ? <Link className="text-brand-700 hover:underline" href={`/admin/classes/${activeClass.id}`}>{activeClass.name}</Link> : t("withoutClass") },
+                  { term: tp("class"), description: activeClass ? <Link className="text-brand-text hover:underline" href={`/admin/classes/${activeClass.id}`}>{activeClass.name}</Link> : t("withoutClass") },
                   { term: t("enrolledOn"), description: active ? formatDate(active.enrolled_on, locale) : "—" },
                 ]}
               />
@@ -234,7 +234,7 @@ export default async function AdminStudentPage({ params, searchParams }: { param
               {account ? (
                 <>
                   <p className="text-sm">{t("accountLinkedHint", { id: account.public_id })}</p>
-                  {can(access, "users.view") ? <Link href={`/admin/users/${account.id}`} className="text-sm font-medium text-brand-700 hover:underline">{t("openAccount")}</Link> : null}
+                  {can(access, "users.view") ? <Link href={`/admin/users/${account.id}`} className="text-sm font-medium text-brand-text hover:underline">{t("openAccount")}</Link> : null}
                 </>
               ) : (
                 <>

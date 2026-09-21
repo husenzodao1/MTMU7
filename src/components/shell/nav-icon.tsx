@@ -1,4 +1,5 @@
 import {
+  Search,
   Bell, BookOpen, BookOpenCheck, CalendarClock, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, Contact,
   FileBarChart, FileText, FolderOpen, GraduationCap, Image, Landmark, LayoutDashboard, LineChart, Megaphone, MessageSquare,
   MessageSquareWarning, Newspaper, NotebookPen, Presentation, Radio, ScrollText, Settings, ShieldCheck, SquareStack,
@@ -9,6 +10,7 @@ import type { IconName } from "@/components/shell/navigation";
 
 const ICONS: Record<IconName, LucideIcon> = {
   dashboard: LayoutDashboard,
+  search: Search,
   teach: Presentation,
   schedule: CalendarDays,
   grades: GraduationCap,

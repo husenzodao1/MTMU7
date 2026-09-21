@@ -25,7 +25,7 @@ const tone: Record<Status, string> = {
   present: "peer-checked:border-success-600 peer-checked:bg-success-50 peer-checked:text-success-700",
   absent: "peer-checked:border-danger-600 peer-checked:bg-danger-50 peer-checked:text-danger-700",
   late: "peer-checked:border-warning-600 peer-checked:bg-warning-50 peer-checked:text-warning-700",
-  excused: "peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-800",
+  excused: "peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-text-strong",
 };
 
 function LateInput({ studentId, defaultValue, label }: { studentId: string; defaultValue: number | null; label: string }) {

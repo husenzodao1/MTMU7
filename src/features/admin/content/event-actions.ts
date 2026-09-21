@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
@@ -11,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { EVENT_AUDIENCES, EVENT_CATEGORIES } from "@/features/content/constants";
 
 const schema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   title: z.string().trim().min(3, "validation.too_small").max(300, "validation.too_big"),
   description: z.string().max(20000, "validation.too_big").optional().transform((v) => v?.trim() || null),
   category: z.enum(EVENT_CATEGORIES),
@@ -78,7 +79,7 @@ export async function setEventStatusAction(_state: FormState, formData: FormData
   if (!access?.school) return done(failure("errors.not_authenticated"));
   if (!can(access, "events.manage")) return done(failure("errors.forbidden"));
   const parsed = z
-    .object({ id: z.string().uuid(), status: z.enum(["draft", "published", "cancelled", "archived"]) })
+    .object({ id: uuid, status: z.enum(["draft", "published", "cancelled", "archived"]) })
     .safeParse({ id: formData.get("id"), status: formData.get("status") });
   if (!parsed.success) return done(failure("errors.invalid"));
   const supabase = await createClient();

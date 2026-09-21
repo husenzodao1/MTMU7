@@ -6,6 +6,7 @@ import { getUpcomingEvents, mapEvent } from "@/features/content/queries";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
+import { requestTimeMinus } from "@/lib/request-time";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,8 +28,8 @@ export default async function EventsPage() {
       .select("id, title, description, category, starts_at, ends_at, all_day, location, audience, organizer, image_path, status")
       .eq("school_id", schoolId)
       .eq("status", "published")
-      .lt("starts_at", new Date().toISOString())
-      .gte("starts_at", new Date(Date.now() - 60 * 86400 * 1000).toISOString())
+      .lt("starts_at", requestTimeMinus(0))
+      .gte("starts_at", requestTimeMinus(60 * 86400 * 1000))
       .order("starts_at", { ascending: false })
       .limit(20),
   ]);

@@ -4,21 +4,41 @@ import { canAny, canEnterAdmin, getAccess, getAuthUserId, hasModule, type Access
 import type { Permission } from "@/lib/auth/permissions";
 
 /**
+ * Where a signed-in visitor stands relative to a usable account. Someone whose
+ * registration is unfinished still reaches the dashboard, which explains what
+ * is missing instead of bouncing them between pages.
+ */
+export type PortalStage = "member" | "profile_missing" | "pending" | "rejected";
+
+export interface PortalSession {
+  stage: PortalStage;
+  access: Access | null;
+  userId: string;
+}
+
+export async function getPortalSession(): Promise<PortalSession> {
+  const access = await getAccess();
+  if (access) {
+    if (!access.isActive || access.status === "blocked") redirect("/login?reason=inactive");
+    if (access.status === "pending") return { stage: "pending", access, userId: access.userId };
+    if (access.status === "rejected") return { stage: "rejected", access, userId: access.userId };
+    return { stage: "member", access, userId: access.userId };
+  }
+  const authUserId = await getAuthUserId();
+  if (!authUserId) redirect("/login");
+  return { stage: "profile_missing", access: null, userId: authUserId };
+}
+
+/**
  * Page guard: returns the active user's access or redirects.
  * - anonymous → /login
- * - signed in without an account row → /register (finish registration)
- * - pending / rejected → /pending
+ * - signed in without a usable account → /dashboard, which says what is missing
  * - blocked or deactivated → /login?reason=inactive
  */
 export async function requireAccess(): Promise<Access> {
-  const access = await getAccess();
-  if (!access) {
-    const authUserId = await getAuthUserId();
-    redirect(authUserId ? "/register?step=profile" : "/login");
-  }
-  if (access.status === "pending" || access.status === "rejected") redirect("/pending");
-  if (!access.isActive || access.status === "blocked") redirect("/login?reason=inactive");
-  return access;
+  const session = await getPortalSession();
+  if (session.stage !== "member" || !session.access) redirect("/dashboard");
+  return session.access;
 }
 
 /** Page guard: at least one of the permissions, otherwise the access-denied page. */

@@ -1,9 +1,26 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
-import { requireAccess } from "@/lib/auth/guards";
+import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
+import { getPortalSession } from "@/lib/auth/guards";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const access = await requireAccess();
+  const session = await getPortalSession();
+
+  // Registration not finished: there is no school, no role and no navigation to
+  // build, so the page renders in the public frame and says what is missing.
+  if (session.stage !== "member" || !session.access) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-canvas">
+        <OfficialStrip />
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 focus:outline-none sm:py-12">
+          {children}
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  const access = session.access;
   const [shell, nav] = await Promise.all([loadShellData(access), portalShellNav(access)]);
 
   return (

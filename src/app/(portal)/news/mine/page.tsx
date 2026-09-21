@@ -61,7 +61,7 @@ export default async function MyArticlesPage({ searchParams }: { searchParams: P
             primary: true,
             cell: (a) => (
               <div>
-                <Link href={a.status === "published" ? `/news/${a.slug}` : `/news/edit/${a.id}`} className="font-medium hover:text-brand-700 hover:underline">
+                <Link href={a.status === "published" ? `/news/${a.slug}` : `/news/edit/${a.id}`} className="font-medium hover:text-brand-text hover:underline">
                   {a.title}
                 </Link>
                 {a.rejection_reason && a.status === "draft" ? <p className="text-sm text-warning-700">{t("returnedShort")}</p> : null}

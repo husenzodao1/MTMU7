@@ -1,7 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { safeRedirectPath } from "../../src/lib/security/redirect.ts";
+import { postSignInPath, safeRedirectPath } from "../../src/lib/security/redirect.ts";
 import { buildContentSecurityPolicy } from "../../src/lib/security/csp.ts";
+import { uuid } from "../../src/lib/validation/uuid.ts";
 
 describe("safeRedirectPath (SEC-008)", () => {
   it("keeps same-origin relative paths with query and hash", () => {
@@ -55,5 +56,47 @@ describe("Content-Security-Policy", () => {
   it("stays same-origin when the Supabase URL is invalid", () => {
     const csp = buildContentSecurityPolicy("n", "not a url", false);
     assert.match(csp, /connect-src 'self'(;|$)/);
+  });
+});
+
+describe("destination after signing in", () => {
+  it("keeps a real portal destination", () => {
+    assert.equal(postSignInPath("/admin/students?page=2"), "/admin/students?page=2");
+    assert.equal(postSignInPath("/teach/attendance"), "/teach/attendance");
+  });
+
+  it("never returns to the auth flow after a correct password", () => {
+    // A leftover "next" from an earlier redirect used to send the visitor back
+    // to the registration form the moment they signed in.
+    for (const path of ["/login", "/register", "/register?step=profile", "/pending", "/reset-password", "/verify", "/auth/callback"]) {
+      assert.equal(postSignInPath(path), "/dashboard", path);
+    }
+  });
+
+  it("still refuses another origin", () => {
+    assert.equal(postSignInPath("https://evil.example/x"), "/dashboard");
+    assert.equal(postSignInPath("//evil.example"), "/dashboard");
+  });
+});
+
+describe("identifier validation", () => {
+  it("accepts the identifiers this database actually contains", () => {
+    // Seeded rows use readable ids; Zod's own uuid() rejects them because the
+    // RFC version nibble is zero, which once made a signed-in user look like
+    // an account with no profile.
+    for (const id of [
+      "00000000-0000-0000-0001-000000000004",
+      "00000000-0000-0000-0000-000000000001",
+      "c0cc1e7b-4b3e-4027-a114-971f5c3f305d",
+      "A0000000-0000-4000-8000-000000000001",
+    ]) {
+      assert.equal(uuid.safeParse(id).success, true, id);
+    }
+  });
+
+  it("still rejects anything that is not an identifier", () => {
+    for (const value of ["", "not-a-uuid", "00000000-0000-0000-0001", "00000000000000000001000000000004", "'; drop table users; --"]) {
+      assert.equal(uuid.safeParse(value).success, false, value);
+    }
   });
 });

@@ -65,7 +65,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
         caption={t("title")}
         rows={rows}
         rowKey={(r) => r.id ?? ""}
-        empty={<EmptyState icon={<UserCog />} title={t("empty")} />}
+        empty={<EmptyState icon={<UserCog />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "name",
@@ -75,7 +75,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
               <div className="flex items-center gap-3">
                 <Avatar name={`${r.first_name ?? ""} ${r.last_name ?? ""}`} src={r.avatar_url} size="sm" />
                 <div className="min-w-0">
-                  <Link href={`/admin/users/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{[r.last_name, r.first_name, r.middle_name].filter(Boolean).join(" ")}</Link>
+                  <Link href={`/admin/users/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{[r.last_name, r.first_name, r.middle_name].filter(Boolean).join(" ")}</Link>
                   <p className="truncate text-xs text-ink-muted">{r.email} · {r.public_id}</p>
                 </div>
               </div>

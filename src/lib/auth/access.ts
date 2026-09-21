@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { createClient } from "@/lib/supabase/server";
 import { isPermission, type Permission, ADMIN_ENTRY_PERMISSIONS } from "@/lib/auth/permissions";
 import type { LocalizedText } from "@/lib/i18n/text";
@@ -10,8 +11,8 @@ const nullableString = z.string().nullable().optional().transform((v) => v ?? nu
 const accessSchema = z.object({
   user: z
     .object({
-      id: z.string().uuid(),
-      school_id: z.string().uuid(),
+      id: uuid,
+      school_id: uuid,
       public_id: z.string(),
       email: z.string(),
       first_name: z.string(),
@@ -25,7 +26,7 @@ const accessSchema = z.object({
     .nullable(),
   school: z
     .object({
-      id: z.string().uuid(),
+      id: uuid,
       slug: z.string(),
       short_name: z.string(),
       full_name: z.string(),
@@ -42,7 +43,7 @@ const accessSchema = z.object({
   roles: z
     .array(
       z.object({
-        id: z.string().uuid(),
+        id: uuid,
         slug: z.string(),
         name_tg: z.string(),
         name_ru: nullableString,
@@ -106,14 +107,27 @@ export interface Access {
  */
 export const getAccess = cache(async (): Promise<Access | null> => {
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  if (!claims?.claims?.sub) return null;
-
+  // The database answers this under the caller's own JWT, so it doubles as the
+  // session check: no session means no user. Asking the auth server first would
+  // double the auth requests for every page view, and its rate limit would then
+  // read as "signed out".
   const { data, error } = await supabase.rpc("get_my_access");
-  if (error || !data) return null;
+  if (error) {
+    // 401/403 is simply "not signed in"; anything else is a fault worth seeing
+    // rather than silently turning into a redirect back to the sign-in page.
+    const status = (error as { code?: string }).code ?? "";
+    if (!/^(401|403|PGRST301|PGRST302)$/.test(status)) {
+      console.error("[getAccess] get_my_access failed", { code: status, message: error.message });
+    }
+    return null;
+  }
+  if (!data) return null;
 
   const parsed = accessSchema.safeParse(data);
-  if (!parsed.success || !parsed.data.user) return null;
+  if (!parsed.success || !parsed.data.user) {
+    if (!parsed.success) console.error("[getAccess] unexpected shape", parsed.error.issues.slice(0, 4));
+    return null;
+  }
 
   const { user, school, roles, permissions, modules, scopes } = parsed.data;
   return {

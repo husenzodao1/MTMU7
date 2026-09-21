@@ -21,7 +21,7 @@ export async function AnnouncementList({ items, compact }: { items: Announcement
             {item.priority !== "normal" ? (
               <Badge tone={item.priority === "critical" ? "danger" : "warning"}>{t(`priority.${item.priority}`)}</Badge>
             ) : null}
-            <Link href={`/announcements#a-${item.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+            <Link href={`/announcements#a-${item.id}`} className="font-medium text-ink hover:text-brand-text hover:underline">
               {item.title}
             </Link>
           </div>
@@ -75,7 +75,7 @@ export async function NewsCompactList({ items, hrefBase = "/news" }: { items: Ne
     <ul className="divide-y divide-line">
       {items.map((item) => (
         <li key={item.id} className="py-3">
-          <Link href={`${hrefBase}/${item.slug}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+          <Link href={`${hrefBase}/${item.slug}`} className="font-medium text-ink hover:text-brand-text hover:underline">
             {item.title}
           </Link>
           <p className="mt-0.5 line-clamp-2 text-sm text-ink-secondary">{item.summary || markdownToPlainText(item.content, 160)}</p>

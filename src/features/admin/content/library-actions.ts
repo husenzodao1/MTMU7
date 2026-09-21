@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { canAny, getAccess } from "@/lib/auth/access";
@@ -13,7 +14,6 @@ import type { Database } from "@/lib/db/database.types";
 
 type BookUpdate = Database["public"]["Tables"]["library_items"]["Update"];
 
-const uuid = z.string().uuid();
 const optionalUuid = uuid.optional().or(z.literal("")).transform((v) => v || null);
 const optionalInt = (min: number, max: number) =>
   z.string().optional().transform((v) => (v?.trim() ? Number(v) : null)).refine((v) => v === null || (Number.isInteger(v) && v >= min && v <= max), "validation.invalid_value");

@@ -70,7 +70,7 @@ export function NewConversationButton({ canCreateGroup, className }: { canCreate
                 role="tab"
                 aria-selected={mode === value}
                 onClick={() => setMode(value)}
-                className={cn("rounded px-3 py-1.5 text-sm", mode === value ? "bg-brand-50 font-medium text-brand-800" : "text-ink-secondary hover:text-ink")}
+                className={cn("rounded px-3 py-1.5 text-sm", mode === value ? "bg-brand-50 font-medium text-brand-text-strong" : "text-ink-secondary hover:text-ink")}
               >
                 {t(`mode.${value}`)}
               </button>

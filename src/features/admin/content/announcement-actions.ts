@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, type FormState } from "@/lib/actions/result";
 import { can, canAny, getAccess } from "@/lib/auth/access";
@@ -14,7 +15,7 @@ import { ROLE_SLUGS } from "@/features/content/constants";
 const AUDIENCES = ["school", "staff", "students", "parents", "roles", "classes", "public"] as const;
 
 const schema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   intent: z.enum(["draft", "publish", "archive", "restore"]),
   title: z.string().trim().min(3, "validation.too_small").max(300, "validation.too_big"),
   body: z.string().trim().min(1, "validation.required").max(20000, "validation.too_big"),
@@ -39,10 +40,13 @@ export async function saveAnnouncementAction(_state: FormState, formData: FormDa
   const timeZone = access.school.timezone;
 
   const roles = formData.getAll("audienceRoles").filter((r): r is string => typeof r === "string" && (ROLE_SLUGS as readonly string[]).includes(r));
-  const classIds = formData.getAll("audienceClassIds").filter((c): c is string => typeof c === "string" && z.string().uuid().safeParse(c).success);
+  const classIds = formData.getAll("audienceClassIds").filter((c): c is string => typeof c === "string" && uuid.safeParse(c).success);
   if (v.audienceType === "roles" && roles.length === 0) return done(failure("errors.validation", { audienceRoles: ["validation.chooseOne"] }));
   if (v.audienceType === "classes" && classIds.length === 0) return done(failure("errors.validation", { audienceClassIds: ["validation.chooseOne"] }));
   if (v.audienceType === "public" && !can(access, "announcements.publish")) return done(failure("errors.publish_permission"));
+  // Authors without the publishing right may only save drafts; the database
+  // trigger refuses anything else, this just reports it clearly.
+  if (v.intent !== "draft" && !can(access, "announcements.publish")) return done(failure("errors.publish_permission"));
 
   const publishAt = localInputToIso(v.publishAt, timeZone) ?? new Date().toISOString();
   const expiresAt = localInputToIso(v.expiresAt, timeZone);
@@ -91,7 +95,7 @@ export async function saveAnnouncementAction(_state: FormState, formData: FormDa
 export async function deleteAnnouncementDraftAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
-  const id = z.string().uuid().safeParse(formData.get("id"));
+  const id = uuid.safeParse(formData.get("id"));
   if (!id.success) return done(failure("errors.invalid"));
   const supabase = await createClient();
   const { error, count } = await supabase.from("announcements").delete({ count: "exact" }).eq("id", id.data).eq("status", "draft");

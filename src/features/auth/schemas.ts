@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 
 export const emailSchema = z.string().trim().toLowerCase().max(254).email("validation.email");
 
@@ -28,7 +29,7 @@ export const registrationDetailsSchema = z
       .optional()
       .transform((v) => v || undefined),
     roleSlug: z.string().max(40).optional().transform((v) => v || undefined),
-    classId: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+    classId: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
     firstName: nameSchema,
     lastName: nameSchema,
     middleName: z.string().trim().max(100).optional().transform((v) => v || undefined),

@@ -124,9 +124,9 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                   term: t("records"),
                   description: (
                     <span className="flex flex-wrap gap-2">
-                      {student ? <Link className="text-brand-700 hover:underline" href={`/admin/students/${student.id}`}>{t("studentRecord")}</Link> : null}
-                      {staff ? <Link className="text-brand-700 hover:underline" href={`/admin/staff/${staff.id}`}>{t("staffRecord")}</Link> : null}
-                      {guardian ? <Link className="text-brand-700 hover:underline" href="/admin/guardians">{t("guardianRecord")}</Link> : null}
+                      {student ? <Link className="text-brand-text hover:underline" href={`/admin/students/${student.id}`}>{t("studentRecord")}</Link> : null}
+                      {staff ? <Link className="text-brand-text hover:underline" href={`/admin/staff/${staff.id}`}>{t("staffRecord")}</Link> : null}
+                      {guardian ? <Link className="text-brand-text hover:underline" href="/admin/guardians">{t("guardianRecord")}</Link> : null}
                       {!student && !staff && !guardian ? "—" : null}
                     </span>
                   ),

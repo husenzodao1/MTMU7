@@ -9,6 +9,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
 import { Pagination } from "@/components/ui/pagination";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
+import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
@@ -21,7 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminAnnouncementsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const access = await requirePermission("announcements.publish");
+  const access = await requirePermission("announcements.publish", "announcements.create");
+  const canPublish = can(access, "announcements.publish");
   const t = await getTranslations("admin.announcements");
   const ts = await getTranslations("common.status");
   const tp = await getTranslations("portal.announcements.priority");
@@ -39,6 +41,8 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
     .eq("school_id", access.school!.id)
     .order("publish_at", { ascending: false })
     .range(list.offset, list.offset + list.pageSize - 1);
+  // An author without the publishing right manages only their own submissions.
+  if (!canPublish) query = query.eq("created_by", access.userId);
   if (list.filters.status) query = query.eq("status", list.filters.status);
   if (list.filters.priority) query = query.eq("priority", list.filters.priority);
   if (list.query) query = query.ilike("title", ilikePattern(list.query));
@@ -54,6 +58,7 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
         actions={<Link href="/admin/announcements/new" className={buttonClasses("primary")}><Plus aria-hidden />{t("new")}</Link>}
       />
       {saved ? <Alert tone="success" className="mb-4">{t.has(`saved.${saved}`) ? t(`saved.${saved}`) : tc("saved")}</Alert> : null}
+      {!canPublish ? <Alert tone="info" className="mb-4">{t("draftOnlyHint")}</Alert> : null}
       <FilterBar
         searchLabel={t("search")}
         filters={[
@@ -65,7 +70,7 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<Megaphone />} title={t("empty")} />}
+        empty={<EmptyState icon={<Megaphone />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "title",
@@ -73,7 +78,7 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/announcements/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{r.title}</Link>
+                <Link href={`/admin/announcements/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
                 <p className="flex items-center gap-1 text-xs text-ink-muted">
                   {t(`audiences.${r.audience_type as "school"}`)}
                   {r.attachment_name ? <><Paperclip className="size-3" aria-hidden /><span className="sr-only">{t("hasAttachment")}</span></> : null}

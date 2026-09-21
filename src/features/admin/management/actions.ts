@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess, isPlatformAdmin } from "@/lib/auth/access";
@@ -13,7 +14,6 @@ import { publicMediaUrl } from "@/features/content/queries";
 import { ROLE_SLUGS } from "@/features/content/constants";
 import type { Json } from "@/lib/db/database.types";
 
-const uuid = z.string().uuid();
 const optionalText = (max: number) => z.string().trim().max(max, "validation.too_big").optional().transform((v) => v || null);
 
 // ---------------------------------------------------------------------------

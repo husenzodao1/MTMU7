@@ -106,7 +106,7 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<GraduationCap />} title={t("empty")} />}
+        empty={<EmptyState icon={<GraduationCap />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "name",
@@ -114,7 +114,7 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/students/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{fullName(r)}</Link>
+                <Link href={`/admin/students/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
                 {r.student_number ? <p className="text-xs text-ink-muted">{r.student_number}</p> : null}
               </div>
             ),

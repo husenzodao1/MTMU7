@@ -6,7 +6,7 @@ import { mapDbError } from "@/lib/actions/errors";
 import { getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-export async function markAllNotificationsReadAction(_state: FormState): Promise<FormState> {
+export async function markAllNotificationsReadAction(): Promise<FormState> {
   const access = await getAccess();
   if (!access) return done(failure("errors.not_authenticated"));
   const supabase = await createClient();
@@ -20,7 +20,7 @@ export async function markAllNotificationsReadAction(_state: FormState): Promise
   return done(success("portal.notifications.allRead"));
 }
 
-export async function deleteReadNotificationsAction(_state: FormState): Promise<FormState> {
+export async function deleteReadNotificationsAction(): Promise<FormState> {
   const access = await getAccess();
   if (!access) return done(failure("errors.not_authenticated"));
   const supabase = await createClient();

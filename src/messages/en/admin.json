@@ -44,7 +44,8 @@
       "analytics": "Analytics",
       "audit": "Audit log",
       "settings": "Settings",
-      "system": "System status"
+      "system": "System status",
+      "globalSearch": "Search"
     },
     "dashboard": {
       "title": "School dashboard",
@@ -125,7 +126,8 @@
       "to": "To",
       "filter": "Filter",
       "empty": "No entries.",
-      "system": "System"
+      "system": "System",
+      "emptyHint": "Entries appear as soon as somebody changes data in the school."
     },
     "people": {
       "name": "Name",
@@ -222,7 +224,8 @@
       "invitationCode": "Invitation code",
       "validUntil": "Valid until {date}",
       "createInvitation": "Create invitation code",
-      "newInvitation": "Create a new code"
+      "newInvitation": "Create a new code",
+      "emptyHint": "Add the first student, or import the whole register from a file."
     },
     "staff": {
       "title": "Staff",
@@ -253,7 +256,8 @@
         "administrator": "Administrator",
         "support": "Support staff",
         "other": "Other"
-      }
+      },
+      "emptyHint": "Add teachers and other staff; their subjects and classes come next."
     },
     "guardians": {
       "title": "Parents and guardians",
@@ -268,7 +272,8 @@
       "empty": "No guardians match the filters.",
       "archiveTitle": "Archive guardian?",
       "archiveDescription": "The record is kept for history but hidden from lists.",
-      "restoreTitle": "Restore guardian?"
+      "restoreTitle": "Restore guardian?",
+      "emptyHint": "Guardians appear here once they are linked to a student."
     },
     "users": {
       "title": "User accounts",
@@ -318,7 +323,8 @@
         "blocked": "Blocked",
         "unblocked": "Unblocked",
         "reactivated": "Reactivated"
-      }
+      },
+      "emptyHint": "Accounts appear here after a registration is approved or an invitation is used."
     },
     "approvals": {
       "title": "Registration approvals",
@@ -389,7 +395,8 @@
       "deactivateTitle": "Deactivate code?",
       "deactivateDescription": "Code {code} will stop working immediately.",
       "created": "The invitation code has been created.",
-      "deactivated": "The code has been deactivated."
+      "deactivated": "The code has been deactivated.",
+      "emptyHint": "Create a code so a teacher or parent can register without waiting for approval."
     },
     "import": {
       "steps": "Import steps",
@@ -563,7 +570,8 @@
       "restoreTitle": "Restore class?",
       "hasActiveStudents": "Move or promote the students before archiving the class.",
       "archived": "The class has been archived.",
-      "restored": "The class has been restored."
+      "restored": "The class has been restored.",
+      "emptyHint": "Create classes for the current academic year and assign homeroom teachers."
     },
     "subjects": {
       "title": "Subjects",
@@ -586,7 +594,8 @@
       "usedIn": "Classes",
       "archiveTitle": "Archive subject?",
       "archiveDescription": "It will no longer be offered for new class assignments.",
-      "restoreTitle": "Restore subject?"
+      "restoreTitle": "Restore subject?",
+      "emptyHint": "Add the subjects taught at the school; they are then assigned to classes."
     },
     "gradebook": {
       "title": "Gradebook oversight",
@@ -777,7 +786,8 @@
       "nameRu": "Name in Russian",
       "nameEn": "Name in English",
       "order": "Order",
-      "viewCount": "Views"
+      "viewCount": "Views",
+      "emptyHint": "Publish the first article; it appears on the public site and in the portal."
     },
     "announcements": {
       "title": "Announcements",
@@ -832,9 +842,10 @@
       "archive": "Archive",
       "restore": "Restore as draft",
       "publishHint": "Publishing notifies the audience when the publication time is reached.",
-      "draftOnlyHint": "Only publishers can publish announcements.",
+      "draftOnlyHint": "You can prepare a draft. An administrator with publishing rights reviews and publishes it.",
       "deleteTitle": "Delete this draft?",
-      "deleteDescription": "The draft will be removed permanently."
+      "deleteDescription": "The draft will be removed permanently.",
+      "emptyHint": "Announcements reach the whole school, chosen roles or specific classes."
     },
     "events": {
       "title": "Events",
@@ -871,7 +882,8 @@
       "cancel": "Cancel event",
       "cancelTitle": "Cancel this event?",
       "cancelDescription": "The event stays visible, marked as cancelled.",
-      "archiveTitle": "Archive this event?"
+      "archiveTitle": "Archive this event?",
+      "emptyHint": "Add meetings, competitions and other dates for the school calendar."
     },
     "library": {
       "title": "Library management",
@@ -952,7 +964,8 @@
       "nameRu": "Name in Russian",
       "nameEn": "Name in English",
       "order": "Order",
-      "viewCount": "Views"
+      "viewCount": "Views",
+      "emptyHint": "Add a book with its cover and file; readers see only published ones."
     },
     "documents": {
       "title": "Documents",
@@ -992,7 +1005,8 @@
       "archiveDescription": "It will no longer be shown to readers.",
       "restoreTitle": "Restore document as draft?",
       "uploaded": "The document has been uploaded.",
-      "versionAdded": "A new version has been saved."
+      "versionAdded": "A new version has been saved.",
+      "emptyHint": "Upload regulations, forms and other official documents."
     },
     "media": {
       "title": "Media library",
@@ -1007,7 +1021,8 @@
       "url": "Image address",
       "uploaded": "The image has been added.",
       "deleteTitle": "Delete image?",
-      "deleteDescription": "Pages that use this image will no longer show it."
+      "deleteDescription": "Pages that use this image will no longer show it.",
+      "emptyHint": "Upload images used in news, events and the website."
     },
     "website": {
       "title": "School website",
@@ -1147,7 +1162,8 @@
       "cancelTitle": "Cancel this notice?",
       "sent": "The notice has been sent.",
       "scheduled": "The notice has been scheduled.",
-      "cancelled": "The notice has been cancelled."
+      "cancelled": "The notice has been cancelled.",
+      "emptyHint": "Send a notice to roles or classes; delivery respects personal settings."
     },
     "moderation": {
       "title": "Message moderation",
@@ -1263,7 +1279,41 @@
       "adminRoleHint": "The school administrator role always has every school permission and cannot be changed.",
       "matrixHint": "You can grant or revoke only permissions you hold yourself. Other granted permissions are kept.",
       "savePermissions": "Save permissions",
-      "permissionsSaved": "Permissions have been saved."
+      "permissionsSaved": "Permissions have been saved.",
+      "modules": {
+        "dashboard": "Dashboard",
+        "schools": "Schools",
+        "users": "User accounts",
+        "roles": "Roles",
+        "invitations": "Invitations",
+        "students": "Students",
+        "staff": "Staff",
+        "guardians": "Parents and guardians",
+        "academic_years": "Academic years",
+        "classes": "Classes",
+        "subjects": "Subjects",
+        "enrollments": "Enrollment",
+        "grades": "Grades",
+        "assessments": "Assessment types",
+        "attendance": "Attendance",
+        "homework": "Homework",
+        "timetable": "Timetable",
+        "news": "News",
+        "announcements": "Announcements",
+        "events": "Events",
+        "library": "Library",
+        "documents": "Documents",
+        "media": "Media",
+        "cms": "Website",
+        "messages": "Messages",
+        "notifications": "Notifications",
+        "reports": "Reports",
+        "analytics": "Analytics",
+        "audit": "Audit log",
+        "settings": "Settings",
+        "modules": "Modules"
+      },
+      "emptyHint": "Every school starts with system roles; add one for a specific responsibility."
     },
     "modules": {
       "title": "Modules",
@@ -1518,6 +1568,59 @@
           "name": "Scheduled deliveries",
           "ok": "No overdue deliveries.",
           "problem": "Some scheduled notices were not delivered. Check the cron job."
+        }
+      }
+    },
+    "search": {
+      "title": "Search",
+      "description": "Find people, classes and content across the sections you may open.",
+      "field": "Search",
+      "placeholder": "Name, number, title or email",
+      "submit": "Search",
+      "hint": "Enter at least two characters.",
+      "empty": "Nothing found for “{query}”.",
+      "more": "First matches shown; open the section for the full list.",
+      "sections": {
+        "students": "Students",
+        "staff": "Staff",
+        "users": "User accounts",
+        "classes": "Classes",
+        "news": "News",
+        "announcements": "Announcements",
+        "library": "Library",
+        "documents": "Documents"
+      }
+    },
+    "setup": {
+      "title": "Getting started",
+      "progress": "{done} of {total} steps done",
+      "open": "Open",
+      "doneLabel": "done",
+      "todoLabel": "to do",
+      "steps": {
+        "year": {
+          "title": "Academic year and terms",
+          "hint": "Set the current year with its quarters or semesters."
+        },
+        "bell": {
+          "title": "Bell schedule",
+          "hint": "Lesson numbers and their times; add the second shift if there is one."
+        },
+        "classes": {
+          "title": "Classes",
+          "hint": "Class names, grade levels and homeroom teachers."
+        },
+        "staff": {
+          "title": "Teachers and staff",
+          "hint": "Add staff records, then their subjects and classes."
+        },
+        "students": {
+          "title": "Students",
+          "hint": "Add students one by one or import the register from a file."
+        },
+        "identity": {
+          "title": "Official identity of the school",
+          "hint": "Names, emblem, photograph and contacts, then approve them."
         }
       }
     }

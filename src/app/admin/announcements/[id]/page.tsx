@@ -8,6 +8,7 @@ import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { ConfirmAction } from "@/components/ui/action-form";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/surface";
+import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import type { Locale } from "@/lib/i18n/text";
 import { isoToLocalInput } from "@/lib/i18n/zoned";
@@ -16,7 +17,8 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { robots: { index: false } };
 
 export default async function EditAnnouncementPage({ params }: { params: Promise<{ id: string }> }) {
-  const access = await requirePermission("announcements.publish");
+  const access = await requirePermission("announcements.publish", "announcements.create");
+  const canPublish = can(access, "announcements.publish");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const t = await getTranslations("admin.announcements");
@@ -25,10 +27,12 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
   const supabase = await createClient();
   const { data: a } = await supabase
     .from("announcements")
-    .select("id, school_id, title, body, priority, audience_type, audience_roles, audience_class_ids, publish_at, expires_at, status, attachment_name, published_at")
+    .select("id, school_id, title, body, priority, audience_type, audience_roles, audience_class_ids, publish_at, expires_at, status, attachment_name, published_at, created_by")
     .eq("id", id)
     .maybeSingle();
   if (!a || a.school_id !== access.school!.id) notFound();
+  // Without the publishing right only your own drafts are editable.
+  if (!canPublish && (a.created_by !== access.userId || a.status !== "draft")) notFound();
   const options = await getAudienceOptions(access.school!.id, locale);
   const timeZone = access.school!.timezone;
 
@@ -58,7 +62,7 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
         schoolId={access.school!.id}
         roles={options.roles}
         classes={options.classes}
-        canPublish
+        canPublish={canPublish}
       />
     </>
   );

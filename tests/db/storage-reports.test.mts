@@ -72,14 +72,14 @@ describe("dashboards", () => {
     await db.query(`INSERT INTO public.timetable_entries (school_id, academic_year_id, class_id, class_subject_id, day_of_week, period_number)
                     VALUES ($1, $2, $3, $4, $5, 1), ($1, $2, $3, $6, $5, 2)`, [SCHOOL_A, a.yearA, a.class9A, a.mathA, dow, a.physicsA]);
     await db.query(`INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, period_number, status)
-                    VALUES ($1, $2, $3, $4, current_date, 1, 'present'), ($1, $5, $3, $4, current_date, 1, 'absent')`,
+                    VALUES ($1, $2, $3, $4, app.school_today($1), 1, 'present'), ($1, $5, $3, $4, app.school_today($1), 1, 'absent')`,
       [SCHOOL_A, a.students.studentA, a.class9A, a.mathA, a.students.unlinkedA]);
     await db.query(`INSERT INTO public.grades (school_id, student_id, class_subject_id, assessment_type_id, score, max_score) VALUES ($1, $2, $3, $4, 4, 5)`,
       [SCHOOL_A, a.students.studentA, a.mathA, a.assessmentTest]);
   });
 
   it("builds the admin dashboard from real data and refuses unauthorized callers", async () => {
-    const d = await asUser(db, t.users.adminA, (tx) => one<{ d: Record<string, any> }>(tx, `SELECT public.admin_dashboard() AS d`));
+    const d = await asUser(db, t.users.adminA, (tx) => one<{ d: { counts: Record<string, number | string>; attendance_today: Record<string, number | string>; alerts: unknown; recent_activity: unknown } }>(tx, `SELECT public.admin_dashboard() AS d`));
     assert.equal(Number(d!.d.counts.students_active), 3);
     assert.equal(Number(d!.d.attendance_today.absent), 1);
     assert.ok(Array.isArray(d!.d.alerts));
@@ -112,11 +112,26 @@ describe("dashboards", () => {
 });
 
 describe("reports and analytics", () => {
+  it("uses the school's local date for the current term and analytics window", async () => {
+    await db.query(`UPDATE public.schools SET timezone = 'Pacific/Kiritimati' WHERE id = $1`, [SCHOOL_A]);
+    const localToday = await one<{ d: string }>(db, `SELECT app.school_today($1)::text AS d`, [SCHOOL_A]);
+    const currentTerm = await asUser(db, t.users.directorA, (tx) => one<{ id: string | null }>(tx, `SELECT app.current_term_id($1) AS id`, [SCHOOL_A]));
+    assert.ok(localToday?.d);
+    assert.ok(currentTerm?.id);
+    const analytics = await asUser(db, t.users.directorA, (tx) => one<{ a: { attendance_weekly: unknown[] } }>(tx, `SELECT public.analytics_overview($1) AS a`, [SCHOOL_A]));
+    assert.ok(Array.isArray(analytics?.a.attendance_weekly));
+    await db.query(`UPDATE public.schools SET timezone = 'Asia/Dushanbe' WHERE id = $1`, [SCHOOL_A]);
+  });
+
   it("runs every report for authorized staff", async () => {
     await asUser(db, t.users.directorA, async (tx) => {
       const enrollment = await rows<{ class_name: string; active_count: number }>(tx, `SELECT * FROM public.report_enrollment()`);
       assert.equal(Number(enrollment.find((r) => r.class_name === "9A")!.active_count), 2);
-      const attendance = await rows<{ attendance_rate: string }>(tx, `SELECT * FROM public.report_attendance(current_date - 7, current_date)`);
+      // The fixture marks attendance on the school's own calendar day, so the
+      // window has to be the school's too: between 19:00 and 24:00 UTC Dushanbe
+      // is already on the next date and a session-date window misses the rows.
+      const attendance = await rows<{ attendance_rate: string }>(tx,
+        `SELECT * FROM public.report_attendance(app.school_today($1) - 7, app.school_today($1))`, [SCHOOL_A]);
       assert.equal(attendance.length, 2);
       const grades = await rows(tx, `SELECT * FROM public.report_grades($1)`, [a.class9A]);
       assert.ok(grades.length >= 2);

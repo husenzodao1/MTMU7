@@ -30,6 +30,27 @@ export function localInputToIso(value: string | null | undefined, timeZone = "As
   return new Date(guess.getTime() - offset * 60000).toISOString();
 }
 
+/**
+ * A "YYYY-MM-DD" filter pair → the half-open instant range [start, end) that
+ * covers those calendar days in `timeZone`. Both bounds are optional; the end
+ * is the start of the day after `to`, so the whole last day is included.
+ */
+export function localDayRangeIso(
+  from: string | null | undefined,
+  to: string | null | undefined,
+  timeZone = "Asia/Dushanbe"
+): { start: string | null; end: string | null } {
+  const dayStart = (day: string | null | undefined) =>
+    day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? localInputToIso(`${day}T00:00`, timeZone) : null;
+  let end: string | null = null;
+  if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    const next = new Date(`${to}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    end = dayStart(next.toISOString().slice(0, 10));
+  }
+  return { start: dayStart(from), end };
+}
+
 /** ISO instant → "YYYY-MM-DDTHH:mm" in `timeZone` for datetime-local inputs. */
 export function isoToLocalInput(iso: string | null | undefined, timeZone = "Asia/Dushanbe"): string {
   if (!iso) return "";

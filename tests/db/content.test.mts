@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asAnon, asUser, createDatabase, errorOf, one, rows, type Db } from "./harness.mts";
-import { seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
+import { newId, seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
 import { seedAcademic, type Academic } from "./academic-fixtures.mts";
 
 let db: Db;
@@ -248,6 +248,36 @@ describe("library", () => {
     assert.equal(removedPublished.affectedRows, 0);
     const removedDraft = await asUser(db, t.users.adminA, (tx) => tx.query(`DELETE FROM public.library_items WHERE id = $1`, [draft!.id]));
     assert.equal(removedDraft.affectedRows, 1);
+  });
+
+  it("lets a book author manage the access list of their own draft only (00035)", async () => {
+    const authorRole = await one<{ id: string }>(db, `INSERT INTO public.roles (school_id, slug, name_tg, level) VALUES ($1, 'book_author', 'book_author', 5) RETURNING id`, [SCHOOL_A]);
+    await db.query(
+      `INSERT INTO public.role_permissions (role_id, permission_id) SELECT $1, p.id FROM public.permissions p WHERE p.slug = ANY ($2)`,
+      [authorRole!.id, ["library.view", "library.create"]]
+    );
+    const authorId = newId();
+    await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [authorId, `${authorId}@example.test`]);
+    await db.query(`INSERT INTO public.users (id, school_id, email, first_name, last_name) VALUES ($1, $2, $3, 'Book', 'Author')`, [authorId, SCHOOL_A, `${authorId}@example.test`]);
+    await db.query(`INSERT INTO public.user_roles (user_id, role_id, school_id) VALUES ($1, $2, $3)`, [authorId, authorRole!.id, SCHOOL_A]);
+
+    const own = await asUser(db, authorId, async (tx) => {
+      const book = await one<{ id: string; uploaded_by: string }>(tx,
+        `INSERT INTO public.library_items (school_id, title, status, visibility, quantity, available_quantity)
+         VALUES ($1, 'Author draft', 'draft', 'specific', 1, 1) RETURNING id, uploaded_by`, [SCHOOL_A]);
+      await tx.query(`INSERT INTO public.library_item_access (item_id, school_id, class_id) VALUES ($1, $2, $3)`, [book!.id, SCHOOL_A, a.class9A]);
+      return book!;
+    });
+    assert.equal(own.uploaded_by, authorId, "the author is stamped on insert");
+    assert.equal((await rows(db, `SELECT id FROM public.library_item_access WHERE item_id = $1`, [own.id])).length, 1);
+
+    // Publishing still needs library.publish, and a published book's access list stays closed.
+    const publish = await errorOf(() => asUser(db, authorId, (tx) => tx.query(`UPDATE public.library_items SET status = 'published' WHERE id = $1`, [own.id])));
+    assert.ok(publish !== null || (await one<{ status: string }>(db, `SELECT status FROM public.library_items WHERE id = $1`, [own.id]))!.status === "draft");
+    const other = await one<{ id: string }>(db, `SELECT id FROM public.library_items WHERE title = 'Physics 9'`);
+    const foreign = await asUser(db, authorId, (tx) =>
+      tx.query(`INSERT INTO public.library_item_access (item_id, school_id, class_id) VALUES ($1, $2, $3)`, [other!.id, SCHOOL_A, a.class9A]).then(() => null).catch((e: Error) => e.message));
+    assert.match(foreign ?? "", /row-level security/);
   });
 
   it("rejects file paths outside the school folder", async () => {

@@ -1,1 +1,42 @@
-{}
+{
+  "site": {
+    "emblemAlt": "Emblem of the governing authority",
+    "footer": {
+      "platform": "Education portal",
+      "links": "Site links",
+      "schools": "Schools",
+      "signIn": "Sign in",
+      "register": "Register",
+      "developedBy": "Developed by",
+      "support": "Support"
+    },
+    "public": {
+      "directoryTitle": "Schools",
+      "directoryDescription": "Choose an active school to view its public information.",
+      "emptyDirectory": "No public schools are available yet.",
+      "openSchool": "Open school site",
+      "schoolSite": "School website",
+      "officialPending": "Official identity details are awaiting approval.",
+      "ownerTextPending": "Awaiting official text from the school",
+      "ownerImagePending": "Awaiting official image",
+      "schoolDescription": "School information will appear here after it is supplied and approved.",
+      "backToSchools": "All schools",
+      "news": "News",
+      "events": "Events",
+      "documents": "Documents",
+      "publishedContent": "Published content",
+      "noPublishedContent": "There is no published content yet.",
+      "download": "Download",
+      "schoolNotFound": "This school website is not available.",
+      "allNews": "All news",
+      "allEvents": "All events",
+      "portalEntry": "Portal sign-in",
+      "sections": "Sections"
+    },
+    "devPreview": {
+      "notice": "Development preview only. No account, database data, or authorization is being bypassed.",
+      "portalNavigation": "Portal navigation",
+      "states": "Portal preview states"
+    }
+  }
+}

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils/cn";
 
 const tones = {
   neutral: "bg-surface-muted text-ink-secondary border-line",
-  brand: "bg-brand-50 text-brand-700 border-brand-200",
+  brand: "bg-brand-50 text-brand-text border-brand-200",
   success: "bg-success-50 text-success-700 border-success-600/25",
   warning: "bg-warning-50 text-warning-700 border-warning-600/25",
   danger: "bg-danger-50 text-danger-700 border-danger-600/25",

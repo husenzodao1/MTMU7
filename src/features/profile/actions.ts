@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { passwordSchema } from "@/features/auth/schemas";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
@@ -89,7 +90,6 @@ export async function updateNotificationSettingsAction(_state: FormState, formDa
   return done(success("common.saved"));
 }
 
-const uuid = z.string().uuid();
 
 export async function sendFriendRequestAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();

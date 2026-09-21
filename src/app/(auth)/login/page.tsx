@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <SignInForm next={next} />
         <p className="border-t border-line pt-4 text-center text-sm text-ink-secondary">
           {t("noAccount")}{" "}
-          <Link href="/register" className="font-medium text-brand-700 hover:underline">
+          <Link href="/register" className="font-medium text-brand-text hover:underline">
             {t("register")}
           </Link>
         </p>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { getAdminDashboard } from "@/features/admin/dashboard-query";
+import { SetupGuide } from "@/features/admin/setup-guide";
 import { adminNavigation } from "@/components/shell/navigation";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
@@ -68,6 +69,8 @@ export default async function AdminDashboardPage() {
         description={[access.school!.shortName, data.academic_year ? t("year", { year: data.academic_year.name }) : null, data.current_term ? t("term", { term: data.current_term.name }) : null].filter(Boolean).join(" · ")}
       />
 
+      <SetupGuide data={data} className="mb-5" />
+
       {data.alerts.length > 0 ? (
         <Card className="mb-5 border-warning-600/30">
           <CardHeader title={<span className="inline-flex items-center gap-2"><TriangleAlert className="size-5 text-warning-600" aria-hidden />{t("setupTitle")}</span>} description={t("setupHint")} />
@@ -126,7 +129,7 @@ export default async function AdminDashboardPage() {
               <ul className="divide-y divide-line">
                 {queues.map((q) => (
                   <li key={q.key}>
-                    <Link href={q.href} className="flex items-center justify-between gap-2 py-2.5 text-sm hover:text-brand-700">
+                    <Link href={q.href} className="flex items-center justify-between gap-2 py-2.5 text-sm hover:text-brand-text">
                       <span>{t(`queues.${q.key}`)}</span>
                       <Badge tone={q.value > 0 ? "warning" : "neutral"}>{q.value}</Badge>
                     </Link>

@@ -49,11 +49,12 @@ export function ActionForm<T>({
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(action, IDLE as FormState<T>);
-  const [handled, setHandled] = useState<FormState<T> | null>(null);
+  // Each result is announced once, even if the effect re-runs because a dependency changed.
+  const handled = useRef<FormState<T> | null>(null);
 
   useEffect(() => {
-    if (state.status !== "done" || handled === state) return;
-    setHandled(state);
+    if (state.status !== "done" || handled.current === state) return;
+    handled.current = state;
     if (state.ok) {
       if (showSuccessToast && state.message) toast("success", t(state.message));
       if (resetOnSuccess) formRef.current?.reset();
@@ -62,7 +63,7 @@ export function ActionForm<T>({
     } else if (!state.fieldErrors) {
       toast("danger", t(state.message));
     }
-  }, [state, handled, toast, t, onSuccess, successRedirect, router, resetOnSuccess, showSuccessToast]);
+  }, [state, toast, t, onSuccess, successRedirect, router, resetOnSuccess, showSuccessToast]);
 
   const fieldErrors = state.status === "done" && !state.ok ? state.fieldErrors ?? {} : {};
   const formError = state.status === "done" && !state.ok && state.fieldErrors ? state.message : null;

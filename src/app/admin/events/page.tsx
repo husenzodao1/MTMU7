@@ -97,7 +97,7 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<CalendarDays />} title={t("empty")} />}
+        empty={<EmptyState icon={<CalendarDays />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           { key: "title", header: t("titleField"), primary: true, cell: (r) => <div><p className="font-medium">{r.title}</p><p className="text-xs text-ink-muted">{tpe(r.category as "school")} · {t(`audiences.${r.audience as "school"}`)}</p></div> },
           { key: "when", header: t("startsAt"), cell: (r) => <span className="text-sm tabular">{formatDateTime(r.starts_at, locale, timeZone)}</span> },

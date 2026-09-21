@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-const uuid = z.string().uuid();
 const optionalUuid = uuid.optional().or(z.literal("")).transform((v) => v || null);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "validation.time");
 

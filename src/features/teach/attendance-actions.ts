@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
 const STATUSES = ["present", "absent", "late", "excused"] as const;
-const uuid = z.string().uuid();
 
 const headerSchema = z.object({
   classId: uuid,

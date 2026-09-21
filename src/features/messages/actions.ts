@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { failure, success, type ActionResult } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import { MESSAGE_MAX_LENGTH, REPORT_REASONS, type ContactResult, type ThreadMessage } from "@/features/messages/types";
 
-const uuid = z.string().uuid();
 
 async function requireMessaging() {
   const access = await getAccess();

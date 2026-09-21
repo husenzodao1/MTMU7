@@ -113,7 +113,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<Newspaper />} title={t("empty")} />}
+        empty={<EmptyState icon={<Newspaper />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "title",
@@ -121,7 +121,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/news/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{r.title}</Link>
+                <Link href={`/admin/news/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
                 <p className="text-xs text-ink-muted">
                   {(r.author as unknown as { first_name: string; last_name: string } | null) ? `${(r.author as unknown as { last_name: string }).last_name} ${(r.author as unknown as { first_name: string }).first_name}` : ""}
                   {r.category_id && categoryName.get(r.category_id) ? ` · ${categoryName.get(r.category_id)}` : ""}

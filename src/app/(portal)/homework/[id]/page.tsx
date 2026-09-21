@@ -67,7 +67,7 @@ export default async function HomeworkDetailPage({ params, searchParams }: { par
               <ul className="space-y-1.5">
                 {assignment.homework_attachments.map((file) => (
                   <li key={file.id}>
-                    <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
+                    <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-text hover:underline">
                       <Paperclip className="size-4" aria-hidden />
                       {file.file_name}
                     </a>
@@ -98,7 +98,7 @@ export default async function HomeworkDetailPage({ params, searchParams }: { par
               <ul className="space-y-1">
                 {submission.homework_attachments.map((file) => (
                   <li key={file.id}>
-                    <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline">
+                    <a href={`/files/homework/${file.id}`} className="inline-flex items-center gap-1.5 text-sm text-brand-text hover:underline">
                       <Paperclip className="size-4" aria-hidden />
                       {file.file_name}
                     </a>
@@ -122,7 +122,7 @@ export default async function HomeworkDetailPage({ params, searchParams }: { par
         </Card>
       </div>
       <p className="mt-6">
-        <Link href="/homework" className="text-sm font-medium text-brand-700 hover:underline">
+        <Link href="/homework" className="text-sm font-medium text-brand-text hover:underline">
           ← {t("backToList")}
         </Link>
       </p>

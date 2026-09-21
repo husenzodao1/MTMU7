@@ -94,7 +94,7 @@ export default async function AdminClassesPage({ searchParams }: { searchParams:
             caption={t("title")}
             rows={rows}
             rowKey={(r) => r.id}
-            empty={<EmptyState icon={<School />} title={t("empty")} />}
+            empty={<EmptyState icon={<School />} title={t("empty")} description={t("emptyHint")} />}
             columns={[
               {
                 key: "name",
@@ -102,7 +102,7 @@ export default async function AdminClassesPage({ searchParams }: { searchParams:
                 primary: true,
                 cell: (r) => (
                   <span className="flex items-center gap-2">
-                    <Link href={`/admin/classes/${r.id}`} className="font-semibold hover:text-brand-700 hover:underline">{r.name}</Link>
+                    <Link href={`/admin/classes/${r.id}`} className="font-semibold hover:text-brand-text hover:underline">{r.name}</Link>
                     {!r.is_active ? <Badge>{tc("status.archived")}</Badge> : null}
                   </span>
                 ),

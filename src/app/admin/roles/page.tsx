@@ -56,7 +56,7 @@ export default async function RolesPage() {
         caption={t("title")}
         rows={roles ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<ShieldCheck />} title={t("empty")} />}
+        empty={<EmptyState icon={<ShieldCheck />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "name",
@@ -64,7 +64,7 @@ export default async function RolesPage() {
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/roles/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{pickName(r, locale)}</Link>
+                <Link href={`/admin/roles/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{pickName(r, locale)}</Link>
                 <p className="font-mono text-xs text-ink-muted">{r.slug}</p>
               </div>
             ),

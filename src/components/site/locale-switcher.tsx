@@ -17,7 +17,7 @@ export async function LocaleSwitcher({ className }: { className?: string }) {
             aria-pressed={locale === code}
             className={cn(
               "rounded-md px-2 py-1 text-sm",
-              locale === code ? "bg-brand-50 font-semibold text-brand-800" : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
+              locale === code ? "bg-brand-50 font-semibold text-brand-text-strong" : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
             )}
           >
             {code === "tg" ? "ТҶ" : code === "ru" ? "РУ" : "EN"}

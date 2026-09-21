@@ -113,7 +113,7 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<FileText />} title={t("empty")} />}
+        empty={<EmptyState icon={<FileText />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "title",
@@ -121,7 +121,7 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
             primary: true,
             cell: (r) => (
               <div>
-                <a href={`/files/documents/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{r.title}</a>
+                <a href={`/files/documents/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</a>
                 <p className="text-xs text-ink-muted">{[tpd(r.category as "other"), r.folder_id ? folderName.get(r.folder_id) : null, `${r.file_name} · ${formatBytes(r.size_bytes)}`].filter(Boolean).join(" · ")}</p>
               </div>
             ),
@@ -145,7 +145,7 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
                     <ul className="divide-y divide-line text-sm">
                       {versions.map((v) => (
                         <li key={v.id} className="flex justify-between gap-2 py-2">
-                          <a href={`/files/document-versions/${v.id}?download=1`} className="text-brand-700 hover:underline">v{v.version} · {v.file_name}</a>
+                          <a href={`/files/document-versions/${v.id}?download=1`} className="text-brand-text hover:underline">v{v.version} · {v.file_name}</a>
                           <span className="text-ink-muted tabular">{formatDateTime(v.created_at, locale, timeZone)}</span>
                         </li>
                       ))}

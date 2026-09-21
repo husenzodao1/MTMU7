@@ -47,7 +47,7 @@ export default async function AnnouncementsPage() {
                   </p>
                   <Markdown source={item.body} />
                   {item.attachmentPath && item.attachmentName ? (
-                    <a href={`/files/announcements/${item.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline" target="_blank" rel="noopener">
+                    <a href={`/files/announcements/${item.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-text hover:underline" target="_blank" rel="noopener">
                       <Paperclip className="size-4" aria-hidden />
                       {item.attachmentName}
                     </a>

@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import { generateInvitationCode } from "@/features/admin/people/invitation-code";
 
-const uuid = z.string().uuid();
 
 export async function setUserStatusAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();

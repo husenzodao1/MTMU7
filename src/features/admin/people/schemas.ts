@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 
 const name = z.string().trim().min(1, "validation.required").max(100, "validation.too_big");
 const optionalText = (max: number) => z.string().trim().max(max, "validation.too_big").optional().transform((v) => v || null);
@@ -24,7 +25,7 @@ export const studentSchema = z.object({
   phone,
   address: optionalText(500),
   notes: optionalText(2000),
-  classId: z.string().uuid().optional().or(z.literal("")).transform((v) => v || null),
+  classId: uuid.optional().or(z.literal("")).transform((v) => v || null),
 });
 
 export const STAFF_TYPES = ["teacher", "director", "vice_principal", "librarian", "administrator", "support", "other"] as const;

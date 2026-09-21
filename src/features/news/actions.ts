@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, canAny, getAccess } from "@/lib/auth/access";
@@ -15,7 +16,7 @@ import { publicMediaUrl } from "@/features/content/queries";
 const INTENTS = ["draft", "review", "approve", "publish", "unpublish", "archive", "restore"] as const;
 
 const articleSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   intent: z.enum(INTENTS),
   title: z.string().trim().min(3, "validation.too_small").max(500, "validation.too_big"),
   slug: z
@@ -30,7 +31,7 @@ const articleSchema = z.object({
   content: z.string().max(100000, "validation.too_big").default(""),
   language: z.enum(CONTENT_LANGUAGES),
   visibility: z.enum(NEWS_VISIBILITY),
-  categoryId: z.string().uuid().optional().or(z.literal("")).transform((v) => v || null),
+  categoryId: uuid.optional().or(z.literal("")).transform((v) => v || null),
   tags: z
     .string()
     .max(500)
@@ -140,7 +141,7 @@ export async function saveArticleAction(_state: FormState, formData: FormData): 
 export async function deleteDraftArticleAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
-  const id = z.string().uuid().safeParse(formData.get("id"));
+  const id = uuid.safeParse(formData.get("id"));
   if (!id.success) return done(failure("errors.invalid"));
   const supabase = await createClient();
   const { error, count } = await supabase
@@ -162,7 +163,7 @@ export async function returnArticleAction(_state: FormState, formData: FormData)
   if (!access?.school) return done(failure("errors.not_authenticated"));
   if (!can(access, "news.publish")) return done(failure("errors.forbidden"));
   const parsed = z
-    .object({ id: z.string().uuid(), reason: z.string().trim().min(3, "validation.too_small").max(500, "validation.too_big") })
+    .object({ id: uuid, reason: z.string().trim().min(3, "validation.too_small").max(500, "validation.too_big") })
     .safeParse({ id: formData.get("id"), reason: formData.get("reason") });
   if (!parsed.success) return done(failure("errors.validation", { reason: ["validation.required"] }));
   const supabase = await createClient();
@@ -178,7 +179,7 @@ export async function returnArticleAction(_state: FormState, formData: FormData)
 }
 
 const categorySchema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   nameTg: z.string().trim().min(1, "validation.required").max(100, "validation.too_big"),
   nameRu: z.string().trim().max(100).optional().transform((v) => v || null),
   nameEn: z.string().trim().max(100).optional().transform((v) => v || null),

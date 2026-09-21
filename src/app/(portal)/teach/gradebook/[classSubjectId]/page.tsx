@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { robots: { index: false } };
 
-const toneClass = { success: "text-success-700", warning: "text-warning-700", danger: "text-danger-700", neutral: "text-ink", brand: "text-brand-800" } as const;
+const toneClass = { success: "text-success-700", warning: "text-warning-700", danger: "text-danger-700", neutral: "text-ink", brand: "text-brand-text-strong" } as const;
 
 export default async function GradebookPage({ params, searchParams }: { params: Promise<{ classSubjectId: string }>; searchParams: Promise<SearchParams> }) {
   const access = await requirePermission("grades.enter", "grades.update", "grades.view");
@@ -130,7 +130,7 @@ export default async function GradebookPage({ params, searchParams }: { params: 
                         const type = typeById.get(typeId);
                         return (
                           <th key={key} scope="col" className={cn("px-2 py-2 text-center align-bottom", key === editKey && "bg-brand-50")}>
-                            <Link href={`${base}&column=${encodeURIComponent(key)}`} className="block rounded px-1 text-xs font-medium text-ink-secondary hover:text-brand-700 hover:underline" aria-label={t("editColumn", { date: formatShortDate(date, locale), type: type ? pickName(type, locale) : "" })}>
+                            <Link href={`${base}&column=${encodeURIComponent(key)}`} className="block rounded px-1 text-xs font-medium text-ink-secondary hover:text-brand-text hover:underline" aria-label={t("editColumn", { date: formatShortDate(date, locale), type: type ? pickName(type, locale) : "" })}>
                               <span className="block tabular">{formatShortDate(date, locale).slice(0, 5)}</span>
                               <span className="block max-w-16 truncate">{type?.code ?? ""}</span>
                             </Link>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
@@ -10,7 +11,6 @@ import { createClient } from "@/lib/supabase/server";
 import { GUARDIAN_RELATIONSHIPS, guardianSchema, STUDENT_STATUSES, studentSchema } from "@/features/admin/people/schemas";
 import { generateInvitationCode } from "@/features/admin/people/invitation-code";
 
-const uuid = z.string().uuid();
 
 export async function createStudentAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();

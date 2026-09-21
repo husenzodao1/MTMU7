@@ -77,7 +77,7 @@ export default async function AdminStaffPage({ searchParams }: { searchParams: P
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<Users />} title={t("empty")} />}
+        empty={<EmptyState icon={<Users />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {
             key: "name",
@@ -85,7 +85,7 @@ export default async function AdminStaffPage({ searchParams }: { searchParams: P
             primary: true,
             cell: (r) => (
               <div>
-                <Link href={`/admin/staff/${r.id}`} className="font-medium hover:text-brand-700 hover:underline">{fullName(r)}</Link>
+                <Link href={`/admin/staff/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
                 {r.employee_number ? <p className="text-xs text-ink-muted">{r.employee_number}</p> : null}
               </div>
             ),

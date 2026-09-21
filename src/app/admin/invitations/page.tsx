@@ -70,7 +70,7 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
-        empty={<EmptyState icon={<KeyRound />} title={t("empty")} />}
+        empty={<EmptyState icon={<KeyRound />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           { key: "code", header: t("code"), primary: true, cell: (r) => <span className="font-mono text-base font-semibold tracking-widest">{r.code}</span> },
           {

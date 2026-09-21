@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
@@ -11,8 +12,8 @@ import { checkFile } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 
 const assignmentSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
-  classSubjectId: z.string().uuid("validation.required"),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
+  classSubjectId: uuid,
   title: z.string().trim().min(2, "validation.too_small").max(300, "validation.too_big"),
   instructions: z.string().max(20000, "validation.too_big").optional().transform((v) => v?.trim() || null),
   dueAt: z.string().optional(),
@@ -95,7 +96,7 @@ export async function saveAssignmentAction(_state: FormState, formData: FormData
 export async function removeAssignmentAttachmentAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access) return done(failure("errors.not_authenticated"));
-  const id = z.string().uuid().safeParse(formData.get("attachmentId"));
+  const id = uuid.safeParse(formData.get("attachmentId"));
   if (!id.success) return done(failure("errors.invalid"));
   const supabase = await createClient();
   const { error, count } = await supabase.from("homework_attachments").delete({ count: "exact" }).eq("id", id.data);
@@ -106,9 +107,9 @@ export async function removeAssignmentAttachmentAction(_state: FormState, formDa
 }
 
 const reviewSchema = z.object({
-  assignmentId: z.string().uuid(),
-  submissionId: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
-  studentId: z.string().uuid(),
+  assignmentId: uuid,
+  submissionId: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
+  studentId: uuid,
   decision: z.enum(["reviewed", "returned", "missing"]),
   score: z
     .string()

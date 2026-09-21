@@ -30,6 +30,14 @@
   --color-brand-800: #14325a;
   --color-brand-900: #0f2643;
 
+  /* Interactive roles kept apart from the palette ramp, so a dark theme can
+     make link text lighter while solid buttons stay dark enough for white text. */
+  --color-brand-solid: #1f4d8b;
+  --color-brand-solid-hover: #193f72;
+  --color-brand-solid-active: #14325a;
+  --color-brand-text: #193f72;
+  --color-brand-text-strong: #14325a;
+
   --color-success-50: #eaf6ef;
   --color-success-600: #1b7349;
   --color-success-700: #155c3a;
@@ -74,8 +82,62 @@
   to { opacity: 1; }
 }
 
+/*
+ * Dark theme: the same token names with dark values, so every component that
+ * uses the tokens follows automatically. Contrast of text tokens on
+ * --color-surface stays at WCAG AA (>= 4.5:1).
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0e1317;
+    --color-surface: #151b21;
+    --color-surface-muted: #1b232a;
+    --color-surface-sunken: #222c34;
+    --color-line: #2b353e;
+    --color-line-strong: #3d4a56;
+
+    --color-ink: #eef2f6;
+    --color-ink-secondary: #c3ccd5;
+    --color-ink-muted: #9aa5b0;
+    --color-ink-inverse: #ffffff;
+
+    --color-brand-50: #16263a;
+    --color-brand-100: #1c3550;
+    --color-brand-200: #24466b;
+    --color-brand-300: #35608f;
+    --color-brand-500: #4a86c9;
+    --color-brand-600: #3d78bd;
+    --color-brand-700: #7fb3ea;
+    --color-brand-800: #a6cbf3;
+    --color-brand-900: #cfe3fa;
+
+    --color-brand-solid: #2f6bb8;
+    --color-brand-solid-hover: #3a7bcc;
+    --color-brand-solid-active: #4a8bd8;
+    --color-brand-text: #8dbcee;
+    --color-brand-text-strong: #b3d4f6;
+
+    --color-success-50: #10291c;
+    --color-success-600: #4bbb85;
+    --color-success-700: #6fcda0;
+    --color-warning-50: #2c2210;
+    --color-warning-600: #d9a441;
+    --color-warning-700: #e8c274;
+    --color-danger-50: #2e1614;
+    --color-danger-600: #e8776b;
+    --color-danger-700: #f09c92;
+    --color-info-50: #16263a;
+    --color-info-600: #7fb3ea;
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  }
+}
+
 @layer base {
   html {
+    color-scheme: light dark;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -102,7 +164,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--color-brand-solid);
     outline-offset: 2px;
   }
 
@@ -139,7 +201,7 @@
     top: -3rem;
     z-index: 100;
     border-radius: var(--radius-md);
-    background: var(--color-brand-700);
+    background: var(--color-brand-solid);
     color: var(--color-ink-inverse);
     padding: 0.5rem 0.875rem;
     font-weight: 600;
@@ -166,5 +228,46 @@
   .prose-official h2,
   .prose-official h3 {
     margin-top: 0.875rem;
+  }
+}
+
+/*
+ * Printing an administrative page (a report, a register) must produce a plain
+ * paper document: light surfaces whatever the screen theme, no chrome, and no
+ * row split across two pages.
+ */
+@media print {
+  :root {
+    --color-canvas: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-muted: #ffffff;
+    --color-surface-sunken: #ffffff;
+    --color-line: #b9c0c8;
+    --color-ink: #000000;
+    --color-ink-secondary: #1f2933;
+    --color-ink-muted: #3d4a56;
+    --color-brand-text: #14325a;
+    --shadow-xs: none;
+    --shadow-sm: none;
+    --shadow-overlay: none;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  tr,
+  li,
+  figure {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  a[href^="/"]::after,
+  a[href^="#"]::after {
+    content: "";
   }
 }

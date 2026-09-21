@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import { guardianSchema, STAFF_STATUSES, staffSchema } from "@/features/admin/people/schemas";
 
-const uuid = z.string().uuid();
 
 function staffRow(v: z.output<typeof staffSchema>) {
   return {
@@ -79,7 +79,7 @@ export async function saveGuardianAction(_state: FormState, formData: FormData):
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
   if (!can(access, "guardians.manage")) return done(failure("errors.forbidden"));
-  const id = z.string().uuid().optional().or(z.literal("")).safeParse(formData.get("id") ?? "");
+  const id = uuid.optional().or(z.literal("")).safeParse(formData.get("id") ?? "");
   if (!id.success) return done(failure("errors.invalid"));
   const input = parseInput(guardianSchema, formDataToObject(formData));
   if (!input.ok) return done(input.result);

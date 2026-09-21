@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, canAny, getAccess } from "@/lib/auth/access";
@@ -9,7 +10,6 @@ import { checkFile, isValidStoragePath } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 import { DOCUMENT_ACCESS, DOCUMENT_CATEGORIES, ROLE_SLUGS } from "@/features/content/constants";
 
-const uuid = z.string().uuid();
 
 const documentSchema = z.object({
   id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),

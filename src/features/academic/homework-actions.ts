@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
@@ -9,7 +10,7 @@ import { checkFile } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 
 const submitSchema = z.object({
-  assignmentId: z.string().uuid(),
+  assignmentId: uuid,
   content: z.string().trim().max(20000, "validation.too_big").optional().transform((v) => v || null),
   attachmentPath: z.string().max(500).optional(),
   attachmentName: z.string().max(255).optional(),

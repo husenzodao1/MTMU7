@@ -179,7 +179,7 @@ export default async function AdminClassPage({ params, searchParams }: { params:
                 {students.map((s, index) => (
                   <li key={s.id} className="flex gap-2 border-b border-line py-1.5 text-sm">
                     <span className="w-6 text-end text-ink-muted tabular">{index + 1}</span>
-                    <Link href={`/admin/students/${s.id}`} className="hover:text-brand-700 hover:underline">{fullName(s)}</Link>
+                    <Link href={`/admin/students/${s.id}`} className="hover:text-brand-text hover:underline">{fullName(s)}</Link>
                   </li>
                 ))}
               </ol>

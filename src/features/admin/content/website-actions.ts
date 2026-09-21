@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
 import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess } from "@/lib/auth/access";
@@ -92,7 +93,7 @@ export async function saveSiteSectionAction(_state: FormState, formData: FormDat
 }
 
 const pageSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal("")).transform((v) => v || undefined),
+  id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   slug: z.string().trim().toLowerCase().min(2, "validation.too_small").max(80).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "validation.slug"),
   titleTg: z.string().trim().min(1, "validation.required").max(200),
   titleRu: z.string().trim().max(200).optional().transform((v) => v || null),

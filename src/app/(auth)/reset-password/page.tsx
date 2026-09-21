@@ -54,7 +54,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       <CardBody className="p-6 sm:p-8">
         {body}
         <p className="mt-5 border-t border-line pt-4 text-center text-sm">
-          <Link href="/login" className="font-medium text-brand-700 hover:underline">
+          <Link href="/login" className="font-medium text-brand-text hover:underline">
             {t("backToLogin")}
           </Link>
         </p>

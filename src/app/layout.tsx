@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Noto_Sans } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
+import { publicEnv } from "@/lib/env";
 import "@/styles/globals.css";
 
 const notoSans = Noto_Sans({
@@ -21,12 +22,23 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common");
+  const locale = await getLocale();
+  const base = publicEnv.NEXT_PUBLIC_APP_URL;
   return {
+    // Absolute URLs for social previews; relative metadata stays relative without it.
+    metadataBase: base ? new URL(base) : null,
     title: { default: t("platformName"), template: `%s · ${t("platformName")}` },
     description: t("platformDescription"),
     applicationName: t("platformName"),
     formatDetection: { telephone: false },
     robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      siteName: t("platformName"),
+      title: t("platformName"),
+      description: t("platformDescription"),
+      locale,
+    },
   };
 }
 

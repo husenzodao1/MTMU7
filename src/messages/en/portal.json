@@ -44,7 +44,18 @@
         "teachers": "Teachers",
         "classes": "Classes",
         "pending": "Pending approvals"
-      }
+      },
+      "incomplete": {
+        "profileTitle": "Finish your registration",
+        "profileBody": "Your account has no profile yet. Tell us your name, school and role so an administrator can review the request.",
+        "profileCta": "Finish registration",
+        "pendingTitle": "Your request is being reviewed",
+        "pendingBody": "An administrator of the school has to approve it. You will see the portal as soon as that happens.",
+        "pendingCta": "Request details",
+        "rejectedTitle": "The request was declined",
+        "rejectedBody": "Contact the school administration to find out why."
+      },
+      "greetingNoName": "Welcome"
     },
     "lessons": {
       "period": "Period {number}",

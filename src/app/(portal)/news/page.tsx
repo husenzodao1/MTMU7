@@ -92,7 +92,7 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
                     {article.category_id && categoryName.get(article.category_id) ? <Badge>{categoryName.get(article.category_id)}</Badge> : null}
                   </div>
                   <h2 className="text-lg font-semibold leading-snug">
-                    <Link href={`/news/${article.slug}`} className="hover:text-brand-700 hover:underline">
+                    <Link href={`/news/${article.slug}`} className="hover:text-brand-text hover:underline">
                       {article.title}
                     </Link>
                   </h2>

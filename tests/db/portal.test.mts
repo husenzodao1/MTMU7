@@ -1,6 +1,6 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { asUser, createDatabase, errorOf, rows, type Db } from "./harness.mts";
+import { asUser, createDatabase, errorOf, one, rows, type Db } from "./harness.mts";
 import { seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
 import { seedAcademic, type Academic } from "./academic-fixtures.mts";
 
@@ -46,6 +46,35 @@ describe("portal timetables", () => {
     assert.deepEqual(other.map((m) => m.class_name), ["9B"]);
     const student = await asUser(db, t.users.studentA, (tx) => rows(tx, `SELECT * FROM public.my_teaching_timetable()`));
     assert.equal(student.length, 0);
+  });
+});
+
+describe("portal today functions", () => {
+  it("default to the school's own calendar day, not the database's UTC day", async () => {
+    // Pick whichever of the two zones currently disagrees with the session's
+    // calendar day; they are 25 hours apart, so one of them always does.
+    const zone = (await one<{ tz: string }>(db, `SELECT CASE
+        WHEN (now() AT TIME ZONE 'Pacific/Kiritimati')::date <> current_date THEN 'Pacific/Kiritimati'
+        ELSE 'Pacific/Niue' END AS tz`))!.tz;
+    const previous = (await one<{ tz: string }>(db, `SELECT timezone AS tz FROM public.schools WHERE id = $1`, [SCHOOL_A]))!.tz;
+    await db.query(`UPDATE public.schools SET timezone = $2 WHERE id = $1`, [SCHOOL_A, zone]);
+    try {
+      const local = (await one<{ d: string }>(db, `SELECT app.school_today($1)::text AS d`, [SCHOOL_A]))!.d;
+      const utc = (await one<{ d: string }>(db, `SELECT current_date::text AS d`))!.d;
+      assert.notEqual(local, utc, "the fixture must exercise a differing calendar day");
+
+      const teacher = await asUser(db, t.users.teacherA, (tx) => one<{ j: { date: string } }>(tx, `SELECT public.teacher_today() AS j`));
+      assert.equal(teacher!.j.date, local);
+      const student = await asUser(db, t.users.studentA, (tx) => one<{ j: { date: string } }>(tx, `SELECT public.student_overview() AS j`));
+      assert.equal(student!.j.date, local);
+
+      // An explicit date still wins over the school default.
+      const explicit = await asUser(db, t.users.teacherA, (tx) =>
+        one<{ j: { date: string } }>(tx, `SELECT public.teacher_today($1::date) AS j`, [utc]));
+      assert.equal(explicit!.j.date, utc);
+    } finally {
+      await db.query(`UPDATE public.schools SET timezone = $2 WHERE id = $1`, [SCHOOL_A, previous]);
+    }
   });
 });
 

@@ -116,7 +116,7 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
                       <span className={cn("truncate text-sm", unread ? "text-ink" : "text-ink-muted")}>{preview}</span>
                       {c.is_muted ? <BellOff className="size-3.5 shrink-0 text-ink-muted" aria-label={t("muted")} /> : null}
                       {unread ? (
-                        <span className="shrink-0 rounded-full bg-brand-600 px-1.5 text-xs font-semibold leading-5 text-ink-inverse tabular">
+                        <span className="shrink-0 rounded-full bg-brand-solid px-1.5 text-xs font-semibold leading-5 text-ink-inverse tabular">
                           <span aria-hidden>{c.unread_count > 99 ? "99+" : c.unread_count}</span>
                           <span className="sr-only">{t("unread", { count: c.unread_count })}</span>
                         </span>
