@@ -8,7 +8,14 @@
       "signIn": "Sign in",
       "register": "Register",
       "developedBy": "Developed by",
-      "support": "Support"
+      "support": "Support desk",
+      "tagline": "Online portal for the schools of Istaravshan",
+      "about": "About us",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "instagram": "Instagram",
+      "siteLinks": "Site links",
+      "quickLinks": "Quick access"
     },
     "public": {
       "directoryTitle": "Schools",
@@ -37,6 +44,7 @@
       "notice": "Development preview only. No account, database data, or authorization is being bypassed.",
       "portalNavigation": "Portal navigation",
       "states": "Portal preview states"
-    }
+    },
+    "authority": "Ministry of Education and Science of the Republic of Tajikistan"
   }
 }

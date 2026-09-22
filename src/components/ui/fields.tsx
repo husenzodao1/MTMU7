@@ -1,7 +1,7 @@
 "use client";
 
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
-import { useFieldError } from "@/components/ui/action-form";
+import { useFieldError, useFieldValue } from "@/components/ui/action-form";
 import { describedBy, FormField, Input, Select, Textarea } from "@/components/ui/form-controls";
 
 interface BaseProps {
@@ -15,10 +15,18 @@ interface BaseProps {
 /** Text input wired to ActionForm field errors. */
 export function TextField({ name, label, hint, required, className, ...props }: BaseProps & Omit<InputHTMLAttributes<HTMLInputElement>, "name">) {
   const error = useFieldError(name);
+  const submitted = useFieldValue(name);
   const id = props.id ?? `f-${name}`;
   return (
     <FormField label={label} htmlFor={id} hint={hint} error={error} required={required} className={className}>
-      <Input id={id} name={name} required={required} {...describedBy(id, { hint, error })} {...props} />
+      <Input
+        id={id}
+        name={name}
+        required={required}
+        defaultValue={props.defaultValue ?? submitted}
+        {...describedBy(id, { hint, error })}
+        {...props}
+      />
     </FormField>
   );
 }
@@ -48,10 +56,18 @@ export function SelectField({
     placeholder?: string;
   }) {
   const error = useFieldError(name);
+  const submitted = useFieldValue(name);
   const id = props.id ?? `f-${name}`;
   return (
     <FormField label={label} htmlFor={id} hint={hint} error={error} required={required} className={className}>
-      <Select id={id} name={name} required={required} {...describedBy(id, { hint, error })} {...props}>
+      <Select
+        id={id}
+        name={name}
+        required={required}
+        defaultValue={props.defaultValue ?? submitted}
+        {...describedBy(id, { hint, error })}
+        {...props}
+      >
         {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (
           <option key={option.value} value={option.value} disabled={option.disabled}>

@@ -21,14 +21,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <Card as="div">
       <CardBody className="space-y-5 p-6 sm:p-8">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-ink-secondary">{t("subtitle")}</p>
-        </div>
         {reason === "inactive" ? <Alert tone="warning">{t("inactive")}</Alert> : null}
         {reason === "password-updated" ? <Alert tone="success">{t("passwordUpdated")}</Alert> : null}
         {reason === "link-invalid" ? <Alert tone="warning">{t("linkInvalid")}</Alert> : null}
         <SignInForm next={next} />
+        {/* Always offered, whether or not the address exists: the card must not
+            become a way to test which addresses are registered here. */}
         <p className="border-t border-line pt-4 text-center text-sm text-ink-secondary">
           {t("noAccount")}{" "}
           <Link href="/register" className="font-medium text-brand-text hover:underline">

@@ -37,6 +37,8 @@ interface ShellProps {
   locale: string;
   switchHref?: { href: string; label: string } | null;
   children: ReactNode;
+  /** Rendered under the content — the portal passes the site footer here. */
+  footer?: ReactNode;
 }
 
 function isActive(pathname: string, href: string) {
@@ -51,7 +53,7 @@ function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: strin
         // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
         <img src={school.logoUrl} alt="" className="size-9 shrink-0 rounded-md border border-line object-cover" />
       ) : (
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-solid text-sm font-semibold text-ink-inverse" aria-hidden>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-solid text-sm font-semibold text-brand-on-solid" aria-hidden>
           {school.name.slice(0, 2).toUpperCase()}
         </span>
       )}
@@ -114,7 +116,7 @@ function CountBadge({ count, label }: { count: number; label: string }) {
   );
 }
 
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children }: ShellProps) {
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -283,6 +285,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         <main id="main" tabIndex={-1} className={cn("mx-auto w-full max-w-[84rem] flex-1 px-4 py-5 focus:outline-none sm:px-6 sm:py-7", mobileBar && "pb-24 lg:pb-7")}>
           {children}
         </main>
+        {footer}
       </div>
 
       {mobileBar && mobileBar.length > 0 ? (

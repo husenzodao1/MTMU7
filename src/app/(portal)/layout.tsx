@@ -23,6 +23,13 @@ export default async function PortalLayout({ children }: { children: React.React
   const access = session.access;
   const [shell, nav] = await Promise.all([loadShellData(access), portalShellNav(access)]);
 
+  // One-click entry to the sections this person actually has, taken from the
+  // navigation already built for them rather than a second hard-coded list.
+  const quickLinks = nav.groups
+    .flatMap((group) => group.items)
+    .map((item) => ({ href: item.href, label: item.label }))
+    .slice(0, 10);
+
   return (
     <AppShell
       variant="portal"
@@ -34,6 +41,7 @@ export default async function PortalLayout({ children }: { children: React.React
       unreadMessages={shell.unreadMessages}
       locale={shell.locale}
       switchHref={nav.switchHref}
+      footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} />}
     >
       {children}
     </AppShell>

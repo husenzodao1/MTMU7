@@ -26,8 +26,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       ref={ref}
       className={cn(
         controlBase,
-        "h-10 appearance-none bg-[length:16px] bg-[right_0.6rem_center] bg-no-repeat pr-9",
-        "bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%235e6670%22 stroke-width=%222%22><path d=%22m6 9 6 6 6-6%22/></svg>')]",
+        "select-chevron h-10 appearance-none pr-9",
+        // While the empty option is the chosen one the control shows hint grey,
+        // so an untouched select never looks like an answered question.
+        "[&:has(option[value='']:checked)]:text-ink-muted",
         className
       )}
       {...props}

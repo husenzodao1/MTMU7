@@ -13,6 +13,8 @@ import { IDLE, type ActionResult, type FormState } from "@/lib/actions/result";
 type ServerAction<T> = (state: FormState<T>, formData: FormData) => Promise<FormState<T>>;
 
 const FieldErrorsContext = createContext<Record<string, string[]>>({});
+const FieldValuesContext = createContext<Record<string, string>>({});
+const FormErrorContext = createContext<{ message: string | null; token: object | null }>({ message: null, token: null });
 
 /** Translated error for a field inside the nearest ActionForm. */
 export function useFieldError(name: string): string | undefined {
@@ -20,6 +22,24 @@ export function useFieldError(name: string): string | undefined {
   const t = useTranslations();
   const key = errors[name]?.[0];
   return key ? t(key) : undefined;
+}
+
+/**
+ * The value this field was submitted with, when the submit was rejected.
+ * React resets a form as soon as its action resolves, so a field that is not
+ * restored here comes back empty and the person retypes work they already did.
+ */
+export function useFieldValue(name: string): string | undefined {
+  return useContext(FieldValuesContext)[name];
+}
+
+/**
+ * The rejected submit of the nearest ActionForm. `token` is the result object
+ * itself, which is new on every submit — depend on it to replay a reaction when
+ * the same error happens twice in a row.
+ */
+export function useFormError(): { message: string | null; token: object | null } {
+  return useContext(FormErrorContext);
 }
 
 /**
@@ -35,10 +55,13 @@ export function ActionForm<T>({
   onSuccess,
   resetOnSuccess,
   showSuccessToast = true,
+  lead,
 }: {
   action: ServerAction<T>;
   children: ReactNode;
   className?: string;
+  /** Rendered above the error alert — for a heading or mark that owns the top of the card. */
+  lead?: ReactNode;
   successRedirect?: string;
   onSuccess?: (result: ActionResult<T>) => void;
   resetOnSuccess?: boolean;
@@ -65,18 +88,25 @@ export function ActionForm<T>({
     }
   }, [state, toast, t, onSuccess, successRedirect, router, resetOnSuccess, showSuccessToast]);
 
+  const rejected = state.status === "done" && !state.ok;
   const fieldErrors = state.status === "done" && !state.ok ? state.fieldErrors ?? {} : {};
+  const fieldValues = state.status === "done" && !state.ok ? state.values ?? {} : {};
   const formError = state.status === "done" && !state.ok && state.fieldErrors ? state.message : null;
 
   return (
     <form ref={formRef} action={formAction} className={className} noValidate>
       <FieldErrorsContext.Provider value={fieldErrors}>
-        {formError ? (
-          <Alert tone="danger" className="mb-4">
-            {t(formError)}
-          </Alert>
-        ) : null}
-        {children}
+        <FieldValuesContext.Provider value={fieldValues}>
+          <FormErrorContext.Provider value={{ message: rejected ? state.message : null, token: state }}>
+            {lead}
+            {formError ? (
+              <Alert tone="danger" className="mb-4">
+                {t(formError)}
+              </Alert>
+            ) : null}
+            {children}
+          </FormErrorContext.Provider>
+        </FieldValuesContext.Provider>
       </FieldErrorsContext.Provider>
     </form>
   );

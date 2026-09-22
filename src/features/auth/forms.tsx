@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { AuthMark } from "@/features/auth/auth-mark";
+import { PhoneField } from "@/features/auth/phone-field";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { Radio } from "@/components/ui/form-controls";
 import { FieldError } from "@/components/ui/fields";
@@ -25,8 +27,19 @@ import {
 
 export function SignInForm({ next }: { next?: string }) {
   const t = useTranslations("auth.login");
+  const terms = useTranslations("auth.terms");
   return (
-    <ActionForm action={signInAction} className="space-y-4">
+    <ActionForm
+      action={signInAction}
+      className="space-y-4"
+      lead={
+        <div className="mb-5">
+          <AuthMark alt={t("markAlt")} />
+          <h1 className="text-center text-2xl font-semibold">{t("title")}</h1>
+          <p className="mt-1 text-center text-sm text-ink-secondary">{t("subtitle")}</p>
+        </div>
+      }
+    >
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <TextField name="email" type="email" label={t("email")} autoComplete="email" inputMode="email" required />
       <TextField name="password" type="password" label={t("password")} autoComplete="current-password" required />
@@ -38,6 +51,17 @@ export function SignInForm({ next }: { next?: string }) {
       <SubmitButton className="w-full" size="lg">
         {t("submit")}
       </SubmitButton>
+      {/* Consent is given by the act of signing in, so there is no checkbox to
+          tick; the sentence states what that act means, including for minors. */}
+      <p className="text-center text-xs leading-relaxed text-ink-muted">
+        {terms.rich("signIn", {
+          terms: (chunks) => (
+            <Link href="/terms" className="underline underline-offset-2 hover:text-ink-secondary">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
     </ActionForm>
   );
 }
@@ -71,6 +95,7 @@ export function RegistrationDetailsForm({
 }) {
   const t = useTranslations("auth.register");
   const tc = useTranslations();
+  const terms = useTranslations("auth.terms");
   const [schoolSlug, setSchoolSlug] = useState(schools.length === 1 ? schools[0]!.slug : "");
   const [options, setOptions] = useState<RegistrationOptions | null>(null);
   const [role, setRole] = useState("");
@@ -145,7 +170,7 @@ export function RegistrationDetailsForm({
         <TextField name="firstName" label={t("firstName")} autoComplete="given-name" required maxLength={100} />
       </div>
       <TextField name="middleName" label={t("middleName")} autoComplete="additional-name" maxLength={100} />
-      <TextField name="phone" type="tel" label={t("phone")} autoComplete="tel" inputMode="tel" maxLength={30} />
+      <PhoneField label={t("phone")} invalidMessage={t("phoneInvalid")} />
 
       {mode === "start" ? (
         <TextField name="email" type="email" label={t("email")} hint={t("emailHint")} autoComplete="email" inputMode="email" required />
@@ -156,10 +181,18 @@ export function RegistrationDetailsForm({
         </>
       )}
 
-      <p className="text-sm text-ink-muted">{t("consent")}</p>
       <SubmitButton className="w-full" size="lg">
         {mode === "start" ? t("sendCode") : t("finish")}
       </SubmitButton>
+      <p className="text-center text-xs leading-relaxed text-ink-muted">
+        {terms.rich("register", {
+          terms: (chunks) => (
+            <Link href="/terms" className="underline underline-offset-2 hover:text-ink-secondary">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
     </ActionForm>
   );
 }

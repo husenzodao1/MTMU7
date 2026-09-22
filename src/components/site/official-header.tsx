@@ -1,36 +1,66 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
-import { getPlatformIdentity } from "@/lib/site/identity";
+import { getPlatformIdentity, getPublicSchoolBySlug, resolveHomeSchoolSlug } from "@/lib/site/identity";
 import { pickText, type Locale } from "@/lib/i18n/text";
 
+/** The emblem of the Republic, shipped with the build; the owner may override it. */
+const DEFAULT_EMBLEM = "/gov/emblem-tj.svg";
+
 /**
- * Government / ministry identity strip. Emblem and authority name are shown
- * only when supplied by the platform owner; nothing is generated.
+ * Government identity strip: the emblem of the Republic and the ministry it
+ * answers to, over a darkened photograph of the national flag. The photograph
+ * is decorative and confined to this strip, never the page behind it.
  */
 export async function OfficialStrip() {
   const locale = (await getLocale()) as Locale;
   const identity = await getPlatformIdentity();
-  const authority = pickText(identity.authorityName, locale);
   const t = await getTranslations("site");
+  const authority = pickText(identity.authorityName, locale) || t("authority");
+  const emblem = identity.emblemUrl ?? DEFAULT_EMBLEM;
 
   return (
-    <div className="border-b border-line bg-surface">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2">
-        <div className="flex min-w-0 items-center gap-2">
-          {identity.emblemUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- official emblem supplied by the owner; rendered unmodified
-            <img src={identity.emblemUrl} alt={t("emblemAlt")} className="h-7 w-auto shrink-0" />
-          ) : null}
-          {authority ? <p className="truncate text-xs font-medium uppercase tracking-wide text-ink-secondary sm:text-sm sm:normal-case sm:tracking-normal">{authority}</p> : null}
+    <div className="relative isolate overflow-hidden border-b border-black/20">
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-20 bg-[url('/gov/flag-strip.webp')] bg-cover bg-center"
+      />
+      {/* Scrim: the flag keeps its colour on the right, the text side stays dark
+          enough for white type to hold well past the AA threshold. */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/70 to-black/55" />
+
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2">
+        <LocaleSwitcher tone="onDark" />
+
+        {/* Emblem and authority share one centre line, so the two read as a
+            single official mark rather than two stacked elements. */}
+        <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <p className="min-w-0 truncate text-right text-[11px] font-medium leading-none tracking-tight text-white sm:text-xs sm:leading-none">
+            {authority}
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element -- official emblem, rendered unmodified */}
+          <img src={emblem} alt={t("emblemAlt")} className="h-8 w-8 shrink-0 object-contain sm:h-9 sm:w-9" />
         </div>
-        <LocaleSwitcher />
       </div>
     </div>
   );
 }
 
-export async function SiteFooter({ schoolName }: { schoolName?: string | null }) {
+const SOCIAL_KEYS = ["whatsapp", "telegram", "instagram"] as const;
+
+/**
+ * Site footer. One sentence of purpose, then the contact and navigation row.
+ * Links appear only where the owner has supplied a destination; nothing here
+ * is invented. `quickLinks` is for signed-in layouts, which pass the sections
+ * that person may open in one click.
+ */
+export async function SiteFooter({
+  schoolName,
+  quickLinks,
+}: {
+  schoolName?: string | null;
+  quickLinks?: Array<{ href: string; label: string }>;
+}) {
   const locale = (await getLocale()) as Locale;
   const identity = await getPlatformIdentity();
   const t = await getTranslations("site.footer");
@@ -38,34 +68,96 @@ export async function SiteFooter({ schoolName }: { schoolName?: string | null })
   const copyright = pickText(identity.copyright, locale);
   const year = new Date().getFullYear();
 
+  const homeSlug = await resolveHomeSchoolSlug();
+  const school = homeSlug ? await getPublicSchoolBySlug(homeSlug) : null;
+  const social = school?.socialLinks ?? {};
+
+  const contact: Array<{ href: string; label: string; external?: boolean }> = [];
+  if (school) contact.push({ href: `/s/${school.slug}`, label: t("about") });
+  if (identity.supportEmail) contact.push({ href: `mailto:${identity.supportEmail}`, label: t("support"), external: true });
+  for (const key of SOCIAL_KEYS) {
+    const href = social[key];
+    if (href) contact.push({ href, label: t(key), external: true });
+  }
+
+  const linkClass = "rounded-sm text-ink-secondary transition-colors hover:text-brand-text hover:underline";
+
   return (
     <footer className="mt-auto border-t border-line bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm text-ink-secondary sm:grid-cols-3">
-        <div>
-          <p className="font-semibold text-ink">{schoolName ?? t("platform")}</p>
-          <p className="mt-1">{copyright || `© ${year}`}</p>
-        </div>
-        <nav aria-label={t("links")}>
-          <ul className="space-y-1.5">
-            <li><Link className="hover:text-ink hover:underline" href="/schools">{t("schools")}</Link></li>
-            <li><Link className="hover:text-ink hover:underline" href="/login">{t("signIn")}</Link></li>
-            <li><Link className="hover:text-ink hover:underline" href="/register">{t("register")}</Link></li>
+      <div className="mx-auto max-w-6xl px-4 py-7 text-sm">
+        <p className="text-center text-ink-secondary sm:text-[0.9375rem]">{t("tagline")}</p>
+
+        {contact.length > 0 ? (
+          <nav aria-label={t("links")} className="mt-4">
+            <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+              {contact.map((item, index) => (
+                <li key={item.href} className="flex items-center gap-x-3">
+                  {index > 0 ? <span aria-hidden className="text-line-strong">|</span> : null}
+                  {item.external ? (
+                    <a className={linkClass} href={item.href} rel="noopener noreferrer" target={item.href.startsWith("mailto:") ? undefined : "_blank"}>
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link className={linkClass} href={item.href}>
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+
+        <nav aria-label={t("siteLinks")} className="mt-3">
+          <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+            <li>
+              <Link className={linkClass} href="/schools">
+                {t("schools")}
+              </Link>
+            </li>
+            <li aria-hidden className="text-line-strong">|</li>
+            <li>
+              <Link className={linkClass} href="/login">
+                {t("signIn")}
+              </Link>
+            </li>
+            <li aria-hidden className="text-line-strong">|</li>
+            <li>
+              <Link className={linkClass} href="/register">
+                {t("register")}
+              </Link>
+            </li>
           </ul>
         </nav>
-        <div>
+
+        {quickLinks && quickLinks.length > 0 ? (
+          <nav aria-label={t("quickLinks")} className="mt-5 border-t border-line pt-4">
+            <ul className="flex flex-wrap items-center justify-center gap-2">
+              {quickLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    className="inline-flex items-center rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-text-strong"
+                    href={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-line pt-4 text-xs text-ink-muted">
+          <span>{schoolName ?? t("platform")}</span>
+          <span aria-hidden>·</span>
+          <span>{copyright || `© ${year}`}</span>
           {attribution ? (
             <>
-              <p className="font-medium text-ink">{t("developedBy")}</p>
-              <p className="mt-1">{attribution}</p>
+              <span aria-hidden>·</span>
+              <span>
+                {t("developedBy")} {attribution}
+              </span>
             </>
-          ) : null}
-          {identity.supportEmail ? (
-            <p className="mt-2">
-              {t("support")}:{" "}
-              <a className="text-brand-text hover:underline" href={`mailto:${identity.supportEmail}`}>
-                {identity.supportEmail}
-              </a>
-            </p>
           ) : null}
         </div>
       </div>

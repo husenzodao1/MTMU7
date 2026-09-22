@@ -3,7 +3,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const variants = {
-  primary: "bg-brand-solid text-ink-inverse hover:bg-brand-solid-hover active:bg-brand-solid-active shadow-xs",
+  primary: "brand-fill shadow-xs",
   secondary: "bg-surface text-ink border border-line-strong hover:bg-surface-muted shadow-xs",
   ghost: "text-ink-secondary hover:bg-surface-muted hover:text-ink",
   danger: "bg-danger-600 text-ink-inverse hover:bg-danger-700 shadow-xs",

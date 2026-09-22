@@ -3,7 +3,7 @@ import type { z } from "zod";
 /** Serializable result returned by every Server Action. `message` is an i18n key. */
 export type ActionResult<T = undefined> =
   | { ok: true; message?: string; data?: T }
-  | { ok: false; message: string; fieldErrors?: Record<string, string[]> };
+  | { ok: false; message: string; fieldErrors?: Record<string, string[]>; values?: Record<string, string> };
 
 /** State shape for forms driven by useActionState. */
 export type FormState<T = undefined> = { status: "idle" } | ({ status: "done" } & ActionResult<T>);
@@ -14,8 +14,27 @@ export function success<T>(message?: string, data?: T): ActionResult<T> {
   return { ok: true, message, data };
 }
 
-export function failure(message: string, fieldErrors?: Record<string, string[]>): ActionResult<never> {
-  return { ok: false, message, fieldErrors };
+export function failure(
+  message: string,
+  fieldErrors?: Record<string, string[]>,
+  values?: Record<string, string>
+): ActionResult<never> {
+  return { ok: false, message, fieldErrors, values };
+}
+
+/**
+ * The text values of a submission, for redisplay after a rejected submit.
+ * React resets a form once its action resolves, so without this a single bad
+ * field would empty every other one. Secrets are never echoed: pass every
+ * password, token and one-time code in `omit`.
+ */
+export function keepValues(formData: FormData, omit: readonly string[] = []): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("$ACTION") || omit.includes(key)) continue;
+    if (typeof value === "string" && value !== "") values[key] = value;
+  }
+  return values;
 }
 
 export function done<T>(result: ActionResult<T>): FormState<T> {
@@ -46,7 +65,8 @@ export function formDataToObject(formData: FormData): Record<string, unknown> {
 /** Parses input with a Zod schema, mapping issues to field error i18n keys. */
 export function parseInput<S extends z.ZodType>(
   schema: S,
-  input: unknown
+  input: unknown,
+  values?: Record<string, string>
 ): { ok: true; data: z.output<S> } | { ok: false; result: ActionResult<never> } {
   const parsed = schema.safeParse(input);
   if (parsed.success) return { ok: true, data: parsed.data };
@@ -58,5 +78,5 @@ export function parseInput<S extends z.ZodType>(
       : `validation.${issue.code}`;
     (fieldErrors[path] ??= []).push(key);
   }
-  return { ok: false, result: failure("errors.validation", fieldErrors) };
+  return { ok: false, result: failure("errors.validation", fieldErrors, values) };
 }

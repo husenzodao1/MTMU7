@@ -70,8 +70,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
     return (
       <Card as="div">
         <CardBody className="p-6 sm:p-8">
-          <h1 className="text-2xl font-semibold">{t("profileTitle")}</h1>
-          <p className="mb-5 mt-1 text-sm text-ink-secondary">{t("profileSubtitle")}</p>
+          <h1 className="text-center text-2xl font-semibold">{t("profileTitle")}</h1>
+          <p className="mb-5 mt-1 text-center text-sm text-ink-secondary">{t("profileSubtitle")}</p>
           <RegistrationDetailsForm schools={await loadSchools()} mode="profile" email={email} />
         </CardBody>
       </Card>
@@ -88,14 +88,14 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <Steps current={step === "verify" ? 1 : 2} labels={labels} />
           {step === "verify" ? (
             <>
-              <h1 className="text-2xl font-semibold">{t("verifyTitle")}</h1>
-              <p className="mb-5 mt-1 text-sm text-ink-secondary">{t("verifySubtitle", { email: draft.email })}</p>
+              <h1 className="text-center text-2xl font-semibold">{t("verifyTitle")}</h1>
+              <p className="mb-5 mt-1 text-center text-sm text-ink-secondary">{t("verifySubtitle", { email: draft.email })}</p>
               <VerifyCodeForm purpose="register" />
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold">{t("passwordTitle")}</h1>
-              <p className="mb-5 mt-1 text-sm text-ink-secondary">{t("passwordSubtitle")}</p>
+              <h1 className="text-center text-2xl font-semibold">{t("passwordTitle")}</h1>
+              <p className="mb-5 mt-1 text-center text-sm text-ink-secondary">{t("passwordSubtitle")}</p>
               <RegistrationPasswordForm />
             </>
           )}
@@ -114,8 +114,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
     <Card as="div">
       <CardBody className="p-6 sm:p-8">
         <Steps current={0} labels={labels} />
-        <h1 className="text-2xl font-semibold">{t("title")}</h1>
-        <p className="mb-5 mt-1 text-sm text-ink-secondary">{t("subtitle")}</p>
+        <h1 className="text-center text-2xl font-semibold">{t("title")}</h1>
+        <p className="mb-5 mt-1 text-center text-sm text-ink-secondary">{t("subtitle")}</p>
         {schools.length === 0 ? (
           <p className="text-sm text-ink-secondary">{t("noSchools")}</p>
         ) : (

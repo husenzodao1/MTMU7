@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
+import { done, failure, formDataToObject, keepValues, parseInput, success, type FormState } from "@/lib/actions/result";
 import { mapDbError } from "@/lib/actions/errors";
 import { getAccess } from "@/lib/auth/access";
 import { postSignInPath } from "@/lib/security/redirect";
@@ -28,13 +28,18 @@ function isRateLimited(error: { status?: number; code?: string } | null) {
 const signInSchema = z.object({ email: emailSchema, password: z.string().min(1, "validation.required").max(128), next: z.string().optional() });
 
 export async function signInAction(_state: FormState, formData: FormData): Promise<FormState> {
-  const input = parseInput(signInSchema, formDataToObject(formData));
+  // The address is echoed back on every failure; the password never is.
+  const kept = keepValues(formData, ["password"]);
+  const input = parseInput(signInSchema, formDataToObject(formData), kept);
   if (!input.ok) return done(input.result);
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email: input.data.email, password: input.data.password });
   if (error) {
-    return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.invalid_credentials"));
+    // One message for "no such account" and for "wrong password". Telling the
+    // two apart would let anyone test which addresses are registered here
+    // (SEC-009); the sign-in card instead always offers the register link.
+    return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.invalid_credentials", undefined, kept));
   }
 
   // Signing in always ends on the dashboard: an unfinished registration or a
@@ -43,7 +48,7 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
   const access = await getAccess();
   if (access && (!access.isActive || access.status === "blocked")) {
     await supabase.auth.signOut();
-    return done(failure("errors.account_inactive"));
+    return done(failure("errors.account_inactive", undefined, kept));
   }
   redirect(postSignInPath(input.data.next));
 }
@@ -79,17 +84,18 @@ export async function loadRegistrationOptions(schoolSlug: string): Promise<Regis
  * an account, so the form cannot be used to enumerate users (SEC-009).
  */
 export async function startRegistrationAction(_state: FormState, formData: FormData): Promise<FormState> {
-  const input = parseInput(registrationDetailsSchema, formDataToObject(formData));
+  const kept = keepValues(formData);
+  const input = parseInput(registrationDetailsSchema, formDataToObject(formData), kept);
   if (!input.ok) return done(input.result);
   const draft = input.data;
 
   const options = await loadRegistrationOptions(draft.schoolSlug);
-  if (!options) return done(failure("errors.invalid_school", { schoolSlug: ["errors.invalid_school"] }));
+  if (!options) return done(failure("errors.invalid_school", { schoolSlug: ["errors.invalid_school"] }, kept));
   if (!draft.invitationCode) {
-    if (!options.registrationOpen) return done(failure("errors.registration_closed"));
-    if (!options.roles.some((r) => r.slug === draft.roleSlug)) return done(failure("errors.invalid_role", { roleSlug: ["errors.invalid_role"] }));
+    if (!options.registrationOpen) return done(failure("errors.registration_closed", undefined, kept));
+    if (!options.roles.some((r) => r.slug === draft.roleSlug)) return done(failure("errors.invalid_role", { roleSlug: ["errors.invalid_role"] }, kept));
     if (draft.classId && !options.classes.some((c) => c.id === draft.classId)) {
-      return done(failure("errors.invalid_class", { classId: ["errors.invalid_class"] }));
+      return done(failure("errors.invalid_class", { classId: ["errors.invalid_class"] }, kept));
     }
   }
 
@@ -176,7 +182,8 @@ export async function completeProfileAction(_state: FormState, formData: FormDat
   if (!claims?.claims?.sub || !email) redirect("/login");
 
   const raw = { ...formDataToObject(formData), email };
-  const details = parseInput(registrationDetailsSchema, raw);
+  const kept = keepValues(formData, ["password", "confirmPassword"]);
+  const details = parseInput(registrationDetailsSchema, raw, kept);
   if (!details.ok) return done(details.result);
 
   // This visitor already has a session, so they may already have a password.
@@ -184,16 +191,16 @@ export async function completeProfileAction(_state: FormState, formData: FormDat
   const fields = raw as Record<string, unknown>;
   const wantsNewPassword = Boolean(fields.password) || Boolean(fields.confirmPassword);
   if (wantsNewPassword) {
-    const passwords = parseInput(passwordPairSchema, raw);
+    const passwords = parseInput(passwordPairSchema, raw, kept);
     if (!passwords.ok) return done(passwords.result);
     const { error } = await supabase.auth.updateUser({ password: passwords.data.password });
     if (error) {
-      if (isRateLimited(error)) return done(failure("errors.rate_limited"));
+      if (isRateLimited(error)) return done(failure("errors.rate_limited", undefined, kept));
       // Supabase refuses a password identical to the current one; say so.
       if (/different from the old password|same_password/i.test(`${error.code ?? ""} ${error.message}`)) {
-        return done(failure("errors.validation", { password: ["validation.passwordSame"] }));
+        return done(failure("errors.validation", { password: ["validation.passwordSame"] }, kept));
       }
-      return done(failure("errors.unexpected"));
+      return done(failure("errors.unexpected", undefined, kept));
     }
   }
   return (await submitRegistration(details.data)) ?? done(failure("errors.unexpected"));
@@ -208,7 +215,7 @@ export async function restartRegistrationAction(): Promise<void> {
 // Password reset (email code, no account enumeration)
 // ---------------------------------------------------------------------------
 export async function requestPasswordResetAction(_state: FormState, formData: FormData): Promise<FormState> {
-  const input = parseInput(z.object({ email: emailSchema }), formDataToObject(formData));
+  const input = parseInput(z.object({ email: emailSchema }), formDataToObject(formData), keepValues(formData));
   if (!input.ok) return done(input.result);
   await writeCookie(RESET_COOKIE, input.data.email);
   const supabase = await createClient();
