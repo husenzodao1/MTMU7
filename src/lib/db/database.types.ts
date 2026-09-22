@@ -1911,6 +1911,87 @@ export type Database = {
           },
         ];
       };
+      lesson_topics: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_subject_id: string;
+          academic_term_id: string | null;
+          lesson_date: string;
+          period_number: number | null;
+          topic: string;
+          homework: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_subject_id: string;
+          academic_term_id?: string | null;
+          lesson_date: string;
+          period_number?: number | null;
+          topic: string;
+          homework?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_subject_id?: string;
+          academic_term_id?: string | null;
+          lesson_date?: string;
+          period_number?: number | null;
+          topic?: string;
+          homework?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lesson_topics_academic_term_id_fkey";
+            columns: ["academic_term_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_terms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lesson_topics_class_subject_id_fkey";
+            columns: ["class_subject_id"];
+            isOneToOne: false;
+            referencedRelation: "class_subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lesson_topics_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lesson_topics_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lesson_topics_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       library_categories: {
         Row: {
           id: string;
