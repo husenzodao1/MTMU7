@@ -61,7 +61,9 @@ describe("upload validation", () => {
   it("checks size, MIME type and extension together", () => {
     assert.deepEqual(checkFile("book", { name: "physics.pdf", type: "application/pdf", size: 1000 }), { ok: true, extension: "pdf" });
     assert.equal(checkFile("book", { name: "virus.exe", type: "application/pdf", size: 10 }).ok, false);
-    assert.equal(checkFile("avatar", { name: "a.png", type: "image/png", size: 3 * 1024 * 1024 }).ok, false);
+    // Avatars allow four megabytes, which covers an ordinary phone photograph.
+    assert.equal(checkFile("avatar", { name: "a.png", type: "image/png", size: 3 * 1024 * 1024 }).ok, true);
+    assert.equal(checkFile("avatar", { name: "a.png", type: "image/png", size: 5 * 1024 * 1024 }).ok, false);
     assert.equal(checkFile("image", { name: "a.svg", type: "image/svg+xml", size: 10 }).ok, false);
   });
 
