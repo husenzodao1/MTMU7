@@ -2946,6 +2946,127 @@ export type Database = {
           },
         ];
       };
+      news_comments: {
+        Row: {
+          id: string;
+          school_id: string;
+          article_id: string;
+          author_id: string;
+          body: string;
+          is_hidden: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          article_id: string;
+          author_id: string;
+          body: string;
+          is_hidden?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          article_id?: string;
+          author_id?: string;
+          body?: string;
+          is_hidden?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "news_articles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "news_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "news_comments_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      news_likes: {
+        Row: {
+          article_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          article_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          article_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "news_likes_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "news_articles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "news_likes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      news_views: {
+        Row: {
+          article_id: string;
+          user_id: string;
+          first_seen_at: string;
+        };
+        Insert: {
+          article_id: string;
+          user_id: string;
+          first_seen_at?: string;
+        };
+        Update: {
+          article_id?: string;
+          user_id?: string;
+          first_seen_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "news_views_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "news_articles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "news_views_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notification_broadcasts: {
         Row: {
           id: string;
@@ -4716,6 +4837,7 @@ export type Database = {
     };
     Functions: {
       add_conversation_members: { Args: { p_conversation_id: string; p_member_ids: string[] }; Returns: number };
+      add_news_comment: { Args: { p_article: string; p_body: string }; Returns: string };
       admin_dashboard: { Args: { p_school_id?: string }; Returns: Json };
       admin_get_user: { Args: { p_user_id: string }; Returns: Json };
       admin_search_users: { Args: { p_query?: string; p_role?: string; p_status?: string; p_sort?: string; p_limit?: number; p_offset?: number; p_school_id?: string }; Returns: { id: string | null; public_id: string | null; email: string | null; first_name: string | null; last_name: string | null; middle_name: string | null; phone: string | null; avatar_url: string | null; status: string | null; is_active: boolean | null; created_at: string | null; last_login_at: string | null; roles: Json | null; total_count: number | null }[] };
@@ -4741,12 +4863,14 @@ export type Database = {
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null }[] };
+      list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
+      news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
       promote_students: { Args: { p_from_class_id: string; p_to_class_id: string; p_student_ids: string[] }; Returns: number };
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };
       record_news_view: { Args: { p_article_id: string }; Returns: undefined };
@@ -4767,6 +4891,7 @@ export type Database = {
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
       submit_registration: { Args: { p_school_slug: string; p_first_name: string; p_last_name: string; p_middle_name?: string; p_role_slug?: string; p_class_id?: string; p_details?: Json; p_invitation_code?: string }; Returns: Json };
       teacher_today: { Args: { p_date?: string }; Returns: Json };
+      toggle_news_like: { Args: { p_article: string }; Returns: Json };
       transfer_student_class: { Args: { p_student_id: string; p_to_class_id: string; p_reason?: string }; Returns: string };
       update_conversation: { Args: { p_conversation_id: string; p_name: string }; Returns: undefined };
       update_school_identity: { Args: { p_school_id: string; p_photo_url?: string; p_logo_url?: string; p_social_links?: Json; p_admin_email?: string }; Returns: undefined };
