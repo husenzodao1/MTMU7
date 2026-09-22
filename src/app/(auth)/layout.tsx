@@ -18,12 +18,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div aria-hidden className="absolute inset-0 -z-30 bg-canvas" />
         <div
           aria-hidden
-          className="absolute inset-0 -z-20 bg-[url('/images/school-bg.webp')] bg-cover bg-center opacity-[0.12]"
+          className="absolute inset-0 -z-20 bg-[url('/images/school-bg.webp')] bg-cover bg-center opacity-40"
         />
         {/* Calms the edges so the photograph never competes with the card. */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_35%,var(--color-canvas)_100%)]"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_45%,var(--color-canvas)_100%)]"
         />
         <div className="w-full max-w-md">{children}</div>
       </main>

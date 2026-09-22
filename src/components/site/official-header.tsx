@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
 import { getPlatformIdentity, getPublicSchoolBySlug, resolveHomeSchoolSlug } from "@/lib/site/identity";
 import { pickText, type Locale } from "@/lib/i18n/text";
+import { resolveContacts } from "@/lib/site/contacts";
 
 /** The emblem of the Republic, shipped with the build; the owner may override it. */
 const DEFAULT_EMBLEM = "/gov/emblem-tj.svg";
@@ -27,20 +28,20 @@ export async function OfficialStrip() {
       />
       {/* Scrim: the flag keeps its colour on the right, the text side stays dark
           enough for white type to hold well past the AA threshold. */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/70 to-black/55" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/45 to-black/25" />
 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2">
-        <LocaleSwitcher tone="onDark" />
-
         {/* Emblem and authority share one centre line, so the two read as a
             single official mark rather than two stacked elements. */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-          <p className="min-w-0 truncate text-right text-[11px] font-medium leading-none tracking-tight text-white sm:text-xs sm:leading-none">
-            {authority}
-          </p>
           {/* eslint-disable-next-line @next/next/no-img-element -- official emblem, rendered unmodified */}
           <img src={emblem} alt={t("emblemAlt")} className="h-8 w-8 shrink-0 object-contain sm:h-9 sm:w-9" />
+          <p className="min-w-0 truncate text-[11px] font-medium leading-none tracking-tight text-white sm:text-xs sm:leading-none">
+            {authority}
+          </p>
         </div>
+
+        <LocaleSwitcher tone="onDark" className="shrink-0" />
       </div>
     </div>
   );
@@ -70,14 +71,13 @@ export async function SiteFooter({
 
   const homeSlug = await resolveHomeSchoolSlug();
   const school = homeSlug ? await getPublicSchoolBySlug(homeSlug) : null;
-  const social = school?.socialLinks ?? {};
+  const social = resolveContacts(school?.socialLinks);
 
   const contact: Array<{ href: string; label: string; external?: boolean }> = [];
   if (school) contact.push({ href: `/s/${school.slug}`, label: t("about") });
   if (identity.supportEmail) contact.push({ href: `mailto:${identity.supportEmail}`, label: t("support"), external: true });
   for (const key of SOCIAL_KEYS) {
-    const href = social[key];
-    if (href) contact.push({ href, label: t(key), external: true });
+    contact.push({ href: social[key], label: t(key), external: true });
   }
 
   const linkClass = "rounded-sm text-ink-secondary transition-colors hover:text-brand-text hover:underline";

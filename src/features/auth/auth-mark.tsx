@@ -36,7 +36,7 @@ export function AuthMark({ alt }: { alt: string }) {
         className="relative inline-flex size-[68px] items-center justify-center rounded-full bg-surface ring-1 ring-line shadow-[0_8px_24px_-8px_rgb(16_24_40_/_0.3)]"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- small static mark, already circular */}
-        <img src="/images/school-photo.png" alt={alt} className="size-[60px] rounded-full object-cover" />
+        <img src="/images/school-mark.webp" alt={alt} className="size-[60px] rounded-full object-cover" />
       </span>
     </div>
   );
