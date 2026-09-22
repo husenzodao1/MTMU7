@@ -1,12 +1,19 @@
 import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
+import { getAuthSchool, safeImageUrl } from "@/lib/site/auth-school";
+
+/** Shown when the chosen school has no photograph of its own. */
+const FALLBACK_BACKGROUND = "/images/school-bg.webp";
 
 /**
  * Chrome for the authentication pages: the government strip on top, the card
- * centred over a quietened photograph of the school, the site footer below.
- * The photograph sits only behind the card area and is held far enough back
- * that the card's own contrast is untouched.
+ * centred over a quietened photograph of the school being signed in to, the
+ * site footer below. The photograph sits only behind the card area and is held
+ * far enough back that the card's own contrast is untouched.
  */
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const school = await getAuthSchool();
+  const background = safeImageUrl(school?.photoUrl) ?? FALLBACK_BACKGROUND;
+
   return (
     <div className="flex min-h-dvh flex-col">
       <OfficialStrip />
@@ -18,7 +25,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div aria-hidden className="absolute inset-0 -z-30 bg-canvas" />
         <div
           aria-hidden
-          className="absolute inset-0 -z-20 bg-[url('/images/school-bg.webp')] bg-cover bg-center opacity-40"
+          className="absolute inset-0 -z-20 bg-cover bg-center opacity-40"
+          style={{ backgroundImage: `url("${background}")` }}
         />
         {/* Calms the edges so the photograph never competes with the card. */}
         <div

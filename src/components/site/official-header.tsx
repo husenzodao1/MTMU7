@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
-import { getPlatformIdentity, getPublicSchoolBySlug, resolveHomeSchoolSlug } from "@/lib/site/identity";
+import { getPlatformIdentity } from "@/lib/site/identity";
+import { getAuthSchool } from "@/lib/site/auth-school";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { resolveContacts } from "@/lib/site/contacts";
 
@@ -69,8 +70,7 @@ export async function SiteFooter({
   const copyright = pickText(identity.copyright, locale);
   const year = new Date().getFullYear();
 
-  const homeSlug = await resolveHomeSchoolSlug();
-  const school = homeSlug ? await getPublicSchoolBySlug(homeSlug) : null;
+  const school = await getAuthSchool();
   const social = resolveContacts(school?.socialLinks);
 
   const contact: Array<{ href: string; label: string; external?: boolean }> = [];

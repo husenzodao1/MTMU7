@@ -19,7 +19,7 @@ const SHAKE: Keyframe[] = [
  * alert. The form's result object is the dependency, so two identical failures
  * in a row are both shown.
  */
-export function AuthMark({ alt }: { alt: string }) {
+export function AuthMark({ alt, src }: { alt: string; src?: string | null }) {
   const { message, token } = useFormError();
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -36,7 +36,7 @@ export function AuthMark({ alt }: { alt: string }) {
         className="relative inline-flex size-[68px] items-center justify-center rounded-full bg-surface ring-1 ring-line shadow-[0_8px_24px_-8px_rgb(16_24_40_/_0.3)]"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- small static mark, already circular */}
-        <img src="/images/school-mark.webp" alt={alt} className="size-[60px] rounded-full object-cover" />
+        <img src={src || "/images/school-mark.webp"} alt={alt} className="size-[60px] rounded-full object-cover" />
       </span>
     </div>
   );

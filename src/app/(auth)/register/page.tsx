@@ -6,6 +6,8 @@ import { RegistrationDetailsForm, RegistrationPasswordForm, VerifyCodeForm } fro
 import { readDraft } from "@/features/auth/draft";
 import { restartRegistrationAction } from "@/features/auth/actions";
 import { Card, CardBody } from "@/components/ui/surface";
+import { ChangeSchool, hasChosenSchool, listAuthSchools, SchoolPicker } from "@/features/auth/school-picker";
+import { getAuthSchool } from "@/lib/site/auth-school";
 import { getAccess } from "@/lib/auth/access";
 import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
@@ -110,16 +112,27 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   }
 
   const schools = await loadSchools();
+
+  // One school is settled before anything is typed, so the form, the page
+  // behind it and the footer all belong to the same school.
+  const choices = await listAuthSchools();
+  if (choices.length > 1 && !(await hasChosenSchool())) {
+    return <SchoolPicker schools={choices} next="/register" />;
+  }
+  const chosen = await getAuthSchool();
+  const forForm = chosen ? schools.filter((s) => s.slug === chosen.slug) : schools;
+
   return (
+    <>
     <Card as="div">
       <CardBody className="p-6 sm:p-8">
         <Steps current={0} labels={labels} />
         <h1 className="text-center text-2xl font-semibold">{t("title")}</h1>
         <p className="mb-5 mt-1 text-center text-sm text-ink-secondary">{t("subtitle")}</p>
-        {schools.length === 0 ? (
+        {forForm.length === 0 ? (
           <p className="text-sm text-ink-secondary">{t("noSchools")}</p>
         ) : (
-          <RegistrationDetailsForm schools={schools} mode="start" />
+          <RegistrationDetailsForm schools={forForm} mode="start" />
         )}
         <p className="mt-5 border-t border-line pt-4 text-center text-sm text-ink-secondary">
           {t("haveAccount")}{" "}
@@ -129,5 +142,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         </p>
       </CardBody>
     </Card>
+    {choices.length > 1 ? <ChangeSchool next="/register" /> : null}
+    </>
   );
 }

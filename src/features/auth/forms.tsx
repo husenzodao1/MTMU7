@@ -25,7 +25,7 @@ import {
   type RegistrationOptions,
 } from "@/features/auth/actions";
 
-export function SignInForm({ next }: { next?: string }) {
+export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string | null }) {
   const t = useTranslations("auth.login");
   const terms = useTranslations("auth.terms");
   return (
@@ -34,7 +34,7 @@ export function SignInForm({ next }: { next?: string }) {
       className="space-y-4"
       lead={
         <div className="mb-5">
-          <AuthMark alt={t("markAlt")} />
+          <AuthMark alt={t("markAlt")} src={markUrl} />
           <h1 className="text-center text-2xl font-semibold">{t("title")}</h1>
           <p className="mt-1 text-center text-sm text-ink-secondary">{t("subtitle")}</p>
         </div>
