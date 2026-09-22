@@ -1413,7 +1413,16 @@
       "emblemUrl": "Emblem image address",
       "emblemUrlHint": "An https:// address of the approved emblem file.",
       "approved": "Identity content approved",
-      "approvedHint": "Confirm only after the owner has checked every text."
+      "approvedHint": "Confirm only after the owner has checked every text.",
+      "address": "Address",
+      "adminEmail": "School administrator's email",
+      "adminEmailHint": "Whoever registers with this address becomes this school's administrator. Once.",
+      "photoUrl": "School photograph URL",
+      "photoUrlHint": "Used on the school page and as its sign-in background.",
+      "logoUrl": "Logo URL",
+      "telegram": "Telegram",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp"
     },
     "reports": {
       "title": "Reports",

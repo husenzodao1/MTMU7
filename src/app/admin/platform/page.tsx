@@ -103,6 +103,26 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
                   <SelectField name="regionId" label={t("region")} placeholder={t("none")} options={regionOptions} />
                   <SelectField name="districtId" label={t("district")} placeholder={t("none")} options={districtOptions} />
                 </div>
+                <TextField name="address" label={t("address")} maxLength={500} />
+                {/* The account that will run the school. It becomes this
+                    school's administrator the moment it registers, once. */}
+                <TextField
+                  name="adminEmail"
+                  type="email"
+                  label={t("adminEmail")}
+                  hint={t("adminEmailHint")}
+                  inputMode="email"
+                  maxLength={255}
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <TextField name="photoUrl" label={t("photoUrl")} hint={t("photoUrlHint")} maxLength={500} />
+                  <TextField name="logoUrl" label={t("logoUrl")} maxLength={500} />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <TextField name="telegram" label={t("telegram")} placeholder="@name" maxLength={200} />
+                  <TextField name="instagram" label={t("instagram")} placeholder="@name" maxLength={200} />
+                  <TextField name="whatsapp" label={t("whatsapp")} placeholder="+992 …" maxLength={200} />
+                </div>
               </FormDialog>
             }
           />

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { uuid } from "@/lib/validation/uuid";
 import { mapDbError } from "@/lib/actions/errors";
-import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
+import { done, failure, formDataToObject, keepValues, parseInput, success, type FormState } from "@/lib/actions/result";
 import { can, getAccess, isPlatformAdmin } from "@/lib/auth/access";
 import { isPermission } from "@/lib/auth/permissions";
 import { localInputToIso } from "@/lib/i18n/zoned";
@@ -15,6 +15,25 @@ import { ROLE_SLUGS } from "@/features/content/constants";
 import type { Json } from "@/lib/db/database.types";
 
 const optionalText = (max: number) => z.string().trim().max(max, "validation.too_big").optional().transform((v) => v || null);
+
+/**
+ * A social account as an administrator would write it — a full link, an @name,
+ * or for WhatsApp a phone number — normalised to the https link the database
+ * stores. Anything unrecognisable becomes null rather than a broken link.
+ */
+function socialUrl(kind: "telegram" | "instagram" | "whatsapp", raw: string | null): string | null {
+  const value = (raw ?? "").trim();
+  if (!value) return null;
+  if (/^https:\/\//i.test(value)) return value.length <= 200 ? value : null;
+  if (/^http:\/\//i.test(value)) return `https://${value.slice(7)}`;
+  if (kind === "whatsapp") {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 9 && digits.length <= 15 ? `https://wa.me/${digits}` : null;
+  }
+  const handle = value.replace(/^@/, "");
+  if (!/^[A-Za-z0-9._]{3,60}$/.test(handle)) return null;
+  return kind === "telegram" ? `https://t.me/${handle}` : `https://instagram.com/${handle}`;
+}
 
 // ---------------------------------------------------------------------------
 // Notification broadcasts
@@ -322,6 +341,7 @@ export async function updatePlatformIdentityAction(_state: FormState, formData: 
 export async function createSchoolAction(_state: FormState, formData: FormData): Promise<FormState> {
   const s = await platformSession();
   if (!s) return done(failure("errors.forbidden"));
+  const kept = keepValues(formData);
   const input = parseInput(
     z.object({
       slug: z.string().trim().toLowerCase().min(3).max(60).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "validation.slug"),
@@ -331,15 +351,56 @@ export async function createSchoolAction(_state: FormState, formData: FormData):
       idPrefix: z.string().trim().toUpperCase().regex(/^[A-Z]{2,6}$/, "validation.idPrefix"),
       regionId: uuid.optional().or(z.literal("")).transform((v) => v || null),
       districtId: uuid.optional().or(z.literal("")).transform((v) => v || null),
+      adminEmail: z.string().trim().toLowerCase().email("validation.email").max(255).optional().or(z.literal("")).transform((v) => v || null),
+      address: optionalText(500),
+      photoUrl: optionalText(500),
+      logoUrl: optionalText(500),
+      telegram: optionalText(200),
+      instagram: optionalText(200),
+      whatsapp: optionalText(200),
     }),
-    formDataToObject(formData)
+    formDataToObject(formData),
+    kept
   );
   if (!input.ok) return done(input.result);
   const v = input.data;
-  const { error } = await s.supabase.from("schools").insert({
-    slug: v.slug, short_name: v.shortName, full_name: v.fullName, code: v.code, id_prefix: v.idPrefix, region_id: v.regionId, district_id: v.districtId, status: "active",
+
+  const links: Record<string, string> = {};
+  for (const kind of ["telegram", "instagram", "whatsapp"] as const) {
+    const url = socialUrl(kind, v[kind]);
+    if (url) links[kind] = url;
+  }
+
+  // The database function is the boundary: it re-checks every rule, provisions
+  // the school's roles through the insert trigger, and is the only path that
+  // may write a nominated administrator address.
+  const { error } = await s.supabase.rpc("create_school", {
+    p_short_name: v.shortName,
+    p_full_name: v.fullName,
+    p_slug: v.slug,
+    p_id_prefix: v.idPrefix,
+    p_admin_email: v.adminEmail ?? undefined,
+    p_photo_url: v.photoUrl ?? undefined,
+    p_logo_url: v.logoUrl ?? undefined,
+    p_address: v.address ?? undefined,
+    p_social_links: links as unknown as Json,
+    p_code: v.code ?? undefined,
+    p_region_id: v.regionId ?? undefined,
+    p_district_id: v.districtId ?? undefined,
   });
-  if (error) return done(error.code === "23505" ? failure("errors.validation", { slug: ["validation.duplicateName"] }) : mapDbError(error));
+  if (error) {
+    const field: Record<string, string> = {
+      slug_taken: "slug",
+      prefix_taken: "idPrefix",
+      admin_email_taken: "adminEmail",
+      invalid_email: "adminEmail",
+      invalid_slug: "slug",
+      invalid_prefix: "idPrefix",
+    };
+    const target = field[error.message];
+    if (target) return done(failure("errors.validation", { [target]: [`validation.${error.message}`] }, kept));
+    return done(mapDbError(error));
+  }
   revalidatePath("/admin/platform");
   return done(success("admin.platform.schoolCreated"));
 }

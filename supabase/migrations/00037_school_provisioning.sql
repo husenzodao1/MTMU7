@@ -30,7 +30,10 @@ CREATE OR REPLACE FUNCTION public.create_school(
   p_photo_url text DEFAULT NULL,
   p_logo_url text DEFAULT NULL,
   p_address text DEFAULT NULL,
-  p_social_links jsonb DEFAULT '{}'::jsonb
+  p_social_links jsonb DEFAULT '{}'::jsonb,
+  p_code text DEFAULT NULL,
+  p_region_id uuid DEFAULT NULL,
+  p_district_id uuid DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -84,17 +87,19 @@ BEGIN
   END IF;
 
   INSERT INTO public.schools (short_name, full_name, slug, id_prefix, admin_email,
-                              photo_url, logo_url, address, social_links, status, is_active)
+                              photo_url, logo_url, address, social_links, code,
+                              region_id, district_id, status, is_active)
   VALUES (btrim(p_short_name), btrim(p_full_name), v_slug, v_prefix, v_email,
           nullif(btrim(coalesce(p_photo_url, '')), ''), nullif(btrim(coalesce(p_logo_url, '')), ''),
-          nullif(btrim(coalesce(p_address, '')), ''), v_links, 'active', true)
+          nullif(btrim(coalesce(p_address, '')), ''), v_links, nullif(btrim(coalesce(p_code, '')), ''),
+          p_region_id, p_district_id, 'active', true)
   RETURNING id INTO v_id;
 
   RETURN jsonb_build_object('id', v_id, 'slug', v_slug);
 END;
 $fn$;
-REVOKE EXECUTE ON FUNCTION public.create_school(text, text, text, text, text, text, text, text, jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_school(text, text, text, text, text, text, text, text, jsonb) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.create_school(text, text, text, text, text, text, text, text, jsonb, text, uuid, uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_school(text, text, text, text, text, text, text, text, jsonb, text, uuid, uuid) TO authenticated;
 
 -- ----------------------------------------------------------------------------
 -- 3. Editing what the owner set

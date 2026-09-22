@@ -106,6 +106,12 @@
     "isbn": "Enter a valid ISBN (10–17 digits, X or hyphens).",
     "futureDate": "Choose a time in the future.",
     "idPrefix": "Use 2–6 Latin capital letters.",
-    "internalLink": "Use an address inside the portal, starting with /."
+    "internalLink": "Use an address inside the portal, starting with /.",
+    "slug_taken": "That address is already taken.",
+    "prefix_taken": "That prefix is already taken.",
+    "admin_email_taken": "That address is already promised to another school.",
+    "invalid_email": "That is not a valid email address.",
+    "invalid_slug": "That address is not valid.",
+    "invalid_prefix": "That prefix is not valid."
   }
 }
