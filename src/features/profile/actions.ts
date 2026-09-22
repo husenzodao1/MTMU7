@@ -14,6 +14,15 @@ import { NOTIFICATION_PREFERENCE_TYPES } from "@/features/profile/constants";
 
 const contactSchema = z.object({
   phone: z.string().trim().max(30).regex(/^[+0-9 ()-]*$/, "validation.phone").optional().transform((v) => v || null),
+  // The handle people are found by. A leading @ is how it is written and read,
+  // but only the handle itself is stored.
+  nickname: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/^@/, ""))
+    .refine((v) => v === "" || /^[A-Za-z0-9._]{3,30}$/.test(v), "validation.nickname")
+    .optional()
+    .transform((v) => v || null),
   avatarPath: z.string().max(500).optional(),
   avatarName: z.string().max(255).optional(),
   avatarSize: z.coerce.number().int().positive().optional(),
@@ -29,7 +38,7 @@ export async function updateContactAction(_state: FormState, formData: FormData)
   if (!input.ok) return done(input.result);
   const v = input.data;
 
-  const patch: { phone: string | null; avatar_url?: string | null } = { phone: v.phone };
+  const patch: { phone: string | null; nickname: string | null; avatar_url?: string | null } = { phone: v.phone, nickname: v.nickname };
   if (v.avatarPath) {
     const prefix = `${access.school.id}/${access.userId}/`;
     const check = checkFile("avatar", { name: v.avatarName ?? "", type: v.avatarType ?? "", size: v.avatarSize ?? 0 });
@@ -43,7 +52,12 @@ export async function updateContactAction(_state: FormState, formData: FormData)
 
   const supabase = await createClient();
   const { error } = await supabase.from("users").update(patch).eq("id", access.userId);
-  if (error) return done(mapDbError(error));
+  if (error) {
+    // The handle is unique inside a school; say which field is the problem.
+    if (error.code === "23505") return done(failure("errors.validation", { nickname: ["validation.nicknameTaken"] }));
+    if (error.code === "23514") return done(failure("errors.validation", { nickname: ["validation.nickname"] }));
+    return done(mapDbError(error));
+  }
   revalidatePath("/", "layout");
   return done(success("portal.profile.saved"));
 }

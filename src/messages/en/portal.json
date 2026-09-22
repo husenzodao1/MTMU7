@@ -519,7 +519,9 @@
       "passwordRules": "At least 10 characters, including letters and numbers.",
       "confirmPassword": "Repeat new password",
       "changePassword": "Change password",
-      "passwordChanged": "Your password has been changed."
+      "passwordChanged": "Your password has been changed.",
+      "nickname": "Nickname",
+      "nicknameHint": "How people find you in search. Letters, digits, a dot or underscore, 3–30 characters."
     },
     "settings": {
       "title": "Settings",

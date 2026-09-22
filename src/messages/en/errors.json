@@ -112,6 +112,8 @@
     "admin_email_taken": "That address is already promised to another school.",
     "invalid_email": "That is not a valid email address.",
     "invalid_slug": "That address is not valid.",
-    "invalid_prefix": "That prefix is not valid."
+    "invalid_prefix": "That prefix is not valid.",
+    "nickname": "A nickname may use letters, digits, a dot or underscore, 3–30 characters.",
+    "nicknameTaken": "That nickname is already taken."
   }
 }

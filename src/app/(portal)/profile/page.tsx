@@ -20,6 +20,7 @@ const profileSchema = z.object({
   first_name: z.string(),
   last_name: z.string(),
   middle_name: z.string().nullable(),
+  nickname: z.string().nullable(),
   phone: z.string().nullable(),
   date_of_birth: z.string().nullable(),
   avatar_url: z.string().nullable(),
@@ -76,6 +77,15 @@ export default async function ProfilePage() {
             <CardBody>
               <ActionForm action={updateContactAction} className="space-y-4">
                 <TextField name="phone" type="tel" autoComplete="tel" label={t("phone")} defaultValue={profile.phone ?? ""} maxLength={30} />
+                <TextField
+                  name="nickname"
+                  label={t("nickname")}
+                  hint={t("nicknameHint")}
+                  defaultValue={profile.nickname ?? ""}
+                  maxLength={31}
+                  autoComplete="off"
+                  placeholder="@nickname"
+                />
                 <DirectUpload kind="avatar" folder={`${access.school?.id}/${access.userId}`} name="avatar" label={t("photo")} hint={t("photoHint")} />
                 {profile.avatar_url ? <Checkbox name="removeAvatar" label={t("removePhoto")} /> : null}
                 <SubmitButton>{t("saveContact")}</SubmitButton>
