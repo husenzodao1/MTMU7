@@ -16,7 +16,7 @@ const IMAGE_TYPES = { "image/jpeg": ["jpg", "jpeg"], "image/png": ["png"], "imag
 
 export const UPLOAD_RULES: Record<UploadKind, Rule> = {
   image: { bucket: "public-media", maxBytes: 10 * 1024 * 1024, types: { ...IMAGE_TYPES, "image/avif": ["avif"] } },
-  avatar: { bucket: "avatars", maxBytes: 2 * 1024 * 1024, types: IMAGE_TYPES },
+  avatar: { bucket: "avatars", maxBytes: 4 * 1024 * 1024, types: IMAGE_TYPES },
   cover: { bucket: "library-covers", maxBytes: 5 * 1024 * 1024, types: IMAGE_TYPES },
   book: {
     bucket: "library-files",
