@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Byline, ReactionBar, type RoleName } from "@/features/news/reactions-ui";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -53,6 +54,11 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
   if (list.filters.category) query = query.eq("category_id", list.filters.category);
   if (list.filters.language) query = query.eq("language", list.filters.language);
   const { data, count } = await query;
+
+  // One call for the whole page: readers, support, replies and the byline.
+  const ids = (data ?? []).map((a) => a.id);
+  const { data: engagementRows } = await supabase.rpc("news_engagement", { p_ids: ids });
+  const engagement = new Map((engagementRows ?? []).flatMap((row) => (row.article_id ? [[row.article_id, row] as const] : [])));
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const tl = await getTranslations("common.locales");
 
@@ -97,7 +103,27 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
                     </Link>
                   </h2>
                   <p className="mt-1 line-clamp-3 text-sm text-ink-secondary">{article.summary || markdownToPlainText(article.content, 220)}</p>
-                  <p className="mt-auto pt-3 text-xs text-ink-muted tabular">{formatDate(article.publish_at, locale)}</p>
+                  <div className="mt-auto flex items-start justify-between gap-3 pt-3">
+                    <p className="text-xs text-ink-muted tabular">{formatDate(article.publish_at, locale)}</p>
+                    {engagement.get(article.id)?.author_name ? (
+                      <Byline
+                        name={engagement.get(article.id)!.author_name ?? ""}
+                        role={engagement.get(article.id)!.author_role as RoleName | null}
+                      />
+                    ) : null}
+                  </div>
+                  {engagement.has(article.id) ? (
+                    <ReactionBar
+                      className="mt-2 border-t border-line pt-2"
+                      articleId={article.id}
+                      engagement={{
+                        views: engagement.get(article.id)!.views ?? 0,
+                        likes: engagement.get(article.id)!.likes ?? 0,
+                        comments: engagement.get(article.id)!.comments ?? 0,
+                        liked: engagement.get(article.id)!.liked ?? false,
+                      }}
+                    />
+                  ) : null}
                 </div>
               </article>
             </li>

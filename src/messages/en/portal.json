@@ -221,7 +221,18 @@
         "draft": "The article has been saved.",
         "review": "The article has been sent for review.",
         "deleted": "The draft has been deleted."
-      }
+      },
+      "views": "Readers",
+      "like": "Support this",
+      "unlike": "Withdraw support",
+      "comments": "Comments",
+      "likeThanks": "Thank you for your support.",
+      "commentAdded": "Your comment has been added.",
+      "commentPlaceholder": "Write a comment…",
+      "commentSubmit": "Send",
+      "noComments": "No comments yet.",
+      "commentLabel": "Your comment",
+      "commentDelete": "Delete comment"
     },
     "newsEditor": {
       "sections": {

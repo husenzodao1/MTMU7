@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NewsComments } from "@/features/news/comments";
+import { Byline, ReactionBar } from "@/features/news/reactions-ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -41,6 +43,8 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
   if (article.status === "published") await supabase.rpc("record_news_view", { p_article_id: article.id });
+  const { data: engagementRows } = await supabase.rpc("news_engagement", { p_ids: [article.id] });
+  const engagement = (engagementRows ?? [])[0] ?? null;
 
   const canEdit = canAny(access, ["news.update", "news.publish"]) || (article.author_id === access.userId && can(access, "news.create"));
 
@@ -58,8 +62,13 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
           {article.publish_at ? <time dateTime={article.publish_at} className="tabular">{formatDate(article.publish_at, locale)}</time> : null}
           {article.tags?.map((tag) => <Badge key={tag}>#{tag}</Badge>)}
+          {engagement?.author_name ? (
+            <span className="ms-auto">
+              <Byline name={engagement.author_name} role={engagement.author_role as never} />
+            </span>
+          ) : null}
           {canEdit ? (
-            <Link href={canAny(access, ["news.update", "news.publish"]) ? `/admin/news/${article.id}` : `/news/edit/${article.id}`} className={buttonClasses("secondary", "sm", "ms-auto")}>
+            <Link href={canAny(access, ["news.update", "news.publish"]) ? `/admin/news/${article.id}` : `/news/edit/${article.id}`} className={buttonClasses("secondary", "sm", engagement?.author_name ? "" : "ms-auto")}>
               {t("edit")}
             </Link>
           ) : null}
@@ -72,8 +81,21 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
       <Card as="div">
         <CardBody className="p-5 sm:p-7">
           <Markdown source={article.content} lang={article.language} />
+          {engagement ? (
+            <ReactionBar
+              className="mt-6 border-t border-line pt-4"
+              articleId={article.id}
+              engagement={{
+                views: engagement.views ?? 0,
+                likes: engagement.likes ?? 0,
+                comments: engagement.comments ?? 0,
+                liked: engagement.liked ?? false,
+              }}
+            />
+          ) : null}
         </CardBody>
       </Card>
+      <NewsComments articleId={article.id} />
     </article>
   );
 }
