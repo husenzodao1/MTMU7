@@ -41,6 +41,16 @@ export const registrationDetailsSchema = z
       .optional()
       .transform((v) => v || undefined),
     email: emailSchema,
+    // The short number the deputy head writes the timetable against. It
+    // identifies a teacher; it admits nobody, so it is optional and free-form
+    // within a narrow shape.
+    employeeNumber: z
+      .string()
+      .trim()
+      .max(32)
+      .regex(/^[A-Za-z0-9-]*$/, "validation.employeeNumber")
+      .optional()
+      .transform((v) => v || undefined),
   })
   .refine((v) => Boolean(v.invitationCode) || Boolean(v.roleSlug), { path: ["roleSlug"], message: "validation.required" });
 

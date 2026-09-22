@@ -144,7 +144,10 @@ async function submitRegistration(draft: RegistrationDraft): Promise<FormState |
     p_middle_name: draft.middleName,
     p_role_slug: draft.roleSlug,
     p_class_id: draft.classId,
-    p_details: draft.phone ? { phone: draft.phone } : {},
+    p_details: {
+      ...(draft.phone ? { phone: draft.phone } : {}),
+      ...(draft.employeeNumber ? { employee_number: draft.employeeNumber } : {}),
+    },
     p_invitation_code: draft.invitationCode,
   });
   if (error) {

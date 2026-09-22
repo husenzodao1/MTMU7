@@ -114,6 +114,7 @@
     "invalid_slug": "That address is not valid.",
     "invalid_prefix": "That prefix is not valid.",
     "nickname": "A nickname may use letters, digits, a dot or underscore, 3–30 characters.",
-    "nicknameTaken": "That nickname is already taken."
+    "nicknameTaken": "That nickname is already taken.",
+    "employeeNumber": "A number may contain only letters, digits and hyphens."
   }
 }

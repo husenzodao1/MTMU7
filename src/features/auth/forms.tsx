@@ -155,6 +155,18 @@ export function RegistrationDetailsForm({
         </fieldset>
       ) : null}
 
+      {/* Staff say which number the timetable already calls them. */}
+      {!withCode && role && role !== "student" && role !== "parent" ? (
+        <TextField
+          name="employeeNumber"
+          label={t("employeeNumber")}
+          hint={t("employeeNumberHint")}
+          autoComplete="off"
+          maxLength={32}
+          inputMode="numeric"
+        />
+      ) : null}
+
       {!withCode && role === "student" && options ? (
         <SelectField
           name="classId"
