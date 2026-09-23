@@ -21,20 +21,60 @@ const ROOT = join(import.meta.dirname, "..", "..");
 const MIGRATIONS = join(ROOT, "supabase", "migrations");
 const listOnly = process.argv.includes("--list");
 
-function connectionString(): string {
-  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
+function fromEnvFile(key: string): string | undefined {
   const envFile = join(ROOT, ".env.local");
-  if (existsSync(envFile)) {
-    for (const line of readFileSync(envFile, "utf8").split(/\r?\n/)) {
-      const match = /^\s*SUPABASE_DB_URL\s*=\s*(.+)\s*$/.exec(line);
-      if (match) return match[1]!.trim().replace(/^["']|["']$/g, "");
-    }
+  if (!existsSync(envFile)) return undefined;
+  for (const line of readFileSync(envFile, "utf8").split(/\r?\n/)) {
+    const match = new RegExp(`^\\s*${key}\\s*=\\s*(.+)\\s*$`).exec(line);
+    if (match) return match[1]!.trim().replace(/^["']|["']$/g, "");
   }
+  return undefined;
+}
+
+const setting = (key: string) => process.env[key] || fromEnvFile(key);
+
+/**
+ * Where to connect. A whole connection string wins when one is given.
+ * Otherwise a password and a project reference are enough: the addresses a
+ * Supabase project answers on follow a known shape, and assembling them here
+ * spares the operator the two traps that shape sets — a direct address that
+ * only exists over IPv6, and a password whose punctuation silently truncates
+ * the URL.
+ */
+function candidates(): string[] {
+  const explicit = setting("SUPABASE_DB_URL");
+  if (explicit) return [explicit];
+
+  const password = setting("SUPABASE_DB_PASSWORD");
+  const ref = setting("SUPABASE_PROJECT_REF") ?? /https:\/\/([a-z0-9]+)\.supabase\.co/.exec(setting("NEXT_PUBLIC_SUPABASE_URL") ?? "")?.[1];
+  const region = setting("SUPABASE_REGION") ?? "eu-central-1";
+
+  if (password && ref) {
+    // Percent-encoding is what makes # @ / ? and % survive inside a URL.
+    const safe = encodeURIComponent(password);
+    return [
+      // Session pooler: IPv4, and the one to use for migrations.
+      `postgresql://postgres.${ref}:${safe}@aws-0-${region}.pooler.supabase.com:5432/postgres`,
+      `postgresql://postgres.${ref}:${safe}@aws-1-${region}.pooler.supabase.com:5432/postgres`,
+      // Direct connection, for networks that do have IPv6.
+      `postgresql://postgres:${safe}@db.${ref}.supabase.co:5432/postgres`,
+    ];
+  }
+
   console.error(
-    "SUPABASE_DB_URL is not set.\n" +
-      "Put the database connection string in .env.local as\n" +
-      "  SUPABASE_DB_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres\n" +
-      "Supabase dashboard -> Project Settings -> Database -> Connection string."
+    [
+      "Nothing to connect with.",
+      "",
+      "Either give the whole connection string:",
+      "  SUPABASE_DB_URL=postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres",
+      "",
+      "or just the password, and let this script work out the rest:",
+      "  SUPABASE_DB_PASSWORD=<password>",
+      "  SUPABASE_PROJECT_REF=<ref>        # or NEXT_PUBLIC_SUPABASE_URL in .env.local",
+      "  SUPABASE_REGION=eu-central-1      # optional, this is the default",
+      "",
+      "Either may be set in the environment or in .env.local.",
+    ].join("\n")
   );
   process.exit(1);
 }
@@ -58,8 +98,29 @@ function psqlPath(): string {
   process.exit(1);
 }
 
-const url = connectionString();
 const psql = psqlPath();
+
+/** The first address that answers, so the operator never has to guess one. */
+function reachable(options: string[]): string {
+  let last = "";
+  for (const option of options) {
+    try {
+      execFileSync(psql, ["--no-psqlrc", "-d", option, "-c", "SELECT 1"], { stdio: "ignore" });
+      if (options.length > 1) {
+        console.log(`Connected on ${option.replace(/:\/\/[^@]*@/, "://<credentials>@")}`);
+      }
+      return option;
+    } catch (error) {
+      last = error instanceof Error && "stderr" in error ? String((error as { stderr?: unknown }).stderr) : String(error);
+    }
+  }
+  console.error("None of the addresses for this project answered.");
+  for (const option of options) console.error("  tried:", option.replace(/:\/\/[^@]*@/, "://<credentials>@"));
+  hint(last);
+  process.exit(1);
+}
+
+const url = reachable(candidates());
 
 /**
  * Two failures account for almost every refused connection, and neither says
