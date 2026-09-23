@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { SelectField, TextField } from "@/components/ui/fields";
+import { ruleJournalColumnAction } from "@/features/teach/grade-actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -49,7 +52,7 @@ export default async function GradebookPage({ params, searchParams }: { params: 
   }
 
   const supabase = await createClient();
-  const [roster, { data: gradeRows }, { data: typeRows }] = await Promise.all([
+  const [roster, { data: gradeRows }, { data: typeRows }, { data: columnRows }, { data: attendanceRows }] = await Promise.all([
     getRoster(cs.classId, term.start_date, term.end_date),
     supabase
       .from("grades")
@@ -63,14 +66,38 @@ export default async function GradebookPage({ params, searchParams }: { params: 
       .select("id, name_tg, name_ru, name_en, code, weight, max_score, is_final, is_active, sort_order")
       .eq("school_id", access.school!.id)
       .order("sort_order"),
+    supabase
+      .from("journal_columns")
+      .select("column_date, assessment_type_id, label")
+      .eq("class_subject_id", classSubjectId)
+      .eq("academic_term_id", term.id)
+      .order("column_date"),
+    supabase
+      .from("attendance_records")
+      .select("student_id, attendance_date, status")
+      .eq("class_subject_id", classSubjectId)
+      .gte("attendance_date", term.start_date)
+      .lte("attendance_date", term.end_date)
+      .limit(5000),
   ]);
   const grades = gradeRows ?? [];
   const types = typeRows ?? [];
   const typeById = new Map(types.map((type) => [type.id, type]));
 
-  // Columns: one per (date, assessment type) that has at least one grade.
-  const columnKeys = [...new Set(grades.map((g) => `${g.grade_date}~${g.assessment_type_id}`))].sort();
+  // Columns are the ones the teacher ruled, plus any a mark implies — a mark
+  // entered before this page existed must never disappear from the journal.
+  const ruled = columnRows ?? [];
+  const columnLabel = new Map(ruled.map((c) => [`${c.column_date}~${c.assessment_type_id}`, c.label]));
+  const columnKeys = [
+    ...new Set([
+      ...ruled.map((c) => `${c.column_date}~${c.assessment_type_id}`),
+      ...grades.map((g) => `${g.grade_date}~${g.assessment_type_id}`),
+    ]),
+  ].sort();
   const cell = new Map(grades.map((g) => [`${g.student_id}|${g.grade_date}~${g.assessment_type_id}`, g]));
+  // A column holds a mark or, where there is none, the letter for an absence.
+  const attended = new Map((attendanceRows ?? []).map((r) => [`${r.student_id}|${r.attendance_date}`, r.status]));
+  const ABSENCE_LETTER: Record<string, string> = { absent: "ғ", late: "д", excused: "у" };
 
   const editKey = firstValue(query.column);
   const [editDate, editType] = editKey && columnKeys.includes(editKey) ? (editKey.split("~") as [string, string]) : [null, null];
@@ -85,6 +112,7 @@ export default async function GradebookPage({ params, searchParams }: { params: 
       score: existing ? Number(existing.score) : null,
       comment: existing?.comment ?? null,
       approved: existing?.status === "approved",
+      attendance: editDate ? attended.get(`${s.id}|${editDate}`) ?? null : null,
     };
   });
 
@@ -132,7 +160,7 @@ export default async function GradebookPage({ params, searchParams }: { params: 
                           <th key={key} scope="col" className={cn("px-2 py-2 text-center align-bottom", key === editKey && "bg-brand-50")}>
                             <Link href={`${base}&column=${encodeURIComponent(key)}`} className="block rounded px-1 text-xs font-medium text-ink-secondary hover:text-brand-text hover:underline" aria-label={t("editColumn", { date: formatShortDate(date, locale), type: type ? pickName(type, locale) : "" })}>
                               <span className="block tabular">{formatShortDate(date, locale).slice(0, 5)}</span>
-                              <span className="block max-w-16 truncate">{type?.code ?? ""}</span>
+                              <span className="block max-w-16 truncate">{columnLabel.get(key) || type?.code || ""}</span>
                             </Link>
                           </th>
                         );
@@ -155,6 +183,14 @@ export default async function GradebookPage({ params, searchParams }: { params: 
                                     {formatNumber(g.score, locale)}
                                     {g.status === "approved" ? <span className="sr-only"> ({t("approved")})</span> : null}
                                   </span>
+                                ) : attended.get(`${s.id}|${key.split("~")[0]}`) &&
+                                  ABSENCE_LETTER[attended.get(`${s.id}|${key.split("~")[0]}`)!] ? (
+                                  <span
+                                    className="font-semibold text-danger-700"
+                                    title={t(`attendanceStatus.${attended.get(`${s.id}|${key.split("~")[0]}`)}`)}
+                                  >
+                                    {ABSENCE_LETTER[attended.get(`${s.id}|${key.split("~")[0]}`)!]}
+                                  </span>
                                 ) : (
                                   <span className="text-ink-muted" aria-label={t("noGrade")}>·</span>
                                 )}
@@ -171,6 +207,29 @@ export default async function GradebookPage({ params, searchParams }: { params: 
             )}
           </CardBody>
         </Card>
+
+        {!term.is_locked && types.filter((x) => x.is_active).length > 0 ? (
+          <Card>
+            <CardHeader title={t("ruleColumn")} description={t("ruleColumnHint")} />
+            <CardBody>
+              <ActionForm action={ruleJournalColumnAction} className="space-y-3" resetOnSuccess>
+                <input type="hidden" name="classSubjectId" value={cs.id} />
+                <input type="hidden" name="academicTermId" value={term.id} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <TextField name="date" type="date" label={t("date")} defaultValue={defaultDate} min={term.start_date} max={term.end_date} required />
+                  <SelectField
+                    name="assessmentTypeId"
+                    label={t("assessmentType")}
+                    required
+                    options={types.filter((x) => x.is_active).map((x) => ({ value: x.id, label: pickName(x, locale) }))}
+                  />
+                </div>
+                <TextField name="label" label={t("columnLabel")} maxLength={60} placeholder="Чоряки I" />
+                <SubmitButton size="sm">{t("ruleColumn")}</SubmitButton>
+              </ActionForm>
+            </CardBody>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader

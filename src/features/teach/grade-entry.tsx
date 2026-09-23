@@ -13,7 +13,12 @@ export interface GradeEntryStudent {
   score: number | null;
   comment: string | null;
   approved: boolean;
+  /** present | absent | late | excused, or null when nothing was marked. */
+  attendance: string | null;
 }
+
+/** The letters a Tajik journal puts in a column when there is no mark. */
+const ATTENDANCE_OPTIONS = ["present", "absent", "late", "excused"] as const;
 
 function ScoreCell({ student, max, disabled }: { student: GradeEntryStudent; max: number; disabled: boolean }) {
   const t = useTranslations("teach.gradebook");
@@ -86,6 +91,7 @@ export function GradeEntryForm({
             <tr className="border-b border-line bg-surface-muted/60 text-start text-xs font-semibold uppercase tracking-wide text-ink-muted">
               <th scope="col" className="px-3 py-2 text-start">{t("student")}</th>
               <th scope="col" className="px-3 py-2 text-start">{t("score", { max })}</th>
+              <th scope="col" className="px-3 py-2 text-start">{t("attendance")}</th>
               <th scope="col" className="px-3 py-2 text-start">{t("comment")}</th>
             </tr>
           </thead>
@@ -108,6 +114,25 @@ export function GradeEntryForm({
                   </th>
                   <td className="px-3 py-2">
                     <ScoreCell student={student} max={max} disabled={disabled} />
+                  </td>
+                  <td className="px-3 py-2">
+                    {/* "clear" is how a mark already set is taken away again;
+                        an untouched row sends nothing and changes nothing. */}
+                    <Select
+                      name={`attendance_${student.id}`}
+                      defaultValue={student.attendance ?? ""}
+                      disabled={disabled}
+                      aria-label={t("attendanceFor", { name: student.name })}
+                      className="h-9 w-32"
+                    >
+                      <option value="">{t("attendanceNone")}</option>
+                      {ATTENDANCE_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {t(`attendanceStatus.${status}`)}
+                        </option>
+                      ))}
+                      {student.attendance ? <option value="clear">{t("attendanceClear")}</option> : null}
+                    </Select>
                   </td>
                   <td className="px-3 py-2">
                     <Input

@@ -93,7 +93,21 @@
       "entryHint": "Leave a score empty to skip the student. Recorded grades can be removed only by authorized staff.",
       "save": "Save grades",
       "saved": "Grades saved.",
-      "nothingToSave": "There are no new or changed scores to save."
+      "nothingToSave": "There are no new or changed scores to save.",
+      "attendance": "Attendance",
+      "attendanceFor": "Attendance for {name}",
+      "attendanceNone": "— no mark",
+      "attendanceClear": "Remove the mark",
+      "attendanceStatus": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late",
+        "excused": "Excused"
+      },
+      "ruleColumn": "New column",
+      "ruleColumnHint": "Open a lesson date ahead of time. Where a heading suits better than a date, write one, such as “Quarter I”.",
+      "columnLabel": "Heading (optional)",
+      "columnAdded": "The column is open."
     },
     "homework": {
       "title": "Homework",
