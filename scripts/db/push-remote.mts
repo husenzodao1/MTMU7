@@ -230,8 +230,17 @@ for (const file of pending) {
   process.stdout.write(`  ${file} … `);
   try {
     // A migration and its ledger entry go in together, so a failure leaves
-    // nothing half-recorded.
-    run(["-d", url, "-1", "-f", join(MIGRATIONS, file)]);
+    // nothing half-recorded. A pooled connection can be closed under us between
+    // files, which says nothing about the migration itself, so a dropped
+    // connection is worth one more try before giving up on the run.
+    try {
+      run(["-d", url, "-1", "-f", join(MIGRATIONS, file)]);
+    } catch (error) {
+      const why = error && typeof error === "object" && "stderr" in error ? String((error as { stderr?: unknown }).stderr ?? "") : String(error);
+      if (!/server closed the connection|connection to server|terminating connection|EOF detected|SSL SYSCALL/i.test(why)) throw error;
+      process.stdout.write("reconnecting … ");
+      run(["-d", url, "-1", "-f", join(MIGRATIONS, file)]);
+    }
     run([
       "-d",
       url,
