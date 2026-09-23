@@ -1911,6 +1911,84 @@ export type Database = {
           },
         ];
       };
+      journal_columns: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_subject_id: string;
+          academic_term_id: string;
+          column_date: string;
+          assessment_type_id: string;
+          period_number: number | null;
+          label: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_subject_id: string;
+          academic_term_id: string;
+          column_date: string;
+          assessment_type_id: string;
+          period_number?: number | null;
+          label?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_subject_id?: string;
+          academic_term_id?: string;
+          column_date?: string;
+          assessment_type_id?: string;
+          period_number?: number | null;
+          label?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "journal_columns_academic_term_id_fkey";
+            columns: ["academic_term_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_terms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_columns_assessment_type_id_fkey";
+            columns: ["assessment_type_id"];
+            isOneToOne: false;
+            referencedRelation: "assessment_types";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_columns_class_subject_id_fkey";
+            columns: ["class_subject_id"];
+            isOneToOne: false;
+            referencedRelation: "class_subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_columns_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "journal_columns_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lesson_topics: {
         Row: {
           id: string;
