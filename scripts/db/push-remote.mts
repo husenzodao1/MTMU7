@@ -52,6 +52,23 @@ function candidates(): string[] {
   const region = setting("SUPABASE_REGION") ?? "eu-central-1";
 
   if (password && ref) {
+    // A shell that asked for another line while the quote was still open puts a
+    // newline inside the value, and the password is then wrong in a way nothing
+    // downstream can explain.
+    if (/[\r\n\t]/.test(password)) {
+      console.error(
+        [
+          "SUPABASE_DB_PASSWORD contains a line break or a tab.",
+          "That happens when the closing quote was on a later line — PowerShell",
+          "shows >> while it waits for it. Set it again on a single line.",
+        ].join("\n")
+      );
+      process.exit(1);
+    }
+    if (password !== password.trim()) {
+      console.error("SUPABASE_DB_PASSWORD has leading or trailing spaces. Set it again without them.");
+      process.exit(1);
+    }
     // Percent-encoding is what makes # @ / ? and % survive inside a URL.
     const safe = encodeURIComponent(password);
     assembled.push(
@@ -105,23 +122,36 @@ function psqlPath(): string {
 
 const psql = psqlPath();
 
+const mask = (u: string) => u.replace(/:\/\/[^@]*@/, "://<credentials>@");
+
 /** The first address that answers, so the operator never has to guess one. */
 function reachable(options: string[]): string {
-  let last = "";
+  const failures: Array<{ url: string; why: string }> = [];
   for (const option of options) {
     try {
-      execFileSync(psql, ["--no-psqlrc", "-d", option, "-c", "SELECT 1"], { stdio: "ignore" });
-      if (options.length > 1) {
-        console.log(`Connected on ${option.replace(/:\/\/[^@]*@/, "://<credentials>@")}`);
-      }
+      execFileSync(psql, ["--no-psqlrc", "-d", option, "-c", "SELECT 1"], {
+        // A dead address should fail in seconds, not in a minute of waiting.
+        env: { ...process.env, PGCONNECT_TIMEOUT: "10" },
+        stdio: ["ignore", "ignore", "pipe"],
+      });
+      if (options.length > 1) console.log(`Connected on ${mask(option)}`);
       return option;
     } catch (error) {
-      last = error instanceof Error && "stderr" in error ? String((error as { stderr?: unknown }).stderr) : String(error);
+      const stderr = error && typeof error === "object" && "stderr" in error ? String((error as { stderr?: unknown }).stderr ?? "") : "";
+      failures.push({ url: option, why: (stderr || String(error)).trim() });
     }
   }
-  console.error("None of the addresses for this project answered.");
-  for (const option of options) console.error("  tried:", option.replace(/:\/\/[^@]*@/, "://<credentials>@"));
-  hint(last);
+
+  console.error("None of the addresses for this project answered.\n");
+  for (const failure of failures) {
+    console.error("  " + mask(failure.url));
+    // Whatever the server or the resolver actually said, with the address
+    // masked the same way, so a password in it cannot surface here.
+    for (const line of failure.why.split(/\r?\n/).filter(Boolean)) {
+      console.error("      " + mask(line));
+    }
+  }
+  hint(failures.map((f) => f.why).join("\n"));
   process.exit(1);
 }
 
