@@ -61,6 +61,35 @@ function psqlPath(): string {
 const url = connectionString();
 const psql = psqlPath();
 
+/**
+ * Two failures account for almost every refused connection, and neither says
+ * so plainly in psql's own words.
+ */
+function hint(message: string): void {
+  if (/Name or service not known|could not translate host name|Unknown host/i.test(message)) {
+    console.error(
+      [
+        "",
+        "The host in SUPABASE_DB_URL could not be found.",
+        "A direct db.<ref>.supabase.co address is IPv6-only, and most networks are not.",
+        "Use the Session pooler string instead: Supabase dashboard -> Project Settings ->",
+        "Database -> Connection string -> Session pooler. Its user looks like postgres.<ref>",
+        "and its host like aws-N-<region>.pooler.supabase.com on port 5432.",
+      ].join("\n")
+    );
+  }
+  if (/password authentication failed|SASL|authentication/i.test(message)) {
+    console.error(
+      [
+        "",
+        "The password was refused. If it contains @ : / ? # [ ] or %, those characters end",
+        "the URL early and must be percent-encoded (# becomes %23). Resetting the password",
+        "to letters and digits only avoids the problem entirely.",
+      ].join("\n")
+    );
+  }
+}
+
 /** Runs SQL and returns stdout, with the connection string kept out of argv. */
 function run(args: string[]): string {
   return execFileSync(psql, ["--no-psqlrc", "--set", "ON_ERROR_STOP=1", ...args], {
@@ -121,6 +150,7 @@ for (const file of pending) {
     const message = error instanceof Error && "stderr" in error ? String((error as { stderr?: unknown }).stderr) : String(error);
     // The connection string may appear in psql's own error text; keep it out.
     console.error(message.split(url).join("<connection string>"));
+    hint(message);
     process.exit(1);
   }
 }
