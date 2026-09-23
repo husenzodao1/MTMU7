@@ -582,6 +582,26 @@
         "cancel": "Request cancelled.",
         "remove": "Contact removed."
       }
+    },
+    "statistics": {
+      "title": "Pupil statistics",
+      "description": "Attendance and marks over the chosen period.",
+      "period": "Period",
+      "periods": {
+        "week": "Week",
+        "month": "Month",
+        "term": "Half-year"
+      },
+      "attendance": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late",
+        "excused": "Excused"
+      },
+      "rating": "Rating",
+      "points": "{points} of {max} points",
+      "chartLabel": "Percentage over the period",
+      "missedDays": "Days missed or late"
     }
   }
 }

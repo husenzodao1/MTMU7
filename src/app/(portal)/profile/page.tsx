@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { StudentStatistics, type StatsPeriod } from "@/features/profile/statistics";
+import { firstValue, type SearchParams } from "@/lib/list-params";
 import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { changePasswordAction, updateContactAction } from "@/features/profile/actions";
@@ -34,8 +36,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("profile") };
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const access = await requireAccess();
+  const statsRaw = firstValue((await searchParams).stats);
+  const period: StatsPeriod = statsRaw === "week" || statsRaw === "month" ? statsRaw : "term";
   const t = await getTranslations("portal.profile");
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
@@ -107,6 +111,7 @@ export default async function ProfilePage() {
           </Card>
         </div>
       </div>
+      <StudentStatistics userId={access.userId} period={period} />
     </>
   );
 }

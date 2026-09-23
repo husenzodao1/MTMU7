@@ -9,13 +9,23 @@ import { Avatar } from "@/components/ui/misc";
 import { Breadcrumb, Card, CardBody, PageHeader } from "@/components/ui/surface";
 import { can, hasModule } from "@/lib/auth/access";
 import { requireAccess } from "@/lib/auth/guards";
+import { StudentStatistics, type StatsPeriod } from "@/features/profile/statistics";
+import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { robots: { index: false } };
 
-export default async function MemberProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MemberProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<SearchParams>;
+}) {
   const access = await requireAccess();
   const { id } = await params;
+  const statsRaw = firstValue((await searchParams).stats);
+  const period: StatsPeriod = statsRaw === "week" || statsRaw === "month" ? statsRaw : "term";
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   if (id === access.userId) redirect("/profile");
   const t = await getTranslations("portal.friends");
@@ -74,6 +84,9 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
           </div>
         </CardBody>
       </Card>
+      <div className="max-w-xl">
+        <StudentStatistics userId={id} period={period} />
+      </div>
     </>
   );
 }

@@ -5048,6 +5048,7 @@ export type Database = {
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
+      student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
       submit_registration: { Args: { p_school_slug: string; p_first_name: string; p_last_name: string; p_middle_name?: string; p_role_slug?: string; p_class_id?: string; p_details?: Json; p_invitation_code?: string }; Returns: Json };
       teacher_today: { Args: { p_date?: string }; Returns: Json };
       toggle_news_like: { Args: { p_article: string }; Returns: Json };
