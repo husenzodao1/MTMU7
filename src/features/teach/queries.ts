@@ -110,3 +110,35 @@ export const getTermsForYear = cache(async (academicYearId: string) => {
     .order("start_date");
   return data ?? [];
 });
+
+/**
+ * Every class subject in the school, for whoever may inspect the journals — a
+ * director checking that the term was filled in, or an administrator answering
+ * a parent. Row-level security still decides what comes back: someone without
+ * the school-wide right simply receives their own.
+ */
+export const getSchoolClassSubjects = cache(async (locale: Locale): Promise<TeachingClassSubject[]> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("class_subjects")
+    .select("id, class_id, classes!inner(name, grade_level, is_active, academic_years!inner(is_current)), subjects(name_tg, name_ru, name_en), staff(last_name, first_name, employee_number)")
+    .eq("is_active", true)
+    .eq("classes.is_active", true)
+    .eq("classes.academic_years.is_current", true)
+    .limit(500);
+  return (data ?? [])
+    .map((row) => {
+      const klass = row.classes as unknown as { name: string; grade_level: number };
+      const subject = row.subjects as Named | null;
+      const teacher = row.staff as unknown as { last_name: string; first_name: string; employee_number: string | null } | null;
+      const who = teacher ? ` · ${teacher.last_name} ${teacher.first_name[0] ?? ""}.${teacher.employee_number ? ` (${teacher.employee_number})` : ""}` : "";
+      return {
+        id: row.id,
+        classId: row.class_id,
+        label: `${klass.name} · ${subject ? pickName(subject, locale) : ""}${who}`,
+        grade: klass.grade_level,
+      };
+    })
+    .sort((a, b) => a.grade - b.grade || a.label.localeCompare(b.label))
+    .map(({ id, classId, label }) => ({ id, classId, label }));
+});
