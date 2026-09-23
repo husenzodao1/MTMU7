@@ -42,8 +42,10 @@ const setting = (key: string) => process.env[key] || fromEnvFile(key);
  * the URL.
  */
 function candidates(): string[] {
+  // An explicit string is tried first but never alone: one left over in a shell
+  // from an earlier attempt must not shut out the addresses that would work.
   const explicit = setting("SUPABASE_DB_URL");
-  if (explicit) return [explicit];
+  const assembled: string[] = [];
 
   const password = setting("SUPABASE_DB_PASSWORD");
   const ref = setting("SUPABASE_PROJECT_REF") ?? /https:\/\/([a-z0-9]+)\.supabase\.co/.exec(setting("NEXT_PUBLIC_SUPABASE_URL") ?? "")?.[1];
@@ -52,14 +54,17 @@ function candidates(): string[] {
   if (password && ref) {
     // Percent-encoding is what makes # @ / ? and % survive inside a URL.
     const safe = encodeURIComponent(password);
-    return [
+    assembled.push(
       // Session pooler: IPv4, and the one to use for migrations.
       `postgresql://postgres.${ref}:${safe}@aws-0-${region}.pooler.supabase.com:5432/postgres`,
       `postgresql://postgres.${ref}:${safe}@aws-1-${region}.pooler.supabase.com:5432/postgres`,
       // Direct connection, for networks that do have IPv6.
-      `postgresql://postgres:${safe}@db.${ref}.supabase.co:5432/postgres`,
-    ];
+      `postgresql://postgres:${safe}@db.${ref}.supabase.co:5432/postgres`
+    );
   }
+
+  const all = [...(explicit ? [explicit] : []), ...assembled];
+  if (all.length > 0) return all;
 
   console.error(
     [
