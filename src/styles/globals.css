@@ -93,54 +93,219 @@
  * uses the tokens follows automatically. Contrast of text tokens on
  * --color-surface stays at WCAG AA (>= 4.5:1).
  */
+/*
+ * The dark values, written once. Two selectors want them — the device saying
+ * dark, and a person choosing the night theme — and a palette written twice
+ * is a palette that drifts.
+ */
+:root {
+  --dk-canvas: #0e1317;
+  --dk-surface: #151b21;
+  --dk-surface-muted: #1b232a;
+  --dk-surface-sunken: #222c34;
+  --dk-line: #2b353e;
+  --dk-line-strong: #3d4a56;
+  --dk-ink: #eef2f6;
+  --dk-ink-secondary: #c3ccd5;
+  --dk-ink-muted: #9aa5b0;
+  --dk-ink-inverse: #ffffff;
+  --dk-brand-50: #2a1f0c;
+  --dk-brand-100: #3a2b10;
+  --dk-brand-200: #513c17;
+  --dk-brand-300: #7a5a22;
+  --dk-brand-500: #c4861c;
+  --dk-brand-600: #d9962b;
+  --dk-brand-700: #e8b44f;
+  --dk-brand-800: #efc168;
+  --dk-brand-900: #f6d692;
+  --dk-brand-solid: #d9962b;
+  --dk-brand-solid-hover: #e8a437;
+  --dk-brand-solid-active: #f0b24a;
+  --dk-brand-on-solid: #14100a;
+  --dk-focus-ring: #efc168;
+  --dk-brand-text: #efc168;
+  --dk-brand-text-strong: #f6d692;
+  --dk-success-50: #10291c;
+  --dk-success-600: #4bbb85;
+  --dk-success-700: #6fcda0;
+  --dk-warning-50: #2c2210;
+  --dk-warning-600: #d9a441;
+  --dk-warning-700: #e8c274;
+  --dk-danger-50: #2e1614;
+  --dk-danger-600: #e8776b;
+  --dk-danger-700: #f09c92;
+  --dk-info-50: #16263a;
+  --dk-info-600: #7fb3ea;
+  --dk-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --dk-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
+  --dk-shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #0e1317;
-    --color-surface: #151b21;
-    --color-surface-muted: #1b232a;
-    --color-surface-sunken: #222c34;
-    --color-line: #2b353e;
-    --color-line-strong: #3d4a56;
-
-    --color-ink: #eef2f6;
-    --color-ink-secondary: #c3ccd5;
-    --color-ink-muted: #9aa5b0;
-    --color-ink-inverse: #ffffff;
-
-    --color-brand-50: #2a1f0c;
-    --color-brand-100: #3a2b10;
-    --color-brand-200: #513c17;
-    --color-brand-300: #7a5a22;
-    --color-brand-500: #c4861c;
-    --color-brand-600: #d9962b;
-    --color-brand-700: #e8b44f;
-    --color-brand-800: #efc168;
-    --color-brand-900: #f6d692;
-
-    --color-brand-solid: #d9962b;
-    --color-brand-solid-hover: #e8a437;
-    --color-brand-solid-active: #f0b24a;
-    --color-brand-on-solid: #14100a;
-    --color-focus-ring: #efc168;
-    --color-brand-text: #efc168;
-    --color-brand-text-strong: #f6d692;
-
-    --color-success-50: #10291c;
-    --color-success-600: #4bbb85;
-    --color-success-700: #6fcda0;
-    --color-warning-50: #2c2210;
-    --color-warning-600: #d9a441;
-    --color-warning-700: #e8c274;
-    --color-danger-50: #2e1614;
-    --color-danger-600: #e8776b;
-    --color-danger-700: #f09c92;
-    --color-info-50: #16263a;
-    --color-info-600: #7fb3ea;
-
-    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-overlay: 0 12px 32px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  :root:not([data-theme]) {
+    --color-canvas: var(--dk-canvas);
+    --color-surface: var(--dk-surface);
+    --color-surface-muted: var(--dk-surface-muted);
+    --color-surface-sunken: var(--dk-surface-sunken);
+    --color-line: var(--dk-line);
+    --color-line-strong: var(--dk-line-strong);
+    --color-ink: var(--dk-ink);
+    --color-ink-secondary: var(--dk-ink-secondary);
+    --color-ink-muted: var(--dk-ink-muted);
+    --color-ink-inverse: var(--dk-ink-inverse);
+    --color-brand-50: var(--dk-brand-50);
+    --color-brand-100: var(--dk-brand-100);
+    --color-brand-200: var(--dk-brand-200);
+    --color-brand-300: var(--dk-brand-300);
+    --color-brand-500: var(--dk-brand-500);
+    --color-brand-600: var(--dk-brand-600);
+    --color-brand-700: var(--dk-brand-700);
+    --color-brand-800: var(--dk-brand-800);
+    --color-brand-900: var(--dk-brand-900);
+    --color-brand-solid: var(--dk-brand-solid);
+    --color-brand-solid-hover: var(--dk-brand-solid-hover);
+    --color-brand-solid-active: var(--dk-brand-solid-active);
+    --color-brand-on-solid: var(--dk-brand-on-solid);
+    --color-focus-ring: var(--dk-focus-ring);
+    --color-brand-text: var(--dk-brand-text);
+    --color-brand-text-strong: var(--dk-brand-text-strong);
+    --color-success-50: var(--dk-success-50);
+    --color-success-600: var(--dk-success-600);
+    --color-success-700: var(--dk-success-700);
+    --color-warning-50: var(--dk-warning-50);
+    --color-warning-600: var(--dk-warning-600);
+    --color-warning-700: var(--dk-warning-700);
+    --color-danger-50: var(--dk-danger-50);
+    --color-danger-600: var(--dk-danger-600);
+    --color-danger-700: var(--dk-danger-700);
+    --color-info-50: var(--dk-info-50);
+    --color-info-600: var(--dk-info-600);
+    --shadow-xs: var(--dk-shadow-xs);
+    --shadow-sm: var(--dk-shadow-sm);
+    --shadow-overlay: var(--dk-shadow-overlay);
   }
+}
+
+:root[data-theme="night"] {
+  --color-canvas: var(--dk-canvas);
+  --color-surface: var(--dk-surface);
+  --color-surface-muted: var(--dk-surface-muted);
+  --color-surface-sunken: var(--dk-surface-sunken);
+  --color-line: var(--dk-line);
+  --color-line-strong: var(--dk-line-strong);
+  --color-ink: var(--dk-ink);
+  --color-ink-secondary: var(--dk-ink-secondary);
+  --color-ink-muted: var(--dk-ink-muted);
+  --color-ink-inverse: var(--dk-ink-inverse);
+  --color-brand-50: var(--dk-brand-50);
+  --color-brand-100: var(--dk-brand-100);
+  --color-brand-200: var(--dk-brand-200);
+  --color-brand-300: var(--dk-brand-300);
+  --color-brand-500: var(--dk-brand-500);
+  --color-brand-600: var(--dk-brand-600);
+  --color-brand-700: var(--dk-brand-700);
+  --color-brand-800: var(--dk-brand-800);
+  --color-brand-900: var(--dk-brand-900);
+  --color-brand-solid: var(--dk-brand-solid);
+  --color-brand-solid-hover: var(--dk-brand-solid-hover);
+  --color-brand-solid-active: var(--dk-brand-solid-active);
+  --color-brand-on-solid: var(--dk-brand-on-solid);
+  --color-focus-ring: var(--dk-focus-ring);
+  --color-brand-text: var(--dk-brand-text);
+  --color-brand-text-strong: var(--dk-brand-text-strong);
+  --color-success-50: var(--dk-success-50);
+  --color-success-600: var(--dk-success-600);
+  --color-success-700: var(--dk-success-700);
+  --color-warning-50: var(--dk-warning-50);
+  --color-warning-600: var(--dk-warning-600);
+  --color-warning-700: var(--dk-warning-700);
+  --color-danger-50: var(--dk-danger-50);
+  --color-danger-600: var(--dk-danger-600);
+  --color-danger-700: var(--dk-danger-700);
+  --color-info-50: var(--dk-info-50);
+  --color-info-600: var(--dk-info-600);
+  --shadow-xs: var(--dk-shadow-xs);
+  --shadow-sm: var(--dk-shadow-sm);
+  --shadow-overlay: var(--dk-shadow-overlay);
+}
+
+/*
+ * Midnight: the night theme with the contrast taken down and the blue taken
+ * out. For reading marks at eleven at night on a phone in a dark room, where
+ * the night theme's near-white on near-black is a torch. Everything else is
+ * inherited from night, so only what differs is written.
+ */
+:root[data-theme="midnight"] {
+  --color-canvas: #0a0a0c;
+  --color-surface: #131316;
+  --color-surface-muted: #1a1a1e;
+  --color-surface-sunken: #202027;
+  --color-line: #2a2a31;
+  --color-line-strong: #3a3a44;
+
+  --color-ink: #d7d4cd;
+  --color-ink-secondary: #a8a49c;
+  --color-ink-muted: #837f78;
+  --color-ink-inverse: #0a0a0c;
+
+  --color-brand-50: #241b0c;
+  --color-brand-100: #2f2411;
+  --color-brand-200: #443318;
+  --color-brand-300: #664c24;
+  --color-brand-500: #a8741c;
+  --color-brand-600: #bd8526;
+  --color-brand-700: #d09b3c;
+  --color-brand-800: #dcae59;
+  --color-brand-900: #e8c684;
+
+  --color-brand-solid: #bd8526;
+  --color-brand-solid-hover: #cd9330;
+  --color-brand-solid-active: #dca63f;
+  --color-brand-on-solid: #0f0c07;
+  --color-focus-ring: #dcae59;
+  --color-brand-text: #dcae59;
+  --color-brand-text-strong: #e8c684;
+
+  --color-success-50: #0e2117;
+  --color-success-600: #3f9d6f;
+  --color-success-700: #5cb388;
+  --color-warning-50: #241d0e;
+  --color-warning-600: #bb8f38;
+  --color-warning-700: #cfa964;
+  --color-danger-50: #271311;
+  --color-danger-600: #c9675c;
+  --color-danger-700: #d78b80;
+  --color-info-50: #131f2e;
+  --color-info-600: #6d99c8;
+
+  --shadow-xs: var(--dk-shadow-xs);
+  --shadow-sm: var(--dk-shadow-sm);
+  --shadow-overlay: var(--dk-shadow-overlay);
+}
+
+/*
+ * Verdant: the light theme with the flag's green in place of the gold. The
+ * greys are the same, because the palette's job is to stay out of the way —
+ * only what is meant to be pressed changes colour.
+ */
+:root[data-theme="verdant"] {
+  --color-brand-50: #eef7f0;
+  --color-brand-100: #d7ecdc;
+  --color-brand-200: #a9d6b5;
+  --color-brand-300: #74bb88;
+  --color-brand-500: #2f9450;
+  --color-brand-600: #1f7a3e;
+  --color-brand-700: #145c2d;
+  --color-brand-800: #0f4723;
+  --color-brand-900: #0a341a;
+
+  --color-brand-solid: #1f7a3e;
+  --color-brand-solid-hover: #1a6c36;
+  --color-brand-solid-active: #145c2d;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #145c2d;
+  --color-brand-text: #145c2d;
+  --color-brand-text-strong: #0f4723;
 }
 
 @layer base {
@@ -482,4 +647,19 @@
   100% {
     transform: translateX(120%);
   }
+}
+
+/*
+ * Tells the browser which way round its own furniture goes — scrollbars, form
+ * controls, the space behind a dialog. Without it a chosen dark theme gets
+ * light scrollbars, which is the one part of the page the theme cannot paint.
+ */
+:root[data-theme="day"],
+:root[data-theme="verdant"] {
+  color-scheme: light;
+}
+
+:root[data-theme="night"],
+:root[data-theme="midnight"] {
+  color-scheme: dark;
 }

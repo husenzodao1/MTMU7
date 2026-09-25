@@ -15,7 +15,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Alert, Card, CardBody, CardHeader, Metric, PageHeader } from "@/components/ui/surface";
 import { can, canAny, canEnterAdmin, hasModule, hasRole } from "@/lib/auth/access";
 import { getPortalSession } from "@/lib/auth/guards";
-import { formatDate, todayIso } from "@/lib/i18n/format";
+import { dayPart, formatDate, todayIso } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
@@ -89,7 +89,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader
-        title={t("greeting", { name: access.firstName })}
+        /* The greeting is the one line on the portal addressed to the person
+           reading it, so it is set the way a name is set: the hour's greeting
+           quiet, the name carrying the weight and the school's colour. */
+        title={
+          <span className="font-display">
+            <span className="font-normal text-ink">{t(`greetings.${dayPart(access.school?.timezone)}`)},</span>{" "}
+            <span className="font-bold text-brand-text">{access.firstName}</span>
+          </span>
+        }
         description={`${tc(`weekdays.${weekday}`)}, ${formatDate(today, locale)}`}
         actions={
           canEnterAdmin(access) ? (

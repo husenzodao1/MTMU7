@@ -46,19 +46,32 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * The school's own mark, top left, on every page a signed-in person opens.
+ *
+ * A round frame in the school's colour with the photograph inside it: a crest
+ * rather than a thumbnail, which is what a school badge is. The name is set in
+ * the display face — the same one the front page uses — so the two read as the
+ * same institution.
+ */
 function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: string }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      {school.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
-        <img src={school.logoUrl} alt="" className="size-9 shrink-0 rounded-md border border-line object-cover" />
-      ) : (
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-solid text-sm font-semibold text-brand-on-solid" aria-hidden>
-          {school.name.slice(0, 2).toUpperCase()}
-        </span>
-      )}
+      <span
+        aria-hidden
+        className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-50 p-[3px] ring-2 ring-brand-solid/70 ring-offset-2 ring-offset-surface"
+      >
+        {school.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
+          <img src={school.logoUrl} alt="" className="size-full rounded-full object-cover" />
+        ) : (
+          <span className="flex size-full items-center justify-center rounded-full bg-brand-solid font-display text-sm font-bold text-brand-on-solid">
+            {school.name.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </span>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold leading-tight text-ink">{school.name}</p>
+        <p className="truncate font-display text-[0.9375rem] font-bold leading-tight tracking-tight text-ink">{school.name}</p>
         <p className="truncate text-xs text-ink-muted">{subtitle}</p>
       </div>
     </div>

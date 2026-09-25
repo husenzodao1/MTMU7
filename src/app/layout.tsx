@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { cookies } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Noto_Sans, Noto_Serif } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
+import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
 import "@/styles/globals.css";
 
 const notoSans = Noto_Sans({
@@ -61,8 +63,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
   const t = await getTranslations("common");
 
+  // Read before a byte of HTML is sent, so the page arrives already painted in
+  // the chosen theme. A theme applied afterwards by a script is a white flash
+  // on every navigation for somebody who chose the dark one.
+  const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
+
   return (
-    <html lang={locale} className={`${notoSans.variable} ${notoSerif.variable}`}>
+    <html
+      lang={locale}
+      // "system" writes nothing at all, which is what leaves the media query
+      // in charge.
+      data-theme={theme === "system" ? undefined : theme}
+      className={`${notoSans.variable} ${notoSerif.variable}`}
+    >
       <body className="min-h-dvh">
         <a href="#main" className="skip-link">
           {t("skipToContent")}

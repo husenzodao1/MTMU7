@@ -55,7 +55,13 @@
         "rejectedTitle": "The request was declined",
         "rejectedBody": "Contact the school administration to find out why."
       },
-      "greetingNoName": "Welcome"
+      "greetingNoName": "Welcome",
+      "greetings": {
+        "morning": "Good morning",
+        "day": "Good afternoon",
+        "evening": "Good evening",
+        "night": "Good night"
+      }
     },
     "lessons": {
       "period": "Period {number}",
@@ -544,7 +550,8 @@
       "enableAll": "Receive notifications",
       "enableAllHint": "Turn off to pause all personal notifications.",
       "categories": "Categories",
-      "save": "Save preferences"
+      "save": "Save preferences",
+      "themeHint": "The portal's colours. The choice is kept in this browser."
     },
     "friends": {
       "title": "Contacts",

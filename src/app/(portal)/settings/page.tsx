@@ -6,6 +6,7 @@ import { NOTIFICATION_PREFERENCE_TYPES } from "@/features/profile/constants";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Checkbox, Fieldset } from "@/components/ui/form-controls";
+import { ThemeSwitcher } from "@/components/site/theme-switcher";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
 import { requireAccess } from "@/lib/auth/guards";
 import { LOCALES } from "@/lib/i18n/text";
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
   const t = await getTranslations("portal.settings");
   const tn = await getTranslations("portal.notifications.types");
   const tl = await getTranslations("common.locales");
+  const tt = await getTranslations("common.themes");
   const locale = await getLocale();
   const supabase = await createClient();
   const { data: settings } = await supabase
@@ -53,6 +55,13 @@ export default async function SettingsPage() {
                 </button>
               ))}
             </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title={tt("label")} description={t("themeHint")} />
+          <CardBody>
+            <ThemeSwitcher />
           </CardBody>
         </Card>
 

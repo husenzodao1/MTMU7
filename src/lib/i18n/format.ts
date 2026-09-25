@@ -106,3 +106,25 @@ export function formatPercent(value: number | string | null | undefined, locale:
 export function todayIso(timeZone = DEFAULT_TIME_ZONE): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
+
+/** The hour, 0–23, where the school is. */
+export function hourIn(timeZone = DEFAULT_TIME_ZONE): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hour12: false }).format(new Date()));
+}
+
+export type DayPart = "morning" | "day" | "evening" | "night";
+
+/**
+ * Which greeting the hour calls for.
+ *
+ * The boundaries are the ones a Tajik speaker would use: субҳ until noon, рӯз
+ * through the afternoon, шом from six, and шаб from ten at night — so somebody
+ * opening the portal after supper is not wished good afternoon.
+ */
+export function dayPart(timeZone = DEFAULT_TIME_ZONE): DayPart {
+  const hour = hourIn(timeZone);
+  if (hour >= 5 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 18) return "day";
+  if (hour >= 18 && hour < 22) return "evening";
+  return "night";
+}

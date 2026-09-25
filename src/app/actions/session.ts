@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAccess } from "@/lib/auth/access";
 import { isLocale } from "@/lib/i18n/text";
+import { isTheme, THEME_COOKIE } from "@/lib/theme";
 import { safeRedirectPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,4 +59,21 @@ export async function clearAuthSchoolAction(formData: FormData): Promise<void> {
   const target = safeRedirectPath(String(formData.get("next") ?? "/login")) ?? "/login";
   (await cookies()).delete("school");
   redirect(target);
+}
+
+/**
+ * Remembers the chosen theme.
+ *
+ * A cookie rather than a database row, because the root layout has to know
+ * before it renders anything and reaching the database there would put a query
+ * in front of every page. Signed-in or not, the choice belongs to the browser
+ * it was made in.
+ */
+export async function setThemeAction(formData: FormData): Promise<void> {
+  const theme = formData.get("theme");
+  if (!isTheme(theme)) return;
+
+  const cookieStore = await cookies();
+  cookieStore.set(THEME_COOKIE, theme, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: false });
+  revalidatePath("/", "layout");
 }

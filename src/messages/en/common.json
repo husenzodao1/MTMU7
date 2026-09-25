@@ -160,7 +160,30 @@
       "ownerImage": "Awaiting official image"
     },
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "themes": {
+      "label": "Colour theme",
+      "system": {
+        "name": "System",
+        "hint": "Whatever the device says"
+      },
+      "day": {
+        "name": "Day",
+        "hint": "Light, for daytime"
+      },
+      "night": {
+        "name": "Night",
+        "hint": "Dark, for the evening"
+      },
+      "midnight": {
+        "name": "Midnight",
+        "hint": "Very dark, for late at night"
+      },
+      "verdant": {
+        "name": "Verdant",
+        "hint": "Light, with green"
+      }
+    }
   },
   "nav": {
     "main": "Main navigation",
