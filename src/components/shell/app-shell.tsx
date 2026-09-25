@@ -69,14 +69,14 @@ function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[];
   const t = useTranslations();
   const normalized = filter.trim().toLowerCase();
   const visibleGroups = groups
-    .map((group) => ({ ...group, items: group.items.filter((item) => !normalized || t(item.label).toLowerCase().includes(normalized)) }))
+    .map((group) => ({ ...group, items: group.items.filter((item) => !normalized || t(item.labelKey).toLowerCase().includes(normalized)) }))
     .filter((group) => group.items.length > 0);
 
   return (
     <div className="space-y-5 px-3 py-4">
       {visibleGroups.map((group) => (
         <div key={group.key}>
-          {group.label ? <p className="mb-1.5 px-2.5 text-xs font-medium uppercase tracking-wide text-ink-muted">{t(group.label)}</p> : null}
+          {group.labelKey ? <p className="mb-1.5 px-2.5 text-xs font-medium uppercase tracking-wide text-ink-muted">{t(group.labelKey)}</p> : null}
           <ul className="space-y-0.5">
             {group.items.map((item) => {
               const active = isActive(pathname, item.href);
@@ -94,7 +94,7 @@ function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[];
                     <span className={cn(active ? "text-brand-text" : "text-ink-muted")}>
                       <NavIcon name={item.icon} />
                     </span>
-                    <span className="truncate">{t(item.label)}</span>
+                    <span className="truncate">{t(item.labelKey)}</span>
                   </Link>
                 </li>
               );
@@ -304,7 +304,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                       <NavIcon name={item.icon} className="size-5" />
                       {item.key === "messages" ? <CountBadge count={unreadMessages} label={t("nav.messagesUnread", { count: unreadMessages })} /> : null}
                     </span>
-                    <span className="max-w-full truncate">{t(item.label)}</span>
+                    <span className="max-w-full truncate">{t(item.labelKey)}</span>
                   </Link>
                 </li>
               );

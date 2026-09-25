@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
+import { SOCIAL_ICON } from "@/components/site/social-icons";
 import { getPlatformIdentity } from "@/lib/site/identity";
 import { getAuthSchool } from "@/lib/site/auth-school";
 import { pickText, type Locale } from "@/lib/i18n/text";
@@ -55,7 +56,7 @@ export async function OfficialStrip() {
   );
 }
 
-const SOCIAL_KEYS = ["whatsapp", "telegram", "instagram"] as const;
+const SOCIAL_KEYS = ["telegram", "instagram", "whatsapp", "x"] as const;
 
 /**
  * Site footer: one sentence of purpose, then contacts and navigation, over a
@@ -91,9 +92,6 @@ export async function SiteFooter({
   const contact: Array<{ href: string; label: string; external?: boolean }> = [];
   if (school) contact.push({ href: `/s/${school.slug}`, label: t("about") });
   if (identity.supportEmail) contact.push({ href: `mailto:${identity.supportEmail}`, label: t("support"), external: true });
-  for (const key of SOCIAL_KEYS) {
-    contact.push({ href: social[key], label: t(key), external: true });
-  }
 
   const linkClass = "rounded-sm text-white/70 transition-colors hover:text-white hover:underline";
 
@@ -109,15 +107,19 @@ export async function SiteFooter({
      * always dark, the way the strip at the top always is.
      */
     <footer className="relative isolate z-10 mt-auto overflow-hidden">
-      {/* A brighter band of the flag closes the page the way the strip opens it. */}
-      <div aria-hidden className="h-2 w-full bg-[url('/gov/flag-strip.webp')] bg-cover bg-center" />
       <div aria-hidden className="absolute inset-0 -z-20 bg-[url('/gov/flag-strip.webp')] bg-cover bg-center" />
       <div
         aria-hidden
-        /* Lighter where the flag meets the band at the top, so the colours are
-           plainly a flag and not a stain, and darker further down where the
-           links and the small print have to hold their contrast. */
-        className="absolute inset-0 -z-10 bg-gradient-to-b from-[#0b1020]/72 via-[#0b1020]/88 to-[#0b1020]/96"
+        /* Darkest at the very top, where the footer meets the page: a bare
+           edge of photograph there read as a seam rather than a background.
+           The flag comes through in the middle, where there is room for it,
+           and the foot goes dark again under the small print. */
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-[#0b1020] via-[#0b1020]/82 to-[#0b1020]/97"
+      />
+      {/* One hairline of the flag's own colours, as a rule rather than a photograph. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-[#cc0000] via-[#ffffff] to-[#006600] opacity-70"
       />
 
       <div className="mx-auto max-w-6xl px-4 py-10 text-sm">
@@ -130,6 +132,27 @@ export async function SiteFooter({
           <p className="max-w-xl text-pretty font-display text-[0.9375rem] leading-relaxed text-white/80 sm:text-base">
             {t("tagline")}
           </p>
+          {/* The accounts, as marks. Four names spelled out competed with the
+              school's own; four glyphs at one weight do not. */}
+          <ul className="mt-1 flex items-center justify-center gap-2">
+            {SOCIAL_KEYS.map((key) => {
+              const Icon = SOCIAL_ICON[key];
+              return (
+                <li key={key}>
+                  <a
+                    href={social[key]}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    aria-label={t(key)}
+                    title={t(key)}
+                    className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 transition-colors hover:border-white/40 hover:bg-white/15 hover:text-white"
+                  >
+                    <Icon className="size-[18px]" />
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
           <span aria-hidden className="mt-1 h-px w-24 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
         </div>
 

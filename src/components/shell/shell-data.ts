@@ -55,7 +55,7 @@ export async function portalShellNav(access: Access): Promise<{ groups: NavGroup
   ].filter((i): i is NavItem => Boolean(i));
 
   return {
-    groups: [{ key: "main", label: "", items }],
+    groups: [{ key: "main", labelKey: "", items }],
     mobileBar,
     switchHref: showAdminLink(access) ? { href: "/admin", label: t("adminCenter") } : null,
   };
