@@ -114,7 +114,22 @@
         "late": "l",
         "excused": "e"
       },
-      "columnLabelExample": "Term 1"
+      "columnLabelExample": "Term 1",
+      "termColumn": "Term",
+      "termColumnLabel": "Heading for the term column",
+      "termColumnHint": "This stands in the heading instead of a date — for example “Term 1”.",
+      "ruleTermColumn": "Rule a term column",
+      "topics": "Lesson topics",
+      "topicsHint": "The right-hand page of the register: the date and topic of each lesson.",
+      "topic": "Lesson topic",
+      "homework": "Homework",
+      "saveTopic": "Save the topic",
+      "noTopics": "No topics written yet.",
+      "noColumns": "No columns yet. Rule the first one with the date of the lesson.",
+      "saveCells": "Save",
+      "cellHelp": "Write a mark in the square, or a letter: a — away, l — late, e — excused.",
+      "cellsSaved": "{count} squares saved.",
+      "cellsRefused": "{count} squares could not be read. They are marked in red — correct them."
     },
     "homework": {
       "title": "Homework",

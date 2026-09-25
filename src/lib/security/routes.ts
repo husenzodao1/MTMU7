@@ -29,3 +29,17 @@ export function isPortalPath(pathname: string): boolean {
 export function isGuestOnlyPath(pathname: string): boolean {
   return matches(pathname, GUEST_ONLY);
 }
+
+/**
+ * Whether a visitor who already has a session should be sent away from this
+ * page.
+ *
+ * Normally yes: they pressed "sign in" while already in. But not when the page
+ * carries a `reason`, because that message is there precisely because another
+ * page just sent them here — a blocked account is refused by the dashboard,
+ * which redirects to /login?reason=inactive, and sending them back produced
+ * ERR_TOO_MANY_REDIRECTS.
+ */
+export function shouldRedirectSignedInAway(pathname: string, search: URLSearchParams): boolean {
+  return isGuestOnlyPath(pathname) && !search.has("reason");
+}

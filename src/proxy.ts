@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/db/database.types";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
-import { isGuestOnlyPath, isPortalPath } from "@/lib/security/routes";
+import { isGuestOnlyPath, isPortalPath, shouldRedirectSignedInAway } from "@/lib/security/routes";
 import { accessTokenSecondsLeft, readSessionCookie } from "@/lib/security/session-token";
 
 
@@ -85,7 +85,7 @@ export async function proxy(request: NextRequest) {
     return withSecurityHeaders(NextResponse.redirect(url), csp, response);
   }
 
-  if (isAuthenticated && isGuestOnlyPath(pathname)) {
+  if (isAuthenticated && shouldRedirectSignedInAway(pathname, request.nextUrl.searchParams)) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";

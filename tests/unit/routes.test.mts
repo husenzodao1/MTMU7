@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { isGuestOnlyPath, isPortalPath } from "../../src/lib/security/routes.ts";
+import { isGuestOnlyPath, isPortalPath, shouldRedirectSignedInAway } from "../../src/lib/security/routes.ts";
 
 describe("route classification used by the proxy", () => {
   it("treats the portal and its subpaths as signed-in areas", () => {
@@ -33,5 +33,25 @@ describe("route classification used by the proxy", () => {
   it("does not match a path that merely starts with the same letters", () => {
     assert.equal(isPortalPath("/administration"), false);
     assert.equal(isGuestOnlyPath("/login-help"), false);
+  });
+});
+
+describe("a signed-in visitor on the sign-in page", () => {
+  it("is sent to the dashboard, because they are already in", () => {
+    assert.equal(shouldRedirectSignedInAway("/login", new URLSearchParams()), true);
+    assert.equal(shouldRedirectSignedInAway("/reset-password", new URLSearchParams("next=/grades")), true);
+  });
+
+  it("is left alone when the page is carrying a reason", () => {
+    // A blocked account is refused by the dashboard, which sends it to
+    // /login?reason=inactive. Sending it back produced ERR_TOO_MANY_REDIRECTS,
+    // and the message it was sent to read never appeared.
+    assert.equal(shouldRedirectSignedInAway("/login", new URLSearchParams("reason=inactive")), false);
+    assert.equal(shouldRedirectSignedInAway("/login", new URLSearchParams("reason=password-updated")), false);
+  });
+
+  it("is never redirected away from a page that is not guest-only", () => {
+    assert.equal(shouldRedirectSignedInAway("/dashboard", new URLSearchParams()), false);
+    assert.equal(shouldRedirectSignedInAway("/confirm-email", new URLSearchParams()), false);
   });
 });

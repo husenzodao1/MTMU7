@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { signOutAction } from "@/app/actions/session";
+import { buttonClasses } from "@/components/ui/button";
 import { SignInForm } from "@/features/auth/forms";
 import { ChangeSchool, hasChosenSchool, listAuthSchools, SchoolPicker } from "@/features/auth/school-picker";
 import { Alert, Card, CardBody } from "@/components/ui/surface";
@@ -14,6 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const t = await getTranslations("auth.login");
+  const tn = await getTranslations("nav");
   const params = await searchParams;
   const reason = firstValue(params.reason);
   const nextRaw = firstValue(params.next);
@@ -31,7 +34,22 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <>
       <Card as="div">
         <CardBody className="space-y-5 p-6 sm:p-8">
-          {reason === "inactive" ? <Alert tone="warning">{t("inactive")}</Alert> : null}
+          {reason === "inactive" ? (
+            <Alert
+              tone="warning"
+              // The visitor still holds the session the portal just refused, so
+              // the way out is offered here rather than left to be guessed.
+              actions={
+                <form action={signOutAction}>
+                  <button type="submit" className={buttonClasses("secondary", "sm")}>
+                    {tn("signOut")}
+                  </button>
+                </form>
+              }
+            >
+              {t("inactive")}
+            </Alert>
+          ) : null}
           {reason === "password-updated" ? <Alert tone="success">{t("passwordUpdated")}</Alert> : null}
           {reason === "link-invalid" ? <Alert tone="warning">{t("linkInvalid")}</Alert> : null}
           <SignInForm next={next} markUrl={school?.logoUrl ?? school?.photoUrl ?? null} />
