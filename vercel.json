@@ -5,8 +5,9 @@
       "schedule": "0 3 * * *"
     },
     {
+      "comment": "A backstop only. Vercel's Hobby plan runs a cron once a day, which is no use to a parent waiting twelve minutes for a mark, so the real cadence is a pg_cron job in Supabase calling this same route every minute (migration 00059). This entry catches anything the database missed while it was down.",
       "path": "/api/cron/telegram-dispatch",
-      "schedule": "* * * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }
