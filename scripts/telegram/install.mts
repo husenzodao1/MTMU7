@@ -231,12 +231,15 @@ if (serviceKey) {
 }
 if (!serviceKeyWorks || REPLACE) {
   say();
-  say("  The Supabase service_role key.");
-  say("  Supabase → Project Settings → API → service_role → copy.");
+  say("  The Supabase secret key — the one that used to be called service_role.");
+  say("  Supabase → Settings → API Keys → Secret keys → copy the sb_secret_… one.");
+  say("  Not the Publishable key, and check the project is the right one.");
   say();
   serviceKey = await askHidden("  service_role key: ");
   if (!(await keyWorks(supabaseUrl, serviceKey))) {
-    say(`  ${cross} Supabase did not accept that key. Copy the one marked service_role, not anon.`);
+    say(`  ${cross} Supabase did not accept that key.`);
+    say(`     It has to come from the project at ${supabaseUrl},`);
+    say("     and from Secret keys — a Publishable key will not do.");
     process.exit(1);
   }
   writeEnvValue("SUPABASE_SERVICE_ROLE_KEY", serviceKey);
