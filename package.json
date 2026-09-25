@@ -16,7 +16,8 @@
     "security:secrets": "node scripts/security/scan-secrets.mts",
     "db:verify": "node scripts/db/verify-remote.mts",
     "admin:password": "node scripts/admin/set-user-password.mts",
-    "import:samples": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import/make-samples.mts"
+    "import:samples": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import/make-samples.mts",
+    "telegram:install": "node scripts/telegram/install.mts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

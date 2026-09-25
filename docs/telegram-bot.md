@@ -2,69 +2,43 @@
 
 Боти Телеграм ба волидон баҳо ва давомоти фарзандашонро мефиристад.
 
-Ҳама чиз навишта ва ҷойгир шудааст. Танҳо чор қадам мондааст, ки онҳоро худи шумо иҷро мекунед, чунки рамзҳо аз они шумоянд.
-
 ---
 
-## 1. Токени нави бот гиред
+# Насб — як фармон
 
-Токене, ки дар чат навишта шуд, дигар маҳфӣ нест. Онро бекор кунед:
+Аввал ду чизро тайёр кунед (ҳар кадом як дақиқа):
 
-1. Дар Телеграм ба **@BotFather** равед.
-2. `/revoke` → ботро интихоб кунед → токени нав мегиред.
+**1. Токени бот.** Дар Телеграм → **@BotFather** → `/revoke` → ботро интихоб кунед → токени нав нусхабардорӣ кунед.
 
-Баъд онро ба Vercel гузоред (қиматро худатон менависед):
+> Токени кӯҳна дар чат навишта шуда буд, яъне дигар маҳфӣ нест. Ҳатман `/revoke` кунед.
 
-```bash
-npx vercel env add TELEGRAM_BOT_TOKEN production
-```
+**2. Калиди Supabase.** Supabase → **Project Settings → API** → сатри **`service_role`** → нусхабардорӣ.
 
-Ҳамин фармонро барои `preview` ва `development` низ такрор кунед.
-
-## 2. Калиди `service_role`-и Supabase
-
-Бот аккаунти портал надорад, барои ҳамин ба ин калид ниёз дорад.
-
-Supabase → **Project Settings → API → service_role** → нусхабардорӣ кунед, сипас:
+Сипас дар терминали папкаи лоиҳа:
 
 ```bash
-npx vercel env add SUPABASE_SERVICE_ROLE_KEY production
+npm run telegram:install
 ```
 
-Боз барои `preview` ва `development`.
+Он ду маротиба мепурсад — токен ва калид. Ҳангоми навиштан ҳарфҳо дар экран **намоён намешаванд**, ин дуруст аст; часпонед ва Enter занед.
 
-> Бе ин калид бот ҷавоб намедиҳад ва `/api/telegram/webhook` рамзи 503 бармегардонад.
+Боқии ҳама чизро худаш мекунад:
 
-## 3. Ботро ба канал админ кунед
+- `.env.local`-ро пур мекунад
+- ҳамаи чор тағйирёбандаро ба Vercel (production, preview, development) мефиристад
+- Supabase Vault-ро пур мекунад, то ҷадвали ҳардақиқагӣ кор кунад
+- webhook ва фармонҳои ботро сабт мекунад
+- ҳамаашро месанҷад ва мегӯяд чӣ тайёр аст ва чӣ не
 
-https://t.me/istaravshan_schools → **Administrators** → ботро илова кунед.
-
-Бе ин Телеграм намегӯяд, ки кӣ ба канал обуна шудааст, ва санҷиши обуна кор намекунад. (Дар ин ҳолат бот ҳамаро мегузаронад — волидон бе айби худ берун намемонанд — вале дар лог огоҳӣ навишта мешавад.)
-
-## 4. Ҷадвали ҳар дақиқа
-
-Vercel дар нақшаи Hobby рӯзе як бор кор мекунад, барои ҳамин ҷадвали асосӣ дар Supabase аст. Дар **Supabase → SQL Editor** ин дуро як бор иҷро кунед (ба ҷойи `…` қиматҳоро гузоред — `CRON_SECRET` дар файли `.env.local`-и шумо ҳаст):
-
-```sql
-select vault.create_secret('https://mtmuraqami7.vercel.app/api/cron/telegram-dispatch',
-                           'telegram_dispatch_url', 'where the outbox is flushed');
-select vault.create_secret('…CRON_SECRET…', 'telegram_cron_secret', 'bearer token for the dispatch route');
-```
-
-Санҷидан:
-
-```sql
-select jobname, schedule, active from cron.job where jobname = 'telegram-dispatch';
-select status, count(*) from net._http_response group by status order by 2 desc limit 5;
-```
-
-## 5. Ботро ба сайт пайваст кунед
+Дар охир агар навишта шавад «the deployed site has not picked the new variables up yet», танҳо як фармон монда:
 
 ```bash
-node scripts/telegram/setup.mts https://mtmuraqami7.vercel.app
+npx vercel --prod
 ```
 
-Ин webhook-ро сабт мекунад ва фармонҳои ботро (/start, /menu, /add, /lang, /help) менависад. Токенро чоп намекунад.
+**Як чизи охирин, ки танҳо дар Телеграм мешавад:** ботро ба канал админ кунед — https://t.me/istaravshan_schools → **Administrators** → ботро илова кунед. Бе ин Телеграм намегӯяд, ки кӣ обуна шудааст. (Скрипт худаш месанҷад ва мегӯяд, ки ин кор шудааст ё не.)
+
+Фармонро боз ҳам иҷро кардан мумкин аст — зарар надорад. Агар хоҳед, ки ҳамаашро аз нав нависад: `npm run telegram:install -- --replace`.
 
 ---
 
@@ -80,7 +54,7 @@ node scripts/telegram/setup.mts https://mtmuraqami7.vercel.app
 
 | Кай | Чӣ меояд |
 |---|---|
-| 12 дақиқа баъди баҳо | Як паём: фан, санаа, намуди кор, баҳо бо ранг |
+| 12 дақиқа баъди баҳо | Як паём: фан, сана, намуди кор, баҳо бо ранг |
 | 12 дақиқа баъди ғоиб | Фан, соати дарс, сабаб (ғоиб / дер / узрнок) |
 | Соати 18:00 (вақти мактаб) | Ҳисоботи рӯз: ҳамаи баҳоҳо, ҳамаи қайдҳо, миёна |
 | Ҳар вақт аз меню | Имрӯз · Ҳафта · Ҷадвали дарсӣ |
@@ -89,14 +63,20 @@ node scripts/telegram/setup.mts https://mtmuraqami7.vercel.app
 
 Соати ҳисоботи рӯзро иваз кардан мумкин аст: `telegram_digest_hour` дар танзимоти мактаб (пешфарз 18).
 
-## Хатогиҳо
+## Агар чизе кор накунад
+
+Аввал `npm run telegram:install`-ро боз як бор иҷро кунед — он худаш месанҷад ва айби аниқро мегӯяд.
 
 | Аломат | Сабаб |
 |---|---|
-| Webhook 503 | `TELEGRAM_BOT_TOKEN` ё `SUPABASE_SERVICE_ROLE_KEY` гузошта нашудааст |
-| Бот ҷавоб намедиҳад | `node scripts/telegram/setup.mts …` иҷро нашудааст |
-| Паём намеояд | Vault пур нашудааст (қадами 4), ё `select * from cron.job_run_details order by start_time desc limit 5` -ро бинед |
-| «Рамз нодуруст» | Рамз аз файли кӯҳна; синфро аз нав созед |
-| Санҷиши обуна кор намекунад | Бот админи канал нест (қадами 3) |
+| Webhook 503 | `TELEGRAM_BOT_TOKEN` ё `SUPABASE_SERVICE_ROLE_KEY` дар Vercel нест → `npx vercel --prod` |
+| Бот ҷавоб намедиҳад | Webhook сабт нашудааст → скриптро иҷро кунед |
+| Паём намеояд | `select * from cron.job_run_details order by start_time desc limit 5` |
+| «Рамз нодуруст» | Рамз аз файли кӯҳна; рамзҳои синфро аз нав созед |
+| Санҷиши обуна кор намекунад | Бот админи канал нест |
 
 Навбати паёмҳо дар `public.telegram_outbox`. Паёме, ки се бор нафиристода шуд, дигар кӯшиш намекунад — сабабаш дар сутуни `last_error`.
+
+## Чизҳое, ки скрипт намебинад
+
+Токен ва калиди Supabase ҳангоми навиштан дар экран намоён намешаванд, дар лог сабт намешаванд ва дар ҷавоб чоп намешаванд. Онҳо аз `.env.local`-и шумо рост ба Vercel ва Supabase мераванд. `.env.local` дар `.gitignore` аст.
