@@ -405,7 +405,7 @@ export function absenceMessage(
 ): string {
   const w = words(locale);
   const subject = pick(absence.subject, locale);
-  const where = [subject, absence.period ? `${absence.period}-${w.lesson}` : null].filter(Boolean).join(" · ");
+  const where = [subject, absence.period ? `${w.lesson} ${absence.period}` : null].filter(Boolean).join(" · ");
   return (
     [
       `${statusDot(absence.status)} <b>${w.attendance}</b>`,
@@ -493,13 +493,6 @@ export function reportMessage(
       );
     }
     if (report.grades.length > MOST_GRADES) lines.push(`<i>… +${report.grades.length - MOST_GRADES}</i>`);
-    // A running average only says something when there is more than one mark,
-    // and the term marks are a verdict rather than part of the sum.
-    const counted = report.grades.filter((g) => !g.final);
-    if (counted.length > 1) {
-      const mean = counted.reduce((sum, g) => sum + g.score, 0) / counted.length;
-      lines.push("", `${RULE}\n${w.average}: <b>${mean.toFixed(1)}</b>`);
-    }
   }
 
   if (report.attendance.length > 0) {
@@ -507,12 +500,24 @@ export function reportMessage(
     for (const a of report.attendance.slice(0, MOST_ABSENCES)) {
       const when = kind === "week" ? `${day(a.date)} · ` : "";
       const subject = pick(a.subject, locale);
-      const where = [when + subject, a.period ? `${a.period}-${w.lesson}` : null].filter(Boolean).join(" · ");
+      const where = [when + subject, a.period ? `${w.lesson} ${a.period}` : null].filter(Boolean).join(" · ");
       lines.push(`${statusDot(a.status)} ${where || when} — <i>${statusWord(a.status, locale)}</i>`);
     }
     if (report.attendance.length > MOST_ABSENCES) {
       lines.push(`<i>… +${report.attendance.length - MOST_ABSENCES}</i>`);
     }
+  }
+
+  // Last, under everything it is drawn from. Sitting between the marks and the
+  // absences, the rule above it looked like a section had ended when it had
+  // not. A running average only says something when there is more than one
+  // mark, and a term mark is a verdict rather than part of the sum.
+  const counted = report.grades.filter((g) => !g.final);
+  if (counted.length > 1) {
+    const mean = counted.reduce((sum, g) => sum + g.score, 0) / counted.length;
+    // No rule of its own: the footer draws one directly underneath, and two in
+    // a row look like a mistake.
+    lines.push("", `${w.average}: <b>${mean.toFixed(1)}</b>`);
   }
 
   return fit(lines.join("\n") + footer(school));

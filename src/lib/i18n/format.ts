@@ -27,12 +27,27 @@ export function formatDate(value: string | Date | null | undefined, locale: Loca
   ).format(isDateOnly ? new Date(`${value}T00:00:00Z`) : date);
 }
 
+/**
+ * The all-numeric date: 22.09.2026 on every Tajik school form there is.
+ *
+ * ICU carries Tajik month and weekday names — Сентябр, Сешанбе — but no
+ * numeric pattern, so tg-TJ quietly falls back to 22/09/2026. It does not
+ * throw, so safeFormatter never notices. Russian is asked for the pattern
+ * instead: day first, dots, and not one word that could be Russian, because
+ * there are no words in it.
+ */
 export function formatShortDate(value: string | Date | null | undefined, locale: Locale, timeZone = DEFAULT_TIME_ZONE): string {
   const date = toDate(value);
   if (!date) return "—";
   const isDateOnly = typeof value === "string" && value.length === 10;
   return safeFormatter(
-    (l) => new Intl.DateTimeFormat(l, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: isDateOnly ? "UTC" : timeZone }),
+    (l) =>
+      new Intl.DateTimeFormat(locale === "tg" ? "ru-RU" : l, {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: isDateOnly ? "UTC" : timeZone,
+      }),
     locale
   ).format(isDateOnly ? new Date(`${value}T00:00:00Z`) : date);
 }

@@ -34,3 +34,26 @@ describe("school time zone conversions", () => {
     assert.deepEqual(localDayRangeIso("15.09.2026", "tomorrow"), { start: null, end: null });
   });
 });
+
+describe("why the Tajik date is formatted through Russian", () => {
+  // src/lib/i18n/format.ts asks ru-RU for the all-numeric date when the locale
+  // is Tajik. That looks wrong until you run this: ICU carries Tajik month and
+  // weekday names but no numeric pattern, so tg-TJ silently produces the
+  // slashes nobody here writes. It does not throw, so the fallback in
+  // safeFormatter never sees it. Should a future ICU learn the pattern, this
+  // test fails and the workaround can go.
+  const numeric = (l: string) =>
+    new Intl.DateTimeFormat(l, { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(
+      new Date("2026-09-22T00:00:00Z")
+    );
+
+  it("is because ICU has no numeric pattern for tg-TJ", () => {
+    assert.equal(numeric("tg-TJ"), "22/09/2026", "if this is 22.09.2026 now, drop the workaround");
+    assert.equal(numeric("ru-RU"), "22.09.2026");
+  });
+
+  it("but it does have the Tajik words, which are kept", () => {
+    const named = (l: string) => new Intl.DateTimeFormat(l, { month: "long", timeZone: "UTC" }).format(new Date("2026-09-22T00:00:00Z"));
+    assert.equal(named("tg-TJ"), "Сентябр", "month names never go through Russian");
+  });
+});
