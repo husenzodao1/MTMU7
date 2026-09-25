@@ -69,6 +69,23 @@ function writeEnvValue(key: string, value: string): void {
 
 // ------------------------------------------------------------------ prompts
 
+/**
+ * Why a key was refused, in words, without repeating any of it back.
+ *
+ * Only the prefix is looked at, and only its name is said: "sb_publishable_" is
+ * a format marker printed on the dashboard, not a secret. Guessing is worse
+ * than useless here — the school has two Supabase projects, and a key from the
+ * wrong one looks exactly like a key from the right one.
+ */
+function describeKey(key: string): string {
+  if (key.length === 0) return "nothing was pasted — try again, and paste with the mouse rather than Ctrl+V";
+  if (key.startsWith("sb_publishable_")) return "that is the Publishable key; the one below it, under Secret keys, is the one";
+  if (key.startsWith("eyJ")) return "that is a legacy JWT key; this project uses the new ones, marked sb_secret_";
+  if (key.startsWith("sb_secret_")) return "right kind of key, wrong project — check the project name at the top of the page";
+  if (key.length < 20) return "that looks cut short; the whole key should come across in one paste";
+  return "it was not recognised";
+}
+
 /** Does Supabase still accept this key? PostgREST answers its own root for a good one. */
 async function keyWorks(url: string, key: string): Promise<boolean> {
   try {
@@ -237,9 +254,14 @@ if (!serviceKeyWorks || REPLACE) {
   say();
   serviceKey = await askHidden("  service_role key: ");
   if (!(await keyWorks(supabaseUrl, serviceKey))) {
-    say(`  ${cross} Supabase did not accept that key.`);
-    say(`     It has to come from the project at ${supabaseUrl},`);
-    say("     and from Secret keys — a Publishable key will not do.");
+    say(`  ${cross} Supabase did not accept that key: ${describeKey(serviceKey)}.`);
+    say(`     The project is the one at ${supabaseUrl}`);
+    say(`     ${dot} Settings → API Keys → Secret keys → the copy button beside sb_secret_…`);
+    say();
+    say("     If pasting into this prompt keeps going wrong, open .env.local in a text");
+    say("     editor, put the key on a line of its own as");
+    say("       SUPABASE_SERVICE_ROLE_KEY=sb_secret_…");
+    say("     save it, and run this again — it will not ask.");
     process.exit(1);
   }
   writeEnvValue("SUPABASE_SERVICE_ROLE_KEY", serviceKey);
