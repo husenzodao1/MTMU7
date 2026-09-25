@@ -173,3 +173,55 @@ describe("ruling a column", () => {
     assert.equal(await errorOf(() => rule(t.users.teacherB, "lesson", day, null)), "forbidden");
   });
 });
+
+describe("the rules the register already had", () => {
+  it("records who entered the mark and who marked the absence", async () => {
+    await save(t.users.teacherA, [cell("5")]);
+    const mark = await one<{ entered_by: string }>(
+      db,
+      `SELECT entered_by FROM public.grades WHERE student_id = $1 AND class_subject_id = $2 AND grade_date = $3`,
+      [a.students.studentA, a.mathA, day]
+    );
+    assert.equal(mark!.entered_by, t.users.teacherA, "a mark with no author cannot be questioned later");
+
+    await save(t.users.teacherA, [cell("ғ")]);
+    const absence = await one<{ marked_by: string }>(
+      db,
+      `SELECT marked_by FROM public.attendance_records WHERE student_id = $1 AND class_subject_id = $2 AND attendance_date = $3`,
+      [a.students.studentA, a.mathA, day]
+    );
+    assert.equal(absence!.marked_by, t.users.teacherA);
+  });
+
+  it("refuses an absence for a day that has not happened", async () => {
+    const future = await one<{ d: string }>(db, `SELECT (current_date + 3)::text AS d`);
+    const outcome = await save(t.users.teacherA, [cell("ғ", a.students.studentA, future!.d)]);
+    assert.deepEqual(outcome.errors.map((e) => e.code), ["future_date"]);
+  });
+
+  it("still takes a mark dated at the end of the term, which is where a quarter mark goes", async () => {
+    const termEnd = await one<{ d: string }>(db, `SELECT end_date::text AS d FROM public.academic_terms WHERE id = $1`, [
+      a.termCurrent,
+    ]);
+    const outcome = await save(t.users.teacherA, [cell("5", a.students.studentA, termEnd!.d)]);
+    assert.deepEqual(outcome.errors, [], "a quarter column is dated ahead on purpose");
+  });
+
+  it("closes the correction window on an old absence, for the teacher but not the administration", async () => {
+    const old = await one<{ d: string }>(db, `SELECT (current_date - 40)::text AS d`);
+    const byTeacher = await save(t.users.teacherA, [cell("ғ", a.students.studentA, old!.d)]);
+    assert.deepEqual(byTeacher.errors.map((e) => e.code), ["window_closed"]);
+
+    const byAdmin = await save(t.users.adminA, [cell("ғ", a.students.studentA, old!.d)]);
+    assert.deepEqual(byAdmin.errors, [], "somebody who may correct attendance is not bound by the window");
+  });
+
+  it("refuses the whole page once the term is locked", async () => {
+    await db.query(`UPDATE public.academic_terms SET is_locked = true WHERE id = $1`, [a.termCurrent]);
+    assert.equal(await errorOf(() => save(t.users.teacherA, [cell("5")])), "term_locked");
+    // The administration may still correct what a locked term holds.
+    const byAdmin = await save(t.users.adminA, [cell("5")]);
+    assert.deepEqual(byAdmin.errors, []);
+    await db.query(`UPDATE public.academic_terms SET is_locked = false WHERE id = $1`, [a.termCurrent]);
+  });
+});

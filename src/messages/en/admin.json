@@ -453,6 +453,10 @@
       "backToList": "Back to list",
       "importAnother": "Import another file",
       "codes": {
+        "term_locked": "The term is locked.",
+        "future_date": "An absence cannot be recorded for a day that has not happened.",
+        "window_closed": "The attendance correction window has closed.",
+        "out_of_range": "out of range",
         "unknown_teacher": "No teacher holds that number.",
         "teacher_busy": "That teacher is already teaching another class at the same time.",
         "invalid_cell": "The cell could not be read. It should look like: Математика (14).",
@@ -464,7 +468,6 @@
         "required": "required",
         "invalid_enum": "not an allowed value",
         "invalid_date": "invalid date",
-        "out_of_range": "out of range",
         "duplicate_in_file": "duplicate in the file",
         "duplicate_existing": "already exists",
         "duplicate_person": "this person already exists",
