@@ -128,9 +128,18 @@ function askHidden(question: string): Promise<string> {
 
 // -------------------------------------------------------------------- vercel
 
-function run(command: string, args: string[], stdin?: string): Promise<{ code: number; out: string }> {
+/**
+ * Runs one command line through the shell.
+ *
+ * It has to be the shell: npx is a .cmd on Windows and Node will not spawn one
+ * directly. And it has to be a single string rather than a command plus an
+ * argument list, because Node concatenates those into the shell unescaped and
+ * says so. Everything interpolated below is a constant in this file — an
+ * environment variable's name, never its value, and never anything typed.
+ */
+function run(commandLine: string, stdin?: string): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { cwd: ROOT, shell: process.platform === "win32" });
+    const child = spawn(commandLine, { cwd: ROOT, shell: true });
     let out = "";
     child.stdout.on("data", (d: Buffer) => (out += d.toString()));
     child.stderr.on("data", (d: Buffer) => (out += d.toString()));
@@ -142,7 +151,7 @@ function run(command: string, args: string[], stdin?: string): Promise<{ code: n
   });
 }
 
-const vercel = (args: string[], stdin?: string) => run("npx", ["--yes", "vercel", ...args], stdin);
+const vercel = (args: string[], stdin?: string) => run(`npx --yes vercel ${args.join(" ")}`, stdin);
 
 async function vercelHas(key: string): Promise<Set<string>> {
   const { out } = await vercel(["env", "ls"]);
@@ -192,7 +201,14 @@ async function telegram<T>(token: string, method: string, body: Record<string, u
 
 // ------------------------------------------------------------------ supabase
 
-async function configureVault(url: string, key: string, site: string, secret: string): Promise<{ scheduled: boolean }> {
+interface Configured {
+  scheduled: boolean;
+  /** Whether the minute job actually reached the site, not merely that it is scheduled. */
+  posted: boolean;
+  error: string | null;
+}
+
+async function configureVault(url: string, key: string, site: string, secret: string): Promise<Configured> {
   const response = await fetch(`${url}/rest/v1/rpc/telegram_configure`, {
     method: "POST",
     headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" },
@@ -202,7 +218,7 @@ async function configureVault(url: string, key: string, site: string, secret: st
     const detail = (await response.text()).slice(0, 200);
     throw new Error(`Supabase refused the configuration (${response.status}): ${detail}`);
   }
-  return (await response.json()) as { scheduled: boolean };
+  return (await response.json()) as Configured;
 }
 
 // ---------------------------------------------------------------------- main
@@ -213,14 +229,57 @@ say("  " + "─".repeat(50));
 say();
 
 const env = readEnvFile();
-const site = (process.argv.find((a) => a.startsWith("https://")) ?? env.get("NEXT_PUBLIC_APP_URL") ?? "").replace(/\/+$/, "");
 const supabaseUrl = (env.get("NEXT_PUBLIC_SUPABASE_URL") ?? "").replace(/\/+$/, "");
 
-if (!site) {
-  say(`  ${cross} I do not know the site's address.`);
-  say("     Run:  node scripts/telegram/install.mts https://your-site.vercel.app");
-  process.exit(1);
+/**
+ * Where the deployed site lives.
+ *
+ * NEXT_PUBLIC_APP_URL in .env.local is http://localhost:3000, and rightly so —
+ * that file is for running the site on this machine. Telegram will not send a
+ * webhook anywhere but https, so the local address is never the answer here.
+ * The Vercel link in .vercel/project.json names the project, which gives the
+ * default address, and the school confirms or corrects it.
+ */
+async function resolveSite(): Promise<string> {
+  const fromArgument = process.argv.find((a) => a.startsWith("https://"));
+  if (fromArgument) return fromArgument.replace(/\/+$/, "");
+
+  const configured = (env.get("NEXT_PUBLIC_APP_URL") ?? "").replace(/\/+$/, "");
+  if (configured.startsWith("https://")) return configured;
+
+  let guess = "";
+  try {
+    const link = JSON.parse(readFileSync(join(ROOT, ".vercel", "project.json"), "utf8")) as { projectName?: string };
+    if (link.projectName) guess = `https://${link.projectName}.vercel.app`;
+  } catch {
+    /* not linked to Vercel from this machine */
+  }
+
+  if (!process.stdin.isTTY) {
+    say(`  ${cross} I do not know the address the site is deployed at.`);
+    say(`     Run:  npm run telegram:install -- ${guess || "https://your-site.vercel.app"}`);
+    process.exit(1);
+  }
+
+  say("  Where is the site deployed? Telegram only sends webhooks over https,");
+  say("  so this cannot be the localhost address in .env.local.");
+  say();
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise<string>((resolve) =>
+    rl.question(guess ? `  Address [${guess}]: ` : "  Address: ", (a) => {
+      rl.close();
+      resolve(a.trim());
+    })
+  );
+  const chosen = (answer || guess).replace(/\/+$/, "");
+  if (!chosen.startsWith("https://")) {
+    say(`  ${cross} That has to begin with https://`);
+    process.exit(1);
+  }
+  return chosen;
 }
+
+const site = await resolveSite();
 if (!supabaseUrl) {
   say(`  ${cross} NEXT_PUBLIC_SUPABASE_URL is missing from .env.local.`);
   process.exit(1);
@@ -296,8 +355,11 @@ say("  Filling the Vault …");
 try {
   const result = await configureVault(supabaseUrl, serviceKey, site, cronSecret);
   done.push(`Supabase Vault ${dot} dispatch address and token stored`);
-  if (result.scheduled) done.push(`pg_cron ${dot} telegram-dispatch runs every minute`);
-  else todo.push("the telegram-dispatch cron job is missing — apply migration 00059");
+  if (!result.scheduled) todo.push("the telegram-dispatch cron job is missing — apply migration 00059");
+  // Scheduled is not the same as working: the job ran every minute for a while
+  // calling a function that did not exist, and reported success each time.
+  else if (result.posted) done.push(`pg_cron ${dot} runs every minute and reached the site`);
+  else todo.push(`the minute job could not reach the site: ${result.error ?? "no reason given"}`);
 } catch (error) {
   todo.push(`Vault: ${error instanceof Error ? error.message : "failed"}`);
 }
