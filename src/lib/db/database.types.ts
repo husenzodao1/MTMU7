@@ -3494,6 +3494,52 @@ export type Database = {
           },
         ];
       };
+      parent_codes: {
+        Row: {
+          student_id: string;
+          school_id: string;
+          code_hash: string;
+          issued_at: string;
+          issued_by: string | null;
+        };
+        Insert: {
+          student_id: string;
+          school_id: string;
+          code_hash: string;
+          issued_at?: string;
+          issued_by?: string | null;
+        };
+        Update: {
+          student_id?: string;
+          school_id?: string;
+          code_hash?: string;
+          issued_at?: string;
+          issued_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parent_codes_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parent_codes_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parent_codes_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: true;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       permissions: {
         Row: {
           id: string;
@@ -4629,6 +4675,170 @@ export type Database = {
           },
         ];
       };
+      telegram_chats: {
+        Row: {
+          chat_id: number;
+          school_id: string | null;
+          locale: string;
+          state: string;
+          pending_student: string | null;
+          attempts: number;
+          blocked_until: string | null;
+          subscribed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          chat_id: number;
+          school_id?: string | null;
+          locale?: string;
+          state?: string;
+          pending_student?: string | null;
+          attempts?: number;
+          blocked_until?: string | null;
+          subscribed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          chat_id?: number;
+          school_id?: string | null;
+          locale?: string;
+          state?: string;
+          pending_student?: string | null;
+          attempts?: number;
+          blocked_until?: string | null;
+          subscribed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_chats_pending_student_fkey";
+            columns: ["pending_student"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "telegram_chats_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      telegram_children: {
+        Row: {
+          chat_id: number;
+          student_id: string;
+          school_id: string;
+          linked_at: string;
+        };
+        Insert: {
+          chat_id: number;
+          student_id: string;
+          school_id: string;
+          linked_at?: string;
+        };
+        Update: {
+          chat_id?: number;
+          student_id?: string;
+          school_id?: string;
+          linked_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_children_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "telegram_chats";
+            referencedColumns: ["chat_id"];
+          },
+          {
+            foreignKeyName: "telegram_children_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "telegram_children_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      telegram_outbox: {
+        Row: {
+          id: string;
+          chat_id: number;
+          school_id: string;
+          student_id: string | null;
+          kind: string;
+          payload: Json;
+          dedupe_key: string;
+          send_after: string;
+          sent_at: string | null;
+          attempts: number;
+          last_error: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          chat_id: number;
+          school_id: string;
+          student_id?: string | null;
+          kind: string;
+          payload?: Json;
+          dedupe_key: string;
+          send_after?: string;
+          sent_at?: string | null;
+          attempts?: number;
+          last_error?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          chat_id?: number;
+          school_id?: string;
+          student_id?: string | null;
+          kind?: string;
+          payload?: Json;
+          dedupe_key?: string;
+          send_after?: string;
+          sent_at?: string | null;
+          attempts?: number;
+          last_error?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "telegram_outbox_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "telegram_chats";
+            referencedColumns: ["chat_id"];
+          },
+          {
+            foreignKeyName: "telegram_outbox_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "telegram_outbox_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       timetable_entries: {
         Row: {
           id: string;
@@ -5034,6 +5244,7 @@ export type Database = {
       admin_set_role_permissions: { Args: { p_role_id: string; p_permission_slugs: string[] }; Returns: undefined };
       admin_set_user_roles: { Args: { p_user_id: string; p_role_ids: string[] }; Returns: undefined };
       admin_set_user_status: { Args: { p_user_id: string; p_status: string; p_reason?: string }; Returns: undefined };
+      advance_academic_year: { Args: { p_name: string; p_start: string; p_end: string }; Returns: Json };
       analytics_overview: { Args: { p_school_id?: string }; Returns: Json };
       change_student_status: { Args: { p_student_ids: string[]; p_status: string; p_effective_date?: string; p_reason?: string }; Returns: number };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
@@ -5056,6 +5267,7 @@ export type Database = {
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_timetable: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
+      issue_parent_codes: { Args: { p_class: string }; Returns: { student_id: string | null; class_name: string | null; full_name: string | null; nickname: string | null; login: string | null; code: string | null }[] };
       list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null }[] };
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };

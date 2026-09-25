@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/dispatch-notifications",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/telegram-dispatch",
+      "schedule": "* * * * *"
     }
   ]
 }

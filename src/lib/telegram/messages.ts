@@ -1,0 +1,524 @@
+
+export interface InlineButton {
+  text: string;
+  /** Exactly one of these two. A URL button opens the channel; data comes back. */
+  callback_data?: string;
+  url?: string;
+}
+
+export type InlineKeyboard = InlineButton[][];
+
+/** Telegram's HTML mode accepts a handful of tags; everything else must be escaped. */
+export function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Everything the bot says.
+ *
+ * The portal's own translations live in src/messages and are loaded by
+ * next-intl inside a request. The bot has no request and no locale context — it
+ * answers a chat whose language is a column in the database — so its words live
+ * here, in one file, where a teacher can read all three languages side by side
+ * and see that they say the same thing.
+ *
+ * Telegram's HTML mode allows <b> <i> <u> <s> <code> <pre> <a>. Anything that
+ * came from a person — a name, a subject, a room — goes through escapeHtml
+ * first, because a child called "A<B" must not silently break every message
+ * their parent receives.
+ */
+
+export type Loc = "tg" | "ru" | "en";
+
+export const LOCALES: Loc[] = ["tg", "ru", "en"];
+
+export function asLocale(value: string | null | undefined): Loc {
+  return value === "ru" || value === "en" ? value : "tg";
+}
+
+export interface Named {
+  tg?: string | null;
+  ru?: string | null;
+  en?: string | null;
+}
+
+/** A name the school stores in three languages, shown in the one asked for. */
+export function pick(name: Named | null | undefined, locale: Loc): string {
+  if (!name) return "";
+  return escapeHtml(name[locale] || name.tg || name.ru || name.en || "");
+}
+
+const RULE = "━━━━━━━━━━━━━━";
+
+const WORDS = {
+  tg: {
+    greeting: "Салом!",
+    intro: "Ман боти волидайн ҳастам. Дар бораи баҳоҳо ва давомоти фарзандатон ба шумо хабар медиҳам.",
+    subscribeTitle: "Обуна лозим аст",
+    subscribeBody: "Пеш аз оғоз ба канали расмии мактабҳои Истаравшан обуна шавед:",
+    subscribeAfter: "Баъди обуна тугмаи «Санҷидан»-ро пахш кунед.",
+    subscribeButton: "Обуна шудан",
+    checkButton: "Санҷидан",
+    subscribeMissing: "Ҳанӯз обуна нашудаед. Обуна шавед ва боз санҷед.",
+    subscribeOk: "Обуна тасдиқ шуд. Ташаккур!",
+    askChild: "Акнун фарзандатонро илова кунед.",
+    askChildHow: "Никнейм ё логини фарзандатонро нависед — масалан",
+    askCode: "Ҳоло <b>рамзи волидайн</b>-ро нависед.",
+    askCodeHow: "Онро мактаб дар варақа додааст (8 ҳарф).",
+    notFound: "Чунин хонанда ёфт нашуд. Имлоро санҷед ё логини мактабиро нависед.",
+    ambiguous: "Чанд хонанда бо ҳамин ном ҳаст. Лутфан логини мактабиро нависед (масалан MT10009).",
+    noCode: "Барои ин хонанда ҳанӯз рамзи волидайн сохта нашудааст. Ба мактаб муроҷиат кунед.",
+    wrongCode: "Рамз нодуруст аст. Бори дигар кӯшиш кунед.",
+    blocked: "Хеле зиёд кӯшиш кардед. Пас аз 15 дақиқа боз кӯшиш кунед.",
+    linked: "Тайёр!",
+    linkedBody: "Акнун ҳар бор ки муаллим баҳо мегузорад, ман ба шумо хабар медиҳам.",
+    menuTitle: "Чиро нишон диҳам?",
+    noChildren: "Ҳанӯз фарзанде илова накардаед.",
+    today: "Имрӯз",
+    week: "Ҳафта",
+    schedule: "Ҷадвал",
+    addChild: "Фарзанди дигар",
+    language: "Забон",
+    back: "Бозгашт",
+    grades: "Баҳоҳо",
+    attendance: "Давомот",
+    timetable: "Ҷадвали дарсӣ",
+    newGrade: "Баҳои нав",
+    changedGrade: "Баҳо иваз шуд",
+    dayReport: "Ҳисоботи рӯз",
+    lesson: "дарси",
+    nothingToday: "Имрӯз баҳо ва қайд нест.",
+    nothingWeek: "Дар ин ҳафта баҳо ва қайд нест.",
+    noTimetable: "Барои ин рӯз ҷадвал нест.",
+    average: "Миёна",
+    room: "синфхона",
+    absent: "ғоиб",
+    late: "дер монд",
+    excused: "бо сабаби узрнок",
+    final: "чорякӣ",
+    chooseLanguage: "Забонро интихоб кунед",
+    languageSet: "Забон иваз шуд.",
+    help: "Фармонҳо: /start — оғоз, /menu — меню, /add — иловаи фарзанд, /lang — забон",
+    unknown: "Фармон нашинохтам. /menu-ро пахш кунед.",
+  },
+  ru: {
+    greeting: "Здравствуйте!",
+    intro: "Я бот для родителей. Я сообщаю вам об оценках и посещаемости вашего ребёнка.",
+    subscribeTitle: "Нужна подписка",
+    subscribeBody: "Перед началом подпишитесь на официальный канал школ Истаравшана:",
+    subscribeAfter: "После подписки нажмите «Проверить».",
+    subscribeButton: "Подписаться",
+    checkButton: "Проверить",
+    subscribeMissing: "Подписка пока не найдена. Подпишитесь и проверьте ещё раз.",
+    subscribeOk: "Подписка подтверждена. Спасибо!",
+    askChild: "Теперь добавьте ребёнка.",
+    askChildHow: "Напишите никнейм или школьный логин ребёнка — например",
+    askCode: "Теперь напишите <b>родительский код</b>.",
+    askCodeHow: "Школа выдала его на листке (8 символов).",
+    notFound: "Такой ученик не найден. Проверьте написание или укажите школьный логин.",
+    ambiguous: "Под этим именем несколько учеников. Укажите школьный логин (например MT10009).",
+    noCode: "Для этого ученика код ещё не выпущен. Обратитесь в школу.",
+    wrongCode: "Код неверный. Попробуйте ещё раз.",
+    blocked: "Слишком много попыток. Повторите через 15 минут.",
+    linked: "Готово!",
+    linkedBody: "Теперь каждый раз, когда учитель ставит оценку, я вам сообщу.",
+    menuTitle: "Что показать?",
+    noChildren: "Вы ещё не добавили ребёнка.",
+    today: "Сегодня",
+    week: "Неделя",
+    schedule: "Расписание",
+    addChild: "Ещё ребёнок",
+    language: "Язык",
+    back: "Назад",
+    grades: "Оценки",
+    attendance: "Посещаемость",
+    timetable: "Расписание уроков",
+    newGrade: "Новая оценка",
+    changedGrade: "Оценка изменена",
+    dayReport: "Итоги дня",
+    lesson: "урок",
+    nothingToday: "Сегодня оценок и отметок нет.",
+    nothingWeek: "За эту неделю оценок и отметок нет.",
+    noTimetable: "На этот день расписания нет.",
+    average: "Средний балл",
+    room: "кабинет",
+    absent: "отсутствовал",
+    late: "опоздал",
+    excused: "по уважительной причине",
+    final: "четвертная",
+    chooseLanguage: "Выберите язык",
+    languageSet: "Язык изменён.",
+    help: "Команды: /start — начать, /menu — меню, /add — добавить ребёнка, /lang — язык",
+    unknown: "Не понял команду. Нажмите /menu.",
+  },
+  en: {
+    greeting: "Hello!",
+    intro: "I am the parents' bot. I tell you about your child's marks and attendance.",
+    subscribeTitle: "Subscription required",
+    subscribeBody: "Before we start, please follow the official channel of Istaravshan schools:",
+    subscribeAfter: "Once you have followed it, tap “Check”.",
+    subscribeButton: "Subscribe",
+    checkButton: "Check",
+    subscribeMissing: "No subscription found yet. Follow the channel and check again.",
+    subscribeOk: "Subscription confirmed. Thank you!",
+    askChild: "Now add your child.",
+    askChildHow: "Send your child's nickname or school login — for example",
+    askCode: "Now send the <b>parent code</b>.",
+    askCodeHow: "The school handed it to you on paper (8 characters).",
+    notFound: "No such pupil. Check the spelling, or use the school login instead.",
+    ambiguous: "Several pupils answer to that name. Please use the school login (e.g. MT10009).",
+    noCode: "No parent code has been issued for this pupil yet. Please ask the school.",
+    wrongCode: "That code is not right. Try again.",
+    blocked: "Too many attempts. Try again in 15 minutes.",
+    linked: "All set!",
+    linkedBody: "From now on I will tell you whenever a teacher enters a mark.",
+    menuTitle: "What would you like to see?",
+    noChildren: "You have not added a child yet.",
+    today: "Today",
+    week: "Week",
+    schedule: "Timetable",
+    addChild: "Another child",
+    language: "Language",
+    back: "Back",
+    grades: "Marks",
+    attendance: "Attendance",
+    timetable: "Timetable",
+    newGrade: "New mark",
+    changedGrade: "Mark changed",
+    dayReport: "The day",
+    lesson: "period",
+    nothingToday: "No marks or notes today.",
+    nothingWeek: "No marks or notes this week.",
+    noTimetable: "No lessons listed for that day.",
+    average: "Average",
+    room: "room",
+    absent: "absent",
+    late: "late",
+    excused: "excused",
+    final: "term mark",
+    chooseLanguage: "Choose a language",
+    languageSet: "Language changed.",
+    help: "Commands: /start — begin, /menu — menu, /add — add a child, /lang — language",
+    unknown: "I did not understand that. Tap /menu.",
+  },
+} as const;
+
+export const words = (locale: Loc) => WORDS[locale];
+
+/** dd.MM.yyyy — the form on every Tajik school form. */
+export function day(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return d && m && y ? `${d}.${m}.${y}` : iso;
+}
+
+/** A mark reads faster as a colour than as a number out of five. */
+export function markDot(score: number, max: number): string {
+  // Out of five: 5 is green, 4 blue, 3 yellow, and 2 is the mark a parent needs
+  // to see at a glance, so it is red. Written as a share, the same reading
+  // holds for a subject marked out of a hundred.
+  const share = max > 0 ? score / max : 0;
+  if (share >= 0.9) return "🟢";
+  if (share >= 0.7) return "🔵";
+  if (share >= 0.55) return "🟡";
+  return "🔴";
+}
+
+export function statusDot(status: string): string {
+  return status === "late" ? "🟡" : status === "excused" ? "🔵" : "🔴";
+}
+
+export function statusWord(status: string, locale: Loc): string {
+  const w = words(locale);
+  return status === "late" ? w.late : status === "excused" ? w.excused : w.absent;
+}
+
+function number(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+}
+
+export interface Child {
+  name: string;
+  class?: string | null;
+}
+
+function childLine(child: Child): string {
+  const cls = child.class ? ` · ${escapeHtml(child.class)}` : "";
+  return `👦 <b>${escapeHtml(child.name)}</b>${cls}`;
+}
+
+function footer(school?: { name?: string | null } | null): string {
+  return school?.name ? `\n${RULE}\n<i>${escapeHtml(school.name)}</i>` : "";
+}
+
+// ------------------------------------------------------------------ the gate
+
+export function welcome(locale: Loc, channel: string, schoolName?: string | null): {
+  text: string;
+  keyboard: InlineKeyboard;
+} {
+  const w = words(locale);
+  const handle = channel.replace(/^@/, "");
+  const text = [
+    `🏫 <b>${escapeHtml(schoolName || "Истаравшан")}</b>`,
+    "",
+    `${w.greeting} ${w.intro}`,
+    "",
+    RULE,
+    `📢 <b>${w.subscribeTitle}</b>`,
+    w.subscribeBody,
+    `👉 @${escapeHtml(handle)}`,
+    "",
+    w.subscribeAfter,
+  ].join("\n");
+  return {
+    text,
+    keyboard: [
+      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}` }],
+      [{ text: `✅ ${w.checkButton}`, callback_data: "check" }],
+    ],
+  };
+}
+
+export function stillNotSubscribed(locale: Loc, channel: string): { text: string; keyboard: InlineKeyboard } {
+  const w = words(locale);
+  const handle = channel.replace(/^@/, "");
+  return {
+    text: `⚠️ ${w.subscribeMissing}\n\n👉 @${escapeHtml(handle)}`,
+    keyboard: [
+      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}` }],
+      [{ text: `✅ ${w.checkButton}`, callback_data: "check" }],
+    ],
+  };
+}
+
+export function askForChild(locale: Loc): string {
+  const w = words(locale);
+  return [`✅ ${w.subscribeOk}`, "", `👨‍👩‍👦 <b>${w.askChild}</b>`, "", `${w.askChildHow} <code>MT10009</code>.`].join("\n");
+}
+
+export function askForCode(locale: Loc): string {
+  const w = words(locale);
+  return [`🔐 ${w.askCode}`, w.askCodeHow].join("\n");
+}
+
+export function linked(locale: Loc, child: Child): string {
+  const w = words(locale);
+  return [`🎉 <b>${w.linked}</b>`, "", childLine(child), "", w.linkedBody].join("\n");
+}
+
+// ------------------------------------------------------------------ the menu
+
+export function menu(locale: Loc, children: Array<{ id: string } & Child>): {
+  text: string;
+  keyboard: InlineKeyboard;
+} {
+  const w = words(locale);
+  if (children.length === 0) {
+    return {
+      text: `👨‍👩‍👦 ${w.noChildren}\n\n${w.askChildHow} <code>MT10009</code>.`,
+      keyboard: [[{ text: `➕ ${w.addChild}`, callback_data: "add" }]],
+    };
+  }
+  const keyboard: InlineKeyboard = children.map((child) => [
+    { text: `📊 ${child.name}${child.class ? ` · ${child.class}` : ""}`, callback_data: `c:${child.id}` },
+  ]);
+  keyboard.push([
+    { text: `➕ ${w.addChild}`, callback_data: "add" },
+    { text: `🌐 ${w.language}`, callback_data: "lang" },
+  ]);
+  return { text: `👨‍👩‍👦 <b>${w.menuTitle}</b>`, keyboard };
+}
+
+export function childMenu(locale: Loc, child: Child, id: string): { text: string; keyboard: InlineKeyboard } {
+  const w = words(locale);
+  return {
+    text: `${childLine(child)}\n\n${w.menuTitle}`,
+    keyboard: [
+      [
+        { text: `📊 ${w.today}`, callback_data: `r:${id}:day` },
+        { text: `📅 ${w.week}`, callback_data: `r:${id}:week` },
+      ],
+      [{ text: `🕘 ${w.schedule}`, callback_data: `r:${id}:timetable` }],
+      [{ text: `↩️ ${w.back}`, callback_data: "menu" }],
+    ],
+  };
+}
+
+export function languageMenu(locale: Loc): { text: string; keyboard: InlineKeyboard } {
+  return {
+    text: `🌐 <b>${words(locale).chooseLanguage}</b>`,
+    keyboard: [
+      [
+        { text: "🇹🇯 Тоҷикӣ", callback_data: "l:tg" },
+        { text: "🇷🇺 Русский", callback_data: "l:ru" },
+        { text: "🇬🇧 English", callback_data: "l:en" },
+      ],
+      [{ text: `↩️ ${words(locale).back}`, callback_data: "menu" }],
+    ],
+  };
+}
+
+// --------------------------------------------------------- what gets pushed
+
+export interface GradeNews {
+  score: number;
+  max: number;
+  date: string;
+  final?: boolean;
+  subject: Named;
+  work: Named;
+}
+
+export function gradeMessage(
+  locale: Loc,
+  child: Child,
+  grade: GradeNews,
+  school?: { name?: string | null } | null,
+  changed = false
+): string {
+  const w = words(locale);
+  const lines = [
+    `📝 <b>${changed ? w.changedGrade : w.newGrade}</b>`,
+    "",
+    childLine(child),
+    `📚 ${pick(grade.subject, locale)}`,
+    `🗓 ${day(grade.date)} · ${pick(grade.work, locale)}${grade.final ? ` (${w.final})` : ""}`,
+    "",
+    `${markDot(grade.score, grade.max)} <b>${number(grade.score)}</b> / ${number(grade.max)}`,
+  ];
+  return lines.join("\n") + footer(school);
+}
+
+export interface AbsenceNews {
+  status: string;
+  date: string;
+  period?: number | null;
+  subject?: Named | null;
+}
+
+export function absenceMessage(
+  locale: Loc,
+  child: Child,
+  absence: AbsenceNews,
+  school?: { name?: string | null } | null
+): string {
+  const w = words(locale);
+  const subject = pick(absence.subject, locale);
+  const where = [subject, absence.period ? `${absence.period}-${w.lesson}` : null].filter(Boolean).join(" · ");
+  return (
+    [
+      `${statusDot(absence.status)} <b>${w.attendance}</b>`,
+      "",
+      childLine(child),
+      where ? `📚 ${where}` : null,
+      `🗓 ${day(absence.date)}`,
+      "",
+      `❗️ <b>${statusWord(absence.status, locale)}</b>`,
+    ]
+      .filter((line) => line !== null)
+      .join("\n") + footer(school)
+  );
+}
+
+export interface Report {
+  child: Child;
+  from?: string;
+  to?: string;
+  grades: Array<{ date: string; score: number; max: number; subject: Named; work: Named; final?: boolean }>;
+  attendance: Array<{ date: string; status: string; period?: number | null; subject?: Named | null }>;
+  timetable?: Array<{ period: number; subject: Named; room?: string | null; teacher?: string | null }>;
+}
+
+/**
+ * Telegram refuses a message over 4096 characters outright, so a week with an
+ * unusual number of marks would reach the parent as nothing at all. The lists
+ * are cut with a count of what was left out, and the whole thing is trimmed as
+ * a last resort — at a line break, so the cut never lands inside a tag.
+ */
+const LIMIT = 4096;
+const MOST_GRADES = 25;
+const MOST_ABSENCES = 15;
+
+function fit(text: string): string {
+  if (text.length <= LIMIT) return text;
+  const cut = text.lastIndexOf("\n", LIMIT - 2);
+  return `${text.slice(0, cut > 0 ? cut : LIMIT - 2)}\n…`;
+}
+
+/** The end-of-day message, and the same thing when a parent asks for it. */
+export function reportMessage(
+  locale: Loc,
+  report: Report,
+  kind: "day" | "week" | "timetable",
+  school?: { name?: string | null } | null
+): string {
+  const w = words(locale);
+  const heading =
+    kind === "timetable"
+      ? `🕘 <b>${w.timetable}</b>`
+      : kind === "week"
+        ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
+        : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
+
+  const lines: string[] = [heading, "", childLine(report.child)];
+
+  if (kind === "timetable") {
+    const rows = report.timetable ?? [];
+    lines.push("");
+    if (rows.length === 0) {
+      lines.push(`— ${w.noTimetable}`);
+    } else {
+      for (const row of rows) {
+        const extra = [row.room ? `${w.room} ${escapeHtml(row.room)}` : null, row.teacher ? escapeHtml(row.teacher) : null]
+          .filter(Boolean)
+          .join(" · ");
+        lines.push(`<b>${row.period}.</b> ${pick(row.subject, locale)}${extra ? ` <i>— ${extra}</i>` : ""}`);
+      }
+    }
+    return fit(lines.join("\n") + footer(school));
+  }
+
+  if (report.grades.length === 0 && report.attendance.length === 0) {
+    lines.push("", `— ${kind === "week" ? w.nothingWeek : w.nothingToday}`);
+    return fit(lines.join("\n") + footer(school));
+  }
+
+  if (report.grades.length > 0) {
+    lines.push("", `📝 <b>${w.grades}</b>`);
+    for (const g of report.grades.slice(0, MOST_GRADES)) {
+      const when = kind === "week" ? `${day(g.date)} · ` : "";
+      lines.push(
+        `${markDot(g.score, g.max)} ${when}${pick(g.subject, locale)} — <b>${number(g.score)}</b> <i>(${pick(g.work, locale)})</i>`
+      );
+    }
+    if (report.grades.length > MOST_GRADES) lines.push(`<i>… +${report.grades.length - MOST_GRADES}</i>`);
+    // A running average only says something when there is more than one mark,
+    // and the term marks are a verdict rather than part of the sum.
+    const counted = report.grades.filter((g) => !g.final);
+    if (counted.length > 1) {
+      const mean = counted.reduce((sum, g) => sum + g.score, 0) / counted.length;
+      lines.push("", `${RULE}\n${w.average}: <b>${mean.toFixed(1)}</b>`);
+    }
+  }
+
+  if (report.attendance.length > 0) {
+    lines.push("", `🚩 <b>${w.attendance}</b>`);
+    for (const a of report.attendance.slice(0, MOST_ABSENCES)) {
+      const when = kind === "week" ? `${day(a.date)} · ` : "";
+      const subject = pick(a.subject, locale);
+      const where = [when + subject, a.period ? `${a.period}-${w.lesson}` : null].filter(Boolean).join(" · ");
+      lines.push(`${statusDot(a.status)} ${where || when} — <i>${statusWord(a.status, locale)}</i>`);
+    }
+    if (report.attendance.length > MOST_ABSENCES) {
+      lines.push(`<i>… +${report.attendance.length - MOST_ABSENCES}</i>`);
+    }
+  }
+
+  return fit(lines.join("\n") + footer(school));
+}
+
+export function backKeyboard(locale: Loc, childId?: string): InlineKeyboard {
+  const w = words(locale);
+  return [[{ text: `↩️ ${w.back}`, callback_data: childId ? `c:${childId}` : "menu" }]];
+}

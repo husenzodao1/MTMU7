@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PGlite, type Transaction } from "@electric-sql/pglite";
@@ -64,18 +64,30 @@ export async function createDatabase(options: { upTo?: string; cache?: boolean }
 
   const snapshot = join(CACHE_DIR, `${fingerprint(files)}.tar.gz`);
   if (existsSync(snapshot)) {
-    const db = await PGlite.create({
-      extensions: EXTENSIONS,
-      loadDataDir: new Blob([readFileSync(snapshot)]),
-    });
-    await db.exec("SET search_path TO public, extensions;");
-    return db;
+    try {
+      const db = await PGlite.create({
+        extensions: EXTENSIONS,
+        loadDataDir: new Blob([readFileSync(snapshot)]),
+      });
+      await db.exec("SET search_path TO public, extensions;");
+      return db;
+    } catch {
+      // A snapshot that cannot be read is a snapshot that is not there. Building
+      // takes seconds; failing the whole file because of a cache does not.
+      rmSync(snapshot, { force: true });
+    }
   }
 
   const db = await build(files);
   const dump = await db.dumpDataDir("gzip");
   mkdirSync(CACHE_DIR, { recursive: true });
-  writeFileSync(snapshot, Buffer.from(await dump.arrayBuffer()));
+  // The test files run at once, so the first one after a migration is added has
+  // every other process reading this path while it is being written. Write it
+  // beside itself and move it into place, which is atomic: a reader sees either
+  // the whole snapshot or no snapshot.
+  const partial = `${snapshot}.${process.pid}.part`;
+  writeFileSync(partial, Buffer.from(await dump.arrayBuffer()));
+  renameSync(partial, snapshot);
   return db;
 }
 

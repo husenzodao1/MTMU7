@@ -205,6 +205,22 @@ describe("importing the same workbook again", () => {
     assert.equal(count!.n, "1", "one pupil, not two");
   });
 
+  it("enrols a new pupil from the start of the year, not the day the sheet was read", async () => {
+    // A school hands the portal over mid-term and types in the marks it already
+    // has on paper. Enrolling everybody on the day of the import would have the
+    // register refuse every one of them.
+    const enrolled = await one<{ on: string; year: string }>(
+      db,
+      `SELECT e.enrolled_on::text AS on, y.start_date::text AS year
+       FROM public.enrollments e
+       JOIN public.academic_years y ON y.id = e.academic_year_id
+       JOIN public.students st ON st.id = e.student_id
+       JOIN public.users u ON u.id = st.user_id
+       WHERE u.email = 'ali.karimov@maktab.tj' AND e.status = 'active'`
+    );
+    assert.equal(enrolled!.on, enrolled!.year);
+  });
+
   it("moves a pupil to a new class and keeps where they came from", async () => {
     const login = await one<{ public_id: string }>(db, `SELECT public_id FROM public.users WHERE email = 'ali.karimov@maktab.tj'`);
     await run([pupil({ login: login!.public_id, class_name: "5Б" })]);
@@ -220,6 +236,19 @@ describe("importing the same workbook again", () => {
       { cls: "5Б", status: "active" },
       { cls: "5А", status: "transferred" },
     ]);
+
+    // A transfer is a date in the record. The new class starts the day they
+    // moved, not back at September, or the old class's marks would still be
+    // acceptable in the new one.
+    const moved = await one<{ on: string; today: string }>(
+      db,
+      `SELECT e.enrolled_on::text AS on, current_date::text AS today
+       FROM public.enrollments e
+       JOIN public.students st ON st.id = e.student_id
+       JOIN public.users u ON u.id = st.user_id
+       WHERE u.email = 'ali.karimov@maktab.tj' AND e.status = 'active'`
+    );
+    assert.equal(moved!.on, moved!.today);
   });
 
   it("makes a changed address prove itself again", async () => {

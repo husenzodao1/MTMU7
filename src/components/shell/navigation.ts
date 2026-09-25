@@ -86,6 +86,9 @@ const ADMIN_GROUPS: Array<{ key: string; label: string; rules: Rule[] }> = [
       { item: { key: "students", href: "/admin/students", icon: "students", label: "admin.nav.students" }, visible: anyOf("students.create", "students.update", "students.archive") },
       { item: { key: "staff", href: "/admin/staff", icon: "staff", label: "admin.nav.staff" }, visible: anyOf("staff.create", "staff.update", "staff.archive") },
       { item: { key: "guardians", href: "/admin/guardians", icon: "guardians", label: "admin.nav.guardians" }, visible: anyOf("guardians.manage") },
+      // The slips a parent types into the bot. It sits beside the people pages
+      // because that is what it is about, even though it issues a secret.
+      { item: { key: "parents", href: "/admin/parents", icon: "children", label: "admin.nav.parents" }, visible: anyOf("students.update") },
       { item: { key: "users", href: "/admin/users", icon: "users", label: "admin.nav.users" }, visible: anyOf("users.view") },
       // Approvals and invitation codes belonged to self-registration, which the
       // school closed when it began issuing logins itself (migration 00045).

@@ -216,6 +216,22 @@ describe("the rules the register already had", () => {
     assert.deepEqual(byAdmin.errors, [], "somebody who may correct attendance is not bound by the window");
   });
 
+  it("names a square from before the pupil arrived, and keeps the rest of the page", async () => {
+    // A teacher who has just filled in a fortnight must not lose it because one
+    // child joined the class halfway through. The trigger would have raised and
+    // rolled the whole call back; the square comes back named instead.
+    await db.query(`UPDATE public.enrollments SET enrolled_on = current_date WHERE student_id = $1`, [
+      a.students.unlinkedA,
+    ]);
+    const outcome = await save(t.users.teacherA, [cell("5"), cell("4", a.students.unlinkedA)]);
+    assert.deepEqual(outcome.errors.map((e) => e.code), ["not_enrolled"], "only the square that broke the rule");
+    assert.equal(outcome.saved, 1, "the pupil who was there still gets their mark");
+    assert.equal(Number((await markOf())!.score), 5);
+    await db.query(`UPDATE public.enrollments SET enrolled_on = current_date - 60 WHERE student_id = $1`, [
+      a.students.unlinkedA,
+    ]);
+  });
+
   it("refuses the whole page once the term is locked", async () => {
     await db.query(`UPDATE public.academic_terms SET is_locked = true WHERE id = $1`, [a.termCurrent]);
     assert.equal(await errorOf(() => save(t.users.teacherA, [cell("5")])), "term_locked");

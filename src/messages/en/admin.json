@@ -45,7 +45,8 @@
       "audit": "Audit log",
       "settings": "Settings",
       "system": "System status",
-      "globalSearch": "Search"
+      "globalSearch": "Search",
+      "parents": "Parents (Telegram bot)"
     },
     "dashboard": {
       "title": "School dashboard",
@@ -1718,6 +1719,36 @@
     "registrationClosed": {
       "closedTitle": "Self-registration is closed",
       "closedBody": "The school issues logins. This page remains only so the history can be read and anything left pending can be settled. Add a new person from Students or Staff."
+    },
+    "parents": {
+      "title": "Parents and the Telegram bot",
+      "description": "Issue parent codes so families receive marks and attendance in Telegram.",
+      "howTitle": "How it works",
+      "howDescription": "Three steps, once per class.",
+      "step1": "Choose a class and download the file of codes.",
+      "step2": "Cut it into rows and hand one to each family.",
+      "step3": "In the bot the parent types the child nickname or login, then the code.",
+      "botTitle": "The parents bot",
+      "botHint": "A parent must follow the official Istaravshan schools channel first, or the bot will not answer.",
+      "issueTitle": "Issue codes",
+      "issueDescription": "An Excel file: class, name, nickname, login and the parent code.",
+      "class": "Class",
+      "download": "Download codes",
+      "reissueTitle": "Please note",
+      "reissueBody": "This file is the only copy of the codes — we do not keep them. Issuing again cancels the old codes, but parents already connected stay connected.",
+      "noClasses": "No classes yet",
+      "noClassesHint": "Import the pupils first; the classes make themselves.",
+      "sheet": "Parent codes",
+      "pupil": "Name",
+      "nickname": "Nickname",
+      "login": "Login",
+      "code": "Parent code",
+      "noticeSheet": "Warning",
+      "noticeTitle": "Parent codes — confidential",
+      "noticeBody": "This file holds parent codes. Do not forward it.",
+      "noticeKeep": "We keep only a fingerprint of each code, never the code itself. This file is the only copy.",
+      "noticeReissue": "If a code is lost, issue the codes for that class again.",
+      "noticeCount": "Rows: {count}"
     }
   }
 }
