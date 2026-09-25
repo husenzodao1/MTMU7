@@ -102,3 +102,58 @@ describe("list parameters", () => {
     assert.equal(buildQueryString({ q: "x", page: "3" }, { page: null, sort: "name" }), "?q=x&sort=name");
   });
 });
+
+describe("pictures in editorial text", () => {
+  it("turns an address on its own line into a picture, not a blue link", () => {
+    const blocks = parseMarkdown("Салом\n\nhttps://cdn.example.tj/bayram.jpg\n\nБа ҳама муборак!");
+    assert.deepEqual(blocks.map((b) => b.type), ["paragraph", "image", "paragraph"]);
+    const image = blocks[1] as { type: "image"; src: string; alt: string };
+    assert.equal(image.src, "https://cdn.example.tj/bayram.jpg");
+  });
+
+  it("reads the written form too, and keeps its caption", () => {
+    const blocks = parseMarkdown("![Хатми синфи 11](https://cdn.example.tj/xatm.webp)");
+    const image = blocks[0] as { type: "image"; src: string; alt: string };
+    assert.equal(image.type, "image");
+    assert.equal(image.alt, "Хатми синфи 11");
+  });
+
+  it("refuses an address that is not a picture, or not one we would load", () => {
+    for (const source of [
+      "https://example.tj/page",
+      "javascript:alert(1)",
+      "data:image/png;base64,AAAA",
+      "//evil.example/x.png",
+    ]) {
+      assert.ok(
+        parseMarkdown(source).every((b) => b.type !== "image"),
+        source
+      );
+    }
+  });
+
+  it("leaves a picture out of an excerpt entirely", () => {
+    const text = markdownToPlainText("https://cdn.example.tj/bayram.jpg\n\nБа ҳама муборак!");
+    assert.equal(text, "Ба ҳама муборак!", "an excerpt that is half a URL tells the reader nothing");
+    assert.equal(markdownToPlainText("![Ид](https://cdn.example.tj/a.png) Салом"), "Салом");
+  });
+});
+
+describe("naming somebody by their handle", () => {
+  const inlineTypes = (source: string) => parseInline(source).map((n) => n.type);
+
+  it("reads @nickname as a mention", () => {
+    const nodes = parseInline("Табрик ба @ali_k ва @nilufar.s");
+    const mentions = nodes.filter((n): n is { type: "mention"; nickname: string } => n.type === "mention");
+    assert.deepEqual(mentions.map((m) => m.nickname), ["ali_k", "nilufar.s"]);
+  });
+
+  it("leaves the @ inside an address alone", () => {
+    // "ali@maktab.tj" must not turn its domain into somebody's handle.
+    assert.ok(!inlineTypes("ali@maktab.tj").includes("mention"));
+  });
+
+  it("ignores a handle too short to be one", () => {
+    assert.ok(!inlineTypes("@ab").includes("mention"));
+  });
+});

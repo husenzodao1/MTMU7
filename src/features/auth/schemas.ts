@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { uuid } from "@/lib/validation/uuid";
 
 export const emailSchema = z.string().trim().toLowerCase().max(254).email("validation.email");
 
@@ -10,51 +9,14 @@ export const passwordSchema = z
   .regex(/[A-Za-zА-Яа-яЁёҲҳҶҷҚқҒғӢӣӮӯ]/, "validation.passwordWeak")
   .regex(/[0-9]/, "validation.passwordWeak");
 
+// Six digits, because that is what the account emails carry and what every
+// screen promises. GoTrue will issue whatever length the project is set to, so
+// the length is pinned here as well: a project quietly moved to eight would
+// otherwise send codes this form accepts but no hint text explains.
 export const otpSchema = z
   .string()
   .trim()
-  .regex(/^\d{6,10}$/, "errors.invalid_code");
-
-const nameSchema = z.string().trim().min(1, "validation.required").max(100, "validation.too_big");
-
-export const registrationDetailsSchema = z
-  .object({
-    schoolSlug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "errors.invalid_school"),
-    invitationCode: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .max(16)
-      .regex(/^[A-Z0-9]*$/, "errors.invalid_invitation")
-      .optional()
-      .transform((v) => v || undefined),
-    roleSlug: z.string().max(40).optional().transform((v) => v || undefined),
-    classId: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
-    firstName: nameSchema,
-    lastName: nameSchema,
-    middleName: z.string().trim().max(100).optional().transform((v) => v || undefined),
-    phone: z
-      .string()
-      .trim()
-      .max(30)
-      .regex(/^[+0-9 ()-]*$/, "validation.phone")
-      .optional()
-      .transform((v) => v || undefined),
-    email: emailSchema,
-    // The short number the deputy head writes the timetable against. It
-    // identifies a teacher; it admits nobody, so it is optional and free-form
-    // within a narrow shape.
-    employeeNumber: z
-      .string()
-      .trim()
-      .max(32)
-      .regex(/^[A-Za-z0-9-]*$/, "validation.employeeNumber")
-      .optional()
-      .transform((v) => v || undefined),
-  })
-  .refine((v) => Boolean(v.invitationCode) || Boolean(v.roleSlug), { path: ["roleSlug"], message: "validation.required" });
-
-export type RegistrationDraft = z.infer<typeof registrationDetailsSchema>;
+  .regex(/^\d{6}$/, "errors.invalid_code");
 
 export const passwordPairSchema = z
   .object({ password: passwordSchema, confirmPassword: z.string() })

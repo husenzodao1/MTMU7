@@ -6,8 +6,6 @@
       "links": "Site links",
       "schools": "Schools",
       "signIn": "Sign in",
-      "register": "Register",
-      "developedBy": "Developed by",
       "support": "Support desk",
       "tagline": "Online portal for the schools of Istaravshan",
       "about": "About us",
@@ -38,7 +36,8 @@
       "allNews": "All news",
       "allEvents": "All events",
       "portalEntry": "Portal sign-in",
-      "sections": "Sections"
+      "sections": "Sections",
+      "developedBy": "Built by"
     },
     "devPreview": {
       "notice": "Development preview only. No account, database data, or authorization is being bypassed.",

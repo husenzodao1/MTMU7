@@ -583,6 +583,7 @@ export type Database = {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          group_label: string;
         };
         Insert: {
           id?: string;
@@ -594,6 +595,7 @@ export type Database = {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          group_label?: string;
         };
         Update: {
           id?: string;
@@ -605,6 +607,7 @@ export type Database = {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          group_label?: string;
         };
         Relationships: [
           {
@@ -2432,6 +2435,25 @@ export type Database = {
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
+        ];
+      };
+      login_secret: {
+        Row: {
+          id: number;
+          secret_sha256: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          secret_sha256: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          secret_sha256?: string;
+          updated_at?: string;
+        };
+        Relationships: [
         ];
       };
       media_assets: {
@@ -4619,6 +4641,7 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          group_label: string;
         };
         Insert: {
           id?: string;
@@ -4634,6 +4657,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          group_label?: string;
         };
         Update: {
           id?: string;
@@ -4649,6 +4673,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          group_label?: string;
         };
         Relationships: [
           {
@@ -4931,6 +4956,7 @@ export type Database = {
           graduation_date: string | null;
           years_in_school: number | null;
           nickname: string | null;
+          credentials_issued_at: string | null;
         };
         Insert: {
           id: string;
@@ -4955,6 +4981,7 @@ export type Database = {
           graduation_date?: string | null;
           years_in_school?: number | null;
           nickname?: string | null;
+          credentials_issued_at?: string | null;
         };
         Update: {
           id?: string;
@@ -4979,6 +5006,7 @@ export type Database = {
           graduation_date?: string | null;
           years_in_school?: number | null;
           nickname?: string | null;
+          credentials_issued_at?: string | null;
         };
         Relationships: [
           {
@@ -5006,6 +5034,7 @@ export type Database = {
       analytics_overview: { Args: { p_school_id?: string }; Returns: Json };
       change_student_status: { Args: { p_student_ids: string[]; p_status: string; p_effective_date?: string; p_reason?: string }; Returns: number };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
+      confirm_account: { Args: { p_user_id: string }; Returns: undefined };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };
       create_group_conversation: { Args: { p_name: string; p_member_ids: string[] }; Returns: string };
       create_school: { Args: { p_short_name: string; p_full_name: string; p_slug: string; p_id_prefix: string; p_admin_email?: string; p_photo_url?: string; p_logo_url?: string; p_address?: string; p_social_links?: Json; p_code?: string; p_region_id?: string; p_district_id?: string }; Returns: Json };
@@ -5018,12 +5047,16 @@ export type Database = {
       get_registration_options: { Args: { p_school_slug: string }; Returns: Json };
       get_unread_message_count: { Args: Record<PropertyKey, never>; Returns: number };
       get_user_school_id: { Args: { p_user_id: string }; Returns: string };
+      grantable_roles: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; name_tg: string | null; name_ru: string | null; name_en: string | null; level: number | null; permissions: number | null }[] };
       import_classes: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
+      import_people: { Args: { p_kind: string; p_rows: Json; p_dry_run?: boolean; p_offset?: number; p_limit?: number }; Returns: Json };
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
+      import_timetable: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null }[] };
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
+      login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
@@ -5031,6 +5064,7 @@ export type Database = {
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
       promote_students: { Args: { p_from_class_id: string; p_to_class_id: string; p_student_ids: string[] }; Returns: number };
+      provision_person: { Args: { p_kind: string; p_row: Json; p_role_id?: string }; Returns: Json };
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };
       record_news_view: { Args: { p_article_id: string }; Returns: undefined };
       remove_conversation_member: { Args: { p_conversation_id: string; p_user_id: string }; Returns: undefined };
@@ -5043,18 +5077,19 @@ export type Database = {
       report_teacher_workload: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { staff_id: string | null; teacher_name: string | null; staff_type: string | null; planned_weekly_hours: number | null; scheduled_lessons_per_week: number | null; max_weekly_hours: number | null; classes: number | null; subjects: number | null }[] };
       resolve_public_school: { Args: { p_host?: string; p_slug?: string }; Returns: string };
       review_registration: { Args: { p_request_id: string; p_approve: boolean; p_role_id?: string; p_class_id?: string; p_reason?: string }; Returns: undefined };
+      role_permission_slugs: { Args: { p_role_id: string }; Returns: string[] };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
       student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
-      submit_registration: { Args: { p_school_slug: string; p_first_name: string; p_last_name: string; p_middle_name?: string; p_role_slug?: string; p_class_id?: string; p_details?: Json; p_invitation_code?: string }; Returns: Json };
       teacher_today: { Args: { p_date?: string }; Returns: Json };
       toggle_news_like: { Args: { p_article: string }; Returns: Json };
       transfer_student_class: { Args: { p_student_id: string; p_to_class_id: string; p_reason?: string }; Returns: string };
       update_conversation: { Args: { p_conversation_id: string; p_name: string }; Returns: undefined };
       update_school_identity: { Args: { p_school_id: string; p_photo_url?: string; p_logo_url?: string; p_social_links?: Json; p_admin_email?: string }; Returns: undefined };
+      user_by_nickname: { Args: { p_nickname: string }; Returns: string };
       user_has_role_in_school: { Args: { p_user_id: string; p_school_id: string; p_role_slugs: string[] }; Returns: boolean };
       write_audit_log: { Args: { p_action: string; p_entity_type: string; p_entity_id?: string; p_old?: Json; p_new?: Json; p_metadata?: Json }; Returns: undefined };
     };

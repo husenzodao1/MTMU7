@@ -108,7 +108,13 @@
       "ruleColumnHint": "Санаи дарсро пешакӣ кушоед. Ҳангоми лозим ба ҷои сана сарлавҳа нависед, мисли «Чоряки I».",
       "columnLabel": "Сарлавҳа (ихтиёрӣ)",
       "columnAdded": "Сутун кушода шуд.",
-      "allJournals": "Журналҳои ҳамаи фанҳо"
+      "allJournals": "Журналҳои ҳамаи фанҳо",
+      "absence": {
+        "absent": "ғ",
+        "late": "д",
+        "excused": "у"
+      },
+      "columnLabelExample": "Чоряки I"
     },
     "homework": {
       "title": "Вазифаҳои хонагӣ",

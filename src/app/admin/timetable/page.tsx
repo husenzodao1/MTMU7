@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { saveRoomAction } from "@/features/admin/academic/structure-actions";
@@ -18,6 +19,7 @@ import { SelectField, TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Checkbox } from "@/components/ui/form-controls";
 import { TabNav } from "@/components/ui/misc";
+import { buttonClasses } from "@/components/ui/button";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDate, todayIso } from "@/lib/i18n/format";
@@ -57,7 +59,16 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
 
   const header = (
     <>
-      <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
+      <PageHeader
+        breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />}
+        title={t("title")}
+        description={t("description")}
+        actions={
+          <Link href="/admin/timetable/import" className={buttonClasses("secondary")}>
+            {t("import")}
+          </Link>
+        }
+      />
       <TabNav label={t("sections")} items={TABS.map((key) => ({ href: key === "grid" ? "/admin/timetable" : `/admin/timetable?tab=${key}`, label: t(`tabs.${key}`), active: key === tab }))} />
     </>
   );

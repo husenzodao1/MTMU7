@@ -68,7 +68,7 @@ describe("destination after signing in", () => {
   it("never returns to the auth flow after a correct password", () => {
     // A leftover "next" from an earlier redirect used to send the visitor back
     // to the registration form the moment they signed in.
-    for (const path of ["/login", "/register", "/register?step=profile", "/pending", "/reset-password", "/verify", "/auth/callback"]) {
+    for (const path of ["/login", "/confirm-email", "/confirm-email?next=/dashboard", "/reset-password", "/verify", "/auth/callback"]) {
       assert.equal(postSignInPath(path), "/dashboard", path);
     }
   });

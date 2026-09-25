@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowRight, ClipboardCheck } from "lucide-react";
 import { AttendanceSummary, GradeList, HomeworkDueList, LessonList } from "@/features/academic/components";
@@ -28,8 +29,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const session = await getPortalSession();
   const t = await getTranslations("portal.dashboard");
 
-  // An unfinished registration still reaches this page: the banner explains the
-  // remaining step instead of bouncing the visitor between forms.
+  // An unconfirmed address is a step, not a state to explain: there is one
+  // screen for it and it is the only thing this person can usefully do.
+  if (session.stage === "email_unconfirmed") redirect("/confirm-email");
+
+  // An account left over from the days of self-registration still reaches this
+  // page: the banner explains what is missing instead of bouncing the visitor
+  // between forms that no longer exist.
   if (session.stage !== "member" || !session.access) {
     const supabase = await createClient();
     const { data: request } = await supabase
@@ -40,7 +46,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       .limit(1)
       .maybeSingle();
     const stage: "profile_missing" | "pending" | "rejected" =
-      session.stage === "member" ? "profile_missing" : session.stage === "profile_missing" && request && request.status !== "rejected" ? "pending" : session.stage;
+      session.stage === "member"
+        ? "profile_missing"
+        : session.stage === "profile_missing" && request && request.status !== "rejected"
+          ? "pending"
+          : session.stage;
     const name = session.access?.firstName ?? request?.first_name ?? "";
     return (
       <>

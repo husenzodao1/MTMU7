@@ -127,7 +127,9 @@
       "filter": "Filter",
       "empty": "No entries.",
       "system": "System",
-      "emptyHint": "Entries appear as soon as somebody changes data in the school."
+      "emptyHint": "Entries appear as soon as somebody changes data in the school.",
+      "actionExample": "update",
+      "entityExample": "grade"
     },
     "people": {
       "name": "Name",
@@ -162,7 +164,24 @@
       "createStaff": "Create staff member",
       "save": "Save",
       "archive": "Archive",
-      "restore": "Restore"
+      "restore": "Restore",
+      "accountIssued": "The account has been created.",
+      "accountIssuedTitle": "The account has been created",
+      "accountIssuedBody": "Hand the login and password to this person. They will confirm their address the first time they sign in.",
+      "accountAlreadyIssued": "This person was already on the register. Their details were updated; their password was not changed.",
+      "accountIssuedWarning": "The password is shown only now and is stored nowhere. Write it down or copy it before leaving this page.",
+      "login": "Login",
+      "password": "Password",
+      "addAnother": "Add another",
+      "openProfile": "Open the profile",
+      "employeeNumberHint": "The same number the timetable is written against: 14.",
+      "emailHint": "The confirmation code goes to this address. Each person needs their own.",
+      "post": "Post and access",
+      "postDescription": "The post decides which sections this person can open.",
+      "role": "Post",
+      "roleHint": "Left unchosen, the post follows from the job title written above.",
+      "roleFromPosition": "From the job title",
+      "addAndIssue": "Add and issue a login"
     },
     "students": {
       "title": "Students",
@@ -434,6 +453,14 @@
       "backToList": "Back to list",
       "importAnother": "Import another file",
       "codes": {
+        "unknown_teacher": "No teacher holds that number.",
+        "teacher_busy": "That teacher is already teaching another class at the same time.",
+        "invalid_cell": "The cell could not be read. It should look like: Математика (14).",
+        "unknown_class": "class not found",
+        "unknown_login": "There is no such login.",
+        "invalid_class": "That class name is not valid.",
+        "invalid_email": "invalid email",
+        "ambiguous_person": "More than one person matches this row.",
         "required": "required",
         "invalid_enum": "not an allowed value",
         "invalid_date": "invalid date",
@@ -441,10 +468,60 @@
         "duplicate_in_file": "duplicate in the file",
         "duplicate_existing": "already exists",
         "duplicate_person": "this person already exists",
-        "unknown_class": "class not found",
-        "invalid_email": "invalid email",
         "invalid_number": "not a number",
         "unknown_staff": "staff member not found"
+      },
+      "workbook": {
+        "instructions": "Download the workbook, fill it in with Excel and send it back. The check tells you what is wrong; the import then returns the same file with the logins and passwords filled in.",
+        "instructionsSheet": "Instructions",
+        "requiredMark": "Columns marked * are required.",
+        "rowNumber": "Row",
+        "allRowsOk": "All {total} rows are in order.",
+        "newClassesTitle": "Classes that will be created",
+        "newClasses": "These classes will be created: {classes}. If one of those names is a typo, fix it now.",
+        "confirm": "Import {total} rows and download the credentials",
+        "done": "{created} new, {updated} updated.",
+        "keepTheFile": "The downloaded file is the only copy of the passwords. Keep it somewhere safe.",
+        "alreadyIssued": "(already issued)",
+        "warningSheet": "Warning",
+        "warningTitle": "This file contains passwords",
+        "warningBody": "Anyone who opens it can sign in as any pupil or teacher in the school.",
+        "warningKeep": "Do not email it or put it on a shared drive. Delete it once the logins have been handed out.",
+        "summary": "{created} new accounts, {updated} updated.",
+        "sampleSheet": "EXAMPLE",
+        "sampleTitle": "{sheet} — a filled-in example",
+        "sampleSuffix": "example",
+        "downloadSample": "Filled-in example"
+      },
+      "errors": {
+        "noFile": "No file was chosen.",
+        "tooLarge": "That file is too large (4 MB at most).",
+        "notXlsx": "Only an Excel file (.xlsx) is accepted.",
+        "sheetMissing": "The file has no sheet by that name.",
+        "columnsMissing": "The file is missing required columns.",
+        "unreadable": "The file could not be read. It may not be an Excel file, or it may have uploaded incompletely."
+      },
+      "fields": {
+        "class_name": "Class",
+        "last_name": "Surname",
+        "first_name": "First name",
+        "middle_name": "Patronymic",
+        "date_of_birth": "Date of birth",
+        "gender": "Sex",
+        "email": "Email address",
+        "phone": "Telephone",
+        "login": "Login",
+        "employee_number": "Teacher number",
+        "position": "Post",
+        "homeroom_class": "Class teacher of",
+        "subjects": "Subjects"
+      },
+      "timetable": {
+        "newSubjectsTitle": "Subjects that will be created",
+        "newSubjects": "These subjects will be created: {subjects}. If one of those names is a typo, fix it now.",
+        "cell": "Period {field}",
+        "confirm": "Import {total} rows",
+        "done": "{lessons} lessons written into the timetable."
       }
     },
     "years": {
@@ -734,7 +811,9 @@
       "reason": "Reason",
       "saveSubstitution": "Save substitution",
       "substitutionSaved": "The substitution has been saved.",
-      "substitutionCancelled": "The substitution has been cancelled."
+      "substitutionCancelled": "The substitution has been cancelled.",
+      "import": "Import the timetable",
+      "importDescription": "Load the timetable from an Excel file. Each cell holds the subject and the teacher's number in brackets."
     },
     "news": {
       "title": "News desk",
@@ -812,7 +891,7 @@
       },
       "content": "Content",
       "body": "Text",
-      "bodyHint": "Formatting: ## heading, **bold**, - list item, [link](https://…).",
+      "bodyHint": "Markdown text. An image address on a line of its own becomes the picture itself. To name somebody, write @nickname.",
       "preview": "Preview",
       "attachment": "Attachment",
       "addAttachment": "Attach a file",
@@ -1632,6 +1711,10 @@
           "hint": "Names, emblem, photograph and contacts, then approve them."
         }
       }
+    },
+    "registrationClosed": {
+      "closedTitle": "Self-registration is closed",
+      "closedBody": "The school issues logins. This page remains only so the history can be read and anything left pending can be settled. Add a new person from Students or Staff."
     }
   }
 }

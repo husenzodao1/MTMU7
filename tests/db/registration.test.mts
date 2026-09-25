@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asAnon, asUser, createDatabase, errorOf, one, rows, type Db } from "./harness.mts";
-import { newId, seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
+import { newId, seedTenants, SCHOOL_A, type Tenants, allowSelfRegistrationInTests } from "./fixtures.mts";
 import { seedAcademic, type Academic } from "./academic-fixtures.mts";
 
 let db: Db;
@@ -12,6 +12,7 @@ before(async () => {
   db = await createDatabase();
   t = await seedTenants(db);
   a = await seedAcademic(db, t);
+  await allowSelfRegistrationInTests(db);
 });
 after(async () => {
   await db.close();

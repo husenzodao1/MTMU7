@@ -346,4 +346,28 @@ describe("function hardening (SEC-006)", () => {
     );
     assert.deepEqual(unsafe, []);
   });
+
+  it("leaves nobody able to sign themselves up", async () => {
+    // The school issues logins; there is no self-service door. Checking the
+    // grant rather than calling the function is deliberate — the suites that
+    // still describe how registration behaved hand the privilege back to
+    // themselves, and this must read the state the migrations actually ship.
+    const granted = await one<{ can: boolean }>(
+      db,
+      `SELECT has_function_privilege('authenticated',
+         'public.submit_registration(text, text, text, text, text, uuid, jsonb, text)', 'EXECUTE') AS can`
+    );
+    assert.equal(granted!.can, false);
+  });
+
+  it("keeps the login secret out of reach of the API roles", async () => {
+    for (const role of ["anon", "authenticated"] as const) {
+      const reachable = await one<{ can: boolean }>(
+        db,
+        `SELECT has_table_privilege($1, 'public.login_secret', 'SELECT') AS can`,
+        [role]
+      );
+      assert.equal(reachable!.can, false, `${role} must not read the login secret`);
+    }
+  });
 });

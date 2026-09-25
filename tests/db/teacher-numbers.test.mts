@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asUser, createDatabase, one, rows, type Db } from "./harness.mts";
-import { newId, seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
+import { newId, seedTenants, SCHOOL_A, type Tenants, allowSelfRegistrationInTests } from "./fixtures.mts";
 import { seedAcademic } from "./academic-fixtures.mts";
 
 let db: Db;
@@ -12,6 +12,7 @@ before(async () => {
   t = await seedTenants(db);
   // Classes and subjects come from the academic fixtures, not the base tenants.
   await seedAcademic(db, t);
+  await allowSelfRegistrationInTests(db);
 });
 after(async () => {
   await db.close();
@@ -119,7 +120,7 @@ describe("what a claimed record brings with it", () => {
       tx.query(
         `INSERT INTO public.class_subjects (school_id, class_id, subject_id, teacher_id)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (class_id, subject_id) DO UPDATE SET teacher_id = EXCLUDED.teacher_id`,
+         ON CONFLICT (class_id, subject_id, group_label) DO UPDATE SET teacher_id = EXCLUDED.teacher_id`,
         [SCHOOL_A, klass!.id, subject!.id, prepared]
       )
     );

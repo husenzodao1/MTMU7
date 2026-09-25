@@ -97,7 +97,14 @@ export default async function GradebookPage({ params, searchParams }: { params: 
   const cell = new Map(grades.map((g) => [`${g.student_id}|${g.grade_date}~${g.assessment_type_id}`, g]));
   // A column holds a mark or, where there is none, the letter for an absence.
   const attended = new Map((attendanceRows ?? []).map((r) => [`${r.student_id}|${r.attendance_date}`, r.status]));
-  const ABSENCE_LETTER: Record<string, string> = { absent: "ғ", late: "д", excused: "у" };
+  // The letters the paper register uses. They are read aloud in class, so they
+  // stay the school's own letters — but they are translatable, because a
+  // Russian-language school writes н, о and у instead.
+  const ABSENCE_LETTER: Record<string, string> = {
+    absent: t("absence.absent"),
+    late: t("absence.late"),
+    excused: t("absence.excused"),
+  };
 
   const editKey = firstValue(query.column);
   const [editDate, editType] = editKey && columnKeys.includes(editKey) ? (editKey.split("~") as [string, string]) : [null, null];
@@ -224,7 +231,7 @@ export default async function GradebookPage({ params, searchParams }: { params: 
                     options={types.filter((x) => x.is_active).map((x) => ({ value: x.id, label: pickName(x, locale) }))}
                   />
                 </div>
-                <TextField name="label" label={t("columnLabel")} maxLength={60} placeholder="Чоряки I" />
+                <TextField name="label" label={t("columnLabel")} maxLength={60} placeholder={t("columnLabelExample")} />
                 <SubmitButton size="sm">{t("ruleColumn")}</SubmitButton>
               </ActionForm>
             </CardBody>

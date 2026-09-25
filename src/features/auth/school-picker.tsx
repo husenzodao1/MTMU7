@@ -37,7 +37,7 @@ export async function hasChosenSchool(): Promise<boolean> {
  * than one school: pick yours, and the card, its background and the footer's
  * accounts become that school's.
  */
-export async function SchoolPicker({ schools, next }: { schools: AuthSchool[]; next: "/login" | "/register" }) {
+export async function SchoolPicker({ schools, next }: { schools: AuthSchool[]; next: "/login" }) {
   const t = await getTranslations("auth.school");
 
   return (
@@ -74,7 +74,7 @@ export async function SchoolPicker({ schools, next }: { schools: AuthSchool[]; n
 }
 
 /** A way back to the list, shown once a school has been chosen. */
-export async function ChangeSchool({ next }: { next: "/login" | "/register" }) {
+export async function ChangeSchool({ next }: { next: "/login" }) {
   const t = await getTranslations("auth.school");
   return (
     <form action={clearAuthSchoolAction} className="mt-4 text-center">

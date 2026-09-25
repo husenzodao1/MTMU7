@@ -19,7 +19,11 @@ const RULES: Rule[] = [
   { id: "private-key", pattern: /-----BEGIN (?:RSA |EC |OPENSSH |)PRIVATE KEY-----/ },
   { id: "github-token", pattern: /\bgh[pousr]_[A-Za-z0-9]{30,}/ },
   { id: "aws-access-key", pattern: /\bAKIA[0-9A-Z]{16}\b/ },
-  { id: "postgres-url-with-password", pattern: /postgres(?:ql)?:\/\/[^:\s/]+:[^@\s]{6,}@/ },
+  // The password must not be a placeholder. `${variable}` in a template literal
+  // and `<password>` in a usage message are instructions for supplying a
+  // credential, not a credential; flagging them teaches people that this
+  // scanner cries wolf, which is how a real finding gets waved through.
+  { id: "postgres-url-with-password", pattern: /postgres(?:ql)?:\/\/[^:\s/]+:(?![^@\s]*(?:\$\{|<[a-z_-]+>))[^@\s]{6,}@/ },
   { id: "generic-assignment", pattern: /\b(?:SERVICE_ROLE_KEY|SECRET|API_KEY|PASSWORD|TOKEN)\s*=\s*["']?[A-Za-z0-9_\-./+]{24,}/ },
 ];
 

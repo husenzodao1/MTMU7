@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Markdown } from "@/components/ui/misc";
 import { EventHighlights, NewsHighlights } from "@/features/site/highlights";
 import { getPublicEvents, getPublicNews } from "@/features/site/public-content";
-import { getPublicSchoolBySlug } from "@/lib/site/identity";
+import { getPlatformIdentity, getPublicSchoolBySlug } from "@/lib/site/identity";
 import { publicSchoolTitle } from "@/features/site/metadata";
 import { createClient } from "@/lib/supabase/server";
 import { pickText, type Locale } from "@/lib/i18n/text";
@@ -21,12 +21,14 @@ export async function generateMetadata({ params }: SchoolPageProps): Promise<Met
 
 export default async function SchoolPage({ params }: SchoolPageProps) {
   const { school: slug } = await params;
-  const [school, localeValue, t] = await Promise.all([
+  const [school, localeValue, t, identity] = await Promise.all([
     getPublicSchoolBySlug(slug),
     getLocale(),
     getTranslations("site.public"),
+    getPlatformIdentity(),
   ]);
   const locale = localeValue as Locale;
+  const attribution = pickText(identity.footerAttribution, locale);
 
   if (!school) {
     return (
@@ -118,6 +120,14 @@ export default async function SchoolPage({ params }: SchoolPageProps) {
               {school.phone ? <a className="hover:text-brand-text hover:underline" href={`tel:${school.phone}`}>{school.phone}</a> : null}
               {school.email ? <a className="hover:text-brand-text hover:underline" href={`mailto:${school.email}`}>{school.email}</a> : null}
             </address>
+          ) : null}
+
+          {/* Who built the portal belongs here, on the page about the school and
+              its people, rather than under every screen a child opens. */}
+          {attribution ? (
+            <p className="mt-6 border-t border-line pt-6 text-sm text-ink-muted">
+              {t("developedBy")} <span className="text-ink-secondary">{attribution}</span>
+            </p>
           ) : null}
         </div>
       </section>

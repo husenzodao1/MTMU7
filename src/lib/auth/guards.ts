@@ -8,7 +8,7 @@ import type { Permission } from "@/lib/auth/permissions";
  * registration is unfinished still reaches the dashboard, which explains what
  * is missing instead of bouncing them between pages.
  */
-export type PortalStage = "member" | "profile_missing" | "pending" | "rejected";
+export type PortalStage = "member" | "profile_missing" | "pending" | "rejected" | "email_unconfirmed";
 
 export interface PortalSession {
   stage: PortalStage;
@@ -22,6 +22,10 @@ export async function getPortalSession(): Promise<PortalSession> {
     if (!access.isActive || access.status === "blocked") redirect("/login?reason=inactive");
     if (access.status === "pending") return { stage: "pending", access, userId: access.userId };
     if (access.status === "rejected") return { stage: "rejected", access, userId: access.userId };
+    // Checked here rather than in the proxy: /admin sits outside the (portal)
+    // group and reaches this through requireAdminArea, and the proxy
+    // deliberately avoids an auth round trip on every request.
+    if (!access.emailVerified) return { stage: "email_unconfirmed", access, userId: access.userId };
     return { stage: "member", access, userId: access.userId };
   }
   const authUserId = await getAuthUserId();
@@ -37,6 +41,7 @@ export async function getPortalSession(): Promise<PortalSession> {
  */
 export async function requireAccess(): Promise<Access> {
   const session = await getPortalSession();
+  if (session.stage === "email_unconfirmed") redirect("/confirm-email");
   if (session.stage !== "member" || !session.access) redirect("/dashboard");
   return session.access;
 }

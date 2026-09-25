@@ -11,7 +11,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Pagination } from "@/components/ui/pagination";
-import { EmptyState, PageHeader } from "@/components/ui/surface";
+import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
@@ -26,6 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function InvitationsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const access = await requirePermission("invitations.manage");
   const t = await getTranslations("admin.invitations");
+  const ta = await getTranslations("admin.registrationClosed");
   const locale = (await getLocale()) as Locale;
   const timeZone = access.school!.timezone;
   const params = await searchParams;
@@ -65,6 +66,12 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
           </FormDialog>
         }
       />
+      {/* These two pages belonged to self-registration, which the school closed
+          when it began issuing logins itself. They still answer so the history
+          can be read and anything left pending can be settled. */}
+      <Alert tone="info" className="mb-4" title={ta("closedTitle")}>
+        {ta("closedBody")}
+      </Alert>
       <FilterBar filters={[{ name: "state", label: t("show"), emptyLabel: t("activeOnly"), options: [{ value: "all", label: t("allCodes") }] }]} />
       <DataTable
         caption={t("title")}

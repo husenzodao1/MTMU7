@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Megaphone, Paperclip } from "lucide-react";
 import { getVisibleAnnouncements } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
-import { Markdown } from "@/components/ui/misc";
+import { MarkdownBlocks, splitLeadImage } from "@/components/ui/misc";
 import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
@@ -31,9 +31,17 @@ export default async function AnnouncementsPage() {
         <Card as="div"><EmptyState icon={<Megaphone />} title={t("empty")} /></Card>
       ) : (
         <ul className="space-y-4">
-          {items.map((item) => (
+          {items.map((item) => {
+            // The photograph leads, large, with the words beneath it — the way a
+            // notice board reads. Whatever order the writer typed them in.
+            const { lead, rest } = splitLeadImage(item.body);
+            return (
             <li key={item.id} id={`a-${item.id}`} className="scroll-mt-24">
-              <Card as="article" className={cn(item.priority === "critical" && "border-danger-600/50", item.priority === "important" && "border-warning-600/40")}>
+              <Card as="article" className={cn("overflow-hidden", item.priority === "critical" && "border-danger-600/50", item.priority === "important" && "border-warning-600/40")}>
+                {lead ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- editorial images are arbitrary owner-supplied URLs
+                  <img src={lead.src} alt={lead.alt} className="max-h-[28rem] w-full border-b border-line object-cover" loading="lazy" />
+                ) : null}
                 <CardBody className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {item.priority !== "normal" ? (
@@ -45,7 +53,7 @@ export default async function AnnouncementsPage() {
                     {formatDateTime(item.publishAt, locale)}
                     {item.expiresAt ? ` · ${t("until", { date: formatDateTime(item.expiresAt, locale) })}` : ""}
                   </p>
-                  <Markdown source={item.body} />
+                  <MarkdownBlocks blocks={rest} />
                   {item.attachmentPath && item.attachmentName ? (
                     <a href={`/files/announcements/${item.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-text hover:underline" target="_blank" rel="noopener">
                       <Paperclip className="size-4" aria-hidden />
@@ -55,7 +63,8 @@ export default async function AnnouncementsPage() {
                 </CardBody>
               </Card>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </>

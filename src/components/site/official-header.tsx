@@ -51,22 +51,30 @@ export async function OfficialStrip() {
 const SOCIAL_KEYS = ["whatsapp", "telegram", "instagram"] as const;
 
 /**
- * Site footer. One sentence of purpose, then the contact and navigation row.
- * Links appear only where the owner has supplied a destination; nothing here
- * is invented. `quickLinks` is for signed-in layouts, which pass the sections
- * that person may open in one click.
+ * Site footer: one sentence of purpose, then contacts and navigation, over a
+ * quietened photograph of the national flag so the page closes the way it
+ * opened.
+ *
+ * Links appear only where the owner has supplied a destination; nothing here is
+ * invented. `signedIn` suppresses the sign-in link, which is nonsense on a page
+ * that could only be reached with a session. `quickLinks` is for signed-in
+ * layouts, which pass the sections that person may open in one click.
+ *
+ * Who built the platform belongs on the school's own "about" page, not at the
+ * bottom of every screen a child opens; see (public)/s/[school]/page.tsx.
  */
 export async function SiteFooter({
   schoolName,
   quickLinks,
+  signedIn = false,
 }: {
   schoolName?: string | null;
   quickLinks?: Array<{ href: string; label: string }>;
+  signedIn?: boolean;
 }) {
   const locale = (await getLocale()) as Locale;
   const identity = await getPlatformIdentity();
   const t = await getTranslations("site.footer");
-  const attribution = pickText(identity.footerAttribution, locale);
   const copyright = pickText(identity.copyright, locale);
   const year = new Date().getFullYear();
 
@@ -83,9 +91,19 @@ export async function SiteFooter({
   const linkClass = "rounded-sm text-ink-secondary transition-colors hover:text-brand-text hover:underline";
 
   return (
-    <footer className="mt-auto border-t border-line bg-surface">
+    <footer className="relative isolate mt-auto overflow-hidden bg-surface">
+      {/* A band of the flag closes the page the way the strip opens it. It is a
+          band rather than a wash because a photograph behind running text costs
+          contrast, and this costs none. */}
+      <div aria-hidden className="h-1.5 w-full bg-[url('/gov/flag-strip.webp')] bg-cover bg-center" />
+      {/* The same photograph behind the footer, held far enough back that every
+          line keeps its own contrast: the surface wash does the work and the
+          photograph only warms it. */}
+      <div aria-hidden className="absolute inset-0 -z-20 bg-[url('/gov/flag-strip.webp')] bg-cover bg-center opacity-30" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-surface/90 via-surface/94 to-surface" />
+
       <div className="mx-auto max-w-6xl px-4 py-7 text-sm">
-        <p className="text-center text-ink-secondary sm:text-[0.9375rem]">{t("tagline")}</p>
+        <p className="text-center font-medium text-ink-secondary sm:text-[0.9375rem]">{t("tagline")}</p>
 
         {contact.length > 0 ? (
           <nav aria-label={t("links")} className="mt-4">
@@ -115,18 +133,16 @@ export async function SiteFooter({
                 {t("schools")}
               </Link>
             </li>
-            <li aria-hidden className="text-line-strong">|</li>
-            <li>
-              <Link className={linkClass} href="/login">
-                {t("signIn")}
-              </Link>
-            </li>
-            <li aria-hidden className="text-line-strong">|</li>
-            <li>
-              <Link className={linkClass} href="/register">
-                {t("register")}
-              </Link>
-            </li>
+            {signedIn ? null : (
+              <>
+                <li aria-hidden className="text-line-strong">|</li>
+                <li>
+                  <Link className={linkClass} href="/login">
+                    {t("signIn")}
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
 
@@ -136,7 +152,7 @@ export async function SiteFooter({
               {quickLinks.map((item) => (
                 <li key={item.href}>
                   <Link
-                    className="inline-flex items-center rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-text-strong"
+                    className="inline-flex items-center rounded-md border border-line bg-surface/70 px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-text-strong"
                     href={item.href}
                   >
                     {item.label}
@@ -151,14 +167,6 @@ export async function SiteFooter({
           <span>{schoolName ?? t("platform")}</span>
           <span aria-hidden>·</span>
           <span>{copyright || `© ${year}`}</span>
-          {attribution ? (
-            <>
-              <span aria-hidden>·</span>
-              <span>
-                {t("developedBy")} {attribution}
-              </span>
-            </>
-          ) : null}
         </div>
       </div>
     </footer>

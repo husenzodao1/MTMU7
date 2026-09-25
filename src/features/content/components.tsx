@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { CalendarRange, Megaphone, Newspaper, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/surface";
+import { splitLeadImage } from "@/components/ui/misc";
 import { markdownToPlainText } from "@/lib/content/markdown";
 import { formatDate, formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
@@ -16,7 +17,19 @@ export async function AnnouncementList({ items, compact }: { items: Announcement
   return (
     <ul className="divide-y divide-line">
       {items.map((item) => (
-        <li key={item.id} className={cn("py-3", item.priority === "critical" && "border-s-4 border-danger-600 ps-3")}>
+        <li key={item.id} className={cn("flex gap-3 py-3", item.priority === "critical" && "border-s-4 border-danger-600 ps-3")}>
+          {/* A thumbnail, so a notice with a photograph is recognisable in the
+              list rather than only once it is opened. */}
+          {splitLeadImage(item.body).lead ? (
+            // eslint-disable-next-line @next/next/no-img-element -- editorial images are arbitrary owner-supplied URLs
+            <img
+              src={splitLeadImage(item.body).lead!.src}
+              alt=""
+              className="size-16 shrink-0 rounded-lg border border-line object-cover"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {item.priority !== "normal" ? (
               <Badge tone={item.priority === "critical" ? "danger" : "warning"}>{t(`priority.${item.priority}`)}</Badge>
@@ -27,6 +40,7 @@ export async function AnnouncementList({ items, compact }: { items: Announcement
           </div>
           <p className="mt-0.5 text-sm text-ink-secondary">{markdownToPlainText(item.body, compact ? 140 : 280)}</p>
           <p className="mt-1 text-xs text-ink-muted tabular">{formatDateTime(item.publishAt, locale)}</p>
+          </div>
         </li>
       ))}
     </ul>
@@ -74,12 +88,23 @@ export async function NewsCompactList({ items, hrefBase = "/news" }: { items: Ne
   return (
     <ul className="divide-y divide-line">
       {items.map((item) => (
-        <li key={item.id} className="py-3">
-          <Link href={`${hrefBase}/${item.slug}`} className="font-medium text-ink hover:text-brand-text hover:underline">
-            {item.title}
-          </Link>
-          <p className="mt-0.5 line-clamp-2 text-sm text-ink-secondary">{item.summary || markdownToPlainText(item.content, 160)}</p>
-          {item.publishAt ? <p className="mt-1 text-xs text-ink-muted tabular">{formatDate(item.publishAt, locale)}</p> : null}
+        <li key={item.id} className="flex gap-3 py-3">
+          {item.coverImageUrl || splitLeadImage(item.content).lead ? (
+            // eslint-disable-next-line @next/next/no-img-element -- editorial images are arbitrary owner-supplied URLs
+            <img
+              src={item.coverImageUrl ?? splitLeadImage(item.content).lead!.src}
+              alt=""
+              className="size-16 shrink-0 rounded-lg border border-line object-cover"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <Link href={`${hrefBase}/${item.slug}`} className="font-medium text-ink hover:text-brand-text hover:underline">
+              {item.title}
+            </Link>
+            <p className="mt-0.5 line-clamp-2 text-sm text-ink-secondary">{item.summary || markdownToPlainText(item.content, 160)}</p>
+            {item.publishAt ? <p className="mt-1 text-xs text-ink-muted tabular">{formatDate(item.publishAt, locale)}</p> : null}
+          </div>
         </li>
       ))}
     </ul>

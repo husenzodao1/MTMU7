@@ -112,3 +112,26 @@ export async function seedTenants(db: Db): Promise<Tenants> {
 
   return { schoolA: SCHOOL_A, schoolB: SCHOOL_B, regionId, districtId, users };
 }
+
+/**
+ * Hands `submit_registration` back to ordinary callers for the length of a test
+ * run.
+ *
+ * 00045 revoked it: the school issues logins now, and nobody signs themselves
+ * up. The function itself stays in the database so the rows it wrote still make
+ * sense and so anything left pending can still be settled, and the tests that
+ * describe how it behaves stay with it. They would otherwise be deleted
+ * alongside a function that is still there — leaving the next person to re-grant
+ * it with nothing to tell them what it does.
+ *
+ * That the shipped grant really is revoked is asserted separately, before this
+ * is called.
+ */
+export async function allowSelfRegistrationInTests(db: Db): Promise<void> {
+  await db.query(
+    `GRANT EXECUTE ON FUNCTION public.submit_registration(text, text, text, text, text, uuid, jsonb, text) TO authenticated`
+  );
+  // 00045 also closed every school that existed when it ran, which includes the
+  // one the migrations seed and the fixtures build on.
+  await db.query(`UPDATE public.schools SET settings = settings - 'registration_open'`);
+}

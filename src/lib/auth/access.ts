@@ -22,6 +22,9 @@ const accessSchema = z.object({
       phone: nullableString,
       status: z.string(),
       is_active: z.boolean(),
+      // Defaulted true so a database that has not yet taken migration 00045 does
+      // not strand every signed-in person at the confirmation screen.
+      email_verified: z.boolean().optional().default(true),
     })
     .nullable(),
   school: z
@@ -83,6 +86,8 @@ export interface Access {
   phone: string | null;
   status: AccountStatus;
   isActive: boolean;
+  /** Whether the person has shown they can read the address on file. */
+  emailVerified: boolean;
   school: {
     id: string;
     slug: string;
@@ -141,6 +146,7 @@ export const getAccess = cache(async (): Promise<Access | null> => {
     phone: user.phone,
     status: user.status as AccountStatus,
     isActive: user.is_active,
+    emailVerified: user.email_verified,
     school: school
       ? {
           id: school.id,

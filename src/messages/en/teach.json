@@ -108,7 +108,13 @@
       "ruleColumnHint": "Open a lesson date ahead of time. Where a heading suits better than a date, write one, such as “Quarter I”.",
       "columnLabel": "Heading (optional)",
       "columnAdded": "The column is open.",
-      "allJournals": "Journals of every subject"
+      "allJournals": "Journals of every subject",
+      "absence": {
+        "absent": "a",
+        "late": "l",
+        "excused": "e"
+      },
+      "columnLabelExample": "Term 1"
     },
     "homework": {
       "title": "Homework",

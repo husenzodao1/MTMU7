@@ -15,7 +15,8 @@
     "db:types": "node scripts/db/generate-types.mts",
     "security:secrets": "node scripts/security/scan-secrets.mts",
     "db:verify": "node scripts/db/verify-remote.mts",
-    "admin:password": "node scripts/admin/set-user-password.mts"
+    "admin:password": "node scripts/admin/set-user-password.mts",
+    "import:samples": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import/make-samples.mts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
@@ -32,8 +33,10 @@
     "next-intl": "^4.13.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "read-excel-file": "^9.3.10",
     "server-only": "0.0.1",
     "tailwind-merge": "^3.6.0",
+    "write-excel-file": "^4.1.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

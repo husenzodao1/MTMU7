@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
-import { Markdown } from "@/components/ui/misc";
+import { MarkdownBlocks, splitLeadImage } from "@/components/ui/misc";
+import { parseMarkdown } from "@/lib/content/markdown";
 import { Alert, Breadcrumb, Card, CardBody } from "@/components/ui/surface";
 import { can, canAny } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
@@ -48,6 +49,12 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
 
   const canEdit = canAny(access, ["news.update", "news.publish"]) || (article.author_id === access.userId && can(access, "news.create"));
 
+  // A cover picture if the article has one; otherwise the first picture in the
+  // body, which is where people put it when there is no cover field to hand.
+  const inBody = splitLeadImage(article.content);
+  const lead = article.cover_image_url ? { src: article.cover_image_url, alt: "" } : inBody.lead;
+  const body = article.cover_image_url ? parseMarkdown(article.content) : inBody.rest;
+
   return (
     <article className="mx-auto max-w-3xl">
       <Breadcrumb label={t("breadcrumb")} items={[{ label: t("title"), href: "/news" }, { label: article.title }]} />
@@ -55,6 +62,14 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
         <Alert tone="warning" className="mb-4" title={t("notPublished")}>
           <StatusBadge status={article.status} label={ts(article.status)} />
         </Alert>
+      ) : null}
+      {lead ? (
+        // eslint-disable-next-line @next/next/no-img-element -- editorial image from public storage
+        <img
+          src={lead.src}
+          alt={lead.alt}
+          className="mb-5 max-h-[30rem] w-full rounded-xl border border-line object-cover"
+        />
       ) : null}
       <header className="mb-5">
         <h1 className="text-3xl font-semibold leading-tight">{article.title}</h1>
@@ -74,13 +89,9 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
           ) : null}
         </div>
       </header>
-      {article.cover_image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- editorial image from public storage
-        <img src={article.cover_image_url} alt="" className="mb-6 w-full rounded-xl border border-line object-cover" />
-      ) : null}
       <Card as="div">
         <CardBody className="p-5 sm:p-7">
-          <Markdown source={article.content} lang={article.language} />
+          <MarkdownBlocks blocks={body} lang={article.language} />
           {engagement ? (
             <ReactionBar
               className="mt-6 border-t border-line pt-4"

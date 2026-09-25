@@ -25,7 +25,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       <>
         <h1 className="text-2xl font-semibold">{t("verifyTitle")}</h1>
         <p className="mb-5 mt-1 text-sm text-ink-secondary">{t("verifySubtitle", { email })}</p>
-        <VerifyCodeForm purpose="reset" />
+        <VerifyCodeForm />
       </>
     );
   } else if (step === "password") {

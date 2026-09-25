@@ -18,6 +18,18 @@
 | `NEXT_PUBLIC_APP_URL` | public | Canonical application URL |
 | `DEFAULT_SCHOOL_SLUG` | server-only | Fallback public school slug |
 | `CRON_SECRET` | server-only | Vercel Cron bearer authentication |
+| `LOGIN_LOOKUP_SECRET` | server-only | Turns an issued login into the sign-in address |
+
+`LOGIN_LOOKUP_SECRET` must also be taught to the database, which stores only its
+SHA-256:
+
+```bash
+node scripts/admin/set-login-secret.mts
+```
+
+Rotating it means setting the new value in both places; sign-in by login stops
+working in between, so do the two together. Without it people can still sign in
+with their email address, so a mismatch degrades rather than locks out.
 
 `NEXT_PUBLIC_*` values are not a substitute for authorization. RLS remains mandatory.
 

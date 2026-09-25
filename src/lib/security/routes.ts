@@ -11,10 +11,10 @@ export const PORTAL_PREFIXES = [
 ] as const;
 
 /**
- * Pages that make no sense for a signed-in visitor. "/register" is not one of
- * them: a session may exist while the account still has no profile row, and the
- * portal sends exactly those visitors to /register?step=profile. Bouncing them
- * back would loop between the two pages.
+ * Pages that make no sense for a signed-in visitor. "/confirm-email" is not one
+ * of them: a session exists there by design, and the visitor is sent to it
+ * precisely because they have one but have not yet proved the address.
+ * Bouncing them back would loop between the two pages.
  */
 export const GUEST_ONLY = ["/login", "/reset-password"] as const;
 

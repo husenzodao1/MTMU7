@@ -134,5 +134,17 @@ export const resolveHomeSchoolSlug = cache(async (): Promise<string | null> => {
   } catch {
     // fall through to configured default
   }
-  return serverEnv.DEFAULT_SCHOOL_SLUG ?? null;
+  if (serverEnv.DEFAULT_SCHOOL_SLUG) return serverEnv.DEFAULT_SCHOOL_SLUG;
+
+  // A platform with exactly one school has no ambiguity to resolve, and asking
+  // an operator to name it in an environment variable only creates a way for
+  // the footer to lose its "about" link and the school to lose its own contacts.
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("schools").select("slug").eq("status", "active").limit(2);
+    if (data?.length === 1) return data[0]!.slug;
+  } catch {
+    // The public site still renders without a school; it simply shows less.
+  }
+  return null;
 });

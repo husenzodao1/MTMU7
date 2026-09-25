@@ -51,3 +51,6 @@ supabase/.branches/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Example workbooks, regenerated with `npm run import:samples`.
+/samples

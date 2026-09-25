@@ -87,8 +87,10 @@ const ADMIN_GROUPS: Array<{ key: string; label: string; rules: Rule[] }> = [
       { item: { key: "staff", href: "/admin/staff", icon: "staff", label: "admin.nav.staff" }, visible: anyOf("staff.create", "staff.update", "staff.archive") },
       { item: { key: "guardians", href: "/admin/guardians", icon: "guardians", label: "admin.nav.guardians" }, visible: anyOf("guardians.manage") },
       { item: { key: "users", href: "/admin/users", icon: "users", label: "admin.nav.users" }, visible: anyOf("users.view") },
-      { item: { key: "approvals", href: "/admin/approvals", icon: "approvals", label: "admin.nav.approvals" }, visible: anyOf("users.approve") },
-      { item: { key: "invitations", href: "/admin/invitations", icon: "invitations", label: "admin.nav.invitations" }, visible: anyOf("invitations.manage") },
+      // Approvals and invitation codes belonged to self-registration, which the
+      // school closed when it began issuing logins itself (migration 00045).
+      // Both pages still answer, so anything left pending from that time can be
+      // settled and the history read, but neither is offered here any more.
     ],
   },
   {

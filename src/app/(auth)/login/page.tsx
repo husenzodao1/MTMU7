@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { SignInForm } from "@/features/auth/forms";
 import { ChangeSchool, hasChosenSchool, listAuthSchools, SchoolPicker } from "@/features/auth/school-picker";
@@ -36,14 +35,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {reason === "password-updated" ? <Alert tone="success">{t("passwordUpdated")}</Alert> : null}
           {reason === "link-invalid" ? <Alert tone="warning">{t("linkInvalid")}</Alert> : null}
           <SignInForm next={next} markUrl={school?.logoUrl ?? school?.photoUrl ?? null} />
-          {/* Always offered, whether or not the address exists: the card must not
-              become a way to test which addresses are registered here. */}
-          <p className="border-t border-line pt-4 text-center text-sm text-ink-secondary">
-            {t("noAccount")}{" "}
-            <Link href="/register" className="font-medium text-brand-text hover:underline">
-              {t("register")}
-            </Link>
-          </p>
+          {/* There is no self-service door: logins come from the school. The
+              card says so rather than offering a form that no longer exists. */}
+          <p className="border-t border-line pt-4 text-center text-sm text-ink-secondary">{t("noAccount")}</p>
         </CardBody>
       </Card>
       {schools.length > 1 ? <ChangeSchool next="/login" /> : null}

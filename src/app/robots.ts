@@ -9,7 +9,7 @@ import { publicEnv } from "@/lib/env";
 const PRIVATE_PREFIXES = [
   "/admin/", "/dashboard", "/teach", "/messages", "/notifications", "/profile", "/settings",
   "/schedule", "/grades", "/attendance", "/homework", "/children", "/friends", "/library",
-  "/news", "/announcements", "/events", "/documents", "/access-denied", "/pending",
+  "/news", "/announcements", "/events", "/documents", "/access-denied", "/confirm-email",
   "/api/", "/files/", "/auth/", "/verify", "/dev-preview",
 ];
 

@@ -70,6 +70,18 @@ function renderInline(nodes: Inline[], keyPrefix: string): ReactNode[] {
           </a>
         );
       }
+      case "mention":
+        // /u/<nickname> resolves the handle and forwards to whoever holds it,
+        // so the text can name a person without the writer knowing their id.
+        return (
+          <Link
+            key={key}
+            href={`/u/${node.nickname}`}
+            className="rounded font-medium text-brand-text hover:text-brand-text-strong hover:underline"
+          >
+            @{node.nickname}
+          </Link>
+        );
     }
   });
 }
@@ -101,12 +113,42 @@ function renderBlock(block: Block, index: number): ReactNode {
       );
     case "paragraph":
       return <p key={key}>{renderInline(block.children, key)}</p>;
+    case "image":
+      return (
+        <figure key={key} className="-mx-1 my-4 overflow-hidden rounded-xl border border-line bg-surface-muted sm:mx-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- editorial images are arbitrary owner-supplied URLs */}
+          <img src={block.src} alt={block.alt} className="w-full object-cover" loading="lazy" />
+          {block.alt ? <figcaption className="px-3 py-2 text-sm text-ink-muted">{block.alt}</figcaption> : null}
+        </figure>
+      );
   }
+}
+
+/**
+ * The picture an item leads with, and everything else.
+ *
+ * A photograph belongs at the top, large, with the words underneath — which is
+ * how a notice board reads and how nobody reads a URL. Splitting it out lets a
+ * card place the two independently instead of taking whatever order the writer
+ * happened to type.
+ */
+export function splitLeadImage(source: string | null | undefined): { lead: { src: string; alt: string } | null; rest: Block[] } {
+  const blocks = parseMarkdown(source);
+  const index = blocks.findIndex((block) => block.type === "image");
+  if (index < 0) return { lead: null, rest: blocks };
+  const lead = blocks[index] as Extract<Block, { type: "image" }>;
+  return { lead: { src: lead.src, alt: lead.alt }, rest: blocks.filter((_, i) => i !== index) };
 }
 
 /** Renders editorial text safely (no HTML is ever interpreted). */
 export function Markdown({ source, className, lang }: { source: string | null | undefined; className?: string; lang?: string }) {
   const blocks = parseMarkdown(source);
+  if (blocks.length === 0) return null;
+  return <div lang={lang} className={cn("prose-official text-base leading-relaxed text-ink", className)}>{blocks.map(renderBlock)}</div>;
+}
+
+/** The same renderer, for blocks a caller has already split. */
+export function MarkdownBlocks({ blocks, className, lang }: { blocks: Block[]; className?: string; lang?: string }) {
   if (blocks.length === 0) return null;
   return <div lang={lang} className={cn("prose-official text-base leading-relaxed text-ink", className)}>{blocks.map(renderBlock)}</div>;
 }

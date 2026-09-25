@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
-import { ImportWizard } from "@/features/admin/import/wizard";
+import { PeopleImportWizard } from "@/features/admin/import/people-wizard";
 import { Card, CardBody, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 
@@ -18,7 +18,7 @@ export default async function ImportStudentsPage() {
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title"), href: "/admin/students" }, { label: t("import") }]} />} title={t("import")} description={t("importDescription")} />
       <Card>
         <CardBody>
-          <ImportWizard kind="students" />
+          <PeopleImportWizard kind="students" />
         </CardBody>
       </Card>
     </>

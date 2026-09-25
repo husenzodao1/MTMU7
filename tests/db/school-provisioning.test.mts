@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asUser, createDatabase, errorOf, one, rows, type Db } from "./harness.mts";
-import { newId, seedTenants, type Tenants } from "./fixtures.mts";
+import { newId, seedTenants, type Tenants, allowSelfRegistrationInTests } from "./fixtures.mts";
 
 let db: Db;
 let t: Tenants;
@@ -9,6 +9,7 @@ let t: Tenants;
 before(async () => {
   db = await createDatabase();
   t = await seedTenants(db);
+  await allowSelfRegistrationInTests(db);
 });
 after(async () => {
   await db.close();
@@ -153,7 +154,10 @@ describe("the nominated administrator", () => {
     const first = await authUser("boss@maktab51.tj");
     assert.equal((await register(first, "maktab-51", null))!.r.status, "active");
 
-    // Same address, a second account: the school already has its administrator.
+    // The same address, on a second account. GoTrue holds one account per
+    // address, so the only way there is for the first to give the address up —
+    // a handover. The claim is spent all the same.
+    await db.query(`UPDATE auth.users SET email = 'former.boss@maktab51.tj' WHERE id = $1`, [first]);
     const second = await authUser("boss@maktab51.tj");
     const error = await errorOf(() => register(second, "maktab-51", null));
     assert.ok(error, "a second claim must not silently succeed");

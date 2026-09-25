@@ -61,8 +61,8 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
-        <TextField name="action" label={t("action")} defaultValue={action ?? ""} placeholder="update" maxLength={50} />
-        <TextField name="entity" label={t("entity")} defaultValue={entity ?? ""} placeholder="grade" maxLength={50} />
+        <TextField name="action" label={t("action")} defaultValue={action ?? ""} placeholder={t("actionExample")} maxLength={50} />
+        <TextField name="entity" label={t("entity")} defaultValue={entity ?? ""} placeholder={t("entityExample")} maxLength={50} />
         <TextField name="from" type="date" label={t("from")} defaultValue={list.filters.from ?? ""} />
         <TextField name="to" type="date" label={t("to")} defaultValue={list.filters.to ?? ""} />
         <Button type="submit" variant="secondary">{t("filter")}</Button>

@@ -25,7 +25,7 @@ export function safeRedirectPath(candidate: unknown, fallback = "/dashboard"): s
 }
 
 /** Auth flow pages: never a destination once the visitor is signed in. */
-const AUTH_PATHS = ["/login", "/register", "/reset-password", "/pending", "/verify", "/auth"];
+const AUTH_PATHS = ["/login", "/reset-password", "/confirm-email", "/verify", "/auth"];
 
 /**
  * Where to land after a successful sign-in. A "next" left over from an earlier

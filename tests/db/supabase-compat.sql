@@ -34,6 +34,14 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authen
 CREATE SCHEMA IF NOT EXISTS auth;
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 
+-- GoTrue's own table, with the full column set of a Supabase project.
+--
+-- The column list is the point. An account this platform creates for itself
+-- must be indistinguishable from one GoTrue created, and 00044 exists because
+-- four of these columns are read into non-nullable Go strings while carrying no
+-- default of their own. They are left without one here for exactly that reason:
+-- a shim that quietly defaulted them to '' would let a test pass on a row that
+-- production could not read.
 CREATE TABLE IF NOT EXISTS auth.users (
   instance_id uuid,
   id uuid PRIMARY KEY,
@@ -42,13 +50,40 @@ CREATE TABLE IF NOT EXISTS auth.users (
   email varchar(255),
   encrypted_password varchar(255),
   email_confirmed_at timestamptz,
+  invited_at timestamptz,
   confirmation_token varchar(255),
+  confirmation_sent_at timestamptz,
+  recovery_token varchar(255),
+  recovery_sent_at timestamptz,
+  email_change_token_new varchar(255),
+  email_change varchar(255),
+  email_change_sent_at timestamptz,
+  last_sign_in_at timestamptz,
   raw_app_meta_data jsonb,
   raw_user_meta_data jsonb,
-  is_anonymous boolean NOT NULL DEFAULT false,
+  is_super_admin boolean,
   created_at timestamptz,
-  updated_at timestamptz
+  updated_at timestamptz,
+  phone text DEFAULT NULL,
+  phone_confirmed_at timestamptz,
+  phone_change text DEFAULT '',
+  phone_change_token varchar(255) DEFAULT '',
+  phone_change_sent_at timestamptz,
+  confirmed_at timestamptz GENERATED ALWAYS AS (LEAST(email_confirmed_at, phone_confirmed_at)) STORED,
+  email_change_token_current varchar(255) DEFAULT '',
+  email_change_confirm_status smallint DEFAULT 0,
+  banned_until timestamptz,
+  reauthentication_token varchar(255) DEFAULT '',
+  reauthentication_sent_at timestamptz,
+  is_sso_user boolean NOT NULL DEFAULT false,
+  deleted_at timestamptz,
+  is_anonymous boolean NOT NULL DEFAULT false,
+  CONSTRAINT users_email_change_confirm_status_check
+    CHECK (email_change_confirm_status >= 0 AND email_change_confirm_status <= 2)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_partial_key ON auth.users (email) WHERE is_sso_user = false;
+CREATE UNIQUE INDEX IF NOT EXISTS users_phone_key ON auth.users (phone) WHERE phone IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS auth.identities (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

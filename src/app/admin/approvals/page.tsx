@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { SelectField, TextAreaField } from "@/components/ui/fields";
 import { TabNav } from "@/components/ui/misc";
 import { Pagination } from "@/components/ui/pagination";
-import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
+import { Alert, Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
@@ -28,6 +28,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const access = await requirePermission("users.approve");
   const t = await getTranslations("admin.approvals");
   const ts = await getTranslations("common.status");
+  const ta = await getTranslations("admin.registrationClosed");
   const locale = (await getLocale()) as Locale;
   const timeZone = access.school!.timezone;
   const params = await searchParams;
@@ -50,6 +51,12 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
+      {/* These two pages belonged to self-registration, which the school closed
+          when it began issuing logins itself. They still answer so the history
+          can be read and anything left pending can be settled. */}
+      <Alert tone="info" className="mb-4" title={ta("closedTitle")}>
+        {ta("closedBody")}
+      </Alert>
       <TabNav
         label={t("views")}
         items={[
