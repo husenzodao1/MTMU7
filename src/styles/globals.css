@@ -8,6 +8,8 @@
  */
 @theme {
   --font-sans: var(--font-noto-sans), "Noto Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  /* Used by `font-display` on the lines that carry the school's name. */
+  --font-display: var(--font-noto-serif), "Noto Serif", Georgia, "Times New Roman", serif;
 
   --color-canvas: #f4f5f7;
   --color-surface: #ffffff;
@@ -376,16 +378,24 @@
     .glass-rise {
       animation: glass-rise linear both;
       animation-timeline: view();
-      animation-range: entry 5% cover 32%;
+      /* Spread across most of the panel's travel up the screen. A narrow range
+         makes the panel snap into place in a few pixels of scroll, which is
+         what reads as abrupt; over half the viewport it simply arrives. */
+      animation-range: entry 0% cover 50%;
     }
   }
 }
 
+/*
+ * Small movements. A panel that travels two and a half centimetres and unblurs
+ * from six pixels announces itself; one that lifts a few millimetres and
+ * sharpens is only noticed if you look for it, which is the point.
+ */
 @keyframes glass-rise {
   from {
     opacity: 0;
-    transform: translateY(2.5rem) scale(0.965);
-    filter: blur(6px);
+    transform: translateY(1.1rem) scale(0.99);
+    filter: blur(2px);
   }
   to {
     opacity: 1;
@@ -397,10 +407,34 @@
 /* The hero settles once, on load, instead of on scroll. */
 @media (prefers-reduced-motion: no-preference) {
   .glass-enter {
-    animation: glass-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: glass-rise 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .glass-enter-late {
-    animation: glass-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+    animation: glass-rise 1200ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
+  }
+
+  /*
+   * Inside the hero, the lines arrive one after another rather than the whole
+   * card appearing at once: the eye is led down the panel in the order the
+   * words are meant to be read.
+   */
+  .glass-stagger > * {
+    animation: glass-line 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .glass-stagger > *:nth-child(1) { animation-delay: 120ms; }
+  .glass-stagger > *:nth-child(2) { animation-delay: 240ms; }
+  .glass-stagger > *:nth-child(3) { animation-delay: 380ms; }
+  .glass-stagger > *:nth-child(4) { animation-delay: 540ms; }
+}
+
+@keyframes glass-line {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

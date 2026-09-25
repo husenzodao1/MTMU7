@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, CalendarDays, ClipboardCheck, FileText, GraduationCap, Languages, Newspaper, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, ClipboardCheck, FileSpreadsheet, Languages, Newspaper, Send, ShieldCheck, Users } from "lucide-react";
 import { EventHighlights, NewsHighlights } from "@/features/site/highlights";
 import { getPublicEvents, getPublicNews } from "@/features/site/public-content";
 import { buttonClasses } from "@/components/ui/button";
@@ -64,12 +64,12 @@ export default async function HomePage() {
   ] as const;
 
   const features = [
-    { icon: GraduationCap, key: "grades" },
+    { icon: ClipboardCheck, key: "journal" },
     { icon: CalendarDays, key: "timetable" },
-    { icon: Newspaper, key: "news" },
-    { icon: FileText, key: "documents" },
+    { icon: Send, key: "parents" },
+    { icon: FileSpreadsheet, key: "people" },
+    { icon: Newspaper, key: "content" },
     { icon: Languages, key: "languages" },
-    { icon: Users, key: "people" },
   ] as const;
 
   return (
@@ -88,9 +88,9 @@ export default async function HomePage() {
       />
 
       <section className="mx-auto max-w-5xl px-4 pb-16 pt-14 sm:pb-24 sm:pt-20">
-        <div className="glass-panel glass-enter px-6 py-12 text-center sm:px-12 sm:py-16">
+        <div className="glass-panel glass-enter glass-stagger px-6 py-12 text-center sm:px-12 sm:py-16">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-text">{t("schoolSite")}</p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-6xl">
+          <h1 className="mt-4 text-balance font-display text-4xl font-semibold tracking-tight text-ink sm:text-6xl">
             {schoolName || home("title")}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-8 text-ink-secondary sm:text-lg">
@@ -111,14 +111,14 @@ export default async function HomePage() {
       </section>
 
       <section aria-labelledby="why" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
-        <h2 id="why" className="mb-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+        <h2 id="why" className="mb-7 text-center font-display text-sm font-semibold uppercase tracking-[0.22em] text-ink-muted">
           {home("whyTitle")}
         </h2>
         <ul className="grid gap-4 sm:grid-cols-3">
           {reasons.map(({ icon: Icon, key }) => (
             <li key={key} className="glass-panel glass-rise glass-tilt p-6">
               <Icon className="size-7 text-brand-text" aria-hidden />
-              <h3 className="mt-4 text-lg font-semibold text-ink">{home(`why.${key}.title`)}</h3>
+              <h3 className="mt-4 font-display text-lg font-semibold text-ink">{home(`why.${key}.title`)}</h3>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">{home(`why.${key}.body`)}</p>
             </li>
           ))}
@@ -126,7 +126,7 @@ export default async function HomePage() {
       </section>
 
       <section aria-labelledby="features" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
-        <h2 id="features" className="mb-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+        <h2 id="features" className="mb-7 text-center font-display text-sm font-semibold uppercase tracking-[0.22em] text-ink-muted">
           {home("featuresTitle")}
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -144,7 +144,7 @@ export default async function HomePage() {
 
       <section aria-labelledby="about" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
         <div className="glass-panel glass-rise px-6 py-10 sm:px-12 sm:py-14">
-          <h2 id="about" className="text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+          <h2 id="about" className="font-display text-sm font-semibold uppercase tracking-[0.22em] text-ink-muted">
             {home("aboutTitle")}
           </h2>
           <p className="mt-5 max-w-3xl text-pretty text-base leading-8 text-ink-secondary">{home("aboutBody")}</p>
@@ -165,7 +165,7 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-5xl px-4 pb-20 sm:pb-28">
         <div className="glass-panel glass-rise px-6 py-10 text-center sm:px-12">
-          <h2 className="text-2xl font-semibold text-ink sm:text-3xl">{home("startTitle")}</h2>
+          <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">{home("startTitle")}</h2>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-sm leading-7 text-ink-secondary">{home("startBody")}</p>
           <Link href={startHref} className={`glass-cta mt-7 ${buttonClasses("primary", "lg")}`}>
             {home("start")}

@@ -8,12 +8,21 @@ describe("the code from the account email", () => {
     assert.equal(otpSchema.safeParse(" 123456 ").data, "123456", "typed with a stray space, pasted from an email");
   });
 
-  it("is not five, not seven, and not eight", () => {
-    // Eight is the length GoTrue issues when the project's OTP setting was
-    // never turned down, and it arrived that way once. Accepting it would let
-    // the mismatch pass unnoticed while every screen still promises six.
-    for (const value of ["12345", "1234567", "12345678"]) {
-      assert.equal(otpSchema.safeParse(value).success, false, value);
+  it("is whatever length the project issues, because refusing it locks people out", () => {
+    // This test used to insist on exactly six, on the reasoning that accepting
+    // eight would hide a misconfigured project. The project was misconfigured,
+    // it sent eight, and the reasoning cost somebody their account: the field
+    // kept the first six characters of a correct code and refused them for
+    // ever. Only GoTrue can say whether a code is the right one; the form's job
+    // is to carry it there intact.
+    for (const value of ["123456", "1234567", "12345678"]) {
+      assert.equal(otpSchema.safeParse(value).success, true, value);
+    }
+  });
+
+  it("still refuses what is plainly not a code", () => {
+    for (const value of ["12345", "12345678901", "12345a", "", "  "]) {
+      assert.equal(otpSchema.safeParse(value).success, false, JSON.stringify(value));
     }
   });
 

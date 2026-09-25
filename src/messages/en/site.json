@@ -47,54 +47,54 @@
     "authority": "Ministry of Education and Science of the Republic of Tajikistan",
     "home": {
       "title": "The Istaravshan school portal",
-      "lead": "The class register, the timetable, marks and attendance — in one place, for the teacher, the pupil and the parent.",
+      "lead": "The class register, the timetable, marks and attendance — in one place. For the teacher, for the pupil, for the parents.",
       "start": "Start",
-      "whyTitle": "Why this one",
+      "whyTitle": "Why this portal",
       "why": {
         "journal": {
-          "title": "The register stays a register",
-          "body": "The same shape as the Tajik class journal: dates across the top, names down the left, and one square that takes a mark or a letter."
+          "title": "The same register",
+          "body": "The page opens exactly as a Tajik class register looks: dates written upwards across the top, surnames down the left, and in each square either a mark or a letter for an absence. A teacher has nothing to relearn."
         },
         "parents": {
-          "title": "Parents are not left guessing",
-          "body": "A child's attendance and marks are known the same day, not at the end of the term."
+          "title": "Parents know the same day",
+          "body": "A mark a teacher enters is in the parents' Telegram twelve minutes later, and the day's summary arrives in the evening — not at the end of the term, when nothing can be put right."
         },
         "official": {
-          "title": "Records stay where they belong",
-          "body": "Everyone sees what they should see and nothing else. The database decides that, not the page."
+          "title": "Everyone sees their own",
+          "body": "What a person may see is decided by the database, not by the look of a page. The teacher sees their class register, the pupil their marks, the parents only their own child."
         }
       },
-      "featuresTitle": "What it does",
+      "featuresTitle": "What the portal does",
       "features": {
-        "grades": {
-          "title": "Marks and statistics",
-          "body": "A rating in percent and points, by subject and by term."
+        "journal": {
+          "title": "The class register and marks",
+          "body": "A mark or an absence in one square, the term column at the end, the topic of each lesson on the facing page. Every mark keeps its date, its subject and the name of the teacher who entered it."
         },
         "timetable": {
-          "title": "Timetable",
-          "body": "The class's week, the teacher's week and cover, in one place."
+          "title": "Timetable and attendance",
+          "body": "The weekly timetable of classes and teachers, bells, rooms and substitutions. Two lessons at the same hour simply will not save."
         },
-        "news": {
-          "title": "News and notices",
-          "body": "Photographs, comments, and naming a pupil by their nickname."
-        },
-        "documents": {
-          "title": "Documents and library",
-          "body": "Official documents and electronic books."
-        },
-        "languages": {
-          "title": "Three languages",
-          "body": "Tajik, Russian and English — completely, not halfway."
+        "parents": {
+          "title": "The parents' Telegram bot",
+          "body": "Parents sign in with their child's nickname and the code the school printed. Marks, absences, timetable and the day's summary — with no account and no portal password."
         },
         "people": {
-          "title": "Import from Excel",
-          "body": "Pupils, teachers and the timetable from a workbook, with logins issued."
+          "title": "Starting from one file",
+          "body": "Pupils, staff and the timetable are read from an Excel file. The portal issues everyone a login and a password and hands the same file back with them filled in."
+        },
+        "content": {
+          "title": "The life of the school",
+          "body": "Announcements, news, events, official documents and an electronic library — with photographs, comments and pupils mentioned by name."
+        },
+        "languages": {
+          "title": "Three languages, in full",
+          "body": "Tajik, Russian and English — every page, every message and every document. Each person chooses their own."
         }
       },
-      "aboutTitle": "About the system, and about us",
-      "aboutBody": "This portal was built for the schools of Istaravshan. The aim is one thing: that the work done today in a paper book and in WhatsApp groups should be done in one orderly, dependable place — without asking a teacher to do the same work twice.",
+      "aboutTitle": "About the system and about us",
+      "aboutBody": "This portal was built for the schools of Istaravshan. It has one aim: to gather what is scattered today across paper registers and WhatsApp groups into one orderly, dependable place — without making a teacher do the same work twice.",
       "startTitle": "Ready?",
-      "startBody": "The school office issues your login and password. Enter them on the sign-in page."
+      "startBody": "The school administration issues the login and password. Enter them on the sign-in page."
     }
   }
 }

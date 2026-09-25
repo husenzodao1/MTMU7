@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Plus, School, Upload } from "lucide-react";
+import { Plus, School } from "lucide-react";
 import { ClassFields } from "@/features/admin/academic/class-fields";
 import { saveClassAction } from "@/features/admin/academic/structure-actions";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { fullName, getStaffOptions } from "@/features/admin/queries";
 import { FormDialog } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
@@ -73,7 +73,9 @@ export default async function AdminClassesPage({ searchParams }: { searchParams:
         description={year ? t("descriptionYear", { year: year.name }) : t("description")}
         actions={year && can(access, "classes.create") ? (
           <>
-            <Link href="/admin/classes/import" className={buttonClasses("secondary")}><Upload aria-hidden />{t("import")}</Link>
+            {/* Classes are not imported on their own any more: the register
+                workbook names each pupil's class, and the import makes the ones
+                the school has not made yet. One way to do it, not two. */}
             <FormDialog action={saveClassAction} trigger={<Button><Plus aria-hidden />{t("new")}</Button>} title={t("new")} description={t("newHint", { year: year.name })} submitLabel={tc("create")} size="lg">
               <ClassFields academicYearId={year.id} staff={staff.map(({ value, label }) => ({ value, label }))} rooms={(rooms ?? []).map((r) => ({ value: r.id, label: r.name }))} />
             </FormDialog>

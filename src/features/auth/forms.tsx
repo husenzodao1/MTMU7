@@ -88,7 +88,11 @@ function CodeField() {
       inputMode="numeric"
       autoComplete="one-time-code"
       pattern="[0-9]*"
-      maxLength={6}
+      // Six is what the project should be set to send and what the hint
+      // promises. The field takes more anyway: a project set to eight would
+      // otherwise let somebody paste their code, silently keep the first six,
+      // and refuse them for ever with no way to tell why.
+      maxLength={10}
       required
       className="[&_input]:text-lg [&_input]:tracking-[0.3em]"
     />

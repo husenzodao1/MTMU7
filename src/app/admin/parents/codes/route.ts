@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { buildWorkbook, type Sheet } from "@/lib/export/xlsx";
 import { can, getAccess } from "@/lib/auth/access";
+import { todayIso } from "@/lib/i18n/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -65,12 +66,17 @@ export async function POST(request: Request) {
     [sheet]
   );
 
-  const stamp = new Date().toISOString().slice(0, 10);
-  const name = `parent-codes-${rows[0]?.class_name ?? "class"}-${stamp}.xlsx`.replace(/[^\w.-]/g, "_");
+  // The school's own day, not the server's: at three in the morning in
+  // Dushanbe the UTC date is still yesterday, and the file would be misfiled.
+  const stamp = todayIso(access.school.timezone);
+  // Named for the class in the school's own alphabet. Stripping it to ASCII
+  // turned both 5А and 5Б into "5_", so the second download quietly replaced
+  // the first.
+  const name = `${t("sheet")} ${rows[0]?.class_name ?? ""} ${stamp}`.trim().replace(/\s+/g, " ");
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${name}"`,
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(name)}.xlsx`,
       "Cache-Control": "no-store",
     },
   });

@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { canEnterAdmin, getAccess } from "@/lib/auth/access";
-import { toCsv } from "@/lib/export/csv";
 import { buildWorkbook } from "@/lib/export/xlsx";
 import { createClient } from "@/lib/supabase/server";
-import { IMPORT_CONFIG, isImportKind } from "@/features/admin/import/config";
 import { isPeopleKind, PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE, type SheetSpec } from "@/features/admin/import/templates";
 import { isSampleKind, sampleRows, SAMPLE_NOTICE } from "@/features/admin/import/samples";
 
@@ -78,13 +76,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
     });
   }
 
-  if (!isImportKind(kind)) return new NextResponse(null, { status: 404 });
-  const csvColumns = IMPORT_CONFIG[kind].columns.map((header) => ({ header, value: () => "" }));
-  return new NextResponse(toCsv([], csvColumns), {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${kind}-template.csv"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
+  return new NextResponse(null, { status: 404 });
 }

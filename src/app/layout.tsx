@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Noto_Sans } from "next/font/google";
+import { Noto_Sans, Noto_Serif } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
 import "@/styles/globals.css";
@@ -10,6 +10,20 @@ const notoSans = Noto_Sans({
   subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
   display: "swap",
   variable: "--font-noto-sans",
+});
+
+/**
+ * For the few lines that are meant to be looked at rather than read through:
+ * the front page's title, its section headings, the school's name in the
+ * footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
+ * most display faces do not, so the letters that make the language its own do
+ * not fall back to a different font mid-word.
+ */
+const notoSerif = Noto_Serif({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  variable: "--font-noto-serif",
 });
 
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
@@ -48,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const t = await getTranslations("common");
 
   return (
-    <html lang={locale} className={notoSans.variable}>
+    <html lang={locale} className={`${notoSans.variable} ${notoSerif.variable}`}>
       <body className="min-h-dvh">
         <a href="#main" className="skip-link">
           {t("skipToContent")}
