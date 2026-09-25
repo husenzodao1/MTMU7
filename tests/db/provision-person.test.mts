@@ -171,3 +171,39 @@ describe("adding somebody the school already holds", () => {
     assert.deepEqual(named, [{ last_name: "Назарзода" }]);
   });
 });
+
+describe("the director", () => {
+  it("is offered, and carries the whole school with them", async () => {
+    const director = await provision(
+      t.users.adminA,
+      "staff",
+      teacher({ employee_number: "50", email: "director@maktab.tj", position: "директор" }),
+      await roleId("director")
+    );
+    assert.equal(director.valid, true);
+
+    const access = await asUser(db, director.userId!, (tx) =>
+      one<{ a: { permissions: string[] } }>(tx, `SELECT public.get_my_access() AS a`)
+    );
+    const held = access!.a.permissions;
+    // Every journal in the school, not only their own: grades.update is what
+    // app.may_keep_journal accepts in place of teaching the class.
+    for (const needed of ["grades.update", "grades.approve", "timetable.manage", "students.import", "users.update", "settings.update"]) {
+      assert.ok(held.includes(needed), `a director must be able to ${needed}`);
+    }
+  });
+
+  it("may write in a journal that is not theirs", async () => {
+    const director = await one<{ id: string }>(
+      db,
+      `SELECT u.id FROM public.users u WHERE u.email = 'director@maktab.tj'`
+    );
+    const mine = await asUser(db, director!.id, (tx) =>
+      one<{ ok: boolean }>(
+        tx,
+        `SELECT app.may_keep_journal(cs.id) AS ok FROM public.class_subjects cs LIMIT 1`
+      )
+    );
+    assert.equal(mine!.ok, true);
+  });
+});

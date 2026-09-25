@@ -22,7 +22,7 @@ export async function OfficialStrip() {
   const emblem = identity.emblemUrl ?? DEFAULT_EMBLEM;
 
   return (
-    <div className="relative isolate overflow-hidden border-b border-black/20">
+    <div className="relative isolate z-10 overflow-hidden border-b border-black/20">
       <div
         aria-hidden
         className="absolute inset-0 -z-20 bg-[url('/gov/flag-strip.webp')] bg-cover bg-center"
@@ -91,7 +91,7 @@ export async function SiteFooter({
   const linkClass = "rounded-sm text-ink-secondary transition-colors hover:text-brand-text hover:underline";
 
   return (
-    <footer className="relative isolate mt-auto overflow-hidden bg-surface">
+    <footer className="relative isolate z-10 mt-auto overflow-hidden bg-surface">
       {/* A band of the flag closes the page the way the strip opens it. It is a
           band rather than a wash because a photograph behind running text costs
           contrast, and this costs none. */}

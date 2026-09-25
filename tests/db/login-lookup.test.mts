@@ -8,7 +8,7 @@ let t: Tenants;
 let studentLogin: string;
 let studentEmail: string;
 
-const SECRET = "a-server-side-secret-of-at-least-32-chars";
+const LOOKUP_SECRET = "a-server-side-secret-of-at-least-32-chars";
 
 const lookup = (login: string, secret: string | null) =>
   asAnon(db, (tx) => one<{ email: string | null }>(tx, `SELECT public.login_lookup($1, $2) AS email`, [login, secret])).then(
@@ -30,7 +30,7 @@ after(async () => {
 
 describe("before a secret has been set", () => {
   it("answers nothing, for every login and every secret", async () => {
-    assert.equal(await lookup(studentLogin, SECRET), null);
+    assert.equal(await lookup(studentLogin, LOOKUP_SECRET), null);
     assert.equal(await lookup(studentLogin, null), null);
   });
 });
@@ -38,11 +38,11 @@ describe("before a secret has been set", () => {
 describe("setting the secret", () => {
   it("is refused to everyone but the platform itself", async () => {
     assert.equal(
-      await errorOf(() => asUser(db, t.users.adminA, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [SECRET]))),
+      await errorOf(() => asUser(db, t.users.adminA, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [LOOKUP_SECRET]))),
       "permission denied for function set_login_secret"
     );
     assert.equal(
-      await errorOf(() => asAnon(db, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [SECRET]))),
+      await errorOf(() => asAnon(db, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [LOOKUP_SECRET]))),
       "permission denied for function set_login_secret"
     );
   });
@@ -52,20 +52,20 @@ describe("setting the secret", () => {
   });
 
   it("stores only a digest of it", async () => {
-    await asService(db, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [SECRET]));
+    await asService(db, (tx) => tx.query(`SELECT public.set_login_secret($1)`, [LOOKUP_SECRET]));
     const stored = await one<{ secret_sha256: string }>(db, `SELECT secret_sha256 FROM public.login_secret WHERE id = 1`);
     assert.match(stored!.secret_sha256, /^[0-9a-f]{64}$/);
-    assert.ok(!stored!.secret_sha256.includes(SECRET));
+    assert.ok(!stored!.secret_sha256.includes(LOOKUP_SECRET));
   });
 });
 
 describe("looking a login up", () => {
   it("gives the address the school issued the login against", async () => {
-    assert.equal(await lookup(studentLogin, SECRET), studentEmail);
+    assert.equal(await lookup(studentLogin, LOOKUP_SECRET), studentEmail);
   });
 
   it("does not care how the login was typed", async () => {
-    assert.equal(await lookup(`  ${studentLogin.toLowerCase()} `, SECRET), studentEmail);
+    assert.equal(await lookup(`  ${studentLogin.toLowerCase()} `, LOOKUP_SECRET), studentEmail);
   });
 
   it("tells a caller without the secret nothing at all", async () => {
@@ -77,7 +77,7 @@ describe("looking a login up", () => {
   });
 
   it("answers nothing for a login nobody holds", async () => {
-    assert.equal(await lookup("MT99999", SECRET), null);
+    assert.equal(await lookup("MT99999", LOOKUP_SECRET), null);
   });
 
   it("answers nothing for an account that may not sign in", async () => {
@@ -89,7 +89,7 @@ describe("looking a login up", () => {
         [userId]
       );
       const usable = status!.is_active && !["blocked", "rejected"].includes(status!.status);
-      assert.equal(await lookup(login!.public_id, SECRET), usable ? studentEmail : null, `login for ${status!.status}`);
+      assert.equal(await lookup(login!.public_id, LOOKUP_SECRET), usable ? studentEmail : null, `login for ${status!.status}`);
     }
   });
 });
@@ -148,8 +148,8 @@ describe("the session snapshot", () => {
 describe("signing in with a nickname", () => {
   it("finds the account the nickname belongs to", async () => {
     await db.query(`UPDATE public.users SET nickname = 'ali_k' WHERE id = $1`, [t.users.studentA]);
-    assert.equal(await lookup("ali_k", SECRET), studentEmail);
-    assert.equal(await lookup("  ALI_K ", SECRET), studentEmail, "typed as it was remembered, not as it was stored");
+    assert.equal(await lookup("ali_k", LOOKUP_SECRET), studentEmail);
+    assert.equal(await lookup("  ALI_K ", LOOKUP_SECRET), studentEmail, "typed as it was remembered, not as it was stored");
   });
 
   it("still answers nothing without the secret", async () => {
@@ -160,12 +160,12 @@ describe("signing in with a nickname", () => {
     // A nickname is unique inside a school, not across the platform. Picking
     // one of two people would sign somebody into the wrong account.
     await db.query(`UPDATE public.users SET nickname = 'ali_k' WHERE id = $1`, [t.users.studentB]);
-    assert.equal(await lookup("ali_k", SECRET), null);
+    assert.equal(await lookup("ali_k", LOOKUP_SECRET), null);
     await db.query(`UPDATE public.users SET nickname = NULL WHERE id = $1`, [t.users.studentB]);
   });
 
   it("answers nothing for a blocked account", async () => {
     await db.query(`UPDATE public.users SET nickname = 'blocked_one' WHERE id = $1`, [t.users.blockedA]);
-    assert.equal(await lookup("blocked_one", SECRET), null);
+    assert.equal(await lookup("blocked_one", LOOKUP_SECRET), null);
   });
 });

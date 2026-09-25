@@ -1,123 +1,178 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, CalendarDays, FileText, LogIn, Newspaper } from "lucide-react";
+import { ArrowRight, CalendarDays, ClipboardCheck, FileText, GraduationCap, Languages, Newspaper, ShieldCheck, Users } from "lucide-react";
 import { EventHighlights, NewsHighlights } from "@/features/site/highlights";
 import { getPublicEvents, getPublicNews } from "@/features/site/public-content";
 import { buttonClasses } from "@/components/ui/button";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { getPlatformIdentity, getPublicSchoolBySlug, resolveHomeSchoolSlug } from "@/lib/site/identity";
+import { safeImageUrl } from "@/lib/site/auth-school";
+
+/** Shown when the school has not supplied a photograph of its own. */
+const FALLBACK_BACKGROUND = "/images/school-bg.webp";
 
 export async function generateMetadata(): Promise<Metadata> {
   const slug = await resolveHomeSchoolSlug();
   const school = slug ? await getPublicSchoolBySlug(slug) : null;
   const identity = await getPlatformIdentity();
   const t = await getTranslations("site.public");
-  // Before the owner approves the official identity, the page stays on the
-  // neutral interface label rather than showing an unapproved school name.
   const title = identity.isApproved && school?.shortName ? school.shortName : t("schoolSite");
   return { title, alternates: { canonical: "/" }, openGraph: { title, type: "website" } };
 }
 
+/**
+ * The front door.
+ *
+ * One photograph of the school, held well back and blurred, with panels of
+ * frosted glass over it: what the portal is for, what it does, who built it,
+ * and one button that starts.
+ *
+ * Nothing here waits for an approval. A visitor arriving before the ministry
+ * has signed off the official wording used to meet a row of boxes saying that
+ * text and images were pending, which tells them nothing and looks broken. The
+ * official name and photograph are still gated — those are claims the school
+ * makes about itself — but what fills the page meanwhile is the platform's own
+ * description of itself, which is true whoever is reading.
+ */
 export default async function HomePage() {
   const t = await getTranslations("site.public");
+  const home = await getTranslations("site.home");
   const slug = await resolveHomeSchoolSlug();
   const school = slug ? await getPublicSchoolBySlug(slug) : null;
 
-  if (!school) {
-    return (
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-        <div className="max-w-2xl border-s-4 border-brand-600 ps-5">
-          <p className="text-sm font-semibold uppercase tracking-wide text-brand-text">{t("schoolSite")}</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">{t("directoryTitle")}</h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-ink-secondary">{t("directoryDescription")}</p>
-          <Link className={`mt-7 ${buttonClasses("primary")}`} href="/schools">
-            {t("openSchool")}
+  const [identity, localeValue] = await Promise.all([getPlatformIdentity(), getLocale()]);
+  const locale = localeValue as Locale;
+  const attribution = pickText(identity.footerAttribution, locale);
+  const approved = identity.isApproved;
+  const schoolName = approved && school ? pickText(school.officialName, locale) || school.fullName : "";
+  const background = (approved && school ? safeImageUrl(school.photoUrl) : null) ?? FALLBACK_BACKGROUND;
+
+  const [news, events] = school
+    ? await Promise.all([getPublicNews(school.id, 4), getPublicEvents(school.id, 3)])
+    : [[], []];
+
+  // Where "start" leads: straight to the sign-in card of this school, or to the
+  // list when the platform carries several — which is the same first question
+  // either way.
+  const startHref = school ? "/login" : "/schools";
+
+  const reasons = [
+    { icon: ClipboardCheck, key: "journal" },
+    { icon: Users, key: "parents" },
+    { icon: ShieldCheck, key: "official" },
+  ] as const;
+
+  const features = [
+    { icon: GraduationCap, key: "grades" },
+    { icon: CalendarDays, key: "timetable" },
+    { icon: Newspaper, key: "news" },
+    { icon: FileText, key: "documents" },
+    { icon: Languages, key: "languages" },
+    { icon: Users, key: "people" },
+  ] as const;
+
+  return (
+    <div className="relative isolate">
+      {/* The school itself, far enough back that every panel over it keeps its
+          own contrast. Fixed, so the glass slides over a still photograph. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-30 bg-cover bg-center"
+        style={{ backgroundImage: `url("${background}")`, filter: "blur(18px) saturate(115%)", transform: "scale(1.08)" }}
+      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 bg-canvas/72" />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_0%,transparent_10%,var(--color-canvas)_90%)]"
+      />
+
+      <section className="mx-auto max-w-5xl px-4 pb-16 pt-14 sm:pb-24 sm:pt-20">
+        <div className="glass-panel glass-enter px-6 py-12 text-center sm:px-12 sm:py-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-text">{t("schoolSite")}</p>
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-ink sm:text-6xl">
+            {schoolName || home("title")}
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-8 text-ink-secondary sm:text-lg">
+            {home("lead")}
+          </p>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link href={startHref} className={`glass-cta ${buttonClasses("primary", "lg")}`}>
+              {home("start")}
+              <ArrowRight aria-hidden />
+            </Link>
+            {school ? (
+              <Link href={`/s/${school.slug}`} className={buttonClasses("secondary", "lg")}>
+                {t("openSchool")}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="why" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
+        <h2 id="why" className="mb-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+          {home("whyTitle")}
+        </h2>
+        <ul className="grid gap-4 sm:grid-cols-3">
+          {reasons.map(({ icon: Icon, key }) => (
+            <li key={key} className="glass-panel glass-rise glass-tilt p-6">
+              <Icon className="size-7 text-brand-text" aria-hidden />
+              <h3 className="mt-4 text-lg font-semibold text-ink">{home(`why.${key}.title`)}</h3>
+              <p className="mt-2 text-sm leading-6 text-ink-secondary">{home(`why.${key}.body`)}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="features" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
+        <h2 id="features" className="mb-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+          {home("featuresTitle")}
+        </h2>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map(({ icon: Icon, key }) => (
+            <li key={key} className="glass-panel glass-rise glass-tilt flex items-start gap-3 p-5">
+              <Icon className="mt-0.5 size-5 shrink-0 text-brand-text" aria-hidden />
+              <div>
+                <h3 className="font-medium text-ink">{home(`features.${key}.title`)}</h3>
+                <p className="mt-1 text-sm leading-6 text-ink-secondary">{home(`features.${key}.body`)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="about" className="mx-auto max-w-5xl px-4 pb-16 sm:pb-24">
+        <div className="glass-panel glass-rise px-6 py-10 sm:px-12 sm:py-14">
+          <h2 id="about" className="text-sm font-semibold uppercase tracking-[0.2em] text-ink-muted">
+            {home("aboutTitle")}
+          </h2>
+          <p className="mt-5 max-w-3xl text-pretty text-base leading-8 text-ink-secondary">{home("aboutBody")}</p>
+          {attribution ? (
+            <p className="mt-6 border-t border-line/60 pt-5 text-sm text-ink-muted">
+              {t("developedBy")} <span className="text-ink-secondary">{attribution}</span>
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {school && (news.length > 0 || events.length > 0) ? (
+        <div className="bg-canvas/85">
+          <NewsHighlights articles={news} schoolSlug={school.slug} />
+          <EventHighlights events={events} schoolSlug={school.slug} />
+        </div>
+      ) : null}
+
+      <section className="mx-auto max-w-5xl px-4 pb-20 sm:pb-28">
+        <div className="glass-panel glass-rise px-6 py-10 text-center sm:px-12">
+          <h2 className="text-2xl font-semibold text-ink sm:text-3xl">{home("startTitle")}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-pretty text-sm leading-7 text-ink-secondary">{home("startBody")}</p>
+          <Link href={startHref} className={`glass-cta mt-7 ${buttonClasses("primary", "lg")}`}>
+            {home("start")}
             <ArrowRight aria-hidden />
           </Link>
         </div>
       </section>
-    );
-  }
-
-  const [identity, localeValue, news, events] = await Promise.all([
-    getPlatformIdentity(),
-    getLocale(),
-    getPublicNews(school.id, 4),
-    getPublicEvents(school.id, 3),
-  ]);
-  const locale = localeValue as Locale;
-  const showOfficialIdentity = identity.isApproved;
-  const schoolName = showOfficialIdentity ? pickText(school.officialName, locale) : "";
-  const schoolDescription = showOfficialIdentity ? pickText(school.description, locale) : "";
-
-  const sections = [
-    { href: `/s/${school.slug}/news`, icon: Newspaper, label: t("news") },
-    { href: `/s/${school.slug}/events`, icon: CalendarDays, label: t("events") },
-    { href: `/s/${school.slug}/documents`, icon: FileText, label: t("documents") },
-    { href: "/login", icon: LogIn, label: t("portalEntry") },
-  ];
-
-  return (
-    <>
-      <section className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-          <div className="border-s-4 border-brand-600 ps-5 sm:ps-7">
-            <p className="text-sm font-semibold uppercase tracking-wide text-brand-text">{t("schoolSite")}</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
-              {schoolName || t("ownerTextPending")}
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-ink-secondary">
-              {schoolDescription || t("schoolDescription")}
-            </p>
-            {!showOfficialIdentity ? <p className="mt-4 text-sm text-ink-secondary">{t("officialPending")}</p> : null}
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link className={buttonClasses("primary")} href={`/s/${school.slug}`}>
-                {t("openSchool")}
-                <ArrowRight aria-hidden />
-              </Link>
-              <Link className={buttonClasses("secondary")} href="/login">
-                <LogIn aria-hidden />
-                {t("portalEntry")}
-              </Link>
-            </div>
-          </div>
-          <div className="flex min-h-64 items-center justify-center overflow-hidden border border-line bg-canvas px-6 py-12 text-center text-sm text-ink-secondary">
-            {showOfficialIdentity && school.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- owner-supplied school image URL
-              <img src={school.photoUrl} alt={school.fullName} className="h-full max-h-80 w-full object-cover" />
-            ) : (
-              t("ownerImagePending")
-            )}
-          </div>
-        </div>
-      </section>
-
-      <NewsHighlights articles={news} schoolSlug={school.slug} />
-      <EventHighlights events={events} schoolSlug={school.slug} />
-
-      <section aria-labelledby="site-sections" className="border-t border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          <h2 id="site-sections" className="text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("sections")}</h2>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {sections.map(({ href, icon: Icon, label }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-3 border border-line bg-canvas p-4 font-medium text-ink hover:border-brand-600 hover:text-brand-text">
-                  <Icon className="size-5 shrink-0 text-ink-muted" aria-hidden />
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {school.address || school.phone || school.email ? (
-            <address className="mt-8 grid gap-1 border-t border-line pt-6 text-sm not-italic text-ink-secondary sm:grid-cols-3">
-              {school.address ? <span>{school.address}</span> : null}
-              {school.phone ? <a className="hover:text-brand-text hover:underline" href={`tel:${school.phone}`}>{school.phone}</a> : null}
-              {school.email ? <a className="hover:text-brand-text hover:underline" href={`mailto:${school.email}`}>{school.email}</a> : null}
-            </address>
-          ) : null}
-        </div>
-      </section>
-    </>
+    </div>
   );
 }
