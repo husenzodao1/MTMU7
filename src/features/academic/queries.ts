@@ -56,7 +56,10 @@ const studentOverviewSchema = z.object({
       assessment_en: ns,
     })
   ),
-  attendance_term: z.object({ present: num, late: num, absent: num, excused: num, total: num }),
+  // `lessons` is how many were held, which is what an attendance share is out
+  // of; `total` is how many rows the register happens to hold. Optional so that
+  // a reply from before migration 00060 still parses.
+  attendance_term: z.object({ present: num, late: num, absent: num, excused: num, total: num, lessons: num.optional() }),
 });
 
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;

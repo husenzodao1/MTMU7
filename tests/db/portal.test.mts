@@ -96,3 +96,81 @@ describe("announcement attachments", () => {
     assert.match(upload ?? "", /row-level security/);
   });
 });
+
+describe("what a pupil is told their attendance is", () => {
+  interface Term {
+    present: number;
+    late: number;
+    absent: number;
+    excused: number;
+    total: number;
+    lessons: number;
+  }
+
+  const overview = () =>
+    asUser(db, t.users.studentA, (tx) =>
+      one<{ j: { attendance_term: Term } }>(tx, `SELECT public.student_overview() AS j`)
+    ).then((r) => r!.j.attendance_term);
+
+  it("counts the lessons that were held, not the rows the register happens to hold", async () => {
+    // This is how a class journal is actually kept: the teacher rules a column
+    // for each lesson and writes only the exceptions. Counting 'present' rows
+    // told a pupil with one late mark that their attendance was nought.
+    await db.query(`DELETE FROM public.attendance_records WHERE student_id = $1`, [a.students.studentA]);
+    await db.query(`DELETE FROM public.journal_columns WHERE class_subject_id = $1`, [a.mathA]);
+    for (let back = 1; back <= 10; back += 1) {
+      await db.query(
+        `INSERT INTO public.journal_columns (school_id, class_subject_id, academic_term_id, kind, column_date, assessment_type_id)
+         VALUES ($1, $2, $3, 'lesson', current_date - $4::int, $5)`,
+        [SCHOOL_A, a.mathA, a.termCurrent, back, a.assessmentTest]
+      );
+    }
+    await db.query(
+      `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, status)
+       VALUES ($1, $2, $3, $4, current_date - 1, 'absent')`,
+      [SCHOOL_A, a.students.studentA, a.class9A, a.mathA]
+    );
+
+    const summary = await overview();
+    assert.equal(summary.lessons, 10, "ten columns were ruled");
+    assert.equal(summary.absent, 1);
+    assert.equal(summary.present, 0, "a blank square is not a row");
+    // 9 of 10 — which is what the page now shows, instead of 0%.
+    assert.equal(Math.round(((summary.lessons - summary.absent - summary.excused) / summary.lessons) * 100), 90);
+  });
+
+  it("still works for a school that calls the roll every lesson", async () => {
+    await db.query(`DELETE FROM public.journal_columns WHERE class_subject_id = $1`, [a.mathA]);
+    await db.query(`DELETE FROM public.attendance_records WHERE student_id = $1`, [a.students.studentA]);
+    for (let back = 1; back <= 4; back += 1) {
+      await db.query(
+        `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, status)
+         VALUES ($1, $2, $3, $4, current_date - $5::int, $6)`,
+        [SCHOOL_A, a.students.studentA, a.class9A, a.mathA, back, back === 1 ? "absent" : "present"]
+      );
+    }
+    const summary = await overview();
+    assert.equal(summary.lessons, 0, "no columns were ruled");
+    assert.equal(summary.total, 4, "so the register's own rows are the lessons");
+    assert.equal(Math.max(summary.lessons, summary.total) - summary.absent - summary.excused, 3);
+  });
+
+  it("does not hold a lesson against a pupil who had not arrived yet", async () => {
+    await db.query(`UPDATE public.enrollments SET enrolled_on = current_date - 3 WHERE student_id = $1`, [
+      a.students.studentA,
+    ]);
+    await db.query(`DELETE FROM public.attendance_records WHERE student_id = $1`, [a.students.studentA]);
+    for (let back = 1; back <= 10; back += 1) {
+      await db.query(
+        `INSERT INTO public.journal_columns (school_id, class_subject_id, academic_term_id, kind, column_date, assessment_type_id)
+         VALUES ($1, $2, $3, 'lesson', current_date - $4::int, $5)`,
+        [SCHOOL_A, a.mathA, a.termCurrent, back, a.assessmentTest]
+      );
+    }
+    const summary = await overview();
+    assert.equal(summary.lessons, 3, "only the lessons since they joined the class");
+    await db.query(`UPDATE public.enrollments SET enrolled_on = current_date - 60 WHERE student_id = $1`, [
+      a.students.studentA,
+    ]);
+  });
+});

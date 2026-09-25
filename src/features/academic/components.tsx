@@ -105,7 +105,13 @@ export async function AttendanceSummary({ summary }: { summary: StudentOverview[
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("common.status");
   const tp = await getTranslations("portal.attendance");
-  const rate = summary.total > 0 ? ((summary.present + summary.late) / summary.total) * 100 : null;
+  // A journal records the exceptions: a blank square means the child was in
+  // their seat, so counting 'present' rows would put almost everybody at nought
+  // per cent. The denominator is the lessons that were held — or, in a school
+  // that calls the roll every time, the register's own rows, whichever is more.
+  const held = Math.max(summary.lessons ?? 0, summary.total);
+  const missed = summary.absent + summary.excused;
+  const rate = held > 0 ? (Math.max(held - missed, 0) / held) * 100 : null;
   const items = [
     { key: "present", value: summary.present },
     { key: "late", value: summary.late },
