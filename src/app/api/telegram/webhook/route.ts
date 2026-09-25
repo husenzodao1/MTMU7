@@ -29,7 +29,7 @@ function sameSecret(sent: string | null, expected: string): boolean {
 
 export async function POST(request: Request) {
   const secret = serverEnv.TELEGRAM_WEBHOOK_SECRET;
-  if (!secret || !isTelegramConfigured()) {
+  if (!secret || !isTelegramConfigured() || !serverEnv.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
   }
   if (!sameSecret(request.headers.get("x-telegram-bot-api-secret-token"), secret)) {

@@ -25,8 +25,13 @@ async function dispatch(request: Request) {
   if (!hasValidCronAuthorization(request.headers.get("authorization"), serverEnv.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // Both halves are needed, and saying which one is missing saves somebody an
+  // afternoon: without the service key every call below fails on its own.
   if (!isTelegramConfigured()) {
-    return NextResponse.json({ error: "Not configured" }, { status: 503 });
+    return NextResponse.json({ error: "TELEGRAM_BOT_TOKEN is not configured" }, { status: 503 });
+  }
+  if (!serverEnv.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is not configured" }, { status: 503 });
   }
 
   let queued = 0;
