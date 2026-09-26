@@ -1,7 +1,10 @@
 import "server-only";
-import { readSheet } from "read-excel-file/node";
+import { readSheet, SheetNotFoundError } from "read-excel-file/node";
 import { cellText } from "@/lib/import/cells";
 import { normalizeHeader } from "@/features/admin/import/templates";
+import { fromHeadingRow, pickSheet, type ColumnMatch, type NamedSheet } from "@/lib/import/sheet-pick";
+
+export type { ColumnMatch } from "@/lib/import/sheet-pick";
 
 /**
  * Reading a workbook the school office filled in.
@@ -31,9 +34,12 @@ export interface SheetRead {
 // strip, which would put this module out of reach of the tests.
 export class SheetMissingError extends Error {
   readonly sheet: string;
-  constructor(sheet: string) {
+  /** The sheets the file does have, so the message can name them. */
+  readonly found: string[];
+  constructor(sheet: string, found: string[] = []) {
     super(`sheet_missing:${sheet}`);
     this.sheet = sheet;
+    this.found = found;
   }
 }
 
@@ -45,10 +51,49 @@ export class ColumnsMissingError extends Error {
   }
 }
 
-export interface ColumnMatch {
-  key: string;
-  header: string;
-  required?: boolean;
+/** The file is not a workbook this reader can open: not a zip, encrypted, cut short. */
+export class UnreadableWorkbookError extends Error {
+  readonly reason: string;
+  constructor(reason: string) {
+    super(`unreadable:${reason}`);
+    this.reason = reason;
+  }
+}
+
+const readRows = async (file: Buffer, sheet: string) => (await readSheet(file, sheet)) as unknown[][];
+
+/**
+ * The sheet to read: the one named in the template, or when there is none by
+ * that name, the one pickSheet recognises.
+ *
+ * It used to be that anything going wrong here came out as "the sheet is
+ * missing", which sent the office looking for a tab that was right there.
+ * Now only a workbook with several sheets and none of them recognisable says
+ * so; a file that cannot be opened at all says that instead.
+ */
+async function findSheet(file: Buffer, sheetName: string, columns: readonly ColumnMatch[]): Promise<unknown[][]> {
+  let names: string[];
+  try {
+    return await readRows(file, sheetName);
+  } catch (error) {
+    if (!(error instanceof SheetNotFoundError) && (error as Error)?.name !== "SheetNotFoundError") {
+      console.warn("[import] workbook could not be read", error);
+      throw new UnreadableWorkbookError((error as Error)?.name ?? "unknown");
+    }
+    // The library sets `sheets`, the names the file does have, without
+    // declaring it.
+    const found = (error as { sheets?: unknown }).sheets;
+    names = Array.isArray(found) ? found.filter((name): name is string => typeof name === "string") : [];
+  }
+
+  const sheets: NamedSheet[] = [];
+  for (const name of names.slice(0, 12)) {
+    // One odd sheet (a chart, a pivot) should not cost the others.
+    sheets.push({ name, rows: await readRows(file, name).catch(() => []) });
+  }
+  const rows = pickSheet(sheets, sheetName, columns);
+  if (!rows) throw new SheetMissingError(sheetName, names);
+  return rows;
 }
 
 /**
@@ -64,16 +109,7 @@ export async function readSheetRows(
   columns: readonly ColumnMatch[],
   maxRows: number
 ): Promise<SheetRead> {
-  let raw: unknown[][];
-  try {
-    raw = (await readSheet(file, sheetName)) as unknown[][];
-  } catch {
-    // Whatever went wrong — no such sheet, not a spreadsheet at all, a file
-    // that never finished uploading — the office needs the same instruction:
-    // this is not the workbook we handed you.
-    throw new SheetMissingError(sheetName);
-  }
-  if (raw.length === 0) throw new SheetMissingError(sheetName);
+  const raw = fromHeadingRow(await findSheet(file, sheetName, columns), columns);
 
   const headers = (raw[0] ?? []).map((cell) => cellText(cell));
   const position = new Map<string, number>();

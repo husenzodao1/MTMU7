@@ -1,7 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { cellText } from "../../src/lib/import/cells.ts";
-import { normalizeHeader, PEOPLE_TEMPLATES } from "../../src/features/admin/import/templates.ts";
+import { fromHeadingRow, pickSheet } from "../../src/lib/import/sheet-pick.ts";
+import { normalizeHeader, PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE } from "../../src/features/admin/import/templates.ts";
 
 describe("what a spreadsheet hands back", () => {
   it("reads a date cell as the day it says, in any timezone", () => {
@@ -34,6 +35,55 @@ describe("matching a heading to its column", () => {
     // became the empty string and the column vanished. These templates are
     // written in Tajik, so they need their own comparison.
     assert.notEqual(normalizeHeader("Синф"), "");
+  });
+
+  it("forgives the Tajik letters a Russian keyboard does not have", () => {
+    assert.equal(normalizeHeader("Руз"), normalizeHeader("Рӯз*"));
+    assert.equal(normalizeHeader("Чадвал"), normalizeHeader("Ҷадвал"));
+    // "у" followed by a combining macron, as some Tajik layouts type "ӯ".
+    assert.equal(normalizeHeader("Ру\u0304з"), normalizeHeader("Рӯз"));
+  });
+});
+
+describe("finding the rows in a workbook that is not quite ours", () => {
+  const columns = TIMETABLE_TEMPLATE.columns;
+  const heading = ["Синф*", "Рӯз*", "1", "2"];
+  const lesson = ["5А", "Душанбе", "Математика (14)", ""];
+
+  it("takes a sheet renamed to Лист1 when it is the only one with anything on it", () => {
+    const rows = pickSheet([{ name: "Лист1", rows: [heading, lesson] }, { name: "Лист2", rows: [] }], "Ҷадвал", columns);
+    assert.deepEqual(rows, [heading, lesson]);
+  });
+
+  it("prefers the sheet whose headings are the template's over an instructions page", () => {
+    const rows = pickSheet(
+      [
+        { name: "Дастур", rows: [["Чӣ тавр пур кардан"], ["Ҳар сатр як синф ва як рӯз"]] },
+        { name: "Sheet1", rows: [heading, lesson] },
+      ],
+      "Ҷадвал",
+      columns
+    );
+    assert.deepEqual(rows, [heading, lesson]);
+  });
+
+  it("finds the sheet by a name retyped on a Russian keyboard", () => {
+    const rows = pickSheet([{ name: "Дастур", rows: [["x"]] }, { name: "Чадвал", rows: [["Синф"], ["5А"]] }], "Ҷадвал", columns);
+    assert.deepEqual(rows, [["Синф"], ["5А"]]);
+  });
+
+  it("gives up only when several sheets have something and none is recognisable", () => {
+    assert.equal(pickSheet([{ name: "A", rows: [["x"]] }, { name: "B", rows: [["y"]] }], "Ҷадвал", columns), null);
+  });
+
+  it("starts at the headings when a title was typed above them", () => {
+    const rows = fromHeadingRow([["Ҷадвали дарсҳо, нимсолаи 1"], [], heading, lesson], columns);
+    assert.deepEqual(rows, [heading, lesson]);
+  });
+
+  it("leaves the rows alone when the headings are nowhere, so the missing ones can be named", () => {
+    const rows = [["Номи фан"], ["Алгебра"]];
+    assert.deepEqual(fromHeadingRow(rows, columns), rows);
   });
 });
 

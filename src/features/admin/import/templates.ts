@@ -102,13 +102,23 @@ export function isPeopleKind(value: string): value is PeopleKind {
   return value === "students" || value === "staff";
 }
 
+// A heading retyped on a Russian keyboard has "Руз" for "Рӯз" and "Чадвал" for
+// "Ҷадвал"; one typed on some Tajik layouts has "у" plus a combining macron.
+const TAJIK_FOLD: Record<string, string> = { ӯ: "у", ӣ: "и", ҷ: "ч", ҳ: "х", қ: "к", ғ: "г" };
+
 /**
- * How a heading is compared. Case, stray spaces and the star that marks a
- * required column are all noise; a heading that has been retyped by hand should
- * still find its column.
+ * How a heading is compared. Case, stray spaces, the star that marks a
+ * required column and the Tajik letters a Russian keyboard lacks are all
+ * noise; a heading that has been retyped by hand should still find its column.
  */
 export function normalizeHeader(value: string): string {
-  return value.replace(/\*/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  return value
+    .normalize("NFC")
+    .replace(/\*/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/[ӯӣҷҳқғ]/g, (letter) => TAJIK_FOLD[letter] ?? letter);
 }
 
 /**
