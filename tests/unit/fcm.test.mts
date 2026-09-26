@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createVerify, generateKeyPairSync } from "node:crypto";
-import { createFcmClient, readServiceAccount, serviceAccountAssertion } from "../../src/lib/push/fcm.ts";
+import { createFcmClient, fcmMessage, readServiceAccount, serviceAccountAssertion } from "../../src/lib/push/fcm.ts";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const account = {
@@ -59,10 +59,30 @@ describe("Firebase, without the SDK", () => {
     assert.equal(send.auth, "Bearer ya29.test");
     const payload = JSON.parse(send.body).message;
     assert.equal(payload.token, "device-token-1");
-    assert.deepEqual(payload.notification, { title: "Мадина", body: "Салом" });
-    assert.equal(payload.data.url, "/messages/c1");
-    assert.equal(payload.android.notification.channel_id, "messages");
+    // Android draws its own notification from the data; the iPhone gets the alert.
+    assert.equal(payload.notification, undefined);
+    assert.deepEqual(
+      { kind: payload.data.kind, title: payload.data.title, body: payload.data.body, url: payload.data.url },
+      { kind: "message", title: "Мадина", body: "Салом", url: "/messages/c1" }
+    );
+    assert.equal(payload.android.priority, "HIGH");
+    assert.deepEqual(payload.apns.payload.aps.alert, { title: "Мадина", body: "Салом" });
     assert.equal(payload.apns.headers["apns-collapse-id"], "conversation:c1");
+  });
+
+  it("carries the reply key and the buttons' words only when there is a reply to offer", () => {
+    const plain = fcmMessage(message, 1_800_000_000_000) as { data: Record<string, string> };
+    assert.equal(plain.data.reply, undefined);
+    const answerable = fcmMessage(
+      { ...message, reply: "signed.token", labels: { reply: "Ҷавоб", read: "Хондам", placeholder: "Паём…", failed: "Нарафт" } },
+      1_800_000_000_000
+    ) as { data: Record<string, string> };
+    assert.deepEqual(
+      { reply: answerable.data.reply, replyLabel: answerable.data.replyLabel, readLabel: answerable.data.readLabel },
+      { reply: "signed.token", replyLabel: "Ҷавоб", readLabel: "Хондам" }
+    );
+    // FCM data is strings only.
+    assert.ok(Object.values(answerable.data).every((value) => typeof value === "string"));
   });
 
   it("tells a removed app from a passing failure", async () => {

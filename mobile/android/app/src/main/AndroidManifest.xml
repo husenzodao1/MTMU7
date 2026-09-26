@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -44,6 +45,23 @@
             android:resource="@color/notification"
         />
 
+        <!-- Chat notifications are drawn by the app (AppMessagingService), so
+             they can carry a reply box and a "mark as read" button. It stands
+             in for the plugin's own service, which it extends. -->
+        <service
+            android:name="io.capawesome.capacitorjs.plugins.firebase.messaging.MessagingService"
+            tools:node="remove" />
+        <service
+            android:name=".AppMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name=".NotificationActionReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -63,6 +81,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Taking a photo for a chat straight from the camera. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Voice messages in a chat: asked for only when the microphone is pressed. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 </manifest>

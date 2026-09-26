@@ -80,7 +80,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
     members,
     myRole,
     currentUserId: access.userId,
-    initialMessages: (messages ?? []) as ThreadMessage[],
+    initialMessages: (messages ?? []) as unknown as ThreadMessage[],
     initialPinned: (pinnedRows ?? []).map((p) => ({
       id: p.id,
       content: p.content,

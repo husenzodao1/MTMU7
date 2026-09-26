@@ -2,7 +2,8 @@
  * The portal's service worker. Two jobs:
  *
  * 1. Show a message that arrived while the portal was closed, and open the
- *    conversation when it is tapped.
+ *    conversation when it is tapped — or answer it, or mark it read, from the
+ *    notification itself, where the browser offers the buttons.
  * 2. Keep the portal's unchanging files — its scripts, styles, fonts, icons —
  *    on the device, so the second visit starts at once and a school's slow
  *    line carries only what is new.
@@ -92,6 +93,20 @@ self.addEventListener("push", (event) => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       if (windows.some((client) => client.focused && samePage(client.url, url))) return;
 
+      // A signed note from the portal lets the notification be answered
+      // without opening anything (see /api/push/reply). Browsers that can
+      // type into a notification show a box; the rest open the conversation
+      // with the composer ready.
+      const reply = typeof data.reply === "string" ? data.reply : null;
+      const labels = data.labels && typeof data.labels === "object" ? data.labels : null;
+      const actions =
+        reply && labels
+          ? [
+              { action: "reply", type: "text", title: String(labels.reply || "Reply"), placeholder: String(labels.placeholder || "") },
+              { action: "read", title: String(labels.read || "Mark as read") },
+            ]
+          : [];
+
       await self.registration.showNotification(title, {
         body: typeof data.body === "string" ? data.body : "",
         icon: "/icons/icon-192.png",
@@ -99,15 +114,45 @@ self.addEventListener("push", (event) => {
         tag: typeof data.tag === "string" ? data.tag : undefined,
         renotify: Boolean(data.tag),
         timestamp: Date.now(),
-        data: { url },
+        actions,
+        data: { url, reply },
       });
     })()
   );
 });
 
+function answer(body) {
+  return fetch("/api/push/reply", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+    credentials: "omit",
+  }).then(
+    (response) => response.ok,
+    () => false
+  );
+}
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/messages";
+  const data = event.notification.data || {};
+  let url = data.url || "/messages";
+  const reply = typeof data.reply === "string" ? data.reply : null;
+
+  if (reply && event.action === "read") {
+    event.waitUntil(answer({ action: "read", token: reply }));
+    return;
+  }
+  if (reply && event.action === "reply") {
+    const text = typeof event.reply === "string" ? event.reply.trim() : "";
+    if (text) {
+      event.waitUntil(answer({ action: "reply", token: reply, text }));
+      return;
+    }
+    // No box in this browser: open the conversation, composer first.
+    url = `${url}${url.includes("?") ? "&" : "?"}reply=1`;
+  }
+
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });

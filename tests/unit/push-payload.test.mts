@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { messagePush, type MessagePushSource } from "../../src/lib/push/payload.ts";
+import { actionLabels, messagePush, type MessagePushSource } from "../../src/lib/push/payload.ts";
 
 const base: MessagePushSource = {
   message_id: "m1",
@@ -21,8 +21,19 @@ describe("push for a message", () => {
     assert.equal(messagePush({ ...base, type: "image", preview: "  " }, "u2", "en").body, "📷 Photo");
   });
 
-  it("still calls any other attachment a file", () => {
+  it("names a file by its caption or its own name, and a recording as a voice message", () => {
     assert.equal(messagePush({ ...base, type: "file", preview: "" }, "u2", "tg").body, "📎 Файл");
+    assert.equal(messagePush({ ...base, type: "file", preview: "Timetable.pdf" }, "u2", "tg").body, "📎 Timetable.pdf");
+    assert.equal(messagePush({ ...base, type: "audio", preview: "" }, "u2", "ru").body, "🎤 Голосовое сообщение");
+  });
+
+  it("words the notification's own buttons in the reader's language", () => {
+    assert.deepEqual(
+      { reply: actionLabels("tg").reply, read: actionLabels("tg").read },
+      { reply: "Ҷавоб", read: "Хондам" }
+    );
+    assert.equal(actionLabels("en").read, "Mark as read");
+    assert.ok(actionLabels("ru").failed.length > 0);
   });
 
   it("titles a group by its name and puts the sender in the body", () => {

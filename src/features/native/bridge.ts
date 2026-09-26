@@ -37,6 +37,8 @@ interface FirebaseMessaging {
 /** The part of @capacitor/app the site uses. */
 interface AppPlugin {
   addListener(event: "appUrlOpen", handler: (event: { url: string }) => void): Promise<Listener>;
+  /** The link the app was started with, when a link (or a notification) started it. */
+  getLaunchUrl(): Promise<{ url?: string } | undefined>;
 }
 
 async function plugin<T>(name: string): Promise<T | null> {

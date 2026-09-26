@@ -17,16 +17,40 @@ export interface ThreadMessage {
   /** Set only on type === "location". */
   location_lat: number | null;
   location_lng: number | null;
-  /** Set only on type === "image": where the photo is kept, and its size. */
+  /** Set on photos, files and voice notes: where the file is kept. */
   media_path: string | null;
+  /** A photo's size in pixels. */
   media_width: number | null;
   media_height: number | null;
+  /** A file's own name, as it was sent. */
+  media_name?: string | null;
+  /** Bytes, for files and voice notes. */
+  media_size?: number | null;
+  media_mime?: string | null;
+  /** A voice note's length in seconds. */
+  media_duration?: number | null;
+  /** Who reacted with what; one per person. */
+  reactions?: Reaction[];
   /** Client-side only: the photo on this device, before it has been uploaded. */
   local_preview?: string;
   /** Client-side only: this one has not reached the server yet, or did not. */
   pending?: boolean;
   failed?: boolean;
 }
+
+export interface Reaction {
+  user_id: string;
+  emoji: string;
+}
+
+/** The row of quick reactions, as in the messenger everybody knows. */
+export const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
+
+/** More, a tap further away. */
+export const MORE_REACTIONS = [
+  "👏", "🔥", "🎉", "💯", "✅", "👌", "🤝", "💪", "🙌", "😊", "😍", "🥰", "😎", "🤔", "😅", "🤣",
+  "😇", "😴", "😡", "😱", "🥺", "😭", "🤗", "🙂", "👀", "⭐", "🌸", "📚", "✏️", "🏆", "🎓", "❗",
+] as const;
 
 export interface ConversationMember {
   user_id: string;

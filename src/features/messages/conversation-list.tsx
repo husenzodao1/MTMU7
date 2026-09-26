@@ -171,8 +171,12 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
                     c.last_message_type === "location"
                       ? `📍 ${c.last_message_content || t("locationShort")}`
                       : c.last_message_type === "image"
-                        ? c.last_message_content ? `${t("photo")} · ${c.last_message_content}` : t("photo")
-                        : c.last_message_content ?? ""
+                        ? c.last_message_content ? `📷 ${c.last_message_content}` : `📷 ${t("photo")}`
+                        : c.last_message_type === "file"
+                          ? `📎 ${c.last_message_content || t("fileShort")}`
+                          : c.last_message_type === "audio"
+                            ? `🎤 ${t("voice")}`
+                            : c.last_message_content ?? ""
                   }`
               : t("noMessagesYet");
             const time = c.last_message_at

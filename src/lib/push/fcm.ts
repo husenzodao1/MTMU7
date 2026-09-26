@@ -65,6 +65,39 @@ export interface FcmMessage {
   url: string;
   /** Replaces an earlier notification from the same conversation. */
   tag: string;
+  /** A signed note that lets the notification be answered where it is. */
+  reply?: string;
+  /** The words on the notification's buttons, in the reader's language. */
+  labels?: { reply: string; read: string; placeholder: string; failed: string };
+}
+
+/**
+ * The message Firebase is asked to deliver.
+ *
+ * Android gets data alone: the app draws the notification itself (see
+ * AppMessagingService), which is what lets it carry a reply box and a "mark
+ * as read" button. The iPhone gets the system alert, as before, from the APNs
+ * part. Everything is strings, as FCM's data must be.
+ */
+export function fcmMessage(message: FcmMessage, now: number): Record<string, unknown> {
+  const tag = message.tag.slice(0, 64);
+  const data: Record<string, string> = { kind: "message", url: message.url, tag, title: message.title, body: message.body };
+  if (message.reply && message.labels) {
+    data.reply = message.reply;
+    data.replyLabel = message.labels.reply;
+    data.readLabel = message.labels.read;
+    data.placeholder = message.labels.placeholder;
+    data.failedLabel = message.labels.failed;
+  }
+  return {
+    token: message.token,
+    data,
+    android: { priority: "HIGH", collapse_key: tag, ttl: "86400s" },
+    apns: {
+      headers: { "apns-priority": "10", "apns-collapse-id": tag, "apns-expiration": String(Math.floor(now / 1000) + 86400) },
+      payload: { aps: { alert: { title: message.title, body: message.body }, sound: "default", "thread-id": tag } },
+    },
+  };
 }
 
 export type FcmResult = "sent" | "gone" | "failed";
@@ -109,29 +142,11 @@ export function createFcmClient(account: ServiceAccount, fetchImpl: typeof fetch
     async send(message) {
       const token = await accessToken();
       if (!token) return "failed";
-      // Collapse keys and tags are short on both platforms.
-      const tag = message.tag.slice(0, 64);
       try {
         const response = await fetchImpl(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
           method: "POST",
           headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              token: message.token,
-              notification: { title: message.title, body: message.body },
-              data: { url: message.url, tag },
-              android: {
-                priority: "HIGH",
-                collapse_key: tag,
-                ttl: "86400s",
-                notification: { tag, channel_id: "messages", default_sound: true },
-              },
-              apns: {
-                headers: { "apns-priority": "10", "apns-collapse-id": tag, "apns-expiration": String(Math.floor(now() / 1000) + 86400) },
-                payload: { aps: { sound: "default", "thread-id": tag } },
-              },
-            },
-          }),
+          body: JSON.stringify({ message: fcmMessage(message, now()) }),
           signal: AbortSignal.timeout(10_000),
         });
         if (response.ok) return "sent";

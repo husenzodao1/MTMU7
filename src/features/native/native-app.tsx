@@ -38,6 +38,20 @@ export function NativeApp() {
       const [app, messaging] = await Promise.all([appPlugin(), messagingPlugin()]);
       if (app) {
         keep(await app.addListener("appUrlOpen", ({ url }) => go(pathForAppLink(url, location.origin))));
+        // Started by tapping a notification while the app was closed: the
+        // link arrives as the launch URL rather than as an event. Followed
+        // once per launch, not on every page after it.
+        const launch = await app.getLaunchUrl().catch(() => undefined);
+        if (launch?.url && live) {
+          let seen: string | null = null;
+          try {
+            seen = sessionStorage.getItem("app-launch-url");
+            sessionStorage.setItem("app-launch-url", launch.url);
+          } catch {
+            /* storage refused: follow it anyway */
+          }
+          if (seen !== launch.url) go(pathForAppLink(launch.url, location.origin));
+        }
       }
       if (messaging) {
         keep(

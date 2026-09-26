@@ -148,7 +148,7 @@ export async function loadOlderMessagesAction(conversationId: string, beforeCrea
     p_limit: 50,
   });
   if (error) return mapDbError(error);
-  return success(undefined, (data ?? []) as ThreadMessage[]);
+  return success(undefined, (data ?? []) as unknown as ThreadMessage[]);
 }
 
 export async function fetchMessageAction(conversationId: string, messageId: string): Promise<ActionResult<ThreadMessage | null>> {
@@ -165,7 +165,7 @@ export async function fetchMessageAction(conversationId: string, messageId: stri
     p_limit: 20,
   });
   if (error) return mapDbError(error);
-  return success(undefined, ((data ?? []) as ThreadMessage[]).find((m) => m.id === messageId) ?? null);
+  return success(undefined, ((data ?? []) as unknown as ThreadMessage[]).find((m) => m.id === messageId) ?? null);
 }
 
 export async function setMutedAction(conversationId: string, muted: boolean): Promise<ActionResult> {

@@ -5,18 +5,27 @@ import {
   Ban,
   Bell,
   BellOff,
+  Camera,
   Check,
   CheckCheck,
+  ChevronDown,
   Clock,
   Copy,
   CornerUpLeft,
+  Download,
   EllipsisVertical,
+  FileText,
   Flag,
   Headset,
   ImagePlus,
   LoaderCircle,
   LogOut,
   MapPin,
+  Maximize2,
+  Mic,
+  Minimize2,
+  Palette,
+  Paperclip,
   Pencil,
   Pin,
   PinOff,
@@ -30,7 +39,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type KeyboardEvent, type ReactNode } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Select, Textarea } from "@/components/ui/form-controls";
 import { Avatar } from "@/components/ui/misc";
@@ -48,13 +58,18 @@ import {
   setMutedAction,
   toggleMessageFavoriteAction,
 } from "@/features/messages/actions";
+import { FileCard, MessageText, ReactionBar, ReactionsPill, VoiceNote } from "@/features/messages/bubbles";
+import { checkFile, FILE_ACCEPT, formatBytes, formatDuration, kindOf } from "@/features/messages/files";
+import { MessageGestures } from "@/features/messages/gestures";
 import { GroupMembersDialog } from "@/features/messages/group-members";
-import { mediaPath, prepareImage, removeImage, uploadImage, useSignedUrl, type PreparedImage } from "@/features/messages/media";
+import { downloadLink, mediaPath, prepareImage, removeMedia, uploadImage, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
 import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/member-card";
 import { PhotoViewer, type ViewedPhoto } from "@/features/messages/photo-viewer";
+import { canRecord, useVoiceRecorder, type Recording } from "@/features/messages/recorder";
+import { useWallpaper, WallpaperDialog, WALLPAPERS, type Wallpaper } from "@/features/messages/wallpaper";
 import { announceMessage } from "@/features/push/client";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
-import { EDIT_WINDOW_MS, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type ThreadMessage } from "@/features/messages/types";
+import { EDIT_WINDOW_MS, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
 import { dayKey, formatClock, formatDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -127,11 +142,47 @@ interface MessageRow {
   media_path: string | null;
   media_width: number | null;
   media_height: number | null;
+  media_name: string | null;
+  media_size: number | null;
+  media_mime: string | null;
+  media_duration: number | null;
 }
+
+/** What is waiting above the composer to be sent: a photo, or any other file. */
+type Attachment =
+  | { kind: "photo"; image: PreparedImage }
+  | { kind: "file"; file: File; name: string; mime: string; size: number; extension: string };
+
+/** Everything that goes when a message is deleted for everyone. */
+const EMPTIED = {
+  location_lat: null,
+  location_lng: null,
+  media_path: null,
+  media_width: null,
+  media_height: null,
+  media_name: null,
+  media_size: null,
+  media_mime: null,
+  media_duration: null,
+  local_preview: undefined,
+  reactions: [],
+} satisfies Partial<ThreadMessage>;
 
 function sortAsc(list: ThreadMessage[]): ThreadMessage[] {
   return [...list].sort((a, b) => (a.created_at === b.created_at ? a.id.localeCompare(b.id) : a.created_at.localeCompare(b.created_at)));
 }
+
+function withReaction(message: ThreadMessage, userId: string, emoji: string | null): ThreadMessage {
+  const others = (message.reactions ?? []).filter((r) => r.user_id !== userId);
+  return { ...message, reactions: emoji ? [...others, { user_id: userId, emoji }] : others };
+}
+
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+// Whether this browser can record is known only in the browser; the server's
+// answer is "no", so the first paint matches it and the microphone appears after.
+const noSubscription = () => () => undefined;
+const cannotRecordOnServer = () => false;
 
 export function Thread({
   conversation,
@@ -175,6 +226,16 @@ export function Thread({
   const [editing, setEditing] = useState<ThreadMessage | null>(null);
   const [reporting, setReporting] = useState<ThreadMessage | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [wallpaper] = useWallpaper();
+  // The message whose menu is open: from its button, a long press or a right-click.
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  // The message a tap on a quote has just brought into view, lit for a moment.
+  const [flash, setFlash] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [showJump, setShowJump] = useState(false);
+  const [unseen, setUnseen] = useState(0);
+  const [typingNow, setTypingNow] = useState<Record<string, { kind: "typing" | "recording"; until: number }>>({});
   // Only an edit waits for the server. A new message never does: see deliver().
   const [saving, startSaving] = useTransition();
   const [loadingOlder, startLoadingOlder] = useTransition();
@@ -190,6 +251,11 @@ export function Thread({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const preserveScroll = useRef<number | null>(null);
   const stickToBottom = useRef(true);
+  const farFromBottom = useRef(false);
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // What realtime has said since the page was rendered, laid over the props
   // rather than copied from them. Copying props into state needs an effect to
@@ -240,16 +306,19 @@ export function Thread({
   );
 
   const [locating, setLocating] = useState(false);
-  // A photo picked and waiting for its caption, and the one being looked at.
-  const [attached, setAttached] = useState<PreparedImage | null>(null);
+  // A photo or file picked and waiting for its caption, and the photo being looked at.
+  const [attached, setAttached] = useState<Attachment | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [viewing, setViewing] = useState<ViewedPhoto | null>(null);
   const [cardFor, setCardFor] = useState<MemberCardSeed | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  // The shrunken photo behind each bubble still on its way, so a failed one
-  // can be sent again without asking for the file a second time.
+  // The shrunken photo, or the file, behind each bubble still on its way, so a
+  // failed one can be sent again without asking for it a second time.
   const photos = useRef(new Map<string, PreparedImage>());
+  const blobs = useRef(new Map<string, { blob: Blob; mime: string }>());
   // Every local link made in this thread, let go of when it closes.
   const previews = useRef(new Set<string>());
   useEffect(() => {
@@ -287,14 +356,22 @@ export function Thread({
   const deliver = useCallback(
     (local: ThreadMessage) => {
       upsert(local);
-      // A photo starts uploading now, alongside whatever is ahead of it in
-      // the queue, and its message waits in line only for the insert.
+      // A photo, file or recording starts uploading now, alongside whatever
+      // is ahead of it in the queue, and its message waits in line only for
+      // the insert.
       const photo = local.type === "image" ? photos.current.get(local.id) : undefined;
-      const uploaded = photo && local.media_path ? uploadImage(local.media_path, photo) : null;
+      const blob = local.type === "file" || local.type === "audio" ? blobs.current.get(local.id) : undefined;
+      const uploaded = local.media_path
+        ? photo
+          ? uploadImage(local.media_path, photo)
+          : blob
+            ? uploadMedia(local.media_path, blob.blob, blob.mime)
+            : null
+        : null;
       queue.current = queue.current.then(async () => {
-        if (local.type === "image" && !(await uploaded)) {
+        if (local.media_path && !(await uploaded)) {
           setMessages((current) => current.map((m) => (m.id === local.id ? { ...m, pending: false, failed: true } : m)));
-          fail("portal.messages.photoFailed");
+          fail(local.type === "audio" ? "portal.messages.voiceFailed" : local.type === "file" ? "portal.messages.fileFailed" : "portal.messages.photoFailed");
           return;
         }
         const { data, error } = await getBrowserClient()
@@ -311,6 +388,10 @@ export function Thread({
             media_path: local.media_path,
             media_width: local.media_width,
             media_height: local.media_height,
+            media_name: local.media_name ?? null,
+            media_size: local.media_size ?? null,
+            media_mime: local.media_mime ?? null,
+            media_duration: local.media_duration ?? null,
           })
           .select("id")
           // A request that never answers would hold every later message
@@ -326,6 +407,7 @@ export function Thread({
         }
         const serverId = data.id;
         photos.current.delete(local.id);
+        blobs.current.delete(local.id);
         setMessages((current) => {
           // Realtime may have delivered the real row already; if so the local
           // one simply goes, rather than appearing twice.
@@ -344,7 +426,21 @@ export function Thread({
   const localMessage = useCallback(
     (
       fields: Pick<ThreadMessage, "content" | "type" | "reply_to_id"> &
-        Partial<Pick<ThreadMessage, "location_lat" | "location_lng" | "media_path" | "media_width" | "media_height" | "local_preview">>
+        Partial<
+          Pick<
+            ThreadMessage,
+            | "location_lat"
+            | "location_lng"
+            | "media_path"
+            | "media_width"
+            | "media_height"
+            | "media_name"
+            | "media_size"
+            | "media_mime"
+            | "media_duration"
+            | "local_preview"
+          >
+        >
     ): ThreadMessage => {
       const me = members.find((m) => m.user_id === currentUserId);
       return {
@@ -365,6 +461,11 @@ export function Thread({
         media_path: null,
         media_width: null,
         media_height: null,
+        media_name: null,
+        media_size: null,
+        media_mime: null,
+        media_duration: null,
+        reactions: [],
         pending: true,
         ...fields,
       };
@@ -386,6 +487,10 @@ export function Thread({
         media_path: failed.media_path,
         media_width: failed.media_width,
         media_height: failed.media_height,
+        media_name: failed.media_name,
+        media_size: failed.media_size,
+        media_mime: failed.media_mime,
+        media_duration: failed.media_duration,
         local_preview: failed.local_preview,
       });
       const photo = photos.current.get(failed.id);
@@ -393,10 +498,101 @@ export function Thread({
         photos.current.delete(failed.id);
         photos.current.set(again.id, photo);
       }
+      const blob = blobs.current.get(failed.id);
+      if (blob) {
+        blobs.current.delete(failed.id);
+        blobs.current.set(again.id, blob);
+      }
       deliver(again);
     },
     [deliver, localMessage]
   );
+
+  // ------------------------------------------------------------- typing…
+
+  // A private channel per conversation, which only its members may join
+  // (00071). Nothing said on it is stored.
+  const typingChannel = useRef<RealtimeChannel | null>(null);
+  const lastTypingSent = useRef(0);
+  useEffect(() => {
+    const supabase = getBrowserClient();
+    const channel = supabase
+      .channel(`chat:${conversation.id}`, { config: { private: true, broadcast: { self: false } } })
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        const said = payload as { user_id?: unknown; kind?: unknown };
+        if (typeof said.user_id !== "string" || said.user_id === currentUserId) return;
+        const who = said.user_id;
+        const kind = said.kind === "recording" ? "recording" : "typing";
+        setTypingNow((current) => ({ ...current, [who]: { kind, until: Date.now() + 5000 } }));
+      })
+      .subscribe();
+    typingChannel.current = channel;
+    const sweep = window.setInterval(() => {
+      setTypingNow((current) => {
+        const at = Date.now();
+        const live = Object.entries(current).filter(([, value]) => value.until > at);
+        return live.length === Object.keys(current).length ? current : Object.fromEntries(live);
+      });
+    }, 1000);
+    return () => {
+      window.clearInterval(sweep);
+      typingChannel.current = null;
+      void supabase.removeChannel(channel);
+    };
+  }, [conversation.id, currentUserId]);
+
+  const announceTyping = useCallback(
+    (kind: "typing" | "recording") => {
+      const at = Date.now();
+      if (at - lastTypingSent.current < 2500) return;
+      lastTypingSent.current = at;
+      void typingChannel.current?.send({ type: "broadcast", event: "typing", payload: { user_id: currentUserId, kind } });
+    },
+    [currentUserId]
+  );
+
+  // --------------------------------------------------------- voice notes
+
+  const sendRecording = useCallback(
+    (recording: Recording) => {
+      const preview = URL.createObjectURL(recording.blob);
+      previews.current.add(preview);
+      const local = localMessage({
+        content: "",
+        type: "audio",
+        reply_to_id: replyTo?.id ?? null,
+        media_path: mediaPath(schoolId, conversation.id, currentUserId, recording.extension),
+        media_size: recording.blob.size,
+        media_mime: recording.mime,
+        media_duration: Math.max(1, recording.duration),
+        local_preview: preview,
+      });
+      blobs.current.set(local.id, { blob: recording.blob, mime: recording.mime });
+      stickToBottom.current = true;
+      setReplyTo(null);
+      deliver(local);
+    },
+    [localMessage, replyTo, schoolId, conversation.id, currentUserId, deliver]
+  );
+  const voice = useVoiceRecorder(sendRecording);
+  const recordable = useSyncExternalStore(noSubscription, canRecord, cannotRecordOnServer);
+  useEffect(() => {
+    if (voice.recording) announceTyping("recording");
+  }, [voice.recording, voice.elapsed, announceTyping]);
+
+  const startRecording = async () => {
+    const result = await voice.start();
+    if (result === "denied") toast("danger", t("micDenied"));
+    else if (result === "unsupported") toast("danger", t("micUnsupported"));
+    else if (result === "failed") toast("danger", t("micFailed"));
+  };
+
+  const finishRecording = async () => {
+    const recording = await voice.stop();
+    if (recording) sendRecording(recording);
+  };
+
+  // ------------------------------------------------------------ location
 
   /**
    * Sends where you are, once, after the browser has asked.
@@ -431,14 +627,25 @@ export function Thread({
     );
   }, [draft, t, toast, deliver, localMessage]);
 
+  // ---------------------------------------------------------- attachments
+
+  const replaceAttachment = useCallback((next: Attachment | null) => {
+    setAttached((previous) => {
+      if (previous?.kind === "photo") {
+        URL.revokeObjectURL(previous.image.previewUrl);
+        previews.current.delete(previous.image.previewUrl);
+      }
+      return next;
+    });
+  }, []);
+
   /**
    * A photo from the picker, a paste or a drop: shrunk on this device and
    * held above the composer until it is sent, so whatever is typed meanwhile
    * becomes its caption.
    */
-  const attach = useCallback(
-    async (file: File | null | undefined) => {
-      if (!file) return;
+  const attachPhoto = useCallback(
+    async (file: File) => {
       setPreparing(true);
       const result = await prepareImage(file);
       setPreparing(false);
@@ -447,29 +654,41 @@ export function Thread({
         return;
       }
       previews.current.add(result.image.previewUrl);
-      setAttached((previous) => {
-        if (previous) {
-          URL.revokeObjectURL(previous.previewUrl);
-          previews.current.delete(previous.previewUrl);
-        }
-        return result.image;
-      });
+      replaceAttachment({ kind: "photo", image: result.image });
       inputRef.current?.focus();
     },
-    [t, toast]
+    [t, toast, replaceAttachment]
   );
 
-  const detach = () => {
-    if (attached) {
-      URL.revokeObjectURL(attached.previewUrl);
-      previews.current.delete(attached.previewUrl);
-    }
-    setAttached(null);
-  };
+  /** Any other file: checked here, sent as it is. */
+  const attachFile = useCallback(
+    (file: File) => {
+      const check = checkFile(file.name, file.size);
+      if (!check.ok) {
+        toast("danger", t(`fileErrors.${check.error}`));
+        return;
+      }
+      replaceAttachment({ kind: "file", file, name: check.name, mime: check.mime, size: file.size, extension: check.extension });
+      inputRef.current?.focus();
+    },
+    [t, toast, replaceAttachment]
+  );
+
+  /** A photo goes the photo's way (shrunk, shown); everything else as a file. */
+  const attachAny = useCallback(
+    (file: File | null | undefined) => {
+      if (!file) return;
+      if (/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)) void attachPhoto(file);
+      else attachFile(file);
+    },
+    [attachPhoto, attachFile]
+  );
 
   const other = conversation.type === "direct" ? members.find((m) => m.user_id !== currentUserId) : undefined;
   const iBlockedOther = Boolean(other && blockedUserIds.includes(other.user_id));
   const byId = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
+
+  // ------------------------------------------------------------ scrolling
 
   // Keep the view pinned to the newest message unless the reader scrolled up.
   useLayoutEffect(() => {
@@ -483,11 +702,44 @@ export function Thread({
     }
   }, [messages]);
 
+  // The conversation's box changes size — the keyboard opens, a reply or a
+  // photo appears above the composer — and the newest message stays in view.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (stickToBottom.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottom.current = distance < 120;
+    const far = distance > 320;
+    if (far !== farFromBottom.current) {
+      farFromBottom.current = far;
+      setShowJump(far);
+      if (!far) setUnseen(0);
+    }
   };
+
+  const toLatest = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current = true;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setUnseen(0);
+  };
+
+  // --------------------------------------------------------------- realtime
+
+  const applyReaction = useCallback((messageId: string, userId: string, emoji: string | null) => {
+    setMessages((current) => current.map((m) => (m.id === messageId ? withReaction(m, userId, emoji) : m)));
+  }, []);
 
   // Realtime: RLS delivers only messages of conversations the user belongs to.
   useEffect(() => {
@@ -512,14 +764,25 @@ export function Thread({
               sender_last_name: sender?.last_name ?? null,
               sender_avatar_url: sender?.avatar_url ?? null,
               is_favorite: false,
-              // The photo already on screen stays, rather than blinking out
-              // while a link to the uploaded copy is fetched.
+              reactions: [],
+              // The photo or recording already on this device stays, rather
+              // than blinking out while a link to the uploaded copy is fetched.
               local_preview: local?.local_preview,
             };
             return sortAsc(local ? current.map((m) => (m.id === local.id ? arrived : m)) : [...current, arrived]);
           });
           return;
         }
+        if (row.sender_id) {
+          const from = row.sender_id;
+          setTypingNow((current) => {
+            if (!(from in current)) return current;
+            const next = { ...current };
+            delete next[from];
+            return next;
+          });
+        }
+        if (!stickToBottom.current) setUnseen((count) => count + 1);
         if (row.sender_id && !sender) {
           void fetchMessageAction(conversation.id, row.id).then((result) => {
             if (result.ok && result.data) upsert(result.data);
@@ -531,6 +794,7 @@ export function Thread({
             sender_last_name: sender?.last_name ?? null,
             sender_avatar_url: sender?.avatar_url ?? null,
             is_favorite: false,
+            reactions: [],
           });
         }
         if (document.visibilityState === "visible") markRead(conversation.id);
@@ -557,7 +821,7 @@ export function Thread({
                   is_deleted: row.is_deleted,
                   is_pinned: row.is_pinned,
                   edited_at: row.edited_at,
-                  ...(row.is_deleted ? { location_lat: null, location_lng: null, media_path: null, media_width: null, media_height: null, local_preview: undefined } : {}),
+                  ...(row.is_deleted ? EMPTIED : {}),
                 }
               : m
           )
@@ -569,6 +833,16 @@ export function Thread({
           return [...without, { id: row.id, content: row.content, sender_first_name: sender?.first_name ?? null, sender_last_name: sender?.last_name ?? null }];
         });
       })
+      // A reaction added, changed or taken back (taking back clears the
+      // emoji rather than deleting the row, so it arrives here too).
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_reactions", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
+        const row = payload.new as { message_id: string; user_id: string; emoji: string | null };
+        applyReaction(row.message_id, row.user_id, row.emoji);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "message_reactions", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
+        const row = payload.new as { message_id: string; user_id: string; emoji: string | null };
+        applyReaction(row.message_id, row.user_id, row.emoji);
+      })
       .subscribe();
 
     const onVisible = () => {
@@ -579,7 +853,64 @@ export function Thread({
       document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
-  }, [conversation.id, currentUserId, memberMap, upsert]);
+  }, [conversation.id, currentUserId, memberMap, upsert, applyReaction]);
+
+  // --------------------------------------------------------- full screen
+
+  // On a phone the conversation is the whole screen, as in any messenger:
+  // above the portal's bars, sized to what the keyboard leaves visible, with
+  // the page behind it held still. On a computer the same, on request.
+  useEffect(() => {
+    const root = document.documentElement;
+    const phone = window.matchMedia("(max-width: 1023.98px)");
+    const view = window.visualViewport;
+    const fit = () => {
+      if (!view) return;
+      root.style.setProperty("--vvh", `${Math.round(view.height)}px`);
+      root.style.setProperty("--vvt", `${Math.round(view.offsetTop)}px`);
+    };
+    const lock = () => root.classList.toggle("chat-lock", phone.matches || expanded);
+    fit();
+    lock();
+    view?.addEventListener("resize", fit);
+    view?.addEventListener("scroll", fit);
+    phone.addEventListener("change", lock);
+    return () => {
+      view?.removeEventListener("resize", fit);
+      view?.removeEventListener("scroll", fit);
+      phone.removeEventListener("change", lock);
+      root.classList.remove("chat-lock");
+      root.style.removeProperty("--vvh");
+      root.style.removeProperty("--vvt");
+    };
+  }, [expanded]);
+
+  // Leaving the browser's full screen (Esc) leaves the chat's too.
+  useEffect(() => {
+    const onChange = () => {
+      if (!document.fullscreenElement) setExpanded(false);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleExpanded = () => {
+    const next = !expanded;
+    setExpanded(next);
+    try {
+      if (next && !document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      if (!next && document.fullscreenElement) void document.exitFullscreen?.().catch(() => undefined);
+    } catch {
+      /* the overlay alone is full screen enough */
+    }
+  };
+
+  // Opened from a notification's "Reply" where the browser had no box for it.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("reply")) inputRef.current?.focus();
+  }, []);
+
+  // ------------------------------------------------------------- actions
 
   const loadOlder = () => {
     const oldest = messages[0];
@@ -594,6 +925,63 @@ export function Thread({
       setHasMore(older.length >= 50);
     });
   };
+
+  /**
+   * A tap on a quote: the message it quotes, scrolled to the middle and lit
+   * for a moment. Further back than what is loaded, the history is fetched
+   * page by page until it turns up — six pages at most.
+   */
+  const jumpTo = useCallback(
+    async (id: string) => {
+      const reveal = () => {
+        const element = document.getElementById(`message-${id}`);
+        if (!element) return false;
+        stickToBottom.current = false;
+        element.scrollIntoView({ block: "center", behavior: "smooth" });
+        setFlash(id);
+        window.setTimeout(() => setFlash((current) => (current === id ? null : current)), 1800);
+        return true;
+      };
+      if (reveal()) return;
+      for (let page = 0; page < 6; page++) {
+        const oldest = messagesRef.current[0];
+        if (!oldest) break;
+        const result = await loadOlderMessagesAction(conversation.id, oldest.created_at, oldest.id);
+        if (!result.ok) break;
+        const older = result.data ?? [];
+        setHasMore(older.length >= 50);
+        if (older.length === 0) break;
+        const el = scrollRef.current;
+        if (el) preserveScroll.current = el.scrollHeight - el.scrollTop;
+        messagesRef.current = sortAsc([...older.filter((m) => !messagesRef.current.some((c) => c.id === m.id)), ...messagesRef.current]);
+        setMessages(messagesRef.current);
+        if (older.some((m) => m.id === id)) {
+          await nextFrame();
+          await nextFrame();
+          if (reveal()) return;
+          break;
+        }
+        if (older.length < 50) break;
+      }
+      toast("danger", t("originalNotFound"));
+    },
+    [conversation.id, t, toast]
+  );
+
+  const react = useCallback(
+    (message: ThreadMessage, emoji: string | null) => {
+      const before = (message.reactions ?? []).find((r) => r.user_id === currentUserId)?.emoji ?? null;
+      applyReaction(message.id, currentUserId, emoji);
+      void getBrowserClient()
+        .rpc("set_message_reaction", { p_message_id: message.id, p_emoji: emoji ?? "" })
+        .then(({ error }) => {
+          if (!error) return;
+          applyReaction(message.id, currentUserId, before);
+          fail(dbErrorKey(error) ?? "errors.unexpected");
+        });
+    },
+    [applyReaction, currentUserId, fail]
+  );
 
   const submit = () => {
     const content = draft.trim();
@@ -617,13 +1005,14 @@ export function Thread({
     stickToBottom.current = true;
     setDraft("");
     setReplyTo(null);
-    if (attached) {
-      const photo = attached;
+    const reply_to_id = replyTo?.id ?? null;
+    if (attached?.kind === "photo") {
+      const photo = attached.image;
       setAttached(null);
       const local = localMessage({
         content,
         type: "image",
-        reply_to_id: replyTo?.id ?? null,
+        reply_to_id,
         media_path: mediaPath(schoolId, conversation.id, currentUserId, photo.extension),
         media_width: photo.width,
         media_height: photo.height,
@@ -631,8 +1020,22 @@ export function Thread({
       });
       photos.current.set(local.id, photo);
       deliver(local);
+    } else if (attached?.kind === "file") {
+      const file = attached;
+      setAttached(null);
+      const local = localMessage({
+        content,
+        type: "file",
+        reply_to_id,
+        media_path: mediaPath(schoolId, conversation.id, currentUserId, file.extension),
+        media_name: file.name,
+        media_size: file.size,
+        media_mime: file.mime,
+      });
+      blobs.current.set(local.id, { blob: file.file, mime: file.mime });
+      deliver(local);
     } else {
-      deliver(localMessage({ content, type: "text", reply_to_id: replyTo?.id ?? null }));
+      deliver(localMessage({ content, type: "text", reply_to_id }));
     }
     inputRef.current?.focus();
   };
@@ -660,6 +1063,11 @@ export function Thread({
   const senderName = (m: Pick<ThreadMessage, "sender_first_name" | "sender_last_name">) =>
     `${m.sender_first_name ?? ""} ${m.sender_last_name ?? ""}`.trim() || t("unknownUser");
 
+  const nameOf = (userId: string) => {
+    const person = memberMap.get(userId);
+    return person ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim() || t("unknownUser") : t("unknownUser");
+  };
+
   /** One line for a message quoted in a reply. */
   const gist = (m: ThreadMessage) =>
     m.is_deleted
@@ -667,17 +1075,16 @@ export function Thread({
       : m.type === "location"
         ? t("locationShort")
         : m.type === "image"
-          ? m.content ? `${t("photo")} · ${m.content}` : t("photo")
-          : m.content;
+          ? m.content ? `📷 ${m.content}` : `📷 ${t("photo")}`
+          : m.type === "file"
+            ? `📎 ${m.content || m.media_name || t("fileShort")}`
+            : m.type === "audio"
+              ? `🎤 ${t("voice")} · ${formatDuration(m.media_duration)}`
+              : m.content;
 
   const openCard = (userId: string | null) => {
     if (!userId) return;
-    const person = memberMap.get(userId);
-    setCardFor({
-      userId,
-      name: person ? `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim() || t("unknownUser") : t("unknownUser"),
-      avatarUrl: person?.avatar_url ?? null,
-    });
+    setCardFor({ userId, name: nameOf(userId), avatarUrl: memberMap.get(userId)?.avatar_url ?? null });
   };
 
   const openPhoto = (m: ThreadMessage, src: string) =>
@@ -688,8 +1095,14 @@ export function Thread({
       subtitle: `${formatDate(m.created_at, locale, timeZone)} · ${formatClock(m.created_at, locale, timeZone)}`,
     });
 
-  // Photos come in by the button, a paste, or dropped onto the conversation.
-  const acceptsPhotos = canPost && !iBlockedOther && !editing;
+  const startReply = (m: ThreadMessage) => {
+    setEditing(null);
+    setReplyTo(m);
+    inputRef.current?.focus();
+  };
+
+  // Photos and files come in by the button, a paste, or dropped onto the conversation.
+  const acceptsFiles = canPost && !iBlockedOther && !editing && !voice.recording;
 
   // Day separators and sender labels depend on the preceding message.
   const rows = useMemo(
@@ -710,14 +1123,25 @@ export function Thread({
   // desk, the person asking. Somebody asking the desk sees the desk, not a card.
   const headerPerson = other?.user_id ?? (isSupport && requesterId && currentUserId !== requesterId ? requesterId : undefined);
   const backHref = isSupport && currentUserId === requesterId ? "/dashboard" : "/messages";
+  const typingEntries = Object.entries(typingNow);
+  const typingLine = (() => {
+    const first = typingEntries[0];
+    if (!first) return null;
+    const [userId, { kind }] = first;
+    if (conversation.type === "direct") return kind === "recording" ? t("recordingAudio") : t("typing");
+    const name = memberMap.get(userId)?.first_name ?? t("unknownUser");
+    return kind === "recording" ? t("recordingName", { name }) : t("typingName", { name });
+  })();
   const subtitle =
-    conversation.subtitle ?? (conversation.type !== "direct" && !isSupport ? t("memberCount", { count: members.length }) : undefined);
+    typingLine ?? conversation.subtitle ?? (conversation.type !== "direct" && !isSupport ? t("memberCount", { count: members.length }) : undefined);
+  const wallpaperNames = Object.fromEntries(WALLPAPERS.map((name) => [name, t(`wallpapers.${name}`)])) as Record<Wallpaper, string>;
+  const attachedFileKind = attached?.kind === "file" ? kindOf(attached.name, attached.mime) : null;
 
   return (
     <div
-      className="chat relative flex h-full min-h-0 flex-col"
+      className={cn("chat chat-screen relative flex h-full min-h-0 flex-col", expanded && "chat-expanded")}
       onDragOver={(event) => {
-        if (!acceptsPhotos || !event.dataTransfer.types.includes("Files")) return;
+        if (!acceptsFiles || !event.dataTransfer.types.includes("Files")) return;
         event.preventDefault();
         if (!dragging) setDragging(true);
       }}
@@ -725,27 +1149,23 @@ export function Thread({
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
       }}
       onDrop={(event) => {
-        if (!acceptsPhotos) return;
+        if (!acceptsFiles) return;
         event.preventDefault();
         setDragging(false);
-        void attach(event.dataTransfer.files[0]);
+        attachAny(event.dataTransfer.files[0]);
       }}
     >
       {dragging ? (
         <div className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-500 bg-surface/85 text-brand-text backdrop-blur-sm">
-          <ImagePlus className="size-10" aria-hidden />
-          <p className="text-sm font-semibold">{t("dropPhoto")}</p>
+          <Paperclip className="size-10" aria-hidden />
+          <p className="text-sm font-semibold">{t("dropFile")}</p>
         </div>
       ) : null}
       <header className="chat-header flex items-center gap-2 px-2.5 py-2 sm:px-4">
         <Link href={backHref} className={buttonClasses("ghost", "icon-sm", isSupport ? "" : "lg:hidden")} aria-label={t("back")}>
           <ArrowLeft aria-hidden />
         </Link>
-        <HeaderIdentity
-          person={headerPerson}
-          onOpen={() => openCard(headerPerson ?? null)}
-          label={t("card.open")}
-        >
+        <HeaderIdentity person={headerPerson} onOpen={() => openCard(headerPerson ?? null)} label={t("card.open")}>
           {isSupport ? (
             <span className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid" aria-hidden>
               <Headset className="size-5" />
@@ -760,9 +1180,22 @@ export function Thread({
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[0.9375rem] font-semibold leading-tight text-ink">{conversation.title}</h1>
-            {subtitle ? <p className="truncate text-xs text-ink-muted">{subtitle}</p> : null}
+            {subtitle ? (
+              <p className={cn("truncate text-xs", typingLine ? "font-medium text-success-700" : "text-ink-muted")} aria-live="polite">
+                {subtitle}
+              </p>
+            ) : null}
           </div>
         </HeaderIdentity>
+        <button
+          type="button"
+          onClick={toggleExpanded}
+          aria-label={expanded ? t("exitFullScreen") : t("fullScreen")}
+          title={expanded ? t("exitFullScreen") : t("fullScreen")}
+          className={cn(buttonClasses("ghost", "icon-sm"), "hidden lg:inline-flex")}
+        >
+          {expanded ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
+        </button>
         <Overlay.DropdownMenu>
           <Overlay.DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon-sm" aria-label={t("conversationMenu")}>
@@ -773,6 +1206,10 @@ export function Thread({
             <Overlay.DropdownMenuItem onSelect={() => runAction(() => setMutedAction(conversation.id, !conversation.isMuted), () => router.refresh())}>
               {conversation.isMuted ? <Bell aria-hidden /> : <BellOff aria-hidden />}
               {conversation.isMuted ? t("unmute") : t("mute")}
+            </Overlay.DropdownMenuItem>
+            <Overlay.DropdownMenuItem onSelect={() => setWallpaperOpen(true)}>
+              <Palette aria-hidden />
+              {t("wallpaper")}
             </Overlay.DropdownMenuItem>
             {conversation.type !== "direct" && !isSupport ? (
               <Overlay.DropdownMenuItem onSelect={() => setMembersOpen(true)}>
@@ -807,194 +1244,283 @@ export function Thread({
           </p>
           <ul className="mt-1 space-y-0.5">
             {pinned.slice(-3).map((p) => (
-              <li key={p.id} className="truncate text-sm text-ink">
-                <span className="font-medium">{senderName(p)}:</span> {p.content}
+              <li key={p.id}>
+                <button type="button" onClick={() => void jumpTo(p.id)} className="block w-full truncate text-start text-sm text-ink hover:underline">
+                  <span className="font-medium">{senderName(p)}:</span> {p.content}
+                </button>
               </li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="chat-wall min-h-0 flex-1 overflow-y-auto px-2.5 py-3 sm:px-[6%]"
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-        aria-label={t("history")}
-      >
-        {hasMore ? (
-          <div className="mb-3 text-center">
-            <Button variant="secondary" size="sm" onClick={loadOlder} loading={loadingOlder}>
-              {t("loadOlder")}
-            </Button>
-          </div>
-        ) : null}
-        {messages.length === 0 ? (
-          <div className="mx-auto mt-6 max-w-xs rounded-xl bg-[var(--chat-notice)] px-4 py-3 text-center text-xs leading-relaxed text-ink-secondary shadow-xs">
-            {isSupport ? t("supportEmpty") : t("emptyThread")}
-          </div>
-        ) : null}
-        <ol className="space-y-0.5">
-          {rows.map(({ message: m, showDay, previousSenderId }) => {
-            const mine = m.sender_id === currentUserId;
-            const firstOfRun = showDay || previousSenderId !== m.sender_id;
-            const showSender = !mine && conversation.type !== "direct" && firstOfRun;
-            const reply = m.reply_to_id ? byId.get(m.reply_to_id) : undefined;
-            const canEdit = mine && !m.is_deleted && m.type === "text" && now - new Date(m.created_at).getTime() < EDIT_WINDOW_MS;
-            const canPin = !m.is_deleted && (conversation.type === "direct" || myRole === "admin");
-            const isPhoto = !m.is_deleted && m.type === "image" && m.media_path !== null;
-            // Time, marks and ticks: after the words, or over the corner of a
-            // photo that has none.
-            const meta = (onPhoto: boolean) => (
-              <span
-                className={cn(
-                  "flex items-center gap-1 text-[0.6875rem] leading-none tabular",
-                  onPhoto
-                    ? "absolute bottom-1.5 end-1.5 rounded-full bg-black/45 px-2 py-1 text-white backdrop-blur-[2px]"
-                    : cn("chat-meta float-end ms-2 mt-1.5 translate-y-0.5", isPhoto && "me-1 mb-0.5")
-                )}
-              >
-                {m.is_pinned ? <Pin className="size-3" aria-label={t("pinnedMessage")} /> : null}
-                {m.is_favorite ? <Star className="size-3 fill-current" aria-label={t("favorite")} /> : null}
-                {m.is_edited && !m.is_deleted ? <span>{t("edited")}</span> : null}
-                <time dateTime={m.created_at}>{formatClock(m.created_at, locale, timeZone)}</time>
-                {mine && !m.is_deleted ? <Receipt message={m} seenAt={othersReadAt} labels={receiptLabels} onRetry={retry} /> : null}
-              </span>
-            );
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          data-wallpaper={wallpaper}
+          className="chat-wall absolute inset-0 overflow-y-auto overscroll-contain px-2.5 py-3 sm:px-[6%]"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-label={t("history")}
+        >
+          {hasMore ? (
+            <div className="mb-3 text-center">
+              <Button variant="secondary" size="sm" onClick={loadOlder} loading={loadingOlder}>
+                {t("loadOlder")}
+              </Button>
+            </div>
+          ) : null}
+          {messages.length === 0 ? (
+            <div className="mx-auto mt-6 max-w-xs rounded-xl bg-[var(--chat-notice)] px-4 py-3 text-center text-xs leading-relaxed text-ink-secondary shadow-xs">
+              {isSupport ? t("supportEmpty") : t("emptyThread")}
+            </div>
+          ) : null}
+          <ol className="space-y-0.5">
+            {rows.map(({ message: m, showDay, previousSenderId }) => {
+              const mine = m.sender_id === currentUserId;
+              const firstOfRun = showDay || previousSenderId !== m.sender_id;
+              const showSender = !mine && conversation.type !== "direct" && firstOfRun;
+              const reply = m.reply_to_id ? byId.get(m.reply_to_id) : undefined;
+              const canEdit = mine && !m.is_deleted && m.type === "text" && now - new Date(m.created_at).getTime() < EDIT_WINDOW_MS;
+              const canPin = !m.is_deleted && (conversation.type === "direct" || myRole === "admin");
+              const isPhoto = !m.is_deleted && m.type === "image" && m.media_path !== null;
+              const isFile = !m.is_deleted && m.type === "file" && m.media_path !== null;
+              const isVoice = !m.is_deleted && m.type === "audio" && m.media_path !== null;
+              const settled = !m.is_deleted && !m.pending && !m.failed;
+              const reactions: Reaction[] = m.reactions ?? [];
+              const myReaction = reactions.find((r) => r.user_id === currentUserId)?.emoji ?? null;
+              // Time, marks and ticks: after the words, or over the corner of a
+              // photo that has none.
+              const meta = (onPhoto: boolean) => (
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-[0.6875rem] leading-none tabular",
+                    onPhoto
+                      ? "absolute bottom-1.5 end-1.5 rounded-full bg-black/45 px-2 py-1 text-white backdrop-blur-[2px]"
+                      : isVoice
+                        ? "chat-meta absolute bottom-1.5 end-2.5"
+                        : cn("chat-meta float-end ms-2 mt-1.5 translate-y-0.5", (isPhoto || isFile) && "me-1 mb-0.5")
+                  )}
+                >
+                  {m.is_pinned ? <Pin className="size-3" aria-label={t("pinnedMessage")} /> : null}
+                  {m.is_favorite ? <Star className="size-3 fill-current" aria-label={t("favorite")} /> : null}
+                  {m.is_edited && !m.is_deleted ? <span>{t("edited")}</span> : null}
+                  <time dateTime={m.created_at}>{formatClock(m.created_at, locale, timeZone)}</time>
+                  {mine && !m.is_deleted ? <Receipt message={m} seenAt={othersReadAt} labels={receiptLabels} onRetry={retry} /> : null}
+                </span>
+              );
 
-            return (
-              <Fragment key={m.id}>
-                {showDay ? (
-                  <li className="sticky top-0 z-[1] py-2 text-center" aria-hidden={false}>
-                    <span className="rounded-lg bg-[var(--chat-notice)] px-3 py-1 text-[0.6875rem] font-medium uppercase tracking-wide text-ink-secondary shadow-xs">
-                      {formatDate(m.created_at, locale, timeZone)}
-                    </span>
-                  </li>
-                ) : null}
-                <li className={cn("group flex", mine ? "justify-end" : "justify-start", firstOfRun && "pt-1.5")}>
-                  <div className={cn("flex max-w-[88%] items-end gap-1 sm:max-w-[72%]", mine && "flex-row-reverse")}>
-                    <div
-                      // A caption wraps to the photo's width, not the other way round.
-                      style={isPhoto ? { maxWidth: photoBox(m.media_width, m.media_height).width + 8 } : undefined}
-                      className={cn(
-                        "chat-bubble min-w-0 text-sm",
-                        isPhoto ? "p-1" : "px-2.5 pb-1 pt-1.5",
-                        mine ? "chat-bubble-mine" : "chat-bubble-theirs",
-                        firstOfRun && (mine ? "chat-tail-mine" : "chat-tail-theirs"),
-                        m.is_deleted && "italic text-ink-muted"
-                      )}
+              return (
+                <Fragment key={m.id}>
+                  {showDay ? (
+                    <li className="sticky top-0 z-[2] py-2 text-center">
+                      <span className="rounded-lg bg-[var(--chat-notice)] px-3 py-1 text-[0.6875rem] font-medium uppercase tracking-wide text-ink-secondary shadow-xs">
+                        {formatDate(m.created_at, locale, timeZone)}
+                      </span>
+                    </li>
+                  ) : null}
+                  <li
+                    id={`message-${m.id}`}
+                    className={cn("chat-row group flex scroll-my-24", mine ? "justify-end" : "justify-start", firstOfRun && "pt-1.5", flash === m.id && "chat-flash")}
+                  >
+                    <MessageGestures
+                      enabled={settled && canPost && !iBlockedOther}
+                      onReply={() => startReply(m)}
+                      onHold={() => setMenuFor(m.id)}
+                      className="max-w-[88%] sm:max-w-[72%]"
                     >
-                      {showSender ? (
-                        <button
-                          type="button"
-                          onClick={() => openCard(m.sender_id)}
-                          className={cn("mb-0.5 block max-w-full truncate text-start text-xs font-semibold text-brand-text-strong hover:underline", isPhoto && "px-1.5 pt-0.5")}
-                        >
-                          {senderName(m)}
-                        </button>
-                      ) : null}
-                      {reply || m.reply_to_id ? (
-                        <p className={cn("mb-1 truncate rounded-md border-s-4 border-brand-500 bg-[var(--chat-quote)] px-2 py-1 text-xs text-ink-secondary", isPhoto && "mx-0.5")}>
-                          {reply ? `${senderName(reply)}: ${gist(reply)}` : t("replyEarlier")}
-                        </p>
-                      ) : null}
-                      {m.is_deleted ? (
-                        <p className="inline">{t("deletedMessage")}</p>
-                      ) : m.type === "location" && m.location_lat !== null && m.location_lng !== null ? (
-                        <LocationCard lat={Number(m.location_lat)} lng={Number(m.location_lng)} label={m.content} openLabel={t("openMap")} title={t("locationShort")} />
-                      ) : isPhoto ? (
-                        <ChatPhoto message={m} label={t("viewPhoto")} onOpen={(src) => openPhoto(m, src)} overlay={m.content ? null : meta(true)} />
-                      ) : (
-                        <p className="inline whitespace-pre-wrap break-words">{m.content}</p>
-                      )}
-                      {isPhoto && m.content ? (
-                        <p className="inline whitespace-pre-wrap break-words px-1.5 pt-1">{m.content}</p>
-                      ) : null}
-                      {isPhoto && !m.content ? null : meta(false)}
-                    </div>
-                    {!m.is_deleted && !m.pending && !m.failed ? (
-                      <Overlay.DropdownMenu>
-                        <Overlay.DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="rounded-full p-1 text-ink-muted opacity-100 hover:bg-surface/70 hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 data-[state=open]:opacity-100"
-                            aria-label={t("messageActions")}
+                      <div className={cn("flex items-end gap-1", mine && "flex-row-reverse")}>
+                        <div className="flex min-w-0 flex-col">
+                          <div
+                            // A caption wraps to the photo's width, not the other way round.
+                            style={isPhoto ? { maxWidth: photoBox(m.media_width, m.media_height).width + 8 } : undefined}
+                            className={cn(
+                              "chat-bubble min-w-0 text-sm",
+                              isPhoto || isFile ? "p-1" : isVoice ? "px-2 pb-1.5 pt-1.5" : "px-2.5 pb-1 pt-1.5",
+                              mine ? "chat-bubble-mine" : "chat-bubble-theirs",
+                              firstOfRun && (mine ? "chat-tail-mine" : "chat-tail-theirs"),
+                              m.is_deleted && "italic text-ink-muted"
+                            )}
                           >
-                            <EllipsisVertical className="size-4" aria-hidden />
-                          </button>
-                        </Overlay.DropdownMenuTrigger>
-                        <Overlay.DropdownMenuContent align={mine ? "end" : "start"}>
-                          {canPost ? (
-                            <Overlay.DropdownMenuItem onSelect={() => { setEditing(null); setReplyTo(m); inputRef.current?.focus(); }}>
-                              <CornerUpLeft aria-hidden />
-                              {t("reply")}
-                            </Overlay.DropdownMenuItem>
+                            {showSender ? (
+                              <button
+                                type="button"
+                                onClick={() => openCard(m.sender_id)}
+                                className={cn("mb-0.5 block max-w-full truncate text-start text-xs font-semibold text-brand-text-strong hover:underline", (isPhoto || isFile) && "px-1.5 pt-0.5")}
+                              >
+                                {senderName(m)}
+                              </button>
+                            ) : null}
+                            {reply || m.reply_to_id ? (
+                              <button
+                                type="button"
+                                onClick={() => m.reply_to_id && void jumpTo(m.reply_to_id)}
+                                className={cn(
+                                  "chat-quote mb-1 block w-full min-w-0 rounded-md border-s-4 border-brand-500 bg-[var(--chat-quote)] px-2 py-1 text-start text-xs transition-colors",
+                                  (isPhoto || isFile) && "mx-0.5 w-[calc(100%-0.25rem)]"
+                                )}
+                              >
+                                {reply ? (
+                                  <>
+                                    <span className="block truncate font-semibold text-brand-text-strong">
+                                      {reply.sender_id === currentUserId ? t("you") : senderName(reply)}
+                                    </span>
+                                    <span className="block truncate text-ink-secondary">{gist(reply)}</span>
+                                  </>
+                                ) : (
+                                  <span className="block truncate text-ink-secondary">{t("replyEarlier")}</span>
+                                )}
+                              </button>
+                            ) : null}
+                            {m.is_deleted ? (
+                              <p className="inline">{t("deletedMessage")}</p>
+                            ) : m.type === "location" && m.location_lat !== null && m.location_lng !== null ? (
+                              <LocationCard lat={Number(m.location_lat)} lng={Number(m.location_lng)} label={m.content} openLabel={t("openMap")} title={t("locationShort")} />
+                            ) : isPhoto ? (
+                              <ChatPhoto message={m} label={t("viewPhoto")} onOpen={(src) => openPhoto(m, src)} overlay={m.content ? null : meta(true)} />
+                            ) : isFile ? (
+                              <FileCard
+                                message={m}
+                                locale={locale}
+                                labels={{ download: t("downloadFile"), failed: t("downloadFailed") }}
+                                onError={() => toast("danger", t("downloadFailed"))}
+                              />
+                            ) : isVoice ? (
+                              <VoiceNote message={m} mine={mine} labels={{ play: t("play"), pause: t("pause") }} />
+                            ) : (
+                              <MessageText text={m.content} />
+                            )}
+                            {(isPhoto || isFile) && m.content ? <MessageText text={m.content} className="px-1.5 pt-1" /> : null}
+                            {isPhoto && !m.content ? null : meta(false)}
+                          </div>
+                          {reactions.length > 0 ? (
+                            <ReactionsPill
+                              reactions={reactions}
+                              mine={mine}
+                              currentUserId={currentUserId}
+                              nameOf={nameOf}
+                              labels={{ title: t("reactions"), you: t("you"), tapToRemove: t("tapToRemove") }}
+                              onRemove={() => react(m, null)}
+                            />
                           ) : null}
-                          {m.type !== "image" || m.content ? (
-                            <Overlay.DropdownMenuItem
-                              onSelect={() => {
-                                const text = m.type === "location" && m.location_lat !== null ? `${m.location_lat},${m.location_lng}` : m.content;
-                                void navigator.clipboard?.writeText(text);
-                                toast("success", tRoot("common.copied"));
-                              }}
-                            >
-                              <Copy aria-hidden />
-                              {tRoot("common.copy")}
-                            </Overlay.DropdownMenuItem>
-                          ) : null}
-                          <Overlay.DropdownMenuItem onSelect={() => runAction(() => toggleMessageFavoriteAction(m.id, !m.is_favorite), () => upsert({ ...m, is_favorite: !m.is_favorite }))}>
-                            <Star aria-hidden />
-                            {m.is_favorite ? t("unfavorite") : t("favorite")}
-                          </Overlay.DropdownMenuItem>
-                          {canPin ? (
-                            <Overlay.DropdownMenuItem onSelect={() => runAction(() => setMessagePinnedAction(m.id, !m.is_pinned))}>
-                              {m.is_pinned ? <PinOff aria-hidden /> : <Pin aria-hidden />}
-                              {m.is_pinned ? t("unpin") : t("pin")}
-                            </Overlay.DropdownMenuItem>
-                          ) : null}
-                          {canEdit ? (
-                            <Overlay.DropdownMenuItem onSelect={() => { setReplyTo(null); setEditing(m); setDraft(m.content); inputRef.current?.focus(); }}>
-                              <Pencil aria-hidden />
-                              {tRoot("common.edit")}
-                            </Overlay.DropdownMenuItem>
-                          ) : null}
-                          <Overlay.DropdownMenuSeparator />
-                          <Overlay.DropdownMenuItem onSelect={() => runAction(() => deleteMessageAction(m.id, "me"), () => setMessages((c) => c.filter((x) => x.id !== m.id)))}>
-                            <Trash2 aria-hidden />
-                            {t("deleteForMe")}
-                          </Overlay.DropdownMenuItem>
-                          {mine ? (
-                            <Overlay.DropdownMenuItem tone="danger" onSelect={() =>
-                                runAction(
-                                  () => deleteMessageAction(m.id, "everyone"),
-                                  () => {
-                                    // The row has let go of the photo; the file goes with it.
-                                    if (m.media_path) removeImage(m.media_path);
-                                    upsert({ ...m, is_deleted: true, content: "", location_lat: null, location_lng: null, media_path: null, media_width: null, media_height: null, local_preview: undefined });
+                        </div>
+                        {settled ? (
+                          <Overlay.DropdownMenu open={menuFor === m.id} onOpenChange={(open) => setMenuFor(open ? m.id : null)}>
+                            <Overlay.DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="chat-more mb-1 rounded-full p-1 text-ink-muted opacity-100 hover:bg-surface/70 hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 data-[state=open]:opacity-100"
+                                aria-label={t("messageActions")}
+                              >
+                                <EllipsisVertical className="size-4" aria-hidden />
+                              </button>
+                            </Overlay.DropdownMenuTrigger>
+                            <Overlay.DropdownMenuContent align={mine ? "end" : "start"}>
+                              {!iBlockedOther ? <ReactionBar chosen={myReaction} onPick={(emoji) => react(m, emoji)} moreLabel={t("moreReactions")} /> : null}
+                              {canPost ? (
+                                <Overlay.DropdownMenuItem onSelect={() => startReply(m)}>
+                                  <CornerUpLeft aria-hidden />
+                                  {t("reply")}
+                                </Overlay.DropdownMenuItem>
+                              ) : null}
+                              {isFile && m.media_path ? (
+                                <Overlay.DropdownMenuItem
+                                  onSelect={() => {
+                                    const path = m.media_path!;
+                                    void downloadLink(path, m.media_name ?? "file").then((url) => {
+                                      if (url) window.location.assign(url);
+                                      else toast("danger", t("downloadFailed"));
+                                    });
+                                  }}
+                                >
+                                  <Download aria-hidden />
+                                  {t("downloadFile")}
+                                </Overlay.DropdownMenuItem>
+                              ) : null}
+                              {m.content || m.type === "location" ? (
+                                <Overlay.DropdownMenuItem
+                                  onSelect={() => {
+                                    const text = m.type === "location" && m.location_lat !== null ? `${m.location_lat},${m.location_lng}` : m.content;
+                                    void navigator.clipboard?.writeText(text);
+                                    toast("success", tRoot("common.copied"));
+                                  }}
+                                >
+                                  <Copy aria-hidden />
+                                  {tRoot("common.copy")}
+                                </Overlay.DropdownMenuItem>
+                              ) : null}
+                              <Overlay.DropdownMenuItem onSelect={() => runAction(() => toggleMessageFavoriteAction(m.id, !m.is_favorite), () => upsert({ ...m, is_favorite: !m.is_favorite }))}>
+                                <Star aria-hidden />
+                                {m.is_favorite ? t("unfavorite") : t("favorite")}
+                              </Overlay.DropdownMenuItem>
+                              {canPin ? (
+                                <Overlay.DropdownMenuItem onSelect={() => runAction(() => setMessagePinnedAction(m.id, !m.is_pinned))}>
+                                  {m.is_pinned ? <PinOff aria-hidden /> : <Pin aria-hidden />}
+                                  {m.is_pinned ? t("unpin") : t("pin")}
+                                </Overlay.DropdownMenuItem>
+                              ) : null}
+                              {canEdit ? (
+                                <Overlay.DropdownMenuItem onSelect={() => { setReplyTo(null); setEditing(m); setDraft(m.content); inputRef.current?.focus(); }}>
+                                  <Pencil aria-hidden />
+                                  {tRoot("common.edit")}
+                                </Overlay.DropdownMenuItem>
+                              ) : null}
+                              <Overlay.DropdownMenuSeparator />
+                              <Overlay.DropdownMenuItem onSelect={() => runAction(() => deleteMessageAction(m.id, "me"), () => setMessages((c) => c.filter((x) => x.id !== m.id)))}>
+                                <Trash2 aria-hidden />
+                                {t("deleteForMe")}
+                              </Overlay.DropdownMenuItem>
+                              {mine ? (
+                                <Overlay.DropdownMenuItem
+                                  tone="danger"
+                                  onSelect={() =>
+                                    runAction(
+                                      () => deleteMessageAction(m.id, "everyone"),
+                                      () => {
+                                        // The row has let go of the file; the file goes with it.
+                                        if (m.media_path) removeMedia(m.media_path);
+                                        upsert({ ...m, is_deleted: true, content: "", ...EMPTIED });
+                                      }
+                                    )
                                   }
-                                )
-                              }
-                            >
-                              <Trash2 aria-hidden />
-                              {t("deleteForEveryone")}
-                            </Overlay.DropdownMenuItem>
-                          ) : (
-                            <Overlay.DropdownMenuItem tone="danger" onSelect={() => setReporting(m)}>
-                              <Flag aria-hidden />
-                              {t("report")}
-                            </Overlay.DropdownMenuItem>
-                          )}
-                        </Overlay.DropdownMenuContent>
-                      </Overlay.DropdownMenu>
-                    ) : null}
-                  </div>
-                </li>
-              </Fragment>
-            );
-          })}
-        </ol>
+                                >
+                                  <Trash2 aria-hidden />
+                                  {t("deleteForEveryone")}
+                                </Overlay.DropdownMenuItem>
+                              ) : (
+                                <Overlay.DropdownMenuItem tone="danger" onSelect={() => setReporting(m)}>
+                                  <Flag aria-hidden />
+                                  {t("report")}
+                                </Overlay.DropdownMenuItem>
+                              )}
+                            </Overlay.DropdownMenuContent>
+                          </Overlay.DropdownMenu>
+                        ) : null}
+                      </div>
+                    </MessageGestures>
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ol>
+        </div>
+        {showJump ? (
+          <button
+            type="button"
+            onClick={toLatest}
+            aria-label={t("jumpToLatest")}
+            className="chat-jump absolute bottom-3 end-3 z-[3] inline-flex size-10 items-center justify-center rounded-full shadow-md transition-transform active:scale-95"
+          >
+            <ChevronDown className="size-5" aria-hidden />
+            {unseen > 0 ? (
+              <span className="absolute -top-1.5 -end-1 inline-flex min-w-5 items-center justify-center rounded-full bg-success-600 px-1 text-[0.6875rem] font-bold leading-5 text-white tabular">
+                {unseen > 99 ? "99+" : unseen}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
       </div>
 
       <footer className="chat-composer px-2 py-2 sm:px-3">
@@ -1007,6 +1533,35 @@ export function Thread({
           </div>
         ) : !canPost ? (
           <p className="px-2 py-1 text-sm text-ink-muted">{t("readOnlyChannel")}</p>
+        ) : voice.recording ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={voice.cancel}
+              aria-label={t("cancelRecording")}
+              title={t("cancelRecording")}
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-danger-600 transition-colors hover:bg-danger-600/10"
+            >
+              <Trash2 className="size-5" aria-hidden />
+            </button>
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-3xl bg-surface px-4 py-2.5 shadow-xs ring-1 ring-line/60" role="status">
+              <span className="chat-rec-dot size-2.5 shrink-0 rounded-full bg-danger-600" aria-hidden />
+              <span className="text-[0.9375rem] font-medium text-ink tabular">{formatDuration(voice.elapsed)}</span>
+              <span className="chat-rec-wave flex h-5 flex-1 items-center gap-[3px] overflow-hidden" aria-hidden>
+                {Array.from({ length: 24 }, (_, index) => (
+                  <span key={index} style={{ animationDelay: `${(index % 8) * 90}ms` }} />
+                ))}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void finishRecording()}
+              aria-label={t("sendVoice")}
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95"
+            >
+              <SendHorizontal className="size-5" aria-hidden />
+            </button>
+          </div>
         ) : (
           <form
             onSubmit={(e) => {
@@ -1017,9 +1572,11 @@ export function Thread({
             {replyTo || editing ? (
               <div className="mb-1.5 flex items-center gap-2 rounded-xl border-s-4 border-brand-500 bg-surface px-3 py-1.5 text-sm shadow-xs">
                 {editing ? <Pencil className="size-4 shrink-0 text-ink-muted" aria-hidden /> : <CornerUpLeft className="size-4 shrink-0 text-ink-muted" aria-hidden />}
-                <span className="min-w-0 flex-1 truncate">
-                  {editing ? t("editing") : t("replyingTo", { name: senderName(replyTo!) })}
-                  {replyTo ? <span className="text-ink-muted"> — {gist(replyTo)}</span> : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold text-brand-text-strong">
+                    {editing ? t("editing") : t("replyingTo", { name: replyTo!.sender_id === currentUserId ? t("you") : senderName(replyTo!) })}
+                  </span>
+                  {replyTo ? <span className="block truncate text-xs text-ink-muted">{gist(replyTo)}</span> : null}
                 </span>
                 <button
                   type="button"
@@ -1037,20 +1594,35 @@ export function Thread({
             ) : null}
             {attached || preparing ? (
               <div className="chat-attachment mb-1.5 flex items-center gap-3 rounded-2xl bg-surface p-1.5 pe-3 shadow-xs ring-1 ring-line/60">
-                {attached ? (
+                {attached?.kind === "photo" ? (
                   // eslint-disable-next-line @next/next/no-img-element -- a local blob of the photo about to be sent
-                  <img src={attached.previewUrl} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+                  <img src={attached.image.previewUrl} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+                ) : attached?.kind === "file" ? (
+                  <span className={cn("inline-flex size-14 shrink-0 items-center justify-center rounded-xl text-white", FILE_TINT[attachedFileKind ?? "doc"])}>
+                    <FileText className="size-6" aria-hidden />
+                  </span>
                 ) : (
                   <span className="inline-flex size-14 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-ink-muted">
                     <LoaderCircle className="size-5 animate-spin" aria-hidden />
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink">{t("photo")}</span>
-                  <span className="block truncate text-xs text-ink-muted">{preparing ? t("photoPreparing") : t("photoCaptionHint")}</span>
+                  <span className="block truncate text-sm font-semibold text-ink">{attached?.kind === "file" ? attached.name : t("photo")}</span>
+                  <span className="block truncate text-xs text-ink-muted">
+                    {preparing
+                      ? t("photoPreparing")
+                      : attached?.kind === "file"
+                        ? `${formatBytes(attached.size, locale)} · ${t("fileCaptionHint")}`
+                        : t("photoCaptionHint")}
+                  </span>
                 </span>
                 {attached ? (
-                  <button type="button" onClick={detach} className="rounded-full p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink" aria-label={t("removePhoto")}>
+                  <button
+                    type="button"
+                    onClick={() => replaceAttachment(null)}
+                    className="rounded-full p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink"
+                    aria-label={attached.kind === "file" ? t("removeFile") : t("removePhoto")}
+                  >
                     <X className="size-4" aria-hidden />
                   </button>
                 ) : null}
@@ -1059,43 +1631,74 @@ export function Thread({
             <div className="flex items-end gap-1.5">
               <div className="flex min-w-0 flex-1 items-end rounded-3xl bg-surface px-1 shadow-xs ring-1 ring-line/60">
                 {!editing ? (
-                  <button
-                    type="button"
-                    onClick={shareLocation}
-                    disabled={locating}
-                    aria-label={t("sendLocation")}
-                    title={t("sendLocation")}
-                    className="my-1 ms-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted hover:text-brand-text disabled:animate-pulse"
-                  >
-                    <MapPin className="size-5" aria-hidden />
-                  </button>
+                  <Overlay.DropdownMenu>
+                    <Overlay.DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={preparing || locating}
+                        aria-label={t("attach")}
+                        title={t("attach")}
+                        className="my-1 ms-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted hover:text-brand-text disabled:animate-pulse data-[state=open]:text-brand-text"
+                      >
+                        <Paperclip className="size-5 -rotate-45" aria-hidden />
+                      </button>
+                    </Overlay.DropdownMenuTrigger>
+                    <Overlay.DropdownMenuContent align="start">
+                      <Overlay.DropdownMenuItem onSelect={() => fileRef.current?.click()}>
+                        <span className="chat-attach-icon bg-[#7c5cff]"><FileText aria-hidden /></span>
+                        {t("attachDocument")}
+                      </Overlay.DropdownMenuItem>
+                      <Overlay.DropdownMenuItem onSelect={() => photoRef.current?.click()}>
+                        <span className="chat-attach-icon bg-[#1f8ef1]"><ImagePlus aria-hidden /></span>
+                        {t("attachGallery")}
+                      </Overlay.DropdownMenuItem>
+                      <Overlay.DropdownMenuItem onSelect={() => cameraRef.current?.click()}>
+                        <span className="chat-attach-icon bg-[#e5484d]"><Camera aria-hidden /></span>
+                        {t("attachCamera")}
+                      </Overlay.DropdownMenuItem>
+                      <Overlay.DropdownMenuItem onSelect={shareLocation}>
+                        <span className="chat-attach-icon bg-[#16a34a]"><MapPin aria-hidden /></span>
+                        {t("sendLocation")}
+                      </Overlay.DropdownMenuItem>
+                    </Overlay.DropdownMenuContent>
+                  </Overlay.DropdownMenu>
                 ) : null}
-                {!editing ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      disabled={preparing}
-                      aria-label={t("attachPhoto")}
-                      title={t("attachPhoto")}
-                      className="my-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted hover:text-brand-text disabled:animate-pulse"
-                    >
-                      <ImagePlus className="size-5" aria-hidden />
-                    </button>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      tabIndex={-1}
-                      onChange={(event) => {
-                        void attach(event.target.files?.[0]);
-                        // The same photo picked twice in a row is still a change.
-                        event.target.value = "";
-                      }}
-                    />
-                  </>
-                ) : null}
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  tabIndex={-1}
+                  onChange={(event) => {
+                    attachAny(event.target.files?.[0]);
+                    // The same file picked twice in a row is still a change.
+                    event.target.value = "";
+                  }}
+                />
+                <input
+                  ref={cameraRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  tabIndex={-1}
+                  onChange={(event) => {
+                    attachAny(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept={FILE_ACCEPT}
+                  className="hidden"
+                  tabIndex={-1}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) attachFile(file);
+                    event.target.value = "";
+                  }}
+                />
                 <label htmlFor="message-input" className="sr-only">
                   {t("composer")}
                 </label>
@@ -1104,14 +1707,17 @@ export function Thread({
                   ref={inputRef}
                   rows={1}
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => {
+                    setDraft(e.target.value);
+                    if (e.target.value.trim()) announceTyping("typing");
+                  }}
                   onKeyDown={onKeyDown}
                   onPaste={(event) => {
                     if (editing) return;
-                    const file = [...event.clipboardData.files].find((f) => f.type.startsWith("image/"));
+                    const file = [...event.clipboardData.files][0];
                     if (!file) return;
                     event.preventDefault();
-                    void attach(file);
+                    attachAny(file);
                   }}
                   maxLength={MESSAGE_MAX_LENGTH}
                   placeholder={attached ? t("photoCaption") : t("composerPlaceholder")}
@@ -1119,14 +1725,26 @@ export function Thread({
                   aria-describedby="message-hint"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={editing ? !draft.trim() || saving : !draft.trim() && !attached}
-                aria-label={editing ? tRoot("common.save") : t("send")}
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95 disabled:opacity-50"
-              >
-                {editing ? <Check className="size-5" aria-hidden /> : <SendHorizontal className="size-5" aria-hidden />}
-              </button>
+              {!editing && !draft.trim() && !attached && recordable ? (
+                <button
+                  type="button"
+                  onClick={() => void startRecording()}
+                  aria-label={t("recordVoice")}
+                  title={t("recordVoice")}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95"
+                >
+                  <Mic className="size-5" aria-hidden />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={editing ? !draft.trim() || saving : !draft.trim() && !attached}
+                  aria-label={editing ? tRoot("common.save") : t("send")}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95 disabled:opacity-50"
+                >
+                  {editing ? <Check className="size-5" aria-hidden /> : <SendHorizontal className="size-5" aria-hidden />}
+                </button>
+              )}
             </div>
             <p id="message-hint" className="sr-only">{t("composerHint")}</p>
           </form>
@@ -1146,6 +1764,11 @@ export function Thread({
         canMessage={canMessage && cardFor?.userId !== currentUserId}
         hideMessage={cardFor !== null && cardFor.userId === other?.user_id}
       />
+      <WallpaperDialog
+        open={wallpaperOpen}
+        onOpenChange={setWallpaperOpen}
+        labels={{ title: t("wallpaper"), description: t("wallpaperDescription"), close: tRoot("common.close"), names: wallpaperNames }}
+      />
 
       {conversation.type !== "direct" && !isSupport ? (
         <GroupMembersDialog
@@ -1161,6 +1784,18 @@ export function Thread({
     </div>
   );
 }
+
+const FILE_TINT: Record<string, string> = {
+  pdf: "bg-[#e5484d]",
+  doc: "bg-[#2f6fed]",
+  sheet: "bg-[#16a34a]",
+  slides: "bg-[#f97316]",
+  text: "bg-[#64748b]",
+  archive: "bg-[#a16207]",
+  audio: "bg-[#8b5cf6]",
+  video: "bg-[#db2777]",
+  image: "bg-[#0d9488]",
+};
 
 function ReportDialog({ message, onClose, onSubmit }: { message: ThreadMessage | null; onClose: () => void; onSubmit: (reason: string, details: string) => void }) {
   const t = useTranslations("portal.messages");

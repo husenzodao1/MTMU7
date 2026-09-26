@@ -65,6 +65,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // The keyboard shrinks the page rather than covering it, so a chat's
+  // composer stays above the keyboard on Android as it does on an iPhone.
+  interactiveWidget: "resizes-content",
   themeColor: "#c4861c",
 };
 

@@ -12,11 +12,44 @@
 
 export type PushLocale = "tg" | "ru" | "en";
 
-const WORDS: Record<PushLocale, { support: string; location: string; photo: string; attachment: string; someone: string }> = {
-  tg: { support: "Дастгирии онлайн", location: "📍 Ҷойгиршавӣ", photo: "📷 Сурат", attachment: "📎 Файл", someone: "Паёми нав" },
-  ru: { support: "Онлайн-поддержка", location: "📍 Местоположение", photo: "📷 Фото", attachment: "📎 Файл", someone: "Новое сообщение" },
-  en: { support: "Online support", location: "📍 Location", photo: "📷 Photo", attachment: "📎 File", someone: "New message" },
+interface Words {
+  support: string;
+  location: string;
+  photo: string;
+  attachment: string;
+  voice: string;
+  someone: string;
+  /** The buttons on the notification itself. */
+  reply: string;
+  read: string;
+  placeholder: string;
+  /** Said on the notification when a reply typed into it did not go. */
+  failed: string;
+}
+
+const WORDS: Record<PushLocale, Words> = {
+  tg: {
+    support: "Дастгирии онлайн", location: "📍 Ҷойгиршавӣ", photo: "📷 Сурат", attachment: "📎 Файл", voice: "🎤 Паёми овозӣ",
+    someone: "Паёми нав", reply: "Ҷавоб", read: "Хондам", placeholder: "Паём…",
+    failed: "Ҷавоб нарафт — барномаро кушоед",
+  },
+  ru: {
+    support: "Онлайн-поддержка", location: "📍 Местоположение", photo: "📷 Фото", attachment: "📎 Файл", voice: "🎤 Голосовое сообщение",
+    someone: "Новое сообщение", reply: "Ответить", read: "Прочитано", placeholder: "Сообщение…",
+    failed: "Ответ не отправлен — откройте приложение",
+  },
+  en: {
+    support: "Online support", location: "📍 Location", photo: "📷 Photo", attachment: "📎 File", voice: "🎤 Voice message",
+    someone: "New message", reply: "Reply", read: "Mark as read", placeholder: "Message…",
+    failed: "Reply not sent — open the app",
+  },
 };
+
+/** What the notification's own buttons say, in the reader's language. */
+export function actionLabels(locale: PushLocale): { reply: string; read: string; placeholder: string; failed: string } {
+  const w = WORDS[locale];
+  return { reply: w.reply, read: w.read, placeholder: w.placeholder, failed: w.failed };
+}
 
 export function asPushLocale(value: unknown): PushLocale {
   return value === "ru" || value === "en" ? value : "tg";
@@ -58,9 +91,11 @@ export function messagePush(source: MessagePushSource, readerId: string, locale:
       ? w.location + (source.preview.trim() ? ` · ${source.preview.trim()}` : "")
       : source.type === "image"
         ? w.photo + (source.preview.trim() ? ` · ${source.preview.trim()}` : "")
-        : source.type === "file" || source.type === "audio"
-        ? w.attachment
-        : source.preview.trim();
+        : source.type === "file"
+          ? source.preview.trim() ? `📎 ${source.preview.trim()}` : w.attachment
+          : source.type === "audio"
+            ? w.voice
+            : source.preview.trim();
   const body = shorten(text || w.someone, 140);
 
   const isSupport = source.conversation_type === "support";

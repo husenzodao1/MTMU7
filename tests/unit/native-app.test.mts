@@ -27,4 +27,13 @@ describe("the phone app, as the site sees it", () => {
     assert.equal(pathForAppLink("tj.mtmu7.app://settings", SITE), null);
     assert.equal(pathForAppLink("not a url", SITE), null);
   });
+
+  it("follows a notification the app drew to its conversation, and nowhere else", () => {
+    const id = "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b";
+    assert.equal(pathForAppLink(`tj.mtmu7.app://open/messages/${id}`, SITE), `/messages/${id}`);
+    assert.equal(pathForAppLink("tj.mtmu7.app://open/support/chat", SITE), "/support/chat");
+    assert.equal(pathForAppLink("tj.mtmu7.app://open//evil.example/x", SITE), null);
+    assert.equal(pathForAppLink("tj.mtmu7.app://open/messages?next=https://evil.example", SITE), "/messages");
+    assert.equal(pathForAppLink("tj.mtmu7.app://open/%2F%2Fevil", SITE), null);
+  });
 });

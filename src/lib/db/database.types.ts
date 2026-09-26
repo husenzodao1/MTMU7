@@ -2710,6 +2710,62 @@ export type Database = {
           },
         ];
       };
+      message_reactions: {
+        Row: {
+          message_id: string;
+          user_id: string;
+          conversation_id: string;
+          school_id: string;
+          emoji: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          message_id: string;
+          user_id: string;
+          conversation_id: string;
+          school_id: string;
+          emoji?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          message_id?: string;
+          user_id?: string;
+          conversation_id?: string;
+          school_id?: string;
+          emoji?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_reactions_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_reactions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       message_reports: {
         Row: {
           id: string;
@@ -2813,6 +2869,10 @@ export type Database = {
           media_path: string | null;
           media_width: number | null;
           media_height: number | null;
+          media_name: string | null;
+          media_size: number | null;
+          media_mime: string | null;
+          media_duration: number | null;
         };
         Insert: {
           id?: string;
@@ -2835,6 +2895,10 @@ export type Database = {
           media_path?: string | null;
           media_width?: number | null;
           media_height?: number | null;
+          media_name?: string | null;
+          media_size?: number | null;
+          media_mime?: string | null;
+          media_duration?: number | null;
         };
         Update: {
           id?: string;
@@ -2857,6 +2921,10 @@ export type Database = {
           media_path?: string | null;
           media_width?: number | null;
           media_height?: number | null;
+          media_name?: string | null;
+          media_size?: number | null;
+          media_mime?: string | null;
+          media_duration?: number | null;
         };
         Relationships: [
           {
@@ -5444,7 +5512,7 @@ export type Database = {
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
       forget_my_device_token: { Args: { p_token: string }; Returns: undefined };
-      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null }[] };
+      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null; media_name: string | null; media_size: number | null; media_mime: string | null; media_duration: number | null; reactions: Json | null }[] };
       get_member_card: { Args: { p_user_id: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_profile: { Args: Record<PropertyKey, never>; Returns: Json };
@@ -5496,6 +5564,7 @@ export type Database = {
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
+      set_message_reaction: { Args: { p_message_id: string; p_emoji: string }; Returns: undefined };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
       student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
       submit_support_request: { Args: { p_school_id: string; p_name: string; p_contact: string; p_message: string }; Returns: string };

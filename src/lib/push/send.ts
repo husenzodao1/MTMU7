@@ -3,7 +3,8 @@ import webpush from "web-push";
 import { publicEnv } from "@/lib/env";
 import { serverEnv } from "@/lib/env.server";
 import { createFcmClient, readServiceAccount, type FcmClient } from "@/lib/push/fcm";
-import { asPushLocale, messagePush, type MessagePushSource } from "@/lib/push/payload";
+import { actionLabels, asPushLocale, messagePush, type MessagePushSource, type PushLocale } from "@/lib/push/payload";
+import { REPLY_TOKEN_TTL_MS, replyKey, signReplyToken } from "@/lib/push/reply-token";
 import { createPrivilegedClient } from "@/lib/supabase/privileged";
 
 /**
@@ -80,6 +81,33 @@ interface Rpc {
   rpc: (name: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
 }
 
+let signingKey: Buffer | null | undefined;
+
+/**
+ * The key a notification's reply is signed with, or null when the server has
+ * no secret to derive it from (and so no way to accept the reply either).
+ */
+export function replySigningKey(): Buffer | null {
+  if (signingKey === undefined) {
+    signingKey = serverEnv.SUPABASE_SERVICE_ROLE_KEY ? replyKey(serverEnv.SUPABASE_SERVICE_ROLE_KEY) : null;
+  }
+  return signingKey;
+}
+
+/**
+ * What a notification needs to be answered where it is shown: a signed note
+ * for this reader in this conversation, and the words on its buttons. Nothing
+ * for an announcement channel, where readers do not write.
+ */
+function replyExtras(claim: Claim, readerId: string, locale: PushLocale): { reply?: string; labels?: ReturnType<typeof actionLabels> } {
+  const key = replySigningKey();
+  if (!key || claim.conversation_type === "announcement") return {};
+  return {
+    reply: signReplyToken({ userId: readerId, conversationId: claim.conversation_id, expiresAt: Date.now() + REPLY_TOKEN_TTL_MS }, key),
+    labels: actionLabels(locale),
+  };
+}
+
 // Enough to empty a class group quickly without opening three hundred sockets
 // from one function at once.
 const CONCURRENCY = 16;
@@ -114,8 +142,18 @@ async function sendToPhones(client: Rpc, native: FcmClient, claim: Claim): Promi
   const queue = [...(claim.devices ?? [])];
   const worker = async () => {
     for (let device = queue.shift(); device; device = queue.shift()) {
-      const payload = messagePush(claim, device.user_id, asPushLocale(device.locale));
-      const result = await native.send({ token: device.token, title: payload.title, body: payload.body, url: payload.url, tag: payload.tag });
+      const locale = asPushLocale(device.locale);
+      const payload = messagePush(claim, device.user_id, locale);
+      const extras = replyExtras(claim, device.user_id, locale);
+      const result = await native.send({
+        token: device.token,
+        title: payload.title,
+        body: payload.body,
+        url: payload.url,
+        tag: payload.tag,
+        reply: extras.reply,
+        labels: extras.labels,
+      });
       if (result === "gone") gone.push(device.token);
       else if (result === "failed") console.warn("[push] phone delivery failed", { platform: device.platform });
     }
@@ -129,7 +167,8 @@ async function sendToBrowsers(client: Rpc, claim: Claim): Promise<void> {
   const queue = [...claim.targets];
   const worker = async () => {
     for (let target = queue.shift(); target; target = queue.shift()) {
-      const payload = messagePush(claim, target.user_id, asPushLocale(target.locale));
+      const locale = asPushLocale(target.locale);
+      const payload = { ...messagePush(claim, target.user_id, locale), ...replyExtras(claim, target.user_id, locale) };
       try {
         await webpush.sendNotification(
           { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.auth } },

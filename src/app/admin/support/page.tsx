@@ -94,7 +94,15 @@ export default async function SupportInboxPage({ searchParams }: { searchParams:
                     </span>
                     <span className="mt-0.5 flex items-center justify-between gap-2">
                       <span className={cn("truncate text-sm", c.unread_count > 0 ? "text-ink" : "text-ink-muted")}>
-                        {c.last_message_type === "location" ? tm("locationShort") : c.last_message_content}
+                        {c.last_message_type === "location"
+                          ? `📍 ${tm("locationShort")}`
+                          : c.last_message_type === "image"
+                            ? `📷 ${c.last_message_content || tm("photo")}`
+                            : c.last_message_type === "file"
+                              ? `📎 ${c.last_message_content || tm("fileShort")}`
+                              : c.last_message_type === "audio"
+                                ? `🎤 ${tm("voice")}`
+                                : c.last_message_content}
                       </span>
                       {c.unread_count > 0 ? (
                         <span className="shrink-0 rounded-full bg-brand-solid px-1.5 text-xs font-semibold leading-5 text-brand-on-solid tabular">{c.unread_count}</span>

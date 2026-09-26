@@ -93,12 +93,42 @@ export function mediaPath(schoolId: string, conversationId: string, userId: stri
 }
 
 export async function uploadImage(path: string, image: PreparedImage): Promise<boolean> {
+  return uploadMedia(path, image.blob, image.blob.type);
+}
+
+/**
+ * Any file into the conversation's folder, labelled with the bare type the
+ * bucket's list is written in ("audio/webm", not "audio/webm;codecs=opus").
+ *
+ * The label has to be on the blob itself: a Blob is sent as a form part, and
+ * the part carries the blob's own type, not the upload's option — and a
+ * browser that does not recognise ".xlsx" gives a picked file no type at
+ * all, which the bucket would refuse.
+ */
+export async function uploadMedia(path: string, blob: Blob, contentType: string): Promise<boolean> {
+  const type = contentType.split(";")[0]!.trim();
+  const labelled = blob.type === type ? blob : new Blob([blob], { type });
   const { error } = await getBrowserClient()
     .storage.from(CHAT_MEDIA_BUCKET)
-    .upload(path, image.blob, { contentType: image.blob.type, cacheControl: "31536000", upsert: false });
+    .upload(path, labelled, { contentType: type, cacheControl: "31536000", upsert: false });
   // A retry of an upload that did land the first time is not a failure.
   return !error || /exists|duplicate/i.test(error.message);
 }
+
+/**
+ * A link that downloads the file under its own name, asked for when it is
+ * tapped: a document is opened far less often than a photo is looked at, so
+ * there is no point signing a link for every one on screen.
+ */
+export async function downloadLink(path: string, name: string): Promise<string | null> {
+  const { data } = await getBrowserClient()
+    .storage.from(CHAT_MEDIA_BUCKET)
+    .createSignedUrl(path, 10 * 60, { download: name })
+    .catch(() => ({ data: null }));
+  return data?.signedUrl ?? null;
+}
+
+export const removeMedia = (path: string) => removeImage(path);
 
 export function removeImage(path: string): void {
   void getBrowserClient()

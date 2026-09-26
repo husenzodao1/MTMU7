@@ -92,6 +92,8 @@
 	<string>To choose a photo and send it in a chat or to support.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>To save a photo someone sent you in a chat.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>To record a voice message in a chat, only while you are recording one.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>To send your location in a chat, only when you tap "Send location".</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

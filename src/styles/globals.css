@@ -451,6 +451,8 @@
   --chat-notice: #ffffffe8;
   --chat-quote: rgb(11 20 26 / 0.05);
   --chat-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  --chat-link: #027eb5;
+  --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%236b5a3a' stroke-opacity='0.16' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
   /* Google's own light button. */
   --google-bg: #ffffff;
   --google-bg-hover: #f7f8f8;
@@ -473,6 +475,8 @@
     --chat-notice: #182229f0;
     --chat-quote: rgb(255 255 255 / 0.06);
     --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+    --chat-link: #53bdeb;
+    --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
     --google-bg: #131314;
     --google-bg-hover: #1f1f20;
     --google-line: #8e918f;
@@ -492,6 +496,8 @@
   --chat-notice: #182229f0;
   --chat-quote: rgb(255 255 255 / 0.06);
   --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+  --chat-link: #53bdeb;
+  --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
   /* Google's own dark button. */
   --google-bg: #131314;
   --google-bg-hover: #1f1f20;
@@ -1044,9 +1050,50 @@
 
 /* ------------------------------------------------------------------ chat */
 
+/*
+ * The wall behind the conversation, and the wallpapers that can replace it
+ * (chosen per device, features/messages/wallpaper.tsx). The default is the
+ * messenger's own idea — faint drawings on paper — drawn from a school's
+ * things: a book, a pencil, a cap, a bell, a ruler. Every other one is a tint
+ * over the chat's own wall colour, so all of them work by day and by night.
+ */
 .chat-wall {
   background-color: var(--chat-wall);
+  background-image: var(--chat-doodle);
+  background-size: 260px 260px;
+}
+.chat-wall[data-wallpaper="plain"] {
+  background-image: none;
+}
+.chat-wall[data-wallpaper="dots"] {
   background-image: radial-gradient(var(--chat-wall-dot) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+.chat-wall[data-wallpaper="mint"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(37 211 102 / 0.16), rgb(18 140 126 / 0.2));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="sky"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(56 189 248 / 0.18), rgb(59 130 246 / 0.2));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="peach"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(251 146 60 / 0.16), rgb(244 114 182 / 0.16));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="lavender"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(167 139 250 / 0.2), rgb(236 72 153 / 0.12));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="brand"] {
+  background-image:
+    var(--chat-doodle),
+    linear-gradient(165deg, color-mix(in oklab, var(--color-brand-solid) 26%, transparent), color-mix(in oklab, var(--color-brand-solid) 8%, transparent));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="graphite"] {
+  background-color: #2b3238;
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1.1px, transparent 1.4px);
   background-size: 16px 16px;
 }
 
@@ -1156,6 +1203,177 @@
    that moves — a thread of forty photos should not be forty animations. */
 .chat-photo {
   background: linear-gradient(135deg, var(--chat-quote), transparent 70%), var(--chat-quote);
+}
+
+/* ------------------------------------------------ the chat as a messenger */
+
+/*
+ * On a phone the conversation takes the whole screen, above the portal's
+ * bars, and is exactly as tall as what the keyboard leaves visible (--vvh and
+ * --vvt come from the visual viewport, set by the thread). On a computer the
+ * same, when asked for. Below the menus and dialogs (z-50), above the bars.
+ */
+@media (max-width: 1023.98px) {
+  .chat-screen {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--vvt, 0px);
+    height: var(--vvh, 100dvh);
+    z-index: 45;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--chat-bar);
+  }
+}
+.chat-screen.chat-expanded {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--vvt, 0px);
+  height: var(--vvh, 100dvh);
+  z-index: 45;
+  background: var(--chat-bar);
+}
+@media (min-width: 1024px) {
+  .chat-screen.chat-expanded .chat-wall {
+    padding-inline: max(6%, calc((100% - 62rem) / 2));
+  }
+}
+html.chat-lock,
+html.chat-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* A bubble is held, not selected, on a touch screen: the hold opens its menu,
+   so the menu's button steps aside there (it stays for the keyboard, and as
+   the point the menu opens from). */
+@media (pointer: coarse) {
+  .chat-row .chat-bubble {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .chat-row .chat-more:not(:focus-visible) {
+    width: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+.chat-link {
+  color: var(--chat-link);
+}
+
+/* The quoted message: a tap takes you there, and it lights up for a moment. */
+.chat-quote:hover {
+  background: color-mix(in oklab, var(--chat-quote) 100%, var(--color-brand-solid) 8%);
+}
+.chat-flash {
+  animation: chat-flash 1.6s ease-out;
+}
+@keyframes chat-flash {
+  0%,
+  35% {
+    background: color-mix(in oklab, var(--color-brand-solid) 22%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.chat-swipe-arrow {
+  background: var(--chat-notice);
+  color: var(--color-ink-secondary);
+  box-shadow: var(--chat-shadow);
+}
+
+.chat-jump {
+  background: var(--chat-theirs);
+  color: var(--color-ink-secondary);
+  box-shadow: var(--chat-shadow), 0 2px 10px rgb(0 0 0 / 0.12);
+}
+
+/* Files and voice notes, tinted from the bubble they sit in. */
+.chat-file {
+  background: var(--chat-quote);
+}
+.chat-file:not(:disabled):hover {
+  background: color-mix(in oklab, var(--chat-quote) 100%, var(--color-ink) 6%);
+}
+.chat-file-action {
+  color: var(--chat-meta);
+  border: 1.5px solid color-mix(in oklab, var(--chat-meta) 45%, transparent);
+}
+.chat-voice-play {
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+}
+.chat-voice-bar {
+  background: color-mix(in oklab, var(--chat-meta) 45%, transparent);
+  transition: background-color 120ms linear;
+}
+.chat-voice-bar.is-played {
+  background: var(--chat-seen);
+}
+.chat-voice-speed {
+  background: color-mix(in oklab, var(--chat-meta) 22%, transparent);
+  color: var(--color-ink-secondary);
+}
+
+.chat-reactions {
+  background: var(--chat-theirs);
+  box-shadow: var(--chat-shadow), 0 0 0 2px var(--chat-wall);
+}
+.chat-reactions.is-mine {
+  background: color-mix(in oklab, var(--chat-theirs) 80%, var(--chat-seen) 20%);
+}
+
+.chat-attach-icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #fff;
+}
+.chat-attach-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* Recording: a slow red pulse and a live-looking wave. */
+.chat-rec-dot {
+  animation: chat-rec 1.2s ease-in-out infinite;
+}
+@keyframes chat-rec {
+  50% {
+    opacity: 0.25;
+  }
+}
+.chat-rec-wave span {
+  display: block;
+  width: 3px;
+  flex-shrink: 0;
+  height: 30%;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-danger-600) 70%, transparent);
+  animation: chat-wave 0.9s ease-in-out infinite alternate;
+}
+@keyframes chat-wave {
+  to {
+    height: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-flash,
+  .chat-rec-dot,
+  .chat-rec-wave span {
+    animation: none;
+  }
 }
 
 /* The full-screen photo: the bars fade into the black rather than sit on it. */
