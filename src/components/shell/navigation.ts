@@ -83,13 +83,13 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     key: "people",
     labelKey: "admin.nav.groups.people",
     rules: [
-      { item: { key: "students", href: "/admin/students", icon: "students", labelKey: "admin.nav.students" }, visible: anyOf("students.create", "students.update", "students.archive") },
-      { item: { key: "staff", href: "/admin/staff", icon: "staff", labelKey: "admin.nav.staff" }, visible: anyOf("staff.create", "staff.update", "staff.archive") },
-      { item: { key: "guardians", href: "/admin/guardians", icon: "guardians", labelKey: "admin.nav.guardians" }, visible: anyOf("guardians.manage") },
-      // The slips a parent types into the bot. It sits beside the people pages
-      // because that is what it is about, even though it issues a secret.
-      { item: { key: "parents", href: "/admin/parents", icon: "children", labelKey: "admin.nav.parents" }, visible: anyOf("students.update") },
-      { item: { key: "users", href: "/admin/users", icon: "users", labelKey: "admin.nav.users" }, visible: anyOf("users.view") },
+      // Every account in one block: pupils, teachers, parents, administrators,
+      // with the parents' bot beside them. The older per-kind pages still
+      // answer (a pupil's academic record, roles and history are linked from
+      // the account), but the menu has one way in.
+      { item: { key: "accounts", href: "/admin/accounts", icon: "users", labelKey: "admin.nav.accounts" }, visible: anyOf("users.view") },
+      { item: { key: "students", href: "/admin/students", icon: "students", labelKey: "admin.nav.students" }, visible: (a) => !can(a, "users.view") && canAny(a, ["students.create", "students.update", "students.archive"]) },
+      { item: { key: "staff", href: "/admin/staff", icon: "staff", labelKey: "admin.nav.staff" }, visible: (a) => !can(a, "users.view") && canAny(a, ["staff.create", "staff.update", "staff.archive"]) },
       // Approvals and invitation codes belonged to self-registration, which the
       // school closed when it began issuing logins itself (migration 00045).
       // Both pages still answer, so anything left pending from that time can be

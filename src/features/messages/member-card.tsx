@@ -1,7 +1,7 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { BookOpen, GraduationCap, House, MessageCircle, UserRound, X } from "lucide-react";
+import { Award, BookOpen, GraduationCap, House, MessageCircle, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
@@ -23,6 +23,8 @@ interface MemberCard {
   class: string | null;
   subjects: Array<{ tg: string; ru: string; en: string }>;
   homeroom: string | null;
+  /** A pupil's posts in their class: monitor, cleanliness committee… (00072). */
+  positions?: string[];
 }
 
 /** What is already known before the card arrives: enough to draw it at once. */
@@ -110,6 +112,13 @@ export function MemberCardDialog({
   const facts: Array<{ icon: typeof BookOpen; label: string; value: string }> = [];
   if (card?.class) facts.push({ icon: GraduationCap, label: t("class"), value: card.class });
   if (card?.homeroom) facts.push({ icon: House, label: t("homeroom"), value: card.homeroom });
+  if (card?.positions?.length) {
+    facts.push({
+      icon: Award,
+      label: tRoot("accounts.sections.positions"),
+      value: card.positions.map((p) => (tRoot.has(`accounts.positions.${p}`) ? tRoot(`accounts.positions.${p}`) : p)).join(" · "),
+    });
+  }
   if (subjects.length > 0) facts.push({ icon: BookOpen, label: t("subjects"), value: subjects.join(" · ") });
 
   return (

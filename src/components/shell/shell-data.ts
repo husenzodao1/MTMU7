@@ -4,6 +4,7 @@ import { hasModule, can, displayName, type Access } from "@/lib/auth/access";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { createClient } from "@/lib/supabase/server";
 import { adminNavigation, portalNavigation, showAdminLink, type NavGroup, type NavItem } from "@/components/shell/navigation";
+import { myHomeroomClasses } from "@/features/accounts/queries";
 import type { ShellSchool, ShellUser } from "@/components/shell/app-shell";
 
 export interface ShellData {
@@ -46,6 +47,12 @@ export async function loadShellData(access: Access): Promise<ShellData> {
 export async function portalShellNav(access: Access): Promise<{ groups: NavGroup[]; mobileBar: NavItem[]; switchHref: { href: string; label: string } | null }> {
   const t = await getTranslations("nav");
   const items = portalNavigation(access);
+  // A homeroom teacher runs their class from the portal: it goes right after
+  // the teaching page, for them and for nobody else.
+  if (items.some((i) => i.key === "teach") && (await myHomeroomClasses(access)).length > 0) {
+    const at = items.findIndex((i) => i.key === "teach") + 1;
+    items.splice(at, 0, { key: "myClass", href: "/my-class", icon: "students", labelKey: "nav.myClass" });
+  }
   const pick = (key: string) => items.find((i) => i.key === key);
   const mobileBar = [
     pick("dashboard"),

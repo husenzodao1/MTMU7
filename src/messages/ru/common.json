@@ -253,6 +253,7 @@
     "language": "Язык",
     "signOut": "Выйти",
     "adminCenter": "Центр управления",
-    "backToPortal": "Вернуться в портал"
+    "backToPortal": "Вернуться в портал",
+    "myClass": "Мой класс"
   }
 }

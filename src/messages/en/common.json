@@ -253,6 +253,7 @@
     "language": "Language",
     "signOut": "Sign out",
     "adminCenter": "Admin Control Center",
-    "backToPortal": "Back to portal"
+    "backToPortal": "Back to portal",
+    "myClass": "My class"
   }
 }

@@ -58,11 +58,11 @@ after(async () => {
 });
 
 describe("the example workbooks, imported in the order the office is given", () => {
-  it("pupils: every row is accepted, and the two classes appear", async () => {
+  it("pupils: every row is accepted, a first-grader without an address among them, and the classes appear", async () => {
     const data = await sheet("students");
     const preview = await people("students", data, true);
     assert.deepEqual(problems(preview), [], "an example the importer would reject teaches the wrong thing");
-    assert.deepEqual(preview.newClasses, ["5А", "5Б"]);
+    assert.deepEqual(preview.newClasses, ["1А", "5А", "5Б"]);
 
     const done = await people("students", data, false);
     assert.equal(done.created, data.length);

@@ -24,7 +24,7 @@ type Step = "upload" | "preview" | "done";
  * The workbook that comes back carries the only copy of the passwords. It is
  * handed over as a download the moment the import finishes, and never stored.
  */
-export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
+export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: PeopleKind; parentManagedMaxGrade?: number }) {
   const t = useTranslations("admin.import");
   const tRoot = useTranslations();
   const template = PEOPLE_TEMPLATES[kind];
@@ -34,7 +34,9 @@ export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
   const [fileName, setFileName] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<PeopleOutcome | null>(null);
-  const [summary, setSummary] = useState<{ created: number; updated: number } | null>(null);
+  const [summary, setSummary] = useState<{ created: number; updated: number; telegram: number } | null>(null);
+  // Send the youngest pupils' new logins to their parents' Telegram.
+  const [notifyParents, setNotifyParents] = useState(kind === "students");
   const [pending, startTransition] = useTransition();
 
   const reset = () => {
@@ -71,6 +73,7 @@ export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
     startTransition(async () => {
       const body = new FormData();
       body.set("file", file);
+      if (notifyParents) body.set("notifyParents", "1");
       const response = await fetch(`/admin/import/people/${kind}`, { method: "POST", body });
       if (!response.ok) {
         const detail = (await response.json().catch(() => null)) as { message?: string } | null;
@@ -91,6 +94,7 @@ export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
       setSummary({
         created: Number(response.headers.get("X-Import-Created") ?? 0),
         updated: Number(response.headers.get("X-Import-Updated") ?? 0),
+        telegram: Number(response.headers.get("X-Telegram-Sent") ?? 0),
       });
       setStep("done");
     });
@@ -225,6 +229,18 @@ export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
             </p>
           )}
 
+          {outcome.valid && kind === "students" ? (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface-muted/40 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={notifyParents}
+                onChange={(event) => setNotifyParents(event.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-brand-600"
+              />
+              <span className="text-ink">{t("workbook.notifyParents", { grade: parentManagedMaxGrade })}</span>
+            </label>
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
             {outcome.valid ? (
               <Button onClick={confirmImport} loading={pending}>
@@ -241,9 +257,10 @@ export function PeopleImportWizard({ kind }: { kind: PeopleKind }) {
       {step === "done" && summary ? (
         <Alert tone="success" title={t("doneTitle")}>
           <p>{t("workbook.done", { created: summary.created, updated: summary.updated })}</p>
+          {summary.telegram > 0 ? <p className="mt-1">{t("workbook.telegramSent", { count: summary.telegram })}</p> : null}
           <p className="mt-2 font-medium">{t("workbook.keepTheFile")}</p>
           <p className="mt-3 flex flex-wrap gap-2">
-            <Link href={kind === "students" ? "/admin/students" : "/admin/staff"} className={buttonClasses("secondary", "sm")}>
+            <Link href={`/admin/accounts?category=${kind === "students" ? "students" : "teachers"}`} className={buttonClasses("secondary", "sm")}>
               {t("backToList")}
             </Link>
             <Button variant="ghost" size="sm" onClick={reset}>

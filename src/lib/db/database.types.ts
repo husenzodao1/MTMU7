@@ -526,6 +526,65 @@ export type Database = {
           },
         ];
       };
+      class_positions: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_id: string;
+          student_id: string;
+          position: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_id: string;
+          student_id: string;
+          position: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_id?: string;
+          student_id?: string;
+          position?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "class_positions_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_positions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_positions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_positions_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       class_students: {
         Row: {
           id: string;
@@ -5492,6 +5551,9 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      account_credentials_recipients: { Args: { p_logins: string[] }; Returns: Json };
+      account_details: { Args: { p_user_id: string }; Returns: Json };
+      account_directory: { Args: { p_category?: string; p_query?: string; p_class_id?: string; p_limit?: number; p_offset?: number }; Returns: Json };
       add_conversation_members: { Args: { p_conversation_id: string; p_member_ids: string[] }; Returns: number };
       add_news_comment: { Args: { p_article: string; p_body: string }; Returns: string };
       admin_dashboard: { Args: { p_school_id?: string }; Returns: Json };
@@ -5521,6 +5583,7 @@ export type Database = {
       get_user_school_id: { Args: { p_user_id: string }; Returns: string };
       grantable_roles: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; name_tg: string | null; name_ru: string | null; name_en: string | null; level: number | null; permissions: number | null }[] };
       import_classes: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
+      import_guardians: { Args: { p_rows: Json }; Returns: number };
       import_people: { Args: { p_kind: string; p_rows: Json; p_dry_run?: boolean; p_offset?: number; p_limit?: number }; Returns: Json };
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
@@ -5552,11 +5615,14 @@ export type Database = {
       report_library: { Args: { p_school_id?: string }; Returns: Json };
       report_message: { Args: { p_message_id: string; p_reason: string; p_details?: string }; Returns: string };
       report_teacher_workload: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { staff_id: string | null; teacher_name: string | null; staff_type: string | null; planned_weekly_hours: number | null; scheduled_lessons_per_week: number | null; max_weekly_hours: number | null; classes: number | null; subjects: number | null }[] };
+      reset_account_mfa: { Args: { p_user_id: string }; Returns: undefined };
+      reset_account_password: { Args: { p_user_id: string }; Returns: Json };
       resolve_public_school: { Args: { p_host?: string; p_slug?: string }; Returns: string };
       resolve_support_request: { Args: { p_request_id: string; p_done: boolean }; Returns: undefined };
       review_registration: { Args: { p_request_id: string; p_approve: boolean; p_role_id?: string; p_class_id?: string; p_reason?: string }; Returns: undefined };
       role_permission_slugs: { Args: { p_role_id: string }; Returns: string[] };
       rule_journal_column: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_kind: string; p_date?: string; p_assessment_type_id?: string; p_label?: string }; Returns: string };
+      save_account: { Args: { p_user_id: string; p_data: Json }; Returns: Json };
       save_device_token: { Args: { p_token: string; p_platform: string; p_locale?: string }; Returns: undefined };
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
       save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };

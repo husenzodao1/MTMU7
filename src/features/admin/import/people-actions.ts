@@ -6,6 +6,8 @@ import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import { readPeopleSheet, type PeopleOutcome } from "@/features/admin/import/people-import";
 import { isPeopleKind } from "@/features/admin/import/templates";
+import { guardianIssues } from "@/features/admin/import/guardians";
+import { gradeLimits } from "@/features/accounts/queries";
 
 /**
  * Checks a workbook and reports everything wrong with it, writing nothing.
@@ -33,5 +35,13 @@ export async function previewPeopleImportAction(kind: string, formData: FormData
     p_limit: 0,
   });
   if (error) return mapDbError(error);
-  return success(undefined, data as unknown as PeopleOutcome);
+  const outcome = data as unknown as PeopleOutcome;
+  if (kind === "students") {
+    const extra = guardianIssues(sheet.rows, (await gradeLimits(access.school.id)).required);
+    if (extra.length > 0) {
+      outcome.errors = [...outcome.errors, ...extra].sort((a, b) => a.row - b.row);
+      outcome.valid = false;
+    }
+  }
+  return success(undefined, outcome);
 }

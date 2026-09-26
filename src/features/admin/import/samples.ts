@@ -24,6 +24,21 @@ export type SampleKind = "students" | "staff" | "timetable";
 type Row = Record<string, string>;
 
 const STUDENTS: Row[] = [
+  // A first-grader: no address of their own (they sign in with the login),
+  // and the parent the school must have for the youngest classes.
+  {
+    class_name: "1А",
+    last_name: "Назаров",
+    first_name: "Фирдавс",
+    middle_name: "Бахтиёрович",
+    date_of_birth: "2019-09-01",
+    gender: "писар",
+    email: "",
+    phone: "",
+    guardian_name: "Назарова Шаҳло",
+    guardian_phone: "+992 93 555 44 33",
+    guardian_relationship: "модар",
+  },
   {
     class_name: "5А",
     last_name: "Каримов",
@@ -33,6 +48,9 @@ const STUDENTS: Row[] = [
     gender: "писар",
     email: "ali.karimov@gmail.com",
     phone: "+992 90 123 45 67",
+    guardian_name: "Каримова Мадина",
+    guardian_phone: "+992 90 111 22 33",
+    guardian_relationship: "модар",
   },
   {
     class_name: "5А",
