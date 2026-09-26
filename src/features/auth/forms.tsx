@@ -18,6 +18,7 @@ import {
   signInAction,
   verifyPasswordResetAction,
 } from "@/features/auth/actions";
+import { abandonSecondStepAction, verifySecondStepAction } from "@/features/auth/two-factor-actions";
 
 export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string | null }) {
   const t = useTranslations("auth.login");
@@ -105,7 +106,7 @@ const CODE_MAX = 10;
  *
  * Reaching six digits sends the form, the way a phone's own code screens do.
  */
-function CodeField() {
+export function CodeField({ label, hint }: { label?: string; hint?: string } = {}) {
   const t = useTranslations("auth.verify");
   const error = useFieldError("token");
   const submitted = useFieldValue("token");
@@ -123,7 +124,7 @@ function CodeField() {
   const complete = value.length >= CODE_LENGTH;
 
   return (
-    <FormField label={t("code")} htmlFor={id} hint={t("codeHint")} error={error} required>
+    <FormField label={label ?? t("code")} htmlFor={id} hint={hint ?? t("codeHint")} error={error} required>
       <div className={cn("otp relative", complete && "otp-complete")} data-invalid={error ? "" : undefined}>
         <input
           id={id}
@@ -156,7 +157,7 @@ function CodeField() {
           spellCheck={false}
           autoCorrect="off"
           autoCapitalize="none"
-          {...describedBy(id, { hint: t("codeHint"), error })}
+          {...describedBy(id, { hint: hint ?? t("codeHint"), error })}
           className="otp-input absolute inset-0 z-10 size-full cursor-text"
         />
         <div className="flex items-center justify-center gap-1.5 sm:gap-2" aria-hidden>
@@ -251,5 +252,30 @@ export function NewPasswordForm() {
         {t("save")}
       </SubmitButton>
     </ActionForm>
+  );
+}
+
+/**
+ * The second step after the password: six digits from the authenticator app,
+ * in the same six boxes as the email code. Typing the sixth sends it.
+ */
+export function TwoFactorForm({ next }: { next?: string }) {
+  const t = useTranslations("auth.twoFactor");
+  return (
+    <div className="space-y-4">
+      <ActionForm action={verifySecondStepAction} className="space-y-4">
+        {next ? <input type="hidden" name="next" value={next} /> : null}
+        <CodeField label={t("code")} hint={t("codeHint")} />
+        <SubmitButton className="w-full" size="lg">
+          {t("submit")}
+        </SubmitButton>
+      </ActionForm>
+      <form action={abandonSecondStepAction} className="text-center">
+        <button type="submit" className="text-sm font-medium text-brand-text hover:underline">
+          {t("otherAccount")}
+        </button>
+      </form>
+      <p className="text-center text-xs leading-relaxed text-ink-muted">{t("lost")}</p>
+    </div>
   );
 }

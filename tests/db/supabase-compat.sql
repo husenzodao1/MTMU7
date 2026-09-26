@@ -97,6 +97,21 @@ CREATE TABLE IF NOT EXISTS auth.identities (
   CONSTRAINT identities_provider_id_provider_unique UNIQUE (provider_id, provider)
 );
 
+-- The part of Supabase's MFA schema the migrations read: which users have a
+-- verified second factor. The real table keys status as an enum; text compares
+-- the same way against the literal 'verified'.
+CREATE TABLE IF NOT EXISTS auth.mfa_factors (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  friendly_name text,
+  factor_type text NOT NULL DEFAULT 'totp',
+  status text NOT NULL DEFAULT 'unverified',
+  secret text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS mfa_factors_user_id_idx ON auth.mfa_factors (user_id);
+
 CREATE OR REPLACE FUNCTION auth.jwt() RETURNS jsonb
 LANGUAGE sql STABLE AS $$
   SELECT coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb

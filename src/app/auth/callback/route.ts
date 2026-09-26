@@ -33,6 +33,15 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) return redirectTo(viaGoogle ? "/login?reason=google-failed" : "/login?reason=link-invalid");
 
+  // Two-step sign-in turned on: before anything else — and certainly before
+  // deciding the account does not exist, which is what getAccess says while
+  // the second step is owed.
+  const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (level?.currentLevel === "aal1" && level.nextLevel === "aal2") {
+    const next = url.searchParams.get("next");
+    return redirectTo(`/two-factor${next ? `?next=${encodeURIComponent(safeRedirectPath(next, "/dashboard"))}` : ""}`);
+  }
+
   if (viaGoogle) {
     const access = await getAccess();
     if (!access) {

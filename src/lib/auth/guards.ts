@@ -1,6 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
-import { canAny, canEnterAdmin, getAccess, getAuthUserId, hasModule, type Access } from "@/lib/auth/access";
+import { canAny, canEnterAdmin, getAccess, getAuthUserId, hasModule, isSecondStepOwed, type Access } from "@/lib/auth/access";
 import type { Permission } from "@/lib/auth/permissions";
 
 /**
@@ -17,6 +17,8 @@ export interface PortalSession {
 }
 
 export async function getPortalSession(): Promise<PortalSession> {
+  // Signed in with the password, second step still owed: nothing else opens.
+  if (await isSecondStepOwed()) redirect("/two-factor");
   const access = await getAccess();
   if (access) {
     if (!access.isActive || access.status === "blocked") redirect("/login?reason=inactive");

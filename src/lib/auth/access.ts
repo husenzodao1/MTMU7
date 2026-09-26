@@ -110,13 +110,30 @@ export interface Access {
  * for anonymous visitors and for authenticated users without an account row
  * (e.g. a registration that was never completed).
  */
-export const getAccess = cache(async (): Promise<Access | null> => {
+/**
+ * Whether the caller has a second step (2FA) owed in this session. Read from
+ * the same answer getAccess gets, so it costs nothing extra; the database is
+ * what decides (migration 00070), and while the step is owed it tells nothing
+ * else.
+ */
+export const isSecondStepOwed = cache(async (): Promise<boolean> => {
+  return (await accessAnswer()).mfaRequired;
+});
+
+const accessAnswer = cache(async (): Promise<{ data: unknown; error: { code?: string; message: string } | null; mfaRequired: boolean }> => {
   const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_my_access");
+  const mfaRequired = Boolean(data && typeof data === "object" && (data as { mfa_required?: unknown }).mfa_required === true);
+  return { data, error: error as { code?: string; message: string } | null, mfaRequired };
+});
+
+export const getAccess = cache(async (): Promise<Access | null> => {
   // The database answers this under the caller's own JWT, so it doubles as the
   // session check: no session means no user. Asking the auth server first would
   // double the auth requests for every page view, and its rate limit would then
   // read as "signed out".
-  const { data, error } = await supabase.rpc("get_my_access");
+  const { data, error, mfaRequired } = await accessAnswer();
+  if (mfaRequired) return null;
   if (error) {
     // 401/403 is simply "not signed in"; anything else is a fault worth seeing
     // rather than silently turning into a redirect back to the sign-in page.

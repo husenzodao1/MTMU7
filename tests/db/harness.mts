@@ -94,6 +94,8 @@ export async function createDatabase(options: { upTo?: string; cache?: boolean }
 interface Claims {
   sub?: string;
   role: "anon" | "authenticated" | "service_role";
+  /** Authenticator assurance: aal2 once a second factor has been passed. */
+  aal?: "aal1" | "aal2";
 }
 
 async function withClaims<T>(db: Db, claims: Claims, fn: (tx: Tx) => Promise<T>): Promise<T> {
@@ -107,6 +109,11 @@ async function withClaims<T>(db: Db, claims: Claims, fn: (tx: Tx) => Promise<T>)
 /** Runs `fn` as an authenticated Supabase user (RLS enforced). */
 export function asUser<T>(db: Db, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return withClaims(db, { sub: userId, role: "authenticated" }, fn);
+}
+
+/** Runs `fn` as an authenticated user at a given assurance level (after, or before, the second factor). */
+export function asUserAt<T>(db: Db, userId: string, aal: "aal1" | "aal2", fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return withClaims(db, { sub: userId, role: "authenticated", aal }, fn);
 }
 
 /** Runs `fn` as the anonymous role (RLS enforced). */

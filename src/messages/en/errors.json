@@ -115,6 +115,7 @@
     "invalid_prefix": "That prefix is not valid.",
     "nickname": "A nickname may use letters, digits, a dot or underscore, 3–30 characters.",
     "nicknameTaken": "That nickname is already taken.",
-    "employeeNumber": "A number may contain only letters, digits and hyphens."
+    "employeeNumber": "A number may contain only letters, digits and hyphens.",
+    "code_six_digits": "The code must be 6 digits."
   }
 }

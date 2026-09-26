@@ -7,6 +7,7 @@ import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Checkbox, Fieldset } from "@/components/ui/form-controls";
 import { ThemeSwitcher } from "@/components/site/theme-switcher";
+import { TwoFactorSettings } from "@/features/auth/two-factor-settings";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
 import { requireAccess } from "@/lib/auth/guards";
 import { LOCALES } from "@/lib/i18n/text";
@@ -32,11 +33,19 @@ export default async function SettingsPage() {
     .eq("user_id", access.userId)
     .maybeSingle();
   const types = (settings?.notification_types ?? {}) as Record<string, boolean>;
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const twoFactorOn = Boolean(factors?.totp?.some((factor) => factor.status === "verified"));
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
       <div className="grid max-w-3xl gap-5">
+        <Card>
+          <CardHeader title={t("twoFactor.title")} description={t("twoFactor.description")} />
+          <CardBody>
+            <TwoFactorSettings enabled={twoFactorOn} />
+          </CardBody>
+        </Card>
         <Card>
           <CardHeader title={t("language")} description={t("languageHint")} />
           <CardBody>

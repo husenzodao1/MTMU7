@@ -5465,6 +5465,7 @@ export type Database = {
       list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
+      mfa_required: { Args: Record<PropertyKey, never>; Returns: boolean };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };

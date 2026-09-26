@@ -97,6 +97,13 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
     return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.invalid_credentials", undefined, kept));
   }
 
+  // Two-step sign-in turned on: the password was only the first step.
+  const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (level?.currentLevel === "aal1" && level.nextLevel === "aal2") {
+    const next = input.data.next ? `?next=${encodeURIComponent(safeRedirectPath(input.data.next))}` : "";
+    redirect(`/two-factor${next}`);
+  }
+
   const access = await getAccess();
   if (access && (!access.isActive || access.status === "blocked")) {
     await supabase.auth.signOut();
