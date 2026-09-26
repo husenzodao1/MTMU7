@@ -96,6 +96,47 @@
       "aboutBody": "This portal was built for the schools of Istaravshan. It has one aim: to gather what is scattered today across paper registers and WhatsApp groups into one orderly, dependable place — without making a teacher do the same work twice.",
       "startTitle": "Ready?",
       "startBody": "The school administration issues the login and password. Enter them on the sign-in page."
+    },
+    "download": {
+      "button": "App",
+      "title": "Get the app",
+      "subtitle": "and use the portal more easily: notifications, quick launch, everything one tap away.",
+      "more": "All ways to install",
+      "platforms": {
+        "android": {
+          "name": "Android",
+          "hint": "APK · direct install"
+        },
+        "ios": {
+          "name": "iPhone and iPad",
+          "hint": "On the Home Screen · App Store"
+        },
+        "windows": {
+          "name": "Windows",
+          "hint": "For your computer · .exe"
+        }
+      }
+    },
+    "app": {
+      "title": "The МТМУ №7 app",
+      "lead": "The same portal on your phone and computer: notifications for new messages, quick launch, and one tap to lessons and marks.",
+      "get": "Download",
+      "android": {
+        "step1": "Tap Download and open MTMU7-android.apk.",
+        "step2": "If the phone asks, allow the browser to install unknown apps.",
+        "step3": "Tap Install and open the app from your home screen."
+      },
+      "ios": {
+        "step1": "Open the portal in Safari (on iPhone only Safari can install it).",
+        "step2": "Tap Share (the square with an arrow) and choose Add to Home Screen.",
+        "step3": "Tap Add: the МТМУ №7 icon appears on your Home Screen."
+      },
+      "windows": {
+        "step1": "Click Download and open MTMU7-windows-setup.exe.",
+        "step2": "If Windows warns you, click More info → Run anyway.",
+        "step3": "The app appears on your desktop and in the Start menu."
+      },
+      "note": "The app uses the same account: sign in with the same login and password."
     }
   }
 }

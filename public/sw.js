@@ -1,17 +1,70 @@
 /*
- * The portal's service worker. It does one thing: show a message that arrived
- * while the portal was closed, and open the conversation when it is tapped.
+ * The portal's service worker. Two jobs:
  *
- * No caching and no offline pages — a school portal that shows yesterday's
- * marks from a cache is worse than one that says it is offline.
+ * 1. Show a message that arrived while the portal was closed, and open the
+ *    conversation when it is tapped.
+ * 2. Keep the portal's unchanging files — its scripts, styles, fonts, icons —
+ *    on the device, so the second visit starts at once and a school's slow
+ *    line carries only what is new.
+ *
+ * Never a page and never data: a school portal that shows yesterday's marks
+ * from a cache is worse than one that says it is offline. Only files whose
+ * address changes whenever their content does (Next's /_next/static/) or that
+ * never change (the icons and pictures shipped with the site) are kept.
  */
+
+const STATIC_CACHE = "static-v1";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(names.filter((name) => name.startsWith("static-") && name !== STATIC_CACHE).map((name) => caches.delete(name)));
+      await self.clients.claim();
+    })()
+  );
+});
+
+function isStatic(url) {
+  return (
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith("/_next/static/") ||
+      url.pathname.startsWith("/icons/") ||
+      url.pathname.startsWith("/brand/") ||
+      url.pathname.startsWith("/gov/") ||
+      url.pathname.startsWith("/flags/") ||
+      url.pathname.startsWith("/images/"))
+  );
+}
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return;
+  }
+  if (!isStatic(url)) return;
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(STATIC_CACHE);
+      const hit = await cache.match(request);
+      if (hit) return hit;
+      const response = await fetch(request);
+      // Whole, same-origin answers only; a partial or failed one is passed on
+      // and never kept.
+      if (response.ok && response.status === 200 && response.type === "basic") {
+        cache.put(request, response.clone()).catch(() => undefined);
+      }
+      return response;
+    })()
+  );
 });
 
 function samePage(clientUrl, path) {

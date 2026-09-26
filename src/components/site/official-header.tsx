@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
+import { DownloadApp, type DownloadLabels } from "@/components/site/download-app";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
+import { isAppUserAgent } from "@/lib/native/app";
+import { APP_PLATFORMS, platformOf } from "@/lib/native/downloads";
 import { SOCIAL_ICON } from "@/components/site/social-icons";
 import { getPlatformIdentity } from "@/lib/site/identity";
 import { getAuthSchool } from "@/lib/site/auth-school";
@@ -21,6 +25,18 @@ export async function OfficialStrip() {
   const t = await getTranslations("site");
   const authority = pickText(identity.authorityName, locale) || t("authority");
   const emblem = identity.emblemUrl ?? DEFAULT_EMBLEM;
+  // Inside the app there is nothing to download.
+  const userAgent = (await headers()).get("user-agent");
+  const offerApp = !isAppUserAgent(userAgent);
+  const download: DownloadLabels = {
+    button: t("download.button"),
+    title: t("download.title"),
+    subtitle: t("download.subtitle"),
+    more: t("download.more"),
+    platforms: Object.fromEntries(
+      APP_PLATFORMS.map((p) => [p, { name: t(`download.platforms.${p}.name`), hint: t(`download.platforms.${p}.hint`) }])
+    ) as DownloadLabels["platforms"],
+  };
 
   return (
     // Not overflow-hidden: the language panel opens downwards out of this
@@ -53,7 +69,10 @@ export async function OfficialStrip() {
           </p>
         </div>
 
-        <LocaleSwitcher tone="onDark" className="shrink-0" />
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {offerApp ? <DownloadApp labels={download} recommended={platformOf(userAgent)} /> : null}
+          <LocaleSwitcher tone="onDark" className="shrink-0" />
+        </div>
       </div>
     </div>
   );

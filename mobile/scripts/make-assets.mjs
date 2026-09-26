@@ -1,9 +1,9 @@
 /**
- * The app's icon and splash, drawn from the school's own photograph: the crest
- * the portal shows after sign-in — the photo in a thick ring of the school's
- * gold — on the night blue the app opens on.
+ * The app's icon and splash, drawn from the portal's own mark
+ * (public/brand/*.svg): an open book in two strokes and a warm dot above it,
+ * on indigo turning to teal.
  *
- *   node scripts/make-assets.mjs     → resources/*.png
+ *   node scripts/make-assets.mjs     → resources/*.png, and the web's icons
  *   npx capacitor-assets generate    → every size both stores ask for
  *
  * Run by `npm run assets`, which does both.
@@ -14,61 +14,46 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, "..", "..");
+const brand = join(root, "public", "brand");
 const out = join(here, "..", "resources");
-const photo = join(here, "..", "..", "public", "images", "school-photo.png");
-const NIGHT = "#0b141a";
-const GOLD = "#e3a130";
-const GOLD_LIGHT = "#f4cc7a";
-
 mkdirSync(out, { recursive: true });
 
-/** The crest at a given diameter, on a transparent square of `canvas` pixels. */
-async function crest(canvas, diameter) {
-  const ring = Math.round(diameter * 0.07);
-  const inner = diameter - ring * 2;
-  const svg = Buffer.from(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="${GOLD_LIGHT}"/>
-          <stop offset="0.55" stop-color="${GOLD}"/>
-          <stop offset="1" stop-color="#b87a17"/>
-        </linearGradient>
-      </defs>
-      <circle cx="${canvas / 2}" cy="${canvas / 2}" r="${diameter / 2 - ring / 2}" fill="none" stroke="url(#g)" stroke-width="${ring}"/>
-    </svg>`);
-  // The source is already round, on a transparent square: trim that margin
-  // so the photograph meets the ring.
-  const picture = await sharp(photo).trim().resize(inner, inner, { fit: "cover" }).png().toBuffer();
-  // Clip to a circle even if the source ever stops being one.
-  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${inner}" height="${inner}"><circle cx="${inner / 2}" cy="${inner / 2}" r="${inner / 2}"/></svg>`);
-  const round = await sharp(picture).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
-  const offset = Math.round((canvas - inner) / 2);
-  return sharp({ create: { width: canvas, height: canvas, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite([
-      { input: round, left: offset, top: offset },
-      { input: svg, left: 0, top: 0 },
-    ])
-    .png()
-    .toBuffer();
+const icon = join(brand, "app-icon.svg");
+const mark = join(brand, "mark.svg");
+const background = join(brand, "app-background.svg");
+
+const render = (svg, size) => sharp(svg, { density: Math.ceil((size / 512) * 72 * 1.5) }).resize(size, size).png();
+
+/** The mark at `scale` of the square, centred on a transparent or given background. */
+async function markOn(size, scale, base) {
+  const inner = Math.round(size * scale);
+  const drawn = await render(mark, inner).toBuffer();
+  const canvas = base
+    ? render(base, size)
+    : sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).png();
+  return sharp(await canvas.toBuffer()).composite([{ input: drawn, gravity: "center" }]).png();
 }
 
-async function onNight(size, crestBuffer) {
-  return sharp({ create: { width: size, height: size, channels: 4, background: NIGHT } })
-    .composite([{ input: crestBuffer, gravity: "center" }])
-    .png()
-    .toBuffer();
-}
+// Capacitor's sources.
+await render(icon, 1024).toFile(join(out, "icon-only.png"));
+// Android's adaptive icon crops to a circle or squircle: the mark keeps to the
+// middle two-thirds of the foreground layer.
+await (await markOn(1024, 0.62)).toFile(join(out, "icon-foreground.png"));
+await render(background, 1024).toFile(join(out, "icon-background.png"));
+const splash = await markOn(2732, 0.22, background);
+await splash.clone().toFile(join(out, "splash.png"));
+await splash.clone().toFile(join(out, "splash-dark.png"));
 
-// The plain icon (iOS, older Android): the crest filling most of the square.
-await sharp(await onNight(1024, await crest(1024, 860))).toFile(join(out, "icon-only.png"));
-// Android's adaptive icon: the launcher crops to a circle, squircle or
-// teardrop, so the crest stays inside the middle two-thirds.
-await sharp(await crest(1024, 620)).toFile(join(out, "icon-foreground.png"));
-await sharp({ create: { width: 1024, height: 1024, channels: 4, background: NIGHT } }).png().toFile(join(out, "icon-background.png"));
-// The splash: a smaller crest in the middle of the night.
-const splash = await onNight(2732, await crest(2732, 720));
-await sharp(splash).toFile(join(out, "splash.png"));
-await sharp(splash).toFile(join(out, "splash-dark.png"));
+// The web: the installable app on a home screen, the tab, Apple's touch icon.
+await render(icon, 192).toFile(join(root, "public", "icons", "icon-192.png"));
+await render(icon, 512).toFile(join(root, "public", "icons", "icon-512.png"));
+await (await markOn(512, 0.62, background)).toFile(join(root, "public", "icons", "icon-maskable-512.png"));
+await render(icon, 512).toFile(join(root, "src", "app", "icon.png"));
+await render(icon, 180).toFile(join(root, "src", "app", "apple-icon.png"));
 
-console.log("resources/: icon-only, icon-foreground, icon-background, splash, splash-dark");
+// The Windows app's installer and window icon (electron-builder makes the .ico).
+mkdirSync(join(root, "desktop", "build"), { recursive: true });
+await render(icon, 1024).toFile(join(root, "desktop", "build", "icon.png"));
+
+console.log("resources/, public/icons/, src/app/icon.png, apple-icon.png, desktop/build/icon.png");

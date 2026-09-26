@@ -20,13 +20,43 @@ The site knows it is inside the app by `MTMU7App` in the User-Agent
 through `/auth/app-return`, and notifications are registered with Firebase
 (`src/features/native/bridge.ts`) instead of Web Push.
 
+## Downloads
+
+The strip at the top of every page carries a small **App** button (not shown
+inside the apps themselves) with the three downloads, and `/app` explains each:
+
+| | Link on the site | Where the file is |
+|---|---|---|
+| Android | `/download/android` | `MTMU7-android.apk` on the `app-latest` release |
+| Windows | `/download/windows` | `MTMU7-windows-setup.exe` on the `app-latest` release |
+| iPhone | `/download/ios` | the App Store when `IOS_APP_URL` is set; until then `/app#ios` (Add to Home Screen) |
+
+The workflows replace the release files on every build of the production
+branch, so the links never change. `ANDROID_APP_URL`, `WINDOWS_APP_URL` and
+`IOS_APP_URL` (Vercel environment) point a button somewhere else — a Play
+Store listing, say — with no code change.
+
+The Windows app is `desktop/` (Electron): the portal in its own window, with
+the same launch animation, offline page and Google sign-in hand-back as the
+phones. Built by `.github/workflows/desktop-windows.yml`. It is not
+code-signed, so SmartScreen asks once; an EV/OV code-signing certificate
+(given to electron-builder as `CSC_LINK`/`CSC_KEY_PASSWORD`) removes that.
+
+Until a release keystore is given (below), the Android APK is signed with a
+debug key kept in the workflow's cache, so a phone can take the next build as
+an update. Give the keystore before handing the APK out widely.
+
 ## Identity
 
 - App id / bundle id: `tj.mtmu7.app` (cannot change once published)
 - Name on the home screen: `МТМУ №7`
-- Icon and splash: `mobile/scripts/make-assets.mjs` draws them from
-  `public/images/school-photo.png`; `npm run assets` in `mobile/` regenerates
-  every size.
+- Icon: `public/brand/app-icon.svg` — two strokes of an open book and a warm
+  dot above it (a head over the page, the sun over the school) on indigo
+  turning to teal. `mobile/scripts/make-assets.mjs` renders every size from it
+  for Android, iPhone, Windows and the web (`npm run assets` in `mobile/`).
+- Opening: the phone's splash is the mark standing still; the site then shows
+  the same mark animating (`src/features/native/app-launch.tsx`) until the page
+  is ready, so native and web hand over without a flash.
 
 ## Building
 

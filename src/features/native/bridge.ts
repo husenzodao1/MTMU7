@@ -50,7 +50,13 @@ async function plugin<T>(name: string): Promise<T | null> {
   }
 }
 
+/** The part of @capacitor/splash-screen the site uses. */
+interface SplashPlugin {
+  hide(options?: { fadeOutDuration?: number }): Promise<void>;
+}
+
 export const appPlugin = () => plugin<AppPlugin>("App");
+export const splashPlugin = () => plugin<SplashPlugin>("SplashScreen");
 export const messagingPlugin = () => plugin<FirebaseMessaging>("FirebaseMessaging");
 
 async function platform(): Promise<"android" | "ios" | null> {

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { appPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
+import { registerWorker } from "@/features/push/client";
 import { pathForAppLink } from "@/lib/native/app";
 
 /**
@@ -11,6 +12,13 @@ import { pathForAppLink } from "@/lib/native/app";
  * nothing at all.
  */
 export function NativeApp() {
+  // Every page, browser or app: the service worker keeps the portal's own
+  // files on the device, so the next visit starts at once.
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? ((run: () => void) => window.setTimeout(run, 1500));
+    idle(() => void registerWorker());
+  }, []);
+
   useEffect(() => {
     if (!isInApp()) return;
     const listeners: Array<{ remove: () => Promise<void> }> = [];

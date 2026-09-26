@@ -4,7 +4,7 @@
   "private": true,
   "description": "The MTMU №7 portal as an app for Android and iPhone: the same site, with the phone's notifications, camera and location.",
   "scripts": {
-    "assets": "node scripts/make-assets.mjs && capacitor-assets generate --iconBackgroundColor '#0b141a' --iconBackgroundColorDark '#0b141a' --splashBackgroundColor '#0b141a' --splashBackgroundColorDark '#0b141a'",
+    "assets": "node scripts/make-assets.mjs && capacitor-assets generate --iconBackgroundColor '#17306d' --iconBackgroundColorDark '#17306d' --splashBackgroundColor '#17306d' --splashBackgroundColorDark '#17306d'",
     "sync": "cap sync",
     "android": "cap open android",
     "ios": "cap open ios"

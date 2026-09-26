@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
+import { AppLaunch } from "@/features/native/app-launch";
 import { NativeApp } from "@/features/native/native-app";
+import { isAppUserAgent } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
@@ -98,6 +100,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
+  // Inside the phone or desktop app a page opens behind the app's own
+  // launch animation (src/features/native/app-launch.tsx).
+  const inApp = isAppUserAgent((await headers()).get("user-agent"));
 
   return (
     <html
@@ -108,6 +113,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable}`}
     >
       <body className="min-h-dvh">
+        {inApp ? <AppLaunch /> : null}
         <a href="#main" className="skip-link">
           {t("skipToContent")}
         </a>

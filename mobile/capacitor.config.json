@@ -3,7 +3,7 @@
   "appName": "МТМУ №7",
   "webDir": "www",
   "appendUserAgent": "MTMU7App",
-  "backgroundColor": "#0b141a",
+  "backgroundColor": "#17306d",
   "loggingBehavior": "none",
   "server": {
     "url": "https://mtmuraqami7.vercel.app/dashboard",
@@ -24,10 +24,10 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 900,
+      "launchShowDuration": 4000,
       "launchAutoHide": true,
-      "launchFadeOutDuration": 250,
-      "backgroundColor": "#0b141a",
+      "launchFadeOutDuration": 200,
+      "backgroundColor": "#17306d",
       "showSpinner": false,
       "androidScaleType": "CENTER_CROP",
       "splashFullScreen": false,
