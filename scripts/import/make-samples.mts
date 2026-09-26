@@ -14,12 +14,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { buildWorkbook } from "../../src/lib/export/xlsx.ts";
-import { isSampleKind, sampleRows, sampleSpec, SAMPLE_NOTICE, type SampleKind } from "../../src/features/admin/import/samples.ts";
+import { isSampleKind, sampleNotice, sampleRows, sampleSpec, type SampleKind } from "../../src/features/admin/import/samples.ts";
 
 const OUT = resolve(process.argv[2] ?? "samples");
 mkdirSync(OUT, { recursive: true });
 
-const KINDS: SampleKind[] = ["students", "staff", "timetable"];
+const KINDS: SampleKind[] = ["students", "staff", "timetable", "subjects"];
 
 for (const kind of KINDS) {
   if (!isSampleKind(kind)) continue;
@@ -32,7 +32,7 @@ for (const kind of KINDS) {
 
   const file = await buildWorkbook(
     [
-      { name: "НАМУНА", title: `${spec.title} — намунаи пуркардашуда`, lines: SAMPLE_NOTICE },
+      { name: "НАМУНА", title: `${spec.title} — намунаи пуркардашуда`, lines: sampleNotice(kind) },
       { name: "Дастур", title: spec.title, lines: [...spec.instructions, "", "Сутунҳои бо * ҳатмӣ."] },
     ],
     [{ name: spec.sheet, columns, rows: sampleRows(kind) }]

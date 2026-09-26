@@ -96,7 +96,7 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
   },
 };
 
-export type SheetKind = PeopleKind | "timetable";
+export type SheetKind = PeopleKind | "timetable" | "subjects";
 
 export function isPeopleKind(value: string): value is PeopleKind {
   return value === "students" || value === "staff";
@@ -142,5 +142,32 @@ export const TIMETABLE_TEMPLATE: SheetSpec = {
     "Агар омӯзгор ҳанӯз муайян нашуда бошад, танҳо номи фанро нависед.",
     "Рӯзҳои дар файл буда пурра иваз мешаванд; рӯзҳое, ки дар файл нестанд, бетағйир мемонанд.",
     "Синфҳо бояд аллакай мавҷуд бошанд — аввал хонандагонро ворид кунед, баъд ҷадвалро.",
+  ],
+};
+
+/**
+ * The school's subjects, one per row. Only the Tajik name is required; the
+ * rest can follow later, and an empty cell never wipes out what a subject
+ * already has. The timetable creates the subjects it meets by name, so the
+ * same name here gives that subject its other names and its code.
+ */
+export const SUBJECTS_TEMPLATE: SheetSpec = {
+  sheet: "Фанҳо",
+  title: "Фанҳои мактаб",
+  maxRows: 300,
+  columns: [
+    { key: "name_tg", header: "Номи фан", required: true, width: 30, hint: "Бо забони тоҷикӣ: Математика" },
+    { key: "name_ru", header: "Бо забони русӣ", width: 28, hint: "Математика" },
+    { key: "name_en", header: "Бо забони англисӣ", width: 26, hint: "Mathematics" },
+    { key: "code", header: "Рамз", width: 12, hint: "Ҳарфҳои лотинӣ ва рақам: MATH" },
+    { key: "weekly_hours", header: "Соат дар ҳафта", width: 16, hint: "Масалан 5 ё 1,5" },
+  ],
+  instructions: [
+    "Ҳар сатр як фан. Танҳо «Номи фан» ҳатмист.",
+    "Агар фан аллакай бошад (бо ҳамин ном), он навсозӣ мешавад ва такрор намешавад; фани бойгонӣ боз фаъол мегардад.",
+    "Катаки холӣ чизеро пок намекунад: он чи фан аллакай дорад, мемонад.",
+    "Рамз кӯтоҳ ва бо ҳарфҳои лотинӣ, рақам, - ё _: MATH, TAJ-LIT. Ду фан як рамз дошта наметавонанд.",
+    "Соат дар ҳафта — аз 0,5 то 20. Он ҳангоми таъин кардани фан ба синф пешниҳод мешавад.",
+    "Номи фанро айнан ҳамон тавр нависед, ки дар ҷадвали дарсӣ менависед — пас ҳарду як фан мешаванд.",
   ],
 };

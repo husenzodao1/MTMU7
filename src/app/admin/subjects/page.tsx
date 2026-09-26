@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { BookMarked, Pencil, Plus } from "lucide-react";
+import { BookMarked, FileSpreadsheet, Pencil, Plus } from "lucide-react";
 import { saveSubjectAction, setSubjectActiveAction } from "@/features/admin/academic/structure-actions";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { ConfirmAction, FormDialog } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
@@ -62,9 +63,15 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
         title={t("title")}
         description={t("description")}
         actions={
-          <FormDialog action={saveSubjectAction} trigger={<Button><Plus aria-hidden />{t("new")}</Button>} title={t("new")} submitLabel={tc("create")} size="md">
-            {fields()}
-          </FormDialog>
+          <>
+            <Link href="/admin/subjects/import" className={buttonClasses("secondary")}>
+              <FileSpreadsheet aria-hidden />
+              {t("import")}
+            </Link>
+            <FormDialog action={saveSubjectAction} trigger={<Button><Plus aria-hidden />{t("new")}</Button>} title={t("new")} submitLabel={tc("create")} size="md">
+              {fields()}
+            </FormDialog>
+          </>
         }
       />
       <FilterBar searchLabel={t("search")} filters={[{ name: "archived", label: t("show"), emptyLabel: t("active"), options: [{ value: "1", label: t("archived") }] }]} />

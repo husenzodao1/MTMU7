@@ -5587,6 +5587,7 @@ export type Database = {
       import_people: { Args: { p_kind: string; p_rows: Json; p_dry_run?: boolean; p_offset?: number; p_limit?: number }; Returns: Json };
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
+      import_subjects: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_timetable: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       issue_parent_codes: { Args: { p_class: string }; Returns: { student_id: string | null; class_name: string | null; full_name: string | null; nickname: string | null; login: string | null; code: string | null }[] };
       join_support_conversation: { Args: { p_conversation_id: string }; Returns: undefined };

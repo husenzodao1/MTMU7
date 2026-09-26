@@ -90,7 +90,9 @@ describe("dashboards", () => {
 
   it("shows a teacher today's lessons with attendance state", async () => {
     const today = await asUser(db, t.users.teacherA, (tx) => one<{ d: { lessons: Array<{ class_name: string; attendance_marked: boolean; period_number: number }> } }>(tx, `SELECT public.teacher_today() AS d`));
-    const isSunday = (await one<{ s: boolean }>(db, `SELECT extract(isodow FROM current_date) = 7 AS s`))!.s;
+    // Sunday where the school is, which is what teacher_today goes by: late on
+    // a Saturday evening in UTC it is already Sunday in Dushanbe.
+    const isSunday = (await one<{ s: boolean }>(db, `SELECT extract(isodow FROM app.school_today($1)) = 7 AS s`, [SCHOOL_A]))!.s;
     if (!isSunday) {
       assert.equal(today!.d.lessons.length, 1);
       assert.equal(today!.d.lessons[0]!.attendance_marked, true);

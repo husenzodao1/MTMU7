@@ -17,9 +17,9 @@
 // Relative and with its extension, unlike the rest of src/: this module is
 // also read by scripts/import/make-samples.mts, which runs under plain Node
 // rather than the bundler that resolves "@/" and bare paths.
-import { PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE, type SheetSpec } from "./templates.ts";
+import { PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, type SheetSpec } from "./templates.ts";
 
-export type SampleKind = "students" | "staff" | "timetable";
+export type SampleKind = "students" | "staff" | "timetable" | "subjects";
 
 type Row = Record<string, string>;
 
@@ -226,10 +226,42 @@ const TIMETABLE: Row[] = Object.entries(WEEK).flatMap(([className, days]) =>
   })
 );
 
-const SAMPLES: Record<SampleKind, Row[]> = { students: STUDENTS, staff: STAFF, timetable: TIMETABLE };
+/**
+ * The subjects of a Tajik school, with the names the timetable above uses, so
+ * importing this first and the timetable after gives every lesson a subject
+ * that already has its Russian and English names and its code.
+ */
+const SUBJECT = (name_tg: string, name_ru: string, name_en: string, code: string, weekly_hours: string): Row => ({ name_tg, name_ru, name_en, code, weekly_hours });
+const SUBJECTS: Row[] = [
+  SUBJECT("Забони тоҷикӣ", "Таджикский язык", "Tajik language", "TAJ", "4"),
+  SUBJECT("Адабиёти тоҷик", "Таджикская литература", "Tajik literature", "TAJ-LIT", "2"),
+  SUBJECT("Математика", "Математика", "Mathematics", "MATH", "5"),
+  SUBJECT("Алгебра", "Алгебра", "Algebra", "ALG", "3"),
+  SUBJECT("Геометрия", "Геометрия", "Geometry", "GEOM", "2"),
+  SUBJECT("Забони русӣ", "Русский язык", "Russian language", "RUS", "3"),
+  SUBJECT("Забони англисӣ", "Английский язык", "English language", "ENG", "2"),
+  SUBJECT("Табиатшиносӣ", "Природоведение", "Natural science", "NAT", "2"),
+  SUBJECT("Физика", "Физика", "Physics", "PHYS", "2"),
+  SUBJECT("Химия", "Химия", "Chemistry", "CHEM", "2"),
+  SUBJECT("Биология", "Биология", "Biology", "BIO", "2"),
+  SUBJECT("География", "География", "Geography", "GEO", "2"),
+  SUBJECT("Таърихи халқи тоҷик", "История таджикского народа", "History of the Tajik people", "HIST-TJ", "2"),
+  SUBJECT("Таърихи умумӣ", "Всеобщая история", "World history", "HIST", "1"),
+  SUBJECT("Ҳуқуқ", "Право", "Law", "LAW", "1"),
+  SUBJECT("Информатика", "Информатика", "Computer science", "IT", "1"),
+  SUBJECT("Технология", "Технология", "Technology", "TECH", "1"),
+  SUBJECT("Санъати тасвирӣ", "Изобразительное искусство", "Fine art", "ART", "1"),
+  SUBJECT("Мусиқӣ", "Музыка", "Music", "MUS", "1"),
+  SUBJECT("Тарбияи ҷисмонӣ", "Физическая культура", "Physical education", "PE", "2"),
+  SUBJECT("Соати тарбиявӣ", "Классный час", "Form period", "FORM", "1"),
+];
+
+const SAMPLES: Record<SampleKind, Row[]> = { students: STUDENTS, staff: STAFF, timetable: TIMETABLE, subjects: SUBJECTS };
 
 export function sampleSpec(kind: SampleKind): SheetSpec {
-  return kind === "timetable" ? TIMETABLE_TEMPLATE : PEOPLE_TEMPLATES[kind];
+  if (kind === "timetable") return TIMETABLE_TEMPLATE;
+  if (kind === "subjects") return SUBJECTS_TEMPLATE;
+  return PEOPLE_TEMPLATES[kind];
 }
 
 /** The example rows, in the column order of that workbook. */
@@ -239,7 +271,7 @@ export function sampleRows(kind: SampleKind): Array<Array<string | null>> {
 }
 
 export function isSampleKind(value: string): value is SampleKind {
-  return value === "students" || value === "staff" || value === "timetable";
+  return value === "students" || value === "staff" || value === "timetable" || value === "subjects";
 }
 
 /** What the example's own front page says, so nobody imports it by accident. */
@@ -257,3 +289,23 @@ export const SAMPLE_NOTICE = [
   "— «Забони англисӣ (19) / Забони англисӣ (23)» — синф ба ду гурӯҳ ҷудо шуда, ҳар гурӯҳ омӯзгори худро дорад.",
   "— «Санъати тасвирӣ» бе қавс — фан ҳаст, вале омӯзгораш ҳанӯз муайян нашудааст. Ин хато нест.",
 ];
+
+/**
+ * The subjects example is not made-up people but a real list, and a school
+ * may well start from it — so its front page says so, instead of telling the
+ * office not to import it.
+ */
+export const SUBJECTS_SAMPLE_NOTICE = [
+  "Ин рӯйхати намунавии фанҳои мактаби тоҷикӣ аст.",
+  "Онро метавонед ҳамчун асос истифода баред: фанҳоеро, ки дар мактаби шумо нестанд, нест кунед, соатҳоро ислоҳ кунед ва ворид кунед.",
+  "",
+  "Ба се чиз диққат диҳед:",
+  "1. Номи фан айнан ҳамон тавр бошад, ки дар ҷадвали дарсӣ менависед: «Забони англисӣ», на «Англисӣ».",
+  "2. Рамз кӯтоҳ ва бо ҳарфҳои лотинӣ: MATH, TAJ-LIT.",
+  "3. Соат дар ҳафта бо вергул ё нуқта: 1,5 ё 1.5.",
+];
+
+/** The front page a filled-in example opens with. */
+export function sampleNotice(kind: SampleKind): string[] {
+  return kind === "subjects" ? SUBJECTS_SAMPLE_NOTICE : SAMPLE_NOTICE;
+}

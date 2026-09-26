@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { canEnterAdmin, getAccess } from "@/lib/auth/access";
 import { buildWorkbook } from "@/lib/export/xlsx";
 import { createClient } from "@/lib/supabase/server";
-import { isPeopleKind, PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE, type SheetSpec } from "@/features/admin/import/templates";
-import { isSampleKind, sampleRows, SAMPLE_NOTICE } from "@/features/admin/import/samples";
+import { isPeopleKind, PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, type SheetSpec } from "@/features/admin/import/templates";
+import { isSampleKind, sampleNotice, sampleRows } from "@/features/admin/import/samples";
 
 export const runtime = "nodejs";
 
@@ -29,7 +29,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
   const access = await getAccess();
   if (!access || !canEnterAdmin(access)) return new NextResponse(null, { status: 403 });
 
-  const template: SheetSpec | null = isPeopleKind(kind) ? PEOPLE_TEMPLATES[kind] : kind === "timetable" ? TIMETABLE_TEMPLATE : null;
+  const template: SheetSpec | null = isPeopleKind(kind)
+    ? PEOPLE_TEMPLATES[kind]
+    : kind === "timetable"
+      ? TIMETABLE_TEMPLATE
+      : kind === "subjects"
+        ? SUBJECTS_TEMPLATE
+        : null;
   if (template) {
     const t = await getTranslations("admin.import.workbook");
     const columns = template.columns.map((column) => ({
@@ -56,7 +62,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
     }
 
     const front = wantsSample
-      ? { name: t("sampleSheet"), title: t("sampleTitle", { sheet: template.title }), lines: SAMPLE_NOTICE }
+      ? { name: t("sampleSheet"), title: t("sampleTitle", { sheet: template.title }), lines: isSampleKind(kind) ? sampleNotice(kind) : [] }
       : { name: t("instructionsSheet"), title: template.title, lines: [...template.instructions, "", t("requiredMark")] };
 
     const file = await buildWorkbook(

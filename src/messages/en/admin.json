@@ -467,7 +467,11 @@
         "invalid_number": "not a number",
         "unknown_staff": "staff member not found",
         "guardian_required": "Young grades need a parent (name and phone)",
-        "invalid_phone": "Invalid phone number"
+        "invalid_phone": "Invalid phone number",
+        "too_long": "too long",
+        "invalid_code": "A code is Latin letters, digits, - and _ only (up to 20)",
+        "invalid_hours": "Hours must be between 0.5 and 20",
+        "code_taken": "This code already belongs to another subject"
       },
       "workbook": {
         "instructions": "Download the workbook, fill it in with Excel and send it back. The check tells you what is wrong; the import then returns the same file with the logins and passwords filled in.",
@@ -525,6 +529,12 @@
         "cell": "Period {field}",
         "confirm": "Import {total} rows",
         "done": "{lessons} lessons written into the timetable."
+      },
+      "subjects": {
+        "planTitle": "What will happen",
+        "plan": "{created} new subjects will be added and {updated} updated.",
+        "confirm": "Import {total} subjects",
+        "done": "{created} new subjects added, {updated} updated."
       }
     },
     "years": {
@@ -673,7 +683,9 @@
       "archiveTitle": "Archive subject?",
       "archiveDescription": "It will no longer be offered for new class assignments.",
       "restoreTitle": "Restore subject?",
-      "emptyHint": "Add the subjects taught at the school; they are then assigned to classes."
+      "emptyHint": "Add the subjects taught at the school; they are then assigned to classes.",
+      "import": "Import from Excel",
+      "importDescription": "Bring in all subjects at once from one Excel file: download the template or start from the ready-made sample."
     },
     "gradebook": {
       "title": "Gradebook oversight",
