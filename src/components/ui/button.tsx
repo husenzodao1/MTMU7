@@ -11,10 +11,12 @@ const variants = {
   link: "text-brand-text underline-offset-4 hover:underline px-0 h-auto",
 } as const;
 
+// A minimum height rather than a height: a label longer than a phone is wide
+// wraps onto a second line inside the button instead of running out of it.
 const sizes = {
-  sm: "h-8 px-3 text-sm gap-1.5",
-  md: "h-10 px-4 text-sm gap-2",
-  lg: "h-11 px-5 text-base gap-2",
+  sm: "min-h-8 px-3 py-1 text-sm gap-1.5",
+  md: "min-h-10 px-4 py-1.5 text-sm gap-2",
+  lg: "min-h-11 px-5 py-2 text-base gap-2",
   icon: "h-10 w-10 p-0",
   "icon-sm": "h-8 w-8 p-0",
 } as const;
@@ -31,7 +33,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "md", className?: string) {
   return cn(
-    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors",
+    "inline-flex max-w-full shrink-0 items-center justify-center rounded-md text-center font-medium leading-tight transition-colors",
     "disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
     variants[variant],
     sizes[size],

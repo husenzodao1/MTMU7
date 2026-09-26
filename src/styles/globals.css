@@ -534,6 +534,25 @@
     }
   }
 
+  /*
+   * Nothing widens the page. A grid item's minimum width is its content's by
+   * default, so one wide table inside a card made the whole column — and the
+   * page with it — as wide as the table: on a phone the timetable pushed the
+   * page sideways and showed every day at once. With the minimum at zero the
+   * card keeps the screen's width and the table scrolls inside its own box,
+   * by swipe. Clipping the page's own sideways overflow is the last line: if
+   * something still sticks out, the page does not slide.
+   */
+  .grid > * {
+    min-width: 0;
+  }
+
+  body {
+    overflow-x: clip;
+    /* A long link or word in a card breaks where it must, not past the edge. */
+    overflow-wrap: break-word;
+  }
+
   *,
   ::before,
   ::after {

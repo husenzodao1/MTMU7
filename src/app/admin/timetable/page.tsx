@@ -286,12 +286,14 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
         <Card>
           <CardHeader title={t("gridTitle", { name: klass?.name ?? "" })} description={t("shift", { shift: klass?.shift ?? 1 })} />
           <CardBody className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[48rem] border-collapse text-sm">
+            {/* On a phone the week is swiped through inside this box, with the
+                period numbers pinned at the left edge. */}
+            <div className="overflow-x-auto overscroll-x-contain">
+              <table className="w-full min-w-[60rem] table-fixed border-collapse text-sm">
                 <caption className="sr-only">{t("gridTitle", { name: klass?.name ?? "" })}</caption>
                 <thead>
                   <tr className="border-b border-line bg-surface-muted/60 text-xs uppercase tracking-wide text-ink-muted">
-                    <th scope="col" className="w-16 px-3 py-2 text-start">{t("period")}</th>
+                    <th scope="col" className="sticky left-0 z-10 w-16 bg-surface-muted px-3 py-2 text-start">{t("period")}</th>
                     {[1, 2, 3, 4, 5, 6].map((d) => (
                       <th key={d} scope="col" className="px-3 py-2 text-start">{tc(`weekdaysShort.${d}`)}</th>
                     ))}
@@ -300,7 +302,7 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
                 <tbody className="divide-y divide-line">
                   {Array.from({ length: periods }, (_, i) => i + 1).map((period) => (
                     <tr key={period}>
-                      <th scope="row" className="px-3 py-2 text-start align-top font-semibold tabular">{period}</th>
+                      <th scope="row" className="sticky left-0 z-10 bg-surface px-3 py-2 text-start align-top font-semibold tabular">{period}</th>
                       {[1, 2, 3, 4, 5, 6].map((day) => {
                         const entry = cell.get(`${day}-${period}`);
                         if (!entry) return <td key={day} className="px-3 py-2 align-top text-ink-muted">—</td>;
