@@ -1,12 +1,22 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { downloadUrl, platformOf } from "../../src/lib/native/downloads.ts";
+import { downloadUrl, platformOf, servedFile } from "../../src/lib/native/downloads.ts";
 
 describe("where the apps come from", () => {
   it("serves the APK and the installer from the fixed release, unless told otherwise", () => {
     assert.match(downloadUrl("android", {})!, /releases\/download\/app-latest\/MTMU7-android\.apk$/);
     assert.match(downloadUrl("windows", {})!, /MTMU7-windows-setup\.exe$/);
     assert.equal(downloadUrl("android", { ANDROID_APP_URL: "https://play.google.com/store/apps/details?id=tj.mtmu7.app" }), "https://play.google.com/store/apps/details?id=tj.mtmu7.app");
+  });
+
+  it("hands out the APK from the portal itself, unless it lives elsewhere", () => {
+    const apk = servedFile("android", {})!;
+    assert.match(apk.source, /releases\/download\/app-latest\/MTMU7-android\.apk$/);
+    assert.equal(apk.type, "application/vnd.android.package-archive");
+    assert.equal(apk.name, "MTMU7.apk");
+    assert.equal(servedFile("android", { ANDROID_APP_URL: "https://play.google.com/store/apps/details?id=tj.mtmu7.app" }), null);
+    assert.equal(servedFile("windows", {}), null);
+    assert.equal(servedFile("ios", {}), null);
   });
 
   it("sends an iPhone to the instructions until there is a store listing", () => {

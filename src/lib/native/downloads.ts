@@ -28,6 +28,25 @@ export function downloadUrl(platform: AppPlatform, env: Record<string, string | 
   return env.IOS_APP_URL || null;
 }
 
+/** A file the portal hands out from its own address. */
+export interface ServedFile {
+  source: string;
+  name: string;
+  type: string;
+}
+
+/**
+ * The Android APK goes out from the portal's own address rather than as a
+ * redirect: a phone sent to github.com may hand the link to the GitHub app,
+ * which fetches the file and then has nothing to install it with, and the
+ * browser never shows it in its downloads. The Windows installer (over
+ * 100 MB) stays a redirect; a computer's browser simply saves it.
+ */
+export function servedFile(platform: AppPlatform, env: Record<string, string | undefined> = process.env): ServedFile | null {
+  if (platform !== "android" || env.ANDROID_APP_URL) return null;
+  return { source: `${RELEASE}/MTMU7-android.apk`, name: "MTMU7.apk", type: "application/vnd.android.package-archive" };
+}
+
 /** Which button to put first, from what the browser says it is. */
 export function platformOf(userAgent: string | null | undefined): AppPlatform | null {
   if (!userAgent) return null;

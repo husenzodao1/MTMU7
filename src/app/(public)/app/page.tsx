@@ -71,6 +71,7 @@ export default async function AppPage() {
               {direct ? (
                 <a
                   href={`/download/${platform}`}
+                  download={platform === "android" ? "MTMU7.apk" : undefined}
                   className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-brand-solid px-5 text-sm font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover"
                 >
                   {t("get")}

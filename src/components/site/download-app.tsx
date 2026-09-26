@@ -93,6 +93,9 @@ export function DownloadApp({ labels, recommended }: { labels: DownloadLabels; r
               <DropdownPrimitive.Item key={platform} asChild>
                 <a
                   href={`/download/${platform}`}
+                  // The APK comes from this site: saved straight into the
+                  // phone's downloads instead of opening a page.
+                  download={platform === "android" ? "MTMU7.apk" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-2.5 py-2.5 outline-none transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted",
                     index === 0 && recommended && "bg-surface-muted/70"

@@ -10,7 +10,7 @@ const PRIVATE_PREFIXES = [
   "/admin/", "/dashboard", "/teach", "/messages", "/notifications", "/profile", "/settings",
   "/schedule", "/grades", "/attendance", "/homework", "/children", "/friends", "/library",
   "/news", "/announcements", "/events", "/documents", "/access-denied", "/confirm-email",
-  "/api/", "/files/", "/auth/", "/verify", "/dev-preview",
+  "/api/", "/files/", "/auth/", "/verify", "/dev-preview", "/download/",
 ];
 
 export default function robots(): MetadataRoute.Robots {
