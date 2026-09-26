@@ -21,6 +21,12 @@ Give the repository two secrets — `APP_URL` and `CRON_SECRET` — or the job e
 endpoint is idempotent, so the two schedules may run together. On a Pro plan you can instead set
 `vercel.json` to `*/5 * * * *` and disable the workflow.
 
+**Region.** `vercel.json` runs the functions in `fra1`, Frankfurt, because the database is in
+`eu-central-1`, Frankfurt. Left to Vercel's default (Washington), every query a page makes crosses
+the Atlantic twice — about ninety milliseconds each, several per page — and a function that waits
+longer holds its slot longer when the whole school arrives at once. If the Supabase project ever
+moves, move this with it.
+
 ## Supabase
 
 - Configure Auth Site URL and callback URLs for the production domain.

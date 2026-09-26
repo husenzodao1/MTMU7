@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { Fragment, useRef, useState } from "react";
+import { ActionForm, SubmitButton, useFieldError, useFieldValue } from "@/components/ui/action-form";
+import { describedBy, FormField } from "@/components/ui/form-controls";
 import { AuthMark } from "@/features/auth/auth-mark";
 import { GoogleSignInButton } from "@/features/auth/google-button";
 import { TextField } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 import {
   confirmEmailAction,
   requestPasswordResetAction,
@@ -87,24 +90,91 @@ function PasswordFields({ optional = false }: { optional?: boolean }) {
   );
 }
 
+/** What the sign-in email sends; the boxes drawn before anything is typed. */
+const CODE_LENGTH = 6;
+/** What the field takes: see the note on maxLength below. */
+const CODE_MAX = 10;
+
+/**
+ * The code, one digit to a box.
+ *
+ * Six boxes, but one input: a single transparent field lies over them and
+ * takes every keystroke, so a paste, the phone offering the code from the
+ * email, Backspace and the numeric keypad all behave as they do in any field,
+ * and the form posts one `token` exactly as before. The boxes only draw it.
+ *
+ * Reaching six digits sends the form, the way a phone's own code screens do.
+ */
 function CodeField() {
   const t = useTranslations("auth.verify");
+  const error = useFieldError("token");
+  const submitted = useFieldValue("token");
+  const [value, setValue] = useState(() => (submitted ?? "").replace(/\D/g, "").slice(0, CODE_MAX));
+  const [focused, setFocused] = useState(false);
+  const sentFor = useRef<string | null>(null);
+  const id = "f-token";
+
+  // Six is what the project should be set to send and what the hint
+  // promises. More boxes appear if more is typed: a project set to eight would
+  // otherwise let somebody paste their code, silently keep the first six, and
+  // refuse them for ever with no way to tell why.
+  const slots = Math.max(CODE_LENGTH, value.length);
+  const active = focused && value.length < slots ? value.length : -1;
+  const complete = value.length >= CODE_LENGTH;
+
   return (
-    <TextField
-      name="token"
-      label={t("code")}
-      hint={t("codeHint")}
-      inputMode="numeric"
-      autoComplete="one-time-code"
-      pattern="[0-9]*"
-      // Six is what the project should be set to send and what the hint
-      // promises. The field takes more anyway: a project set to eight would
-      // otherwise let somebody paste their code, silently keep the first six,
-      // and refuse them for ever with no way to tell why.
-      maxLength={10}
-      required
-      className="[&_input]:text-lg [&_input]:tracking-[0.3em]"
-    />
+    <FormField label={t("code")} htmlFor={id} hint={t("codeHint")} error={error} required>
+      <div className={cn("otp relative", complete && "otp-complete")} data-invalid={error ? "" : undefined}>
+        <input
+          id={id}
+          name="token"
+          value={value}
+          onChange={(event) => {
+            const next = event.target.value.replace(/\D/g, "").slice(0, CODE_MAX);
+            setValue(next);
+            if (next.length === CODE_LENGTH && sentFor.current !== next) {
+              sentFor.current = next;
+              const form = event.target.form;
+              // After this render, so the sixth box is drawn before the page moves on.
+              requestAnimationFrame(() => form?.requestSubmit());
+            }
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          // The caret stays at the end: the boxes show one place to type, and
+          // a caret hidden in the middle would type somewhere else.
+          onSelect={(event) => {
+            const input = event.currentTarget;
+            const end = input.value.length;
+            if (input.selectionStart !== end || input.selectionEnd !== end) input.setSelectionRange(end, end);
+          }}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]*"
+          maxLength={CODE_MAX}
+          required
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          {...describedBy(id, { hint: t("codeHint"), error })}
+          className="otp-input absolute inset-0 z-10 size-full cursor-text"
+        />
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2" aria-hidden>
+          {Array.from({ length: slots }, (_, index) => (
+            <Fragment key={index}>
+              {slots === CODE_LENGTH && index === CODE_LENGTH / 2 ? <span className="otp-dot" /> : null}
+              <span className={cn("otp-box", index < value.length && "otp-box-filled", index === active && "otp-box-active")}>
+                {value[index] ? (
+                  <span key={`${index}:${value[index]}`} className="otp-digit">
+                    {value[index]}
+                  </span>
+                ) : null}
+              </span>
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    </FormField>
   );
 }
 

@@ -90,6 +90,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
     blockedUserIds: (blocks ?? []).map((b) => b.blocked_id),
     canPost,
     canManageMembers: conversation.type === "group",
+    canMessage: can(access, "messages.use"),
     timeZone: access.school!.timezone,
     schoolId: access.school!.id,
   };

@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/db/database.types";
 import { publicEnv } from "@/lib/env";
 import { serverEnv } from "@/lib/env.server";
+import { resilientFetch } from "@/lib/supabase/resilient-fetch";
+
+const privilegedFetch = resilientFetch({ timeoutMs: 20_000 });
 
 /**
  * SERVICE ROLE CLIENT — bypasses row level security.
@@ -27,5 +30,6 @@ export function createPrivilegedClient() {
   }
   return createClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, serverEnv.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: privilegedFetch },
   });
 }

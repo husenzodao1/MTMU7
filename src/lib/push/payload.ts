@@ -12,10 +12,10 @@
 
 export type PushLocale = "tg" | "ru" | "en";
 
-const WORDS: Record<PushLocale, { support: string; location: string; attachment: string; someone: string }> = {
-  tg: { support: "Дастгирии онлайн", location: "📍 Ҷойгиршавӣ", attachment: "📎 Файл", someone: "Паёми нав" },
-  ru: { support: "Онлайн-поддержка", location: "📍 Местоположение", attachment: "📎 Файл", someone: "Новое сообщение" },
-  en: { support: "Online support", location: "📍 Location", attachment: "📎 File", someone: "New message" },
+const WORDS: Record<PushLocale, { support: string; location: string; photo: string; attachment: string; someone: string }> = {
+  tg: { support: "Дастгирии онлайн", location: "📍 Ҷойгиршавӣ", photo: "📷 Сурат", attachment: "📎 Файл", someone: "Паёми нав" },
+  ru: { support: "Онлайн-поддержка", location: "📍 Местоположение", photo: "📷 Фото", attachment: "📎 Файл", someone: "Новое сообщение" },
+  en: { support: "Online support", location: "📍 Location", photo: "📷 Photo", attachment: "📎 File", someone: "New message" },
 };
 
 export function asPushLocale(value: unknown): PushLocale {
@@ -56,7 +56,9 @@ export function messagePush(source: MessagePushSource, readerId: string, locale:
   const text =
     source.type === "location"
       ? w.location + (source.preview.trim() ? ` · ${source.preview.trim()}` : "")
-      : source.type === "file" || source.type === "image" || source.type === "audio"
+      : source.type === "image"
+        ? w.photo + (source.preview.trim() ? ` · ${source.preview.trim()}` : "")
+        : source.type === "file" || source.type === "audio"
         ? w.attachment
         : source.preview.trim();
   const body = shorten(text || w.someone, 140);

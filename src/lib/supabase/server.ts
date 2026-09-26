@@ -3,6 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/db/database.types";
 import { publicEnv } from "@/lib/env";
+import { resilientFetch } from "@/lib/supabase/resilient-fetch";
+
+/** A page waits this long for the database, and asks a failed read again. */
+const serverFetch = resilientFetch({ timeoutMs: 15_000 });
 
 /**
  * User-scoped Supabase client for Server Components, Server Actions and Route
@@ -13,6 +17,7 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(publicEnv.NEXT_PUBLIC_SUPABASE_URL, publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    global: { fetch: serverFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();

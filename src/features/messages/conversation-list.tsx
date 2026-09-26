@@ -168,7 +168,11 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
               ? c.last_message_deleted
                 ? t("deletedMessage")
                 : `${c.last_message_sender_id === currentUserId ? `${t("you")}: ` : ""}${
-                    c.last_message_type === "location" ? `📍 ${c.last_message_content || t("locationShort")}` : c.last_message_content ?? ""
+                    c.last_message_type === "location"
+                      ? `📍 ${c.last_message_content || t("locationShort")}`
+                      : c.last_message_type === "image"
+                        ? c.last_message_content ? `${t("photo")} · ${c.last_message_content}` : t("photo")
+                        : c.last_message_content ?? ""
                   }`
               : t("noMessagesYet");
             const time = c.last_message_at

@@ -2762,6 +2762,9 @@ export type Database = {
           deleted_by: string | null;
           location_lat: number | null;
           location_lng: number | null;
+          media_path: string | null;
+          media_width: number | null;
+          media_height: number | null;
         };
         Insert: {
           id?: string;
@@ -2781,6 +2784,9 @@ export type Database = {
           deleted_by?: string | null;
           location_lat?: number | null;
           location_lng?: number | null;
+          media_path?: string | null;
+          media_width?: number | null;
+          media_height?: number | null;
         };
         Update: {
           id?: string;
@@ -2800,6 +2806,9 @@ export type Database = {
           deleted_by?: string | null;
           location_lat?: number | null;
           location_lng?: number | null;
+          media_path?: string | null;
+          media_width?: number | null;
+          media_height?: number | null;
         };
         Relationships: [
           {
@@ -5386,7 +5395,8 @@ export type Database = {
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
-      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null }[] };
+      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null }[] };
+      get_member_card: { Args: { p_user_id: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_profile: { Args: Record<PropertyKey, never>; Returns: Json };
       get_registration_options: { Args: { p_school_slug: string }; Returns: Json };

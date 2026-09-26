@@ -17,6 +17,12 @@ export interface ThreadMessage {
   /** Set only on type === "location". */
   location_lat: number | null;
   location_lng: number | null;
+  /** Set only on type === "image": where the photo is kept, and its size. */
+  media_path: string | null;
+  media_width: number | null;
+  media_height: number | null;
+  /** Client-side only: the photo on this device, before it has been uploaded. */
+  local_preview?: string;
   /** Client-side only: this one has not reached the server yet, or did not. */
   pending?: boolean;
   failed?: boolean;

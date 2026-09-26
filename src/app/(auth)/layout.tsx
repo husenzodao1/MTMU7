@@ -1,5 +1,19 @@
+import { Unbounded } from "next/font/google";
 import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
 import { getAuthSchool, safeImageUrl } from "@/lib/site/auth-school";
+
+/**
+ * The digits of the emailed code: wide, round and weighty, so six numbers
+ * read at a glance as one thing to copy. Digits only — the latin subset is
+ * all it needs — and not preloaded, because only the code screens draw it.
+ */
+const codeDigits = Unbounded({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-code",
+});
 
 /** Shown when the chosen school has no photograph of its own. */
 const FALLBACK_BACKGROUND = "/images/school-bg.webp";
@@ -15,7 +29,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const background = safeImageUrl(school?.photoUrl) ?? FALLBACK_BACKGROUND;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className={`${codeDigits.variable} flex min-h-dvh flex-col`}>
       <OfficialStrip />
       <main
         id="main"

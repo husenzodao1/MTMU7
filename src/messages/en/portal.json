@@ -460,7 +460,32 @@
       "supportDeskSubtitle": "Online support · you are replying for the school",
       "supportBadge": "Support",
       "supportEmpty": "Write your question — a member of the school staff will answer right here. Two ticks (✓✓) mean your message has been read.",
-      "locationShort": "📍 Location"
+      "locationShort": "📍 Location",
+      "photo": "📷 Photo",
+      "attachPhoto": "Send a photo",
+      "removePhoto": "Remove photo",
+      "photoCaption": "Add a caption…",
+      "photoCaptionHint": "Add a caption if you like, then send",
+      "photoPreparing": "Preparing the photo…",
+      "photoFailed": "The photo did not send. Tap the mark to try again.",
+      "dropPhoto": "Drop the photo here",
+      "viewPhoto": "Open photo",
+      "downloadPhoto": "Download",
+      "photoErrors": {
+        "not_image": "That file is not a picture. Choose a JPEG, PNG or WebP.",
+        "too_large": "That picture is too large (up to 25 MB).",
+        "unreadable": "That picture could not be opened. Try another one."
+      },
+      "card": {
+        "open": "View profile",
+        "class": "Class",
+        "homeroom": "Class teacher of",
+        "subjects": "Subjects",
+        "graduated": "Graduate",
+        "unavailable": "Nothing more can be shown about this person.",
+        "write": "Message",
+        "profile": "Profile"
+      }
     },
     "notifications": {
       "title": "Notifications",
