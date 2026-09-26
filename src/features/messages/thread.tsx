@@ -39,7 +39,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Select, Textarea } from "@/components/ui/form-controls";
@@ -221,7 +221,6 @@ export function Thread({
   const [messages, setMessages] = useState<ThreadMessage[]>(() => sortAsc(initialMessages));
   const [hasMore, setHasMore] = useState(initialMessages.length >= 50);
   const [pinned, setPinned] = useState(initialPinned);
-  const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ThreadMessage | null>(null);
   const [editing, setEditing] = useState<ThreadMessage | null>(null);
   const [reporting, setReporting] = useState<ThreadMessage | null>(null);
@@ -249,6 +248,11 @@ export function Thread({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // What is being typed lives outside React state: a keystroke used to render
+  // the whole conversation again, every bubble of it, and on a phone the send
+  // button trailed the first letter by a visible moment. Now it renders the
+  // one button that depends on it (ComposerAction) and nothing else.
+  const draft = useDraft(inputRef);
   const preserveScroll = useRef<number | null>(null);
   const stickToBottom = useRef(true);
   const farFromBottom = useRef(false);
@@ -622,8 +626,8 @@ export function Thread({
         // fourteen decimal places, a claim no phone can support.
         const latitude = Number(position.coords.latitude.toFixed(6));
         const longitude = Number(position.coords.longitude.toFixed(6));
-        const label = draft.trim().slice(0, 200);
-        setDraft("");
+        const label = draft.get().trim().slice(0, 200);
+        draft.set("");
         stickToBottom.current = true;
         deliver(localMessage({ content: label, type: "location", reply_to_id: null, location_lat: latitude, location_lng: longitude }));
       },
@@ -992,7 +996,7 @@ export function Thread({
   );
 
   const submit = () => {
-    const content = draft.trim();
+    const content = draft.get().trim();
     if (editing) {
       if (saving || !content) return;
       const target = editing;
@@ -1001,7 +1005,7 @@ export function Thread({
         if (!result.ok) return fail(result.message);
         upsert({ ...target, content, is_edited: true });
         setEditing(null);
-        setDraft("");
+        draft.set("");
       });
       return;
     }
@@ -1011,7 +1015,7 @@ export function Thread({
     // for the next sentence before the first has arrived anywhere.
     if (!content && !attached) return;
     stickToBottom.current = true;
-    setDraft("");
+    draft.set("");
     setReplyTo(null);
     const reply_to_id = replyTo?.id ?? null;
     if (attached?.kind === "photo") {
@@ -1055,7 +1059,7 @@ export function Thread({
     } else if (event.key === "Escape" && (editing || replyTo)) {
       setEditing(null);
       setReplyTo(null);
-      setDraft("");
+      draft.set("");
     }
   };
 
@@ -1470,7 +1474,7 @@ export function Thread({
                                 </Overlay.DropdownMenuItem>
                               ) : null}
                               {canEdit ? (
-                                <Overlay.DropdownMenuItem onSelect={() => { setReplyTo(null); setEditing(m); setDraft(m.content); inputRef.current?.focus(); }}>
+                                <Overlay.DropdownMenuItem onSelect={() => { setReplyTo(null); setEditing(m); draft.set(m.content); inputRef.current?.focus(); }}>
                                   <Pencil aria-hidden />
                                   {tRoot("common.edit")}
                                 </Overlay.DropdownMenuItem>
@@ -1589,7 +1593,7 @@ export function Thread({
                 <button
                   type="button"
                   onClick={() => {
-                    if (editing) setDraft("");
+                    if (editing) draft.set("");
                     setEditing(null);
                     setReplyTo(null);
                   }}
@@ -1714,9 +1718,9 @@ export function Thread({
                   id="message-input"
                   ref={inputRef}
                   rows={1}
-                  value={draft}
+                  defaultValue=""
                   onChange={(e) => {
-                    setDraft(e.target.value);
+                    draft.typed(e.target.value);
                     if (e.target.value.trim()) announceTyping("typing");
                   }}
                   onKeyDown={onKeyDown}
@@ -1733,26 +1737,15 @@ export function Thread({
                   aria-describedby="message-hint"
                 />
               </div>
-              {!editing && !draft.trim() && !attached && recordable ? (
-                <button
-                  type="button"
-                  onClick={() => void startRecording()}
-                  aria-label={t("recordVoice")}
-                  title={t("recordVoice")}
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95"
-                >
-                  <Mic className="size-5" aria-hidden />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={editing ? !draft.trim() || saving : !draft.trim() && !attached}
-                  aria-label={editing ? tRoot("common.save") : t("send")}
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95 disabled:opacity-50"
-                >
-                  {editing ? <Check className="size-5" aria-hidden /> : <SendHorizontal className="size-5" aria-hidden />}
-                </button>
-              )}
+              <ComposerAction
+                draft={draft}
+                editing={Boolean(editing)}
+                attached={Boolean(attached)}
+                recordable={recordable}
+                saving={saving}
+                onRecord={() => void startRecording()}
+                labels={{ record: t("recordVoice"), send: t("send"), save: tRoot("common.save") }}
+              />
             </div>
             <p id="message-hint" className="sr-only">{t("composerHint")}</p>
           </form>
@@ -1843,6 +1836,89 @@ function ReportDialog({ message, onClose, onSubmit }: { message: ThreadMessage |
         </form>
       </Overlay.DialogContent>
     </Overlay.Dialog>
+  );
+}
+
+/** The composer's text, kept where typing does not render the thread. */
+interface Draft {
+  get(): string;
+  /** Replaces the text, in the box as well: clearing after a send, loading a message to edit. */
+  set(value: string): void;
+  /** What the box itself reports as somebody types. */
+  typed(value: string): void;
+  subscribe(listener: () => void): () => void;
+}
+
+function useDraft(input: RefObject<HTMLTextAreaElement | null>): Draft {
+  const [draft] = useState<Draft>(() => {
+    let text = "";
+    const listeners = new Set<() => void>();
+    const changed = () => {
+      for (const listener of listeners) listener();
+    };
+    return {
+      get: () => text,
+      set(value) {
+        text = value;
+        const box = input.current;
+        if (box && box.value !== value) box.value = value;
+        changed();
+      },
+      typed(value) {
+        text = value;
+        changed();
+      },
+      subscribe(listener) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+  });
+  return draft;
+}
+
+/**
+ * The round button at the end of the composer: the microphone while the box
+ * is empty, the arrow the moment there is a letter in it, and back again the
+ * moment it is empty. The only part of the conversation that re-renders as
+ * somebody types.
+ */
+function ComposerAction({
+  draft,
+  editing,
+  attached,
+  recordable,
+  saving,
+  onRecord,
+  labels,
+}: {
+  draft: Draft;
+  editing: boolean;
+  attached: boolean;
+  recordable: boolean;
+  saving: boolean;
+  onRecord: () => void;
+  labels: { record: string; send: string; save: string };
+}) {
+  const hasText = useSyncExternalStore(draft.subscribe, () => draft.get().trim().length > 0, () => false);
+  const round =
+    "inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-95";
+  if (!editing && !hasText && !attached && recordable) {
+    return (
+      <button type="button" onClick={onRecord} aria-label={labels.record} title={labels.record} className={round}>
+        <Mic className="size-5" aria-hidden />
+      </button>
+    );
+  }
+  return (
+    <button
+      type="submit"
+      disabled={editing ? !hasText || saving : !hasText && !attached}
+      aria-label={editing ? labels.save : labels.send}
+      className={cn(round, "disabled:opacity-50")}
+    >
+      {editing ? <Check className="size-5" aria-hidden /> : <SendHorizontal className="size-5" aria-hidden />}
+    </button>
   );
 }
 
