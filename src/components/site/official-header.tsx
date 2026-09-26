@@ -26,7 +26,10 @@ export async function OfficialStrip() {
     // Not overflow-hidden: the language panel opens downwards out of this
     // strip, and clipping the strip clipped the panel. The flag behind is an
     // inset-0 layer, so it never needed clipping to stay put.
-    <div className="relative isolate z-10 border-b border-black/20">
+    // Sticky on every page: the authority stays in view however far down the
+    // page is read. One fixed height (--strip-h, globals.css) so the portal's
+    // own header and sidebar know exactly where it ends.
+    <div className="official-strip sticky top-0 isolate z-40 border-b border-black/20 safe-top print:static">
       <div
         aria-hidden
         className="absolute inset-0 -z-20 bg-[url('/gov/flag-strip.webp')] bg-cover bg-center"
@@ -35,7 +38,7 @@ export async function OfficialStrip() {
           enough for white type to hold well past the AA threshold. */}
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/45 to-black/25" />
 
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-4">
         {/* Emblem and authority share one centre line, so the two read as a
             single official mark rather than two stacked elements. */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
@@ -45,7 +48,7 @@ export async function OfficialStrip() {
               ellipsis — it is the authority the school answers to, and half of
               it says nothing. On a narrow screen it takes a second line; the
               row grows, which is what a row is for. */}
-          <p className="min-w-0 text-pretty text-[11px] font-medium leading-tight tracking-tight text-white sm:text-xs">
+          <p className="line-clamp-2 min-w-0 text-pretty text-[11px] font-medium leading-tight tracking-tight text-white sm:text-xs">
             {authority}
           </p>
         </div>

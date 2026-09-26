@@ -4,7 +4,26 @@ import type { Block, Inline } from "@/lib/content/markdown";
 import { parseMarkdown } from "@/lib/content/markdown";
 import { cn } from "@/lib/utils/cn";
 
-export function Avatar({ name, src, size = "md", className }: { name: string; src?: string | null; size?: "sm" | "md" | "lg"; className?: string }) {
+/**
+ * A person's photo, or their initials, inside a ring of the chosen theme's
+ * colour. The ring sits outside the photo — a thin band of the theme's accent
+ * and a hairline gap of the page behind it — so the photo keeps its size and
+ * every theme dresses faces in its own colour. `ring={false}` for the few
+ * places a bare circle reads better (a stack of tiny faces).
+ */
+export function Avatar({
+  name,
+  src,
+  size = "md",
+  className,
+  ring = true,
+}: {
+  name: string;
+  src?: string | null;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+  ring?: boolean;
+}) {
   const dimension = { sm: "size-8 text-xs", md: "size-10 text-sm", lg: "size-14 text-lg" }[size];
   const initials = name
     .split(/\s+/)
@@ -12,15 +31,16 @@ export function Avatar({ name, src, size = "md", className }: { name: string; sr
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
-  if (src) {
+  const face = src ? (
     // eslint-disable-next-line @next/next/no-img-element -- user avatars come from signed/public storage URLs of arbitrary size
-    return <img src={src} alt="" className={cn("shrink-0 rounded-full object-cover", dimension, className)} loading="lazy" />;
-  }
-  return (
+    <img src={src} alt="" className={cn("shrink-0 rounded-full bg-surface object-cover", dimension, className)} loading="lazy" />
+  ) : (
     <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-text-strong", dimension, className)} aria-hidden>
       {initials || "?"}
     </span>
   );
+  if (!ring) return face;
+  return <span className={cn("avatar-ring", size === "lg" && "avatar-ring-lg")}>{face}</span>;
 }
 
 /** Link-based tabs for sub-pages (server friendly, aria-current on the active tab). */

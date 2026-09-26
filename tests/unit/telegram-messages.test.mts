@@ -204,3 +204,45 @@ describe("the first minute with the bot", () => {
     assert.ok(tagsBalance(caption));
   });
 });
+
+describe("reports a parent can read at a glance", () => {
+  const S = (tg: string) => ({ tg, ru: tg, en: tg });
+  const busy: Report = {
+    child: { name: "Алӣ", class: "7 «Б»" },
+    from: "2026-09-21",
+    to: "2026-09-26",
+    grades: [
+      { date: "2026-09-22", score: 5, max: 5, subject: S("Забони тоҷикӣ ва адабиёти классикӣ"), work: S("Иншо") },
+      { date: "2026-09-23", score: 18, max: 20, subject: S("Физика & <астрономия>"), work: S("Санҷиш") },
+    ],
+    attendance: [{ date: "2026-09-24", status: "late", period: 2, subject: S("Химия") }],
+    timetable: [{ period: 1, subject: S("Математика"), room: "12" }],
+  };
+
+  it("draws marks, absences and the timetable as tables that fit a phone", () => {
+    for (const locale of LOCALES) {
+      for (const kind of ["day", "week", "timetable"] as const) {
+        const text = reportMessage(locale, busy, kind, school);
+        const tables = [...text.matchAll(/<pre>([\s\S]*?)<\/pre>/g)].map((m) => m[1]!);
+        assert.ok(tables.length > 0, `${locale} ${kind}`);
+        for (const body of tables) {
+          const plain = body.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+          for (const line of plain.split("\n")) assert.ok(Array.from(line).length <= 32, `${locale} ${kind}: ${line}`);
+        }
+        assert.ok(tagsBalance(text));
+      }
+    }
+  });
+
+  it("escapes names inside a table once, not twice", () => {
+    const text = reportMessage("tg", busy, "week", school);
+    assert.ok(text.includes("&amp; &lt;") || text.includes("&amp;"), "an ampersand is escaped");
+    assert.ok(!text.includes("&amp;amp;"), "and not escaped again");
+  });
+
+  it("colours the buttons and gives each its own row", () => {
+    const keyboard = childMenu("tg", busy.child, "1").keyboard;
+    assert.ok(keyboard.every((row) => row.length === 1));
+    assert.equal(keyboard[0]![0]!.style, "primary");
+  });
+});

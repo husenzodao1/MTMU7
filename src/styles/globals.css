@@ -862,6 +862,56 @@
   color-scheme: dark;
 }
 
+/* ------------------------------------------------------------ avatar rings */
+
+/*
+ * A ring of the theme's own accent around every face: a band that turns from
+ * the accent to a lighter and a deeper shade of it, and a hairline of the page
+ * between band and photo, so the photo never touches the colour.
+ */
+.avatar-ring {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(
+    from 210deg,
+    var(--color-brand-solid),
+    color-mix(in oklab, var(--color-brand-solid) 50%, #ffffff),
+    var(--color-brand-solid) 55%,
+    color-mix(in oklab, var(--color-brand-solid) 70%, #000000),
+    var(--color-brand-solid)
+  );
+}
+.avatar-ring > * {
+  box-shadow: 0 0 0 2px var(--color-surface);
+  margin: 2px;
+}
+.avatar-ring-lg {
+  padding: 3px;
+}
+.avatar-ring-lg > * {
+  box-shadow: 0 0 0 3px var(--color-surface);
+  margin: 3px;
+}
+
+/* ------------------------------------------------------- the top strip */
+
+/* The ministry strip is sticky on every page and always this tall, so
+   everything else that sticks — the portal's header, its sidebar, a chat that
+   fills the screen — can start exactly below it. */
+:root {
+  --strip-h: calc(3rem + env(safe-area-inset-top));
+}
+.official-strip {
+  height: var(--strip-h);
+}
+@media print {
+  :root {
+    --strip-h: 0px;
+  }
+}
+
 /* ------------------------------------------------------------------ chat */
 
 .chat-wall {

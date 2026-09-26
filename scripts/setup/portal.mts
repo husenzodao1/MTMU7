@@ -12,6 +12,10 @@
  *   3. Web Push keys exist, so a message reaches somebody whose tab is closed.
  *      They are generated here, once, and sent to all three Vercel
  *      environments.
+ *   4. The sign-in emails reach the inbox, not spam: they go out through a
+ *      sender that is allowed to send for its own address (a Gmail account
+ *      with an app password, or any SMTP service), with the portal's
+ *      spam-safe templates and subjects (scripts/setup/email-templates.mts).
  *
  * It asks for a Supabase personal access token (the Management API will not
  * take the service key) and, optionally, the Google client id and secret.
@@ -26,6 +30,7 @@ import { createInterface } from "node:readline";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import webpush from "web-push";
+import { templatePatch } from "./email-templates.mts";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const ENV_FILE = join(ROOT, ".env.local");
@@ -181,6 +186,15 @@ say(`       ${supabaseUrl}/auth/v1/callback`);
 const googleId = await ask("     Client ID: ", false);
 const googleSecret = googleId ? await ask("     Client secret (hidden): ", true) : "";
 
+say();
+say("  3. The address sign-in codes are sent from (press Enter to skip).");
+say("     A Gmail account works best without a domain of your own: Google →");
+say("     Security → 2-Step Verification → App passwords → create one.");
+const smtpUser = await ask("     Sender address (e.g. school@gmail.com): ", false);
+const smtpPass = smtpUser ? await ask("     App password or SMTP password (hidden): ", true) : "";
+const smtpHost = smtpUser ? (await ask("     SMTP host [smtp.gmail.com]: ", false)) || "smtp.gmail.com" : "";
+const smtpPort = smtpUser ? (await ask("     SMTP port [465]: ", false)) || "465" : "";
+
 if (token) {
   const current = await management<AuthConfig>(token, ref, "GET");
   if (!current.ok || !current.data) {
@@ -199,6 +213,24 @@ if (token) {
       uri_allow_list: [...allow].join(","),
     };
     if (!current.data.site_url) patch.site_url = site;
+    // The spam-safe templates and subjects, always.
+    Object.assign(patch, templatePatch());
+    if (smtpUser && smtpPass) {
+      // The From address is the account that sends it: that is what lets
+      // Gmail's (or the provider's) SPF and DKIM vouch for the message.
+      Object.assign(patch, {
+        smtp_admin_email: smtpUser,
+        smtp_user: smtpUser,
+        smtp_pass: smtpPass,
+        smtp_host: smtpHost,
+        smtp_port: smtpPort,
+        smtp_sender_name: "МТМУ №7",
+        smtp_max_frequency: 30,
+        // Gmail sends ~500 a day; an hourly cap well under that keeps one
+        // busy morning from spending the whole day's allowance.
+        rate_limit_email_sent: 120,
+      });
+    }
     if (googleId && googleSecret) {
       patch.external_google_enabled = true;
       patch.external_google_client_id = googleId;
@@ -219,6 +251,9 @@ if (token) {
         todo.push("Google is still off — run this again with the client id and secret when you have them");
       }
       done.push(`${site}/auth/callback is an allowed return address`);
+      done.push("sign-in emails use the spam-safe templates and subjects");
+      if (smtpUser && smtpPass) done.push(`sign-in emails are sent from ${smtpUser} through ${smtpHost}:${smtpPort}`);
+      else todo.push("no sender was given: emails keep going out the way they did (see docs/operations/EMAIL.md)");
     }
   }
 } else {

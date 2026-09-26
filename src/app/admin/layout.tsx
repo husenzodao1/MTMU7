@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
 import { adminShellNav, loadShellData } from "@/components/shell/shell-data";
+import { OfficialStrip } from "@/components/site/official-header";
 import { requireAdminArea } from "@/lib/auth/guards";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       unreadMessages={shell.unreadMessages}
       locale={shell.locale}
       switchHref={nav.switchHref}
+      strip={<OfficialStrip />}
     >
       {children}
     </AppShell>

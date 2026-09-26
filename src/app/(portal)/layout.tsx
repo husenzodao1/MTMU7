@@ -48,6 +48,7 @@ export default async function PortalLayout({ children }: { children: React.React
       unreadMessages={shell.unreadMessages}
       locale={shell.locale}
       switchHref={nav.switchHref}
+      strip={<OfficialStrip />}
       footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} signedIn />}
     >
       {children}

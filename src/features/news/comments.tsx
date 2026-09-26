@@ -43,7 +43,9 @@ export async function NewsComments({ articleId }: { articleId: string }) {
           <ul className="space-y-4">
             {comments.map((comment) => (
               <li key={comment.id} className="flex gap-3">
-                <Avatar name={comment.author_name ?? ""} src={comment.author_avatar_url} className="mt-0.5 shrink-0" />
+                <div className="mt-0.5 shrink-0">
+                  <Avatar name={comment.author_name ?? ""} src={comment.author_avatar_url} />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <span className="text-sm font-medium text-ink">{comment.author_name}</span>

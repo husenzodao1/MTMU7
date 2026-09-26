@@ -55,6 +55,45 @@ That is the sender refusing, not a problem with the account.
 Check it by asking for a recovery code at `/login → forgot password`: the code
 should arrive within a minute.
 
+## Codes landing in spam
+
+A message goes to spam when the receiving server cannot confirm it came from
+the address it claims. The usual cause here: the From address is a
+`@gmail.com` (or any other) address, but the message is sent by a different
+company's server (Brevo, Resend, SendGrid…) that the address's owner never
+authorised. SPF and DKIM then fail, and Gmail files it as spam however good
+the text is.
+
+Two fixes, either is enough:
+
+1. **Send through the account itself** (no domain needed). With a Gmail
+   account — the school's `…@gmail.com` — create an *app password* (Google
+   Account → Security → 2-Step Verification → App passwords) and put in
+   Supabase → Authentication → SMTP Settings:
+
+   | Field | Value |
+   | --- | --- |
+   | Sender email | the Gmail address itself |
+   | Sender name | `МТМУ №7` |
+   | Host / Port | `smtp.gmail.com` / `465` |
+   | Username | the Gmail address |
+   | Password | the 16-letter app password |
+
+   Gmail allows about 500 messages a day from one account, plenty for sign-in
+   codes. Google signs every message, so it lands in the inbox.
+
+2. **Own a domain** (e.g. `mtmu7.tj`) and verify it with the SMTP provider:
+   add its SPF, DKIM and DMARC records to the domain's DNS, and send from
+   `no-reply@` that domain.
+
+`npm run portal:setup` does option 1 end to end — it asks for the address and
+the app password and also installs the spam-safe templates and subjects from
+`scripts/setup/email-templates.mts` (no links, no images, the code in the
+subject). By hand, the same templates are in `email-templates.html`.
+
+If a message still lands in spam once: open it and press **Not spam**. Gmail
+learns per sender, and the next ones arrive in the inbox.
+
 ## When nobody can receive email yet
 
 An operator with the service-role key can set a password directly:

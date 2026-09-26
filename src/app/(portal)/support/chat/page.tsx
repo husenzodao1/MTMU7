@@ -36,7 +36,7 @@ export default async function SupportChatPage() {
   if (!thread) notFound();
 
   return (
-    <div className="-mx-1 h-[calc(100dvh-11rem)] min-h-[26rem] max-w-3xl overflow-hidden rounded-2xl border border-line bg-surface shadow-sm sm:mx-auto lg:h-[calc(100dvh-7.5rem)]">
+    <div className="-mx-1 h-[calc(100dvh-11rem-var(--strip-h))] min-h-[26rem] max-w-3xl overflow-hidden rounded-2xl border border-line bg-surface shadow-sm sm:mx-auto lg:h-[calc(100dvh-7.5rem-var(--strip-h))]">
       <Thread key={id} {...thread} />
     </div>
   );

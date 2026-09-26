@@ -4,6 +4,12 @@ export interface InlineButton {
   /** Exactly one of these two. A URL button opens the channel; data comes back. */
   callback_data?: string;
   url?: string;
+  /**
+   * The button's colour (Bot API 9.4): blue for the way forward, green for
+   * what confirms or adds, red for what cannot be undone. Older clients ignore
+   * it and draw their usual button.
+   */
+  style?: "primary" | "success" | "danger";
 }
 
 export type InlineKeyboard = InlineButton[][];
@@ -44,8 +50,13 @@ export interface Named {
 
 /** A name the school stores in three languages, shown in the one asked for. */
 export function pick(name: Named | null | undefined, locale: Loc): string {
+  return escapeHtml(pickRaw(name, locale));
+}
+
+/** The same, unescaped: for a table, which escapes its whole body at once. */
+function pickRaw(name: Named | null | undefined, locale: Loc): string {
   if (!name) return "";
-  return escapeHtml(name[locale] || name.tg || name.ru || name.en || "");
+  return name[locale] || name.tg || name.ru || name.en || "";
 }
 
 const RULE = "━━━━━━━━━━━━━━";
@@ -112,6 +123,14 @@ const WORDS = {
     getMenu: "📅 ҷадвал ва ҳисоботи ҳафта — ҳар вақт аз меню",
     nextStep: "Қадами оянда:",
     chooseLanguageFirst: "Забонро интихоб кунед",
+    colSubject: "Фан",
+    colMark: "Баҳо",
+    colDate: "Сана",
+    colStatus: "Ҳолат",
+    colRoom: "Ҳуҷра",
+    absentShort: "ғоиб",
+    lateShort: "дер",
+    excusedShort: "узрнок",
   },
   ru: {
     greeting: "Здравствуйте!",
@@ -174,6 +193,14 @@ const WORDS = {
     getMenu: "📅 расписание и итоги недели — в любой момент из меню",
     nextStep: "Следующий шаг:",
     chooseLanguageFirst: "Выберите язык",
+    colSubject: "Предмет",
+    colMark: "Оценка",
+    colDate: "Дата",
+    colStatus: "Статус",
+    colRoom: "Каб.",
+    absentShort: "нет",
+    lateShort: "опозд.",
+    excusedShort: "уваж.",
   },
   en: {
     greeting: "Hello!",
@@ -236,6 +263,14 @@ const WORDS = {
     getMenu: "📅 the timetable and the week — any time from the menu",
     nextStep: "Next step:",
     chooseLanguageFirst: "Choose a language",
+    colSubject: "Subject",
+    colMark: "Mark",
+    colDate: "Date",
+    colStatus: "Status",
+    colRoom: "Room",
+    absentShort: "absent",
+    lateShort: "late",
+    excusedShort: "excused",
   },
 } as const;
 
@@ -271,6 +306,67 @@ export function statusWord(status: string, locale: Loc): string {
 
 function number(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+}
+
+/** A mark as it is written on a school form: "5", or "18/20" when not out of five. */
+function markText(score: number, max: number): string {
+  return max === 5 ? number(score) : `${number(score)}/${number(max)}`;
+}
+
+function shortStatus(status: string, locale: Loc): string {
+  const w = words(locale);
+  return status === "late" ? w.lateShort : status === "excused" ? w.excusedShort : w.absentShort;
+}
+
+/** dd.MM — enough inside a week, and short enough for a phone-wide table. */
+function dayMonth(iso: string): string {
+  const [, m, d] = iso.slice(0, 10).split("-");
+  return d && m ? `${d}.${m}` : iso;
+}
+
+type Align = "left" | "right" | "center";
+
+/** Counted by characters, not UTF-16 units, so a letter is one column. */
+function columns(value: string): number {
+  return Array.from(value).length;
+}
+
+function cell(value: string, width: number, align: Align): string {
+  const chars = Array.from(value.replace(/\s+/g, " ").trim());
+  const text = chars.length > width ? `${chars.slice(0, width - 1).join("")}…` : chars.join("");
+  const room = width - columns(text);
+  if (align === "right") return " ".repeat(room) + text;
+  if (align === "center") return " ".repeat(Math.floor(room / 2)) + text + " ".repeat(Math.ceil(room / 2));
+  return text + " ".repeat(room);
+}
+
+/**
+ * A table Telegram draws in its monospace font, framed with box-drawing lines.
+ *
+ * At most about 32 columns fit a phone's chat bubble before lines wrap, so
+ * the widest column is given what the others leave and long names end in an
+ * ellipsis. No emoji inside: they are two columns wide in some fonts and one
+ * in others, and a single one would pull a whole column out of line.
+ */
+export function table(
+  head: string[],
+  rows: string[][],
+  spec: Array<{ align: Align; max?: number }>,
+  total = 32
+): string {
+  const natural = spec.map((column, index) =>
+    Math.min(column.max ?? 99, Math.max(columns(head[index] ?? ""), ...rows.map((row) => columns(row[index] ?? ""))))
+  );
+  // Borders and a space either side of every cell.
+  const frame = 1 + spec.length * 3;
+  const widest = natural.indexOf(Math.max(...natural));
+  const others = natural.reduce((sum, width, index) => (index === widest ? sum : sum + width), 0);
+  const widths = natural.map((width, index) => (index === widest ? Math.max(4, Math.min(width, total - frame - others)) : width));
+  const line = (left: string, middle: string, right: string) => left + widths.map((w) => "─".repeat(w + 2)).join(middle) + right;
+  const row = (values: string[], header = false) =>
+    "│" + values.map((value, index) => ` ${cell(value, widths[index]!, header ? "left" : spec[index]!.align)} `).join("│") + "│";
+  const body = [line("╭", "┬", "╮"), row(head, true), line("├", "┼", "┤"), ...rows.map((values) => row(values)), line("╰", "┴", "╯")];
+  return `<pre>${escapeHtml(body.join("\n"))}</pre>`;
 }
 
 export interface Child {
@@ -310,8 +406,8 @@ export function welcome(locale: Loc, channel: string, schoolName?: string | null
   return {
     text,
     keyboard: [
-      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}` }],
-      [{ text: `✅ ${w.checkButton}`, callback_data: "check" }],
+      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}`, style: "primary" }],
+      [{ text: `✅ ${w.checkButton}`, callback_data: "check", style: "success" }],
     ],
   };
 }
@@ -322,8 +418,8 @@ export function stillNotSubscribed(locale: Loc, channel: string): { text: string
   return {
     text: `⚠️ ${w.subscribeMissing}\n\n👉 @${escapeHtml(handle)}`,
     keyboard: [
-      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}` }],
-      [{ text: `✅ ${w.checkButton}`, callback_data: "check" }],
+      [{ text: `📢 ${w.subscribeButton}`, url: `https://t.me/${handle}`, style: "primary" }],
+      [{ text: `✅ ${w.checkButton}`, callback_data: "check", style: "success" }],
     ],
   };
 }
@@ -344,9 +440,9 @@ export function startLanguage(): { text: string; keyboard: InlineKeyboard } {
       `🌐 ${WORDS.en.chooseLanguageFirst}`,
     ].join("\n"),
     keyboard: [
-      [{ text: "🇹🇯 Тоҷикӣ", callback_data: "sl:tg" }],
-      [{ text: "🇷🇺 Русский", callback_data: "sl:ru" }],
-      [{ text: "🇬🇧 English", callback_data: "sl:en" }],
+      [{ text: "🇹🇯 Тоҷикӣ", callback_data: "sl:tg", style: "primary" }],
+      [{ text: "🇷🇺 Русский", callback_data: "sl:ru", style: "primary" }],
+      [{ text: "🇬🇧 English", callback_data: "sl:en", style: "primary" }],
     ],
   };
 }
@@ -422,16 +518,16 @@ export function menu(locale: Loc, children: Array<{ id: string } & Child>): {
   if (children.length === 0) {
     return {
       text: `👨‍👩‍👦 ${w.noChildren}\n\n${w.askChildHow} <code>MT10009</code>.`,
-      keyboard: [[{ text: `➕ ${w.addChild}`, callback_data: "add" }]],
+      keyboard: [[{ text: `➕ ${w.addChild}`, callback_data: "add", style: "success" }]],
     };
   }
+  // One button to a row: a row's buttons share its width, and a whole row is
+  // the size a thumb finds without looking.
   const keyboard: InlineKeyboard = children.map((child) => [
-    { text: `📊 ${child.name}${child.class ? ` · ${child.class}` : ""}`, callback_data: `c:${child.id}` },
+    { text: `👤 ${child.name}${child.class ? ` · ${child.class}` : ""}`, callback_data: `c:${child.id}`, style: "primary" },
   ]);
-  keyboard.push([
-    { text: `➕ ${w.addChild}`, callback_data: "add" },
-    { text: `🌐 ${w.language}`, callback_data: "lang" },
-  ]);
+  keyboard.push([{ text: `➕ ${w.addChild}`, callback_data: "add", style: "success" }]);
+  keyboard.push([{ text: `🌐 ${w.language}`, callback_data: "lang" }]);
   return { text: `👨‍👩‍👦 <b>${w.menuTitle}</b>`, keyboard };
 }
 
@@ -440,11 +536,9 @@ export function childMenu(locale: Loc, child: Child, id: string): { text: string
   return {
     text: `${childLine(child)}\n\n${w.menuTitle}`,
     keyboard: [
-      [
-        { text: `📊 ${w.today}`, callback_data: `r:${id}:day` },
-        { text: `📅 ${w.week}`, callback_data: `r:${id}:week` },
-      ],
-      [{ text: `🕘 ${w.schedule}`, callback_data: `r:${id}:timetable` }],
+      [{ text: `📊 ${w.today}`, callback_data: `r:${id}:day`, style: "primary" }],
+      [{ text: `📅 ${w.week}`, callback_data: `r:${id}:week`, style: "primary" }],
+      [{ text: `🕘 ${w.schedule}`, callback_data: `r:${id}:timetable`, style: "success" }],
       [{ text: `↩️ ${w.back}`, callback_data: "menu" }],
     ],
   };
@@ -454,11 +548,9 @@ export function languageMenu(locale: Loc): { text: string; keyboard: InlineKeybo
   return {
     text: `🌐 <b>${words(locale).chooseLanguage}</b>`,
     keyboard: [
-      [
-        { text: "🇹🇯 Тоҷикӣ", callback_data: "l:tg" },
-        { text: "🇷🇺 Русский", callback_data: "l:ru" },
-        { text: "🇬🇧 English", callback_data: "l:en" },
-      ],
+      [{ text: "🇹🇯 Тоҷикӣ", callback_data: "l:tg", style: locale === "tg" ? "success" : "primary" }],
+      [{ text: "🇷🇺 Русский", callback_data: "l:ru", style: locale === "ru" ? "success" : "primary" }],
+      [{ text: "🇬🇧 English", callback_data: "l:en", style: locale === "en" ? "success" : "primary" }],
       [{ text: `↩️ ${words(locale).back}`, callback_data: "menu" }],
     ],
   };
@@ -574,11 +666,16 @@ export function reportMessage(
     if (rows.length === 0) {
       lines.push(`— ${w.noTimetable}`);
     } else {
-      for (const row of rows) {
-        const extra = [row.room ? `${w.room} ${escapeHtml(row.room)}` : null, row.teacher ? escapeHtml(row.teacher) : null]
-          .filter(Boolean)
-          .join(" · ");
-        lines.push(`<b>${row.period}.</b> ${pick(row.subject, locale)}${extra ? ` <i>— ${extra}</i>` : ""}`);
+      lines.push(
+        table(
+          ["№", w.colSubject, w.colRoom],
+          rows.map((row) => [String(row.period), pickRaw(row.subject, locale), row.room ?? "—"]),
+          [{ align: "right" }, { align: "left" }, { align: "center", max: 6 }]
+        )
+      );
+      const teachers = rows.filter((row) => row.teacher);
+      if (teachers.length > 0) {
+        lines.push(teachers.map((row) => `<b>${row.period}.</b> <i>${escapeHtml(row.teacher!)}</i>`).join("\n"));
       }
     }
     return fit(lines.join("\n") + footer(school));
@@ -590,24 +687,42 @@ export function reportMessage(
   }
 
   if (report.grades.length > 0) {
+    const shown = report.grades.slice(0, MOST_GRADES);
     lines.push("", `📝 <b>${w.grades}</b>`);
-    for (const g of report.grades.slice(0, MOST_GRADES)) {
-      const when = kind === "week" ? `${day(g.date)} · ` : "";
-      lines.push(
-        `${markDot(g.score, g.max)} ${when}${pick(g.subject, locale)} — <b>${number(g.score)}</b> <i>(${pick(g.work, locale)})</i>`
-      );
-    }
+    lines.push(
+      kind === "week"
+        ? table(
+            [w.colDate, w.colSubject, w.colMark],
+            shown.map((g) => [dayMonth(g.date), pickRaw(g.subject, locale), markText(g.score, g.max)]),
+            [{ align: "left" }, { align: "left" }, { align: "center", max: 6 }]
+          )
+        : table(
+            [w.colSubject, w.colMark],
+            shown.map((g) => [pickRaw(g.subject, locale), markText(g.score, g.max)]),
+            [{ align: "left" }, { align: "center", max: 6 }]
+          )
+    );
     if (report.grades.length > MOST_GRADES) lines.push(`<i>… +${report.grades.length - MOST_GRADES}</i>`);
   }
 
   if (report.attendance.length > 0) {
+    const shown = report.attendance.slice(0, MOST_ABSENCES);
+    const where = (a: Report["attendance"][number]) =>
+      [pickRaw(a.subject, locale), a.period ? `${a.period}` : null].filter(Boolean).join(" · ") || "—";
     lines.push("", `🚩 <b>${w.attendance}</b>`);
-    for (const a of report.attendance.slice(0, MOST_ABSENCES)) {
-      const when = kind === "week" ? `${day(a.date)} · ` : "";
-      const subject = pick(a.subject, locale);
-      const where = [when + subject, a.period ? `${w.lesson} ${a.period}` : null].filter(Boolean).join(" · ");
-      lines.push(`${statusDot(a.status)} ${where || when} — <i>${statusWord(a.status, locale)}</i>`);
-    }
+    lines.push(
+      kind === "week"
+        ? table(
+            [w.colDate, w.colSubject, w.colStatus],
+            shown.map((a) => [dayMonth(a.date), where(a), shortStatus(a.status, locale)]),
+            [{ align: "left" }, { align: "left" }, { align: "left", max: 7 }]
+          )
+        : table(
+            [w.colSubject, w.colStatus],
+            shown.map((a) => [where(a), shortStatus(a.status, locale)]),
+            [{ align: "left" }, { align: "left", max: 7 }]
+          )
+    );
     if (report.attendance.length > MOST_ABSENCES) {
       lines.push(`<i>… +${report.attendance.length - MOST_ABSENCES}</i>`);
     }
@@ -617,9 +732,11 @@ export function reportMessage(
   // absences, the rule above it looked like a section had ended when it had
   // not. A running average only says something when there is more than one
   // mark, and a term mark is a verdict rather than part of the sum.
-  const counted = report.grades.filter((g) => !g.final);
+  const counted = report.grades.filter((g) => !g.final && g.max > 0);
   if (counted.length > 1) {
-    const mean = counted.reduce((sum, g) => sum + g.score, 0) / counted.length;
+    // On the five-point scale every mark is read on: 18 out of 20 counts as
+    // 4.5, not as eighteen.
+    const mean = counted.reduce((sum, g) => sum + (g.max === 5 ? g.score : (g.score / g.max) * 5), 0) / counted.length;
     // No rule of its own: the footer draws one directly underneath, and two in
     // a row look like a mistake.
     lines.push("", `${w.average}: <b>${mean.toFixed(1)}</b>`);
@@ -630,5 +747,5 @@ export function reportMessage(
 
 export function backKeyboard(locale: Loc, childId?: string): InlineKeyboard {
   const w = words(locale);
-  return [[{ text: `↩️ ${w.back}`, callback_data: childId ? `c:${childId}` : "menu" }]];
+  return [[{ text: `↩️ ${w.back}`, callback_data: childId ? `c:${childId}` : "menu", style: "primary" }]];
 }
