@@ -118,7 +118,9 @@ async function pushToVercel(key: string, value: string): Promise<void> {
   for (const env of ["production", "preview", "development"]) {
     if (REPLACE) await run(`npx --yes vercel env rm ${key} ${env} --yes`);
     const { code, out } = await run(`npx --yes vercel env add ${key} ${env}`, value);
-    if (code !== 0 && !/already exists/i.test(out)) failed.push(env);
+    // A key that is already there is kept, not reported as a failure: the
+    // Vercel CLI says so as "already exists" or "has already been added".
+    if (code !== 0 && !/already (exists|been added)/i.test(out)) failed.push(env);
   }
   if (failed.length > 0) todo.push(`${key} could not be set in Vercel for: ${failed.join(", ")}`);
   else done.push(`${key} is in Vercel`);
