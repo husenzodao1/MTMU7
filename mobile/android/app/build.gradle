@@ -28,6 +28,17 @@ android {
         }
     }
     signingConfigs {
+        // CI keeps one debug key between builds (see mobile-android.yml), so
+        // a phone with the app can take the next debug APK as an update.
+        debug {
+            def debugStore = System.getenv('ANDROID_DEBUG_KEYSTORE')
+            if (debugStore) {
+                storeFile file(debugStore)
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
         release {
             def storePath = signingValue('storeFile', 'ANDROID_KEYSTORE_PATH')
             if (storePath) {

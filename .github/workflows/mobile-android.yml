@@ -90,11 +90,27 @@ jobs:
 
       # The debug key signs the downloadable APK until a release keystore is
       # given. Kept between runs so a phone that has the app can take the next
-      # build as an update rather than refusing it as a different app.
+      # build as an update rather than refusing it as a different app. It is
+      # made here, at a path of our own, rather than left to the Android
+      # plugin: where the plugin puts its own depends on the runner, and the
+      # cache found nothing there to keep.
       - uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
+          path: ~/.mtmu7/debug.keystore
+          key: android-debug-keystore-v2
+
+      - name: Debug signing key
+        run: |
+          store="$HOME/.mtmu7/debug.keystore"
+          if [ ! -f "$store" ]; then
+            mkdir -p "$(dirname "$store")"
+            keytool -genkeypair -keystore "$store" -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          # Public: the same line on every run means phones can update.
+          keytool -list -v -keystore "$store" -storepass android | grep -m1 "SHA256:"
+          echo "ANDROID_DEBUG_KEYSTORE=$store" >> "$GITHUB_ENV"
 
       - name: Debug APK
         working-directory: mobile/android
