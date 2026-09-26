@@ -27,7 +27,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
   const [{ data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }] = await Promise.all([
     supabase
       .from("conversation_members")
-      .select("user_id, role, is_muted, joined_at, users(first_name, last_name, avatar_url)")
+      .select("user_id, role, is_muted, joined_at, last_read_at, users(first_name, last_name, avatar_url)")
       .eq("conversation_id", id)
       .order("joined_at"),
     supabase.rpc("get_conversation_messages", { p_conversation_id: id, p_limit: 50 }),
@@ -51,6 +51,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
       first_name: user?.first_name ?? null,
       last_name: user?.last_name ?? null,
       avatar_url: user?.avatar_url ?? null,
+      last_read_at: row.last_read_at,
     };
   });
   const me = (memberRows ?? []).find((m) => m.user_id === access.userId);

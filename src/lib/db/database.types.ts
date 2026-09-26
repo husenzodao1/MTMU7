@@ -2737,6 +2737,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_by: string | null;
+          location_lat: number | null;
+          location_lng: number | null;
         };
         Insert: {
           id?: string;
@@ -2754,6 +2756,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           deleted_by?: string | null;
+          location_lat?: number | null;
+          location_lng?: number | null;
         };
         Update: {
           id?: string;
@@ -2771,6 +2775,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           deleted_by?: string | null;
+          location_lat?: number | null;
+          location_lng?: number | null;
         };
         Relationships: [
           {

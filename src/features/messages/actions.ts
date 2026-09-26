@@ -246,3 +246,50 @@ export async function removeGroupMemberAction(conversationId: string, userId: st
   if (userId === access.userId) redirect("/messages");
   return success("portal.messages.memberRemoved");
 }
+
+/**
+ * Sends where the sender is.
+ *
+ * The coordinates come from the browser, which means they come from the person:
+ * they were asked, they agreed, and they can stop agreeing. Nothing here keeps
+ * a trail — a location is a message like any other, it sits in the conversation
+ * it was sent to, and deleting the message deletes the place.
+ */
+export async function sendLocationAction(
+  conversationId: string,
+  latitude: number,
+  longitude: number,
+  label: string
+): Promise<ActionResult<{ id: string }>> {
+  const access = await requireMessaging();
+  if (!access) return failure("errors.not_authenticated");
+  const parsed = z
+    .object({
+      conversationId: uuid,
+      latitude: z.number().finite().min(-90).max(90),
+      longitude: z.number().finite().min(-180).max(180),
+      label: z.string().trim().max(200),
+    })
+    .safeParse({ conversationId, latitude, longitude, label });
+  if (!parsed.success) return failure("errors.invalid");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      conversation_id: parsed.data.conversationId,
+      sender_id: access.userId,
+      school_id: access.school!.id,
+      content: parsed.data.label,
+      type: "location",
+      // Rounded here as well as in the column: a browser will happily report
+      // fourteen decimal places, which is a claim about somebody's position
+      // that no phone can support and nobody needs.
+      location_lat: Number(parsed.data.latitude.toFixed(6)),
+      location_lng: Number(parsed.data.longitude.toFixed(6)),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return mapDbError(error);
+  return success(undefined, { id: data.id });
+}

@@ -437,7 +437,18 @@
         "inappropriate": "Inappropriate content",
         "privacy": "Personal information",
         "other": "Other"
-      }
+      },
+      "receipt": {
+        "sending": "Sending",
+        "sent": "Delivered",
+        "seen": "Read",
+        "failed": "Not sent"
+      },
+      "sendLocation": "Send location",
+      "openMap": "Open on a map",
+      "locationUnsupported": "This browser cannot report a location.",
+      "locationDenied": "Location was not allowed. Turn it on in the browser's settings.",
+      "locationFailed": "Could not work out where you are. Try again."
     },
     "notifications": {
       "title": "Notifications",

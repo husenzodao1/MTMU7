@@ -14,6 +14,12 @@ export interface ThreadMessage {
   is_favorite: boolean;
   created_at: string;
   edited_at: string | null;
+  /** Set only on type === "location". */
+  location_lat: number | null;
+  location_lng: number | null;
+  /** Client-side only: this one has not reached the server yet, or did not. */
+  pending?: boolean;
+  failed?: boolean;
 }
 
 export interface ConversationMember {
@@ -22,6 +28,8 @@ export interface ConversationMember {
   last_name: string | null;
   avatar_url: string | null;
   role: "admin" | "member";
+  /** When this member last opened the conversation; drives the second tick. */
+  last_read_at?: string | null;
 }
 
 export interface ContactResult {

@@ -5,17 +5,22 @@ import {
   Ban,
   Bell,
   BellOff,
+  Check,
+  CheckCheck,
+  Clock,
   Copy,
   CornerUpLeft,
   EllipsisVertical,
   Flag,
   LogOut,
+  MapPin,
   Pencil,
   Pin,
   PinOff,
   SendHorizontal,
   Star,
   Trash2,
+  TriangleAlert,
   Users,
   X,
 } from "lucide-react";
@@ -36,6 +41,7 @@ import {
   markConversationReadAction,
   removeGroupMemberAction,
   reportMessageAction,
+  sendLocationAction,
   sendMessageAction,
   setBlockedAction,
   setMessagePinnedAction,
@@ -68,6 +74,8 @@ interface MessageRow {
   is_deleted: boolean;
   created_at: string;
   edited_at: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
 }
 
 function sortAsc(list: ThreadMessage[]): ThreadMessage[] {
@@ -126,8 +134,74 @@ export function Thread({
   const preserveScroll = useRef<number | null>(null);
   const stickToBottom = useRef(true);
 
-  const members = initialMembers;
+  // What realtime has said since the page was rendered, laid over the props
+  // rather than copied from them. Copying props into state needs an effect to
+  // keep the two in step, and an effect that sets state on every render of the
+  // parent is a render loop waiting to happen; a lookup merged at read time
+  // cannot fall behind because there is nothing to fall behind.
+  const [readSince, setReadSince] = useState<Record<string, string | null>>({});
+  const members = useMemo(
+    () => initialMembers.map((m) => (m.user_id in readSince ? { ...m, last_read_at: readSince[m.user_id] } : m)),
+    [initialMembers, readSince]
+  );
   const memberMap = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
+
+  // The moment the last of the others caught up. One number, however many
+  // people are in the room: a second tick that appeared when the first of
+  // thirty parents looked would be telling the sender something untrue.
+  const othersReadAt = useMemo(() => {
+    const others = members.filter((m) => m.user_id !== currentUserId);
+    if (others.length === 0) return null;
+    let earliest = Infinity;
+    for (const member of others) {
+      if (!member.last_read_at) return null;
+      earliest = Math.min(earliest, new Date(member.last_read_at).getTime());
+    }
+    return Number.isFinite(earliest) ? earliest : null;
+  }, [members, currentUserId]);
+
+  const receiptLabels = useMemo(
+    () => ({ sending: t("receipt.sending"), sent: t("receipt.sent"), seen: t("receipt.seen"), failed: t("receipt.failed") }),
+    [t]
+  );
+
+  const [locating, setLocating] = useState(false);
+
+  /**
+   * Sends where you are, once, after the browser has asked.
+   *
+   * Nothing is watched and nothing is remembered: this asks for a single
+   * position at the moment the button is pressed. A refusal is a refusal — it
+   * says so and stops, rather than asking again on the next tap.
+   */
+  const shareLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      toast("danger", t("locationUnsupported"));
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const label = draft.trim();
+        setDraft("");
+        stickToBottom.current = true;
+        startSending(async () => {
+          const result = await sendLocationAction(conversation.id, latitude, longitude, label);
+          setLocating(false);
+          if (!result.ok) {
+            setDraft(label);
+            toast("danger", tRoot(result.message));
+          }
+        });
+      },
+      (error) => {
+        setLocating(false);
+        toast("danger", error.code === error.PERMISSION_DENIED ? t("locationDenied") : t("locationFailed"));
+      },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
+    );
+  }, [conversation.id, draft, t, tRoot, toast, startSending]);
   const other = conversation.type === "direct" ? members.find((m) => m.user_id !== currentUserId) : undefined;
   const iBlockedOther = Boolean(other && blockedUserIds.includes(other.user_id));
   const byId = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
@@ -187,6 +261,16 @@ export function Thread({
           void markConversationReadAction(conversation.id);
         }
       })
+      // Somebody opened the conversation: their last_read_at changed, and the
+      // sender is owed the second tick without reloading anything.
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversation_members", filter: `conversation_id=eq.${conversation.id}` },
+        (payload) => {
+          const row = payload.new as { user_id: string; last_read_at: string | null };
+          setReadSince((current) => ({ ...current, [row.user_id]: row.last_read_at }));
+        }
+      )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
         const row = payload.new as MessageRow;
         setMessages((current) =>
@@ -244,30 +328,55 @@ export function Thread({
       return;
     }
     const reply = replyTo;
+    const me = memberMap.get(currentUserId);
+
+    // The message appears the moment it is typed, not when the server agrees.
+    // Waiting for a round trip before clearing the box is what made this feel
+    // slow: on a school's connection that is most of a second of staring at
+    // your own sentence. The draft clears, the bubble is there, and it carries
+    // a clock until the server confirms it.
+    const localId = `local:${crypto.randomUUID()}`;
+    upsert({
+      id: localId,
+      conversation_id: conversation.id,
+      sender_id: currentUserId,
+      sender_first_name: me?.first_name ?? null,
+      sender_last_name: me?.last_name ?? null,
+      sender_avatar_url: me?.avatar_url ?? null,
+      content,
+      type: "text",
+      reply_to_id: reply?.id ?? null,
+      is_pinned: false,
+      is_edited: false,
+      is_deleted: false,
+      is_favorite: false,
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      location_lat: null,
+      location_lng: null,
+      pending: true,
+    });
+    stickToBottom.current = true;
+    setDraft("");
+    setReplyTo(null);
+
     startSending(async () => {
       const result = await sendMessageAction(conversation.id, content, reply?.id ?? null);
-      if (!result.ok || !result.data) return fail(result.ok ? "errors.unexpected" : result.message);
-      stickToBottom.current = true;
-      const me = memberMap.get(currentUserId);
-      upsert({
-        id: result.data.id,
-        conversation_id: conversation.id,
-        sender_id: currentUserId,
-        sender_first_name: me?.first_name ?? null,
-        sender_last_name: me?.last_name ?? null,
-        sender_avatar_url: me?.avatar_url ?? null,
-        content,
-        type: "text",
-        reply_to_id: reply?.id ?? null,
-        is_pinned: false,
-        is_edited: false,
-        is_deleted: false,
-        is_favorite: false,
-        created_at: byId.get(result.data.id)?.created_at ?? new Date().toISOString(),
-        edited_at: null,
+      if (!result.ok || !result.data) {
+        // Keep what they wrote, on screen, marked — never silently swallowed.
+        setMessages((current) => current.map((m) => (m.id === localId ? { ...m, pending: false, failed: true } : m)));
+        return fail(result.ok ? "errors.unexpected" : result.message);
+      }
+      const serverId = result.data.id;
+      setMessages((current) => {
+        // Realtime may have delivered the real row already; if so the local one
+        // simply goes, rather than appearing twice.
+        const arrived = current.some((m) => m.id === serverId);
+        const next = arrived
+          ? current.filter((m) => m.id !== localId)
+          : current.map((m) => (m.id === localId ? { ...m, id: serverId, pending: false } : m));
+        return sortAsc(next);
       });
-      setDraft("");
-      setReplyTo(null);
       inputRef.current?.focus();
     });
   };
@@ -420,6 +529,8 @@ export function Thread({
                       ) : null}
                       {m.is_deleted ? (
                         <p className="italic">{t("deletedMessage")}</p>
+                      ) : m.type === "location" && m.location_lat !== null && m.location_lng !== null ? (
+                        <LocationCard lat={m.location_lat} lng={m.location_lng} label={m.content} openLabel={t("openMap")} />
                       ) : (
                         <p className="whitespace-pre-wrap break-words">{m.content}</p>
                       )}
@@ -428,6 +539,7 @@ export function Thread({
                         {m.is_favorite ? <Star className="size-3 fill-current" aria-label={t("favorite")} /> : null}
                         {m.is_edited && !m.is_deleted ? <span>{t("edited")}</span> : null}
                         <time dateTime={m.created_at}>{formatClock(m.created_at, locale, timeZone)}</time>
+                        {mine && !m.is_deleted ? <Receipt message={m} seenAt={othersReadAt} labels={receiptLabels} /> : null}
                       </p>
                     </div>
                     {!m.is_deleted ? (
@@ -549,6 +661,19 @@ export function Thread({
                 className="max-h-40 min-h-10 resize-none"
                 aria-describedby="message-hint"
               />
+              {!editing ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  loading={locating}
+                  onClick={shareLocation}
+                  aria-label={t("sendLocation")}
+                  title={t("sendLocation")}
+                >
+                  {locating ? null : <MapPin aria-hidden />}
+                </Button>
+              ) : null}
               <Button type="submit" size="icon" loading={sending} disabled={!draft.trim()} aria-label={editing ? tRoot("common.save") : t("send")}>
                 {sending ? null : <SendHorizontal aria-hidden />}
               </Button>
@@ -617,5 +742,76 @@ function ReportDialog({ message, onClose, onSubmit }: { message: ThreadMessage |
         </form>
       </Overlay.DialogContent>
     </Overlay.Dialog>
+  );
+}
+
+/**
+ * One tick, two ticks.
+ *
+ * A clock while the message is still on its way, one tick once the server has
+ * it, two once everyone else in the conversation has opened it since. In a
+ * group that means everyone — a second tick that appeared when the first of
+ * thirty parents looked would be telling the sender something untrue.
+ *
+ * `seenAt` is the earliest `last_read_at` among the other members, so the
+ * comparison is one number against one number however many people are in the
+ * room.
+ */
+function Receipt({
+  message,
+  seenAt,
+  labels,
+}: {
+  message: ThreadMessage;
+  seenAt: number | null;
+  labels: { sending: string; sent: string; seen: string; failed: string };
+}) {
+  if (message.failed) {
+    return (
+      <span title={labels.failed} className="text-danger-600">
+        <TriangleAlert className="size-3" aria-label={labels.failed} />
+      </span>
+    );
+  }
+  if (message.pending) {
+    return (
+      <span title={labels.sending} className="text-ink-muted">
+        <Clock className="size-3" aria-label={labels.sending} />
+      </span>
+    );
+  }
+  const seen = seenAt !== null && seenAt >= new Date(message.created_at).getTime();
+  return (
+    <span title={seen ? labels.seen : labels.sent} className={seen ? "text-info-600" : "text-ink-muted"}>
+      {seen ? <CheckCheck className="size-3.5" aria-label={labels.seen} /> : <Check className="size-3.5" aria-label={labels.sent} />}
+    </span>
+  );
+}
+
+/**
+ * A place, drawn rather than described.
+ *
+ * No map tiles: a tile provider would be a third party watching every location
+ * anybody in the school sends, which is a poor trade for a picture. The card
+ * shows the coordinates and hands off to whatever map the person already has.
+ */
+function LocationCard({ lat, lng, label, openLabel }: { lat: number; lng: number; label: string; openLabel: string }) {
+  const point = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+  return (
+    <span className="block">
+      {label ? <span className="mb-1.5 block whitespace-pre-wrap break-words">{label}</span> : null}
+      <a
+        href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2.5 rounded-lg border border-line bg-surface/60 px-3 py-2 transition-colors hover:border-line-strong"
+      >
+        <MapPin className="size-5 shrink-0 text-brand-text" aria-hidden />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-ink">{openLabel}</span>
+          <span className="block truncate text-xs text-ink-muted tabular">{point}</span>
+        </span>
+      </a>
+    </span>
   );
 }
