@@ -2,7 +2,9 @@ import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
 import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
 import { getTranslations } from "next-intl/server";
+import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { getPortalSession } from "@/lib/auth/guards";
+import { isWelcome } from "@/lib/auth/welcome";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const session = await getPortalSession();
@@ -22,7 +24,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   const access = session.access;
-  const [shell, nav] = await Promise.all([loadShellData(access), portalShellNav(access)]);
+  const [shell, nav, welcome] = await Promise.all([loadShellData(access), portalShellNav(access), isWelcome()]);
 
   // One-click entry to the sections this person actually has, taken from the
   // navigation already built for them rather than a second hard-coded list.
@@ -38,20 +40,23 @@ export default async function PortalLayout({ children }: { children: React.React
     .slice(0, 10);
 
   return (
-    <AppShell
-      variant="portal"
-      school={shell.school}
-      user={shell.user}
-      groups={nav.groups}
-      mobileBar={nav.mobileBar}
-      unreadNotifications={shell.unreadNotifications}
-      unreadMessages={shell.unreadMessages}
-      locale={shell.locale}
-      switchHref={nav.switchHref}
-      strip={<OfficialStrip />}
-      footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} signedIn />}
-    >
-      {children}
-    </AppShell>
+    <>
+      {welcome ? <WelcomeTransition firstName={access.firstName} /> : null}
+      <AppShell
+        variant="portal"
+        school={shell.school}
+        user={shell.user}
+        groups={nav.groups}
+        mobileBar={nav.mobileBar}
+        unreadNotifications={shell.unreadNotifications}
+        unreadMessages={shell.unreadMessages}
+        locale={shell.locale}
+        switchHref={nav.switchHref}
+        strip={<OfficialStrip />}
+        footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} signedIn />}
+      >
+        {children}
+      </AppShell>
+    </>
   );
 }

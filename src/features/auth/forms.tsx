@@ -7,6 +7,7 @@ import { ActionForm, SubmitButton, useFieldError, useFieldValue } from "@/compon
 import { describedBy, FormField } from "@/components/ui/form-controls";
 import { AuthMark } from "@/features/auth/auth-mark";
 import { GoogleSignInButton } from "@/features/auth/google-button";
+import { SignInVeil } from "@/features/auth/welcome-transition";
 import { TextField } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
@@ -36,6 +37,7 @@ export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string 
       }
     >
       {next ? <input type="hidden" name="next" value={next} /> : null}
+      <SignInVeil />
       {/* The school issues the login, but a pupil remembers their nickname and
           the people who set the school up know their address. All three reach
           the same account, so the field takes whichever they have to hand — and
@@ -265,6 +267,7 @@ export function TwoFactorForm({ next }: { next?: string }) {
     <div className="space-y-4">
       <ActionForm action={verifySecondStepAction} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
+        <SignInVeil />
         <CodeField label={t("code")} hint={t("codeHint")} />
         <SubmitButton className="w-full" size="lg">
           {t("submit")}

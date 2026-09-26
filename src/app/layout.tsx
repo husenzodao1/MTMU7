@@ -6,6 +6,7 @@ import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/go
 import { SupportFab } from "@/components/site/support-fab";
 import { AppLaunch } from "@/features/native/app-launch";
 import { NativeApp } from "@/features/native/native-app";
+import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
@@ -105,7 +106,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
   // Inside the phone or desktop app a page opens behind the app's own
   // launch animation (src/features/native/app-launch.tsx).
-  const inApp = isAppUserAgent((await headers()).get("user-agent"));
+  // …except the first page after signing in, which opens with the welcome.
+  const inApp = isAppUserAgent((await headers()).get("user-agent")) && !(await isWelcome());
 
   return (
     <html

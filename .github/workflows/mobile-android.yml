@@ -9,10 +9,10 @@ name: Mobile app · Android
 # Optional repository secrets (Settings → Secrets and variables → Actions):
 #   GOOGLE_SERVICES_JSON        Firebase → Project settings → Android app →
 #                               google-services.json (paste as-is or base64)
-#   ANDROID_KEYSTORE_BASE64     the upload keystore, base64-encoded
+#   ANDROID_KEYSTORE_BASE64     the upload keystore (JKS or PKCS#12), base64
 #   ANDROID_KEYSTORE_PASSWORD   its password
-#   ANDROID_KEY_ALIAS           the key's alias
-#   ANDROID_KEY_PASSWORD        the key's password
+#   ANDROID_KEY_ALIAS           the key's alias (read from the key if absent)
+#   ANDROID_KEY_PASSWORD        the key's password (the store's if absent)
 # Without them the build still runs: no notifications, no release artifacts.
 
 on:
@@ -77,16 +77,40 @@ jobs:
 
       - run: npx cap sync android
 
+      # The release key signs the APK people download once it is given
+      # (scripts/setup/android.ps1 makes one): not debuggable, one signature
+      # for good, which is also what Play Protect and Google sign-in look at.
+      # A PKCS#12 key made on Windows works as well as a keytool one; its
+      # alias is read from the key itself when the secret does not name it,
+      # and its key password is the store's when none is given.
       - name: Release keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "::notice::No keystore: only the debug APK is built."
             exit 0
           fi
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          echo "SIGNED_RELEASE=1" >> "$GITHUB_ENV"
+          store="$RUNNER_TEMP/upload.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$store"
+          alias="$ANDROID_KEY_ALIAS"
+          if [ -z "$alias" ] || ! keytool -list -keystore "$store" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$alias" > /dev/null 2>&1; then
+            alias=$(keytool -list -keystore "$store" -storepass "$ANDROID_KEYSTORE_PASSWORD" | awk -F', ' '/PrivateKeyEntry/ { print $1; exit }')
+          fi
+          if [ -z "$alias" ]; then
+            echo "::error::The release keystore could not be read with the password given."
+            exit 1
+          fi
+          {
+            echo "SIGNED_RELEASE=1"
+            echo "ANDROID_KEYSTORE_PATH=$store"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+            echo "ANDROID_KEY_ALIAS=$alias"
+            echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+          } >> "$GITHUB_ENV"
 
       # The debug key signs the downloadable APK until a release keystore is
       # given. Kept between runs so a phone that has the app can take the next
@@ -119,11 +143,6 @@ jobs:
       - name: Release APK and bundle
         if: env.SIGNED_RELEASE == '1'
         working-directory: mobile/android
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew --no-daemon --stacktrace assembleRelease bundleRelease
 
       - uses: actions/upload-artifact@v4
@@ -151,6 +170,17 @@ jobs:
           apk=$(ls android/app/build/outputs/apk/release/*-release.apk 2>/dev/null | head -n 1)
           [ -n "$apk" ] || apk=$(ls android/app/build/outputs/apk/debug/*.apk | head -n 1)
           cp "$apk" "$RUNNER_TEMP/MTMU7-android.apk"
+          # Which key signed it: the SHA-1 is what Firebase asks for, so that
+          # Google sign-in in the app knows this build.
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner"
+          certs=$("$apksigner" verify --print-certs "$RUNNER_TEMP/MTMU7-android.apk" | grep -E "SHA-1|SHA-256" || true)
+          echo "$certs"
+          {
+            echo "### Signing certificate of $(basename "$apk")"
+            echo '```'
+            echo "$certs"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
           gh release view app-latest --repo "$REPO" > /dev/null 2>&1 || \
             gh release create app-latest --repo "$REPO" --title "МТМУ №7 · apps" \
               --notes "The latest Android, Windows and iPhone builds of the МТМУ №7 portal. Download from https://mtmuraqami7.vercel.app/app" || true

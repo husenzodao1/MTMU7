@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { done, failure, formDataToObject, parseInput, success, type ActionResult, type FormState } from "@/lib/actions/result";
+import { markWelcome } from "@/lib/auth/welcome";
 import { postSignInPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,7 @@ export async function verifySecondStepAction(_state: FormState, formData: FormDa
   if (!factor) redirect("/login");
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: input.data.token });
   if (error) return done(failure("auth.twoFactor.wrong", { token: ["auth.twoFactor.wrong"] }));
+  await markWelcome();
   redirect(postSignInPath(input.data.next));
 }
 

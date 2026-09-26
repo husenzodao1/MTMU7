@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import { useState, type MouseEvent } from "react";
+import { isInApp, nativeGoogleSignIn } from "@/features/native/bridge";
 
 /**
  * Google's own four-colour "G", drawn at its published proportions. The mark
@@ -18,19 +21,45 @@ function GoogleMark({ className }: { className?: string }) {
 
 /**
  * The quiet alternative under the password form: a white pill with Google's
- * mark, as Google asks it to be drawn, and nothing else. A plain link, so it
- * works before any JavaScript has loaded.
+ * mark, as Google asks it to be drawn, and nothing else.
+ *
+ * A plain link, never next/link. /auth/google answers with a redirect to
+ * Google, and a client-side navigation that ends on another site leaves the
+ * router waiting for a page that never arrives — which inside the app, where
+ * that page opens in Chrome instead, froze every form after it, the password
+ * form included.
+ *
+ * In the app the link is only the fallback: the phone's own account sheet
+ * comes first, and the sign-in never leaves the app.
  */
 export function GoogleSignInButton({ label, next }: { label: string; next?: string }) {
   const href = next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google";
+  const [busy, setBusy] = useState(false);
+
+  async function onClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (!isInApp()) return;
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    const answer = await nativeGoogleSignIn(next);
+    if (answer === "cancelled") {
+      setBusy(false);
+      return;
+    }
+    // Signed in (or turned away, with the reason on the sign-in page), or the
+    // browser's way when the phone's could not be used.
+    window.location.assign(answer ?? href);
+  }
+
   return (
-    <Link
+    <a
       href={href}
-      prefetch={false}
-      className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-full border px-4 text-sm font-medium shadow-xs transition-colors"
+      onClick={onClick}
+      aria-busy={busy || undefined}
+      className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-full border px-4 text-sm font-medium shadow-xs transition-colors aria-busy:opacity-70"
     >
-      <GoogleMark className="size-[18px]" />
+      {busy ? <span className="size-[18px] animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden /> : <GoogleMark className="size-[18px]" />}
       <span>{label}</span>
-    </Link>
+    </a>
   );
 }

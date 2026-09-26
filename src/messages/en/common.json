@@ -224,6 +224,10 @@
         "send": "Send",
         "sent": "Your message has been received. A member of the school staff will contact you soon."
       }
+    },
+    "welcome": {
+      "title": "Welcome",
+      "signingIn": "Signing you in…"
     }
   },
   "nav": {

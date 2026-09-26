@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getAccess } from "@/lib/auth/access";
-import { removeGoogleOrphan } from "@/lib/auth/google-orphan";
-import { serverEnv } from "@/lib/env.server";
-import { postSignInPath, safeRedirectPath } from "@/lib/security/redirect";
+import { finishGoogleSignIn } from "@/lib/auth/google-finish";
+import { markWelcome } from "@/lib/auth/welcome";
+import { safeRedirectPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,10 +9,8 @@ import { createClient } from "@/lib/supabase/server";
  * path (SEC-008).
  *
  * Google is a way into an account the school already issued, never a way to
- * make one. Supabase links a Google sign-in to the account with the same
- * address by itself; when there is no such account, the visitor is signed
- * straight back out, whatever Supabase created for them is removed, and the
- * sign-in page says the address was not recognised and whom to ask.
+ * make one; what that means is in finishGoogleSignIn, shared with the sign-in
+ * from the accounts on a phone.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -33,29 +30,15 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data.user) return redirectTo(viaGoogle ? "/login?reason=google-failed" : "/login?reason=link-invalid");
 
-  // Two-step sign-in turned on: before anything else — and certainly before
-  // deciding the account does not exist, which is what getAccess says while
-  // the second step is owed.
+  if (viaGoogle) return redirectTo(await finishGoogleSignIn(supabase, data.user, url.searchParams.get("next")));
+
+  // Two-step sign-in turned on: the second step before anything else.
   const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (level?.currentLevel === "aal1" && level.nextLevel === "aal2") {
     const next = url.searchParams.get("next");
     return redirectTo(`/two-factor${next ? `?next=${encodeURIComponent(safeRedirectPath(next, "/dashboard"))}` : ""}`);
   }
 
-  if (viaGoogle) {
-    const access = await getAccess();
-    if (!access) {
-      const userId = data.user.id;
-      await supabase.auth.signOut();
-      if (serverEnv.SUPABASE_SERVICE_ROLE_KEY) await removeGoogleOrphan(userId);
-      return redirectTo("/login?reason=google-unknown");
-    }
-    if (!access.isActive || access.status === "blocked") {
-      await supabase.auth.signOut();
-      return redirectTo("/login?reason=google-inactive");
-    }
-    return redirectTo(postSignInPath(url.searchParams.get("next")));
-  }
-
+  await markWelcome();
   return redirectTo(safeRedirectPath(url.searchParams.get("next"), "/dashboard"));
 }

@@ -57,7 +57,13 @@ interface SplashPlugin {
   hide(options?: { fadeOutDuration?: number }): Promise<void>;
 }
 
+/** The app's own Google sign-in (GoogleAccountPlugin.java). */
+interface GoogleAccountPlugin {
+  signIn(options?: { nonce?: string }): Promise<{ idToken: string; email: string }>;
+}
+
 export const appPlugin = () => plugin<AppPlugin>("App");
+export const googleAccountPlugin = () => plugin<GoogleAccountPlugin>("GoogleAccount");
 export const splashPlugin = () => plugin<SplashPlugin>("SplashScreen");
 export const messagingPlugin = () => plugin<FirebaseMessaging>("FirebaseMessaging");
 
@@ -143,5 +149,38 @@ export async function forgetNativeToken(): Promise<void> {
     await Promise.race([forget, new Promise<void>((resolve) => setTimeout(resolve, 3000))]);
   } catch {
     /* the next person to sign in on this phone takes the token over anyway */
+  }
+}
+
+/**
+ * Google sign-in inside the app, from the accounts already on the phone.
+ *
+ * Returns where to go once signed in, "cancelled" when the person closed the
+ * account sheet, or null when this cannot be done here — a browser, a build
+ * without Google configured, a portal that does not accept the phone's
+ * token yet — so the caller takes the browser's way instead.
+ */
+export async function nativeGoogleSignIn(next?: string): Promise<string | "cancelled" | null> {
+  const google = await googleAccountPlugin();
+  if (!google) return null;
+  let idToken: string;
+  try {
+    ({ idToken } = await google.signIn());
+  } catch (error) {
+    return (error as { code?: string }).code === "cancelled" ? "cancelled" : null;
+  }
+  try {
+    const response = await fetch("/auth/google/native", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ idToken, next: next ?? null }),
+    });
+    if (!response.ok) return null;
+    const answer = (await response.json()) as { path?: unknown; fallback?: unknown };
+    if (answer.fallback === true) return null;
+    return typeof answer.path === "string" && answer.path.startsWith("/") && !answer.path.startsWith("//") ? answer.path : null;
+  } catch {
+    return null;
   }
 }

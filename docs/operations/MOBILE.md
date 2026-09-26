@@ -100,7 +100,47 @@ By hand:
 The database side is migration `00069_device_tokens.sql`: phones are kept in
 `device_tokens`, and `claim_message_push` hands them out with the browsers.
 
+## Google sign-in inside the app
+
+Google refuses to sign anybody in inside an app's web view, and sending them
+out to Chrome and back loses them on the way. In the app the Google button
+first asks Android itself: `GoogleAccountPlugin` shows the phone's own account
+sheet (Credential Manager) and hands back a Google ID token, which the portal
+turns into a session at `/auth/google/native` — the same checks as the
+browser's way (`finishGoogleSignIn`). If the build has no Google client, or
+Supabase does not accept its tokens yet, the button quietly takes the
+browser's way instead.
+
+It needs three settings, which `scripts/setup/android.ps1` walks through on
+Windows (it also makes the release key, below):
+
+1. Firebase → Authentication → Sign-in method → **Google** enabled. This
+   creates the web client whose id the app's token is issued for.
+2. Firebase → Project settings → the Android app → **SHA-1** of the key that
+   signs the published APK (printed on every Android build's summary page),
+   then a fresh `google-services.json` in `GOOGLE_SERVICES_JSON`.
+3. Supabase → Authentication → Providers → Google → **Client IDs**: the web
+   client id from that file added after the existing one, comma-separated.
+
+The Google button is a plain link, never `next/link`: a client-side
+navigation that ends on another site leaves Next's router waiting for a page
+that never comes, and inside the app, where that page opens in Chrome
+instead, it froze every form after it.
+
 ## Stores
+
+**The release key.** On Windows, `scripts/setup/android.ps1` makes it (PKCS#12,
+RSA 2048, thirty years), stores it in GitHub and keeps the only copy in
+Documents\MTMU7 Android key:
+
+```powershell
+irm https://raw.githubusercontent.com/husenzodao1/MTMU7/main/scripts/setup/android.ps1 | iex
+```
+
+From then on the downloadable APK is a release build — not debuggable, one
+signature for good — which is what Play Protect judges an unknown app by.
+Outside Google Play it may still ask to scan the app once; only a store
+listing removes that question entirely.
 
 **Google Play** (one-time $25): make an upload keystore once and keep it safe —
 losing it means a new app listing.

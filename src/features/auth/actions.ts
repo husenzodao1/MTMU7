@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { done, failure, formDataToObject, keepValues, parseInput, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
+import { markWelcome } from "@/lib/auth/welcome";
 import { serverEnv } from "@/lib/env.server";
 import { postSignInPath, safeRedirectPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
@@ -113,6 +114,7 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
   // read it before the portal opens.
   if (access && !access.emailVerified) return startConfirmation(supabase, email, input.data.next);
 
+  await markWelcome();
   redirect(postSignInPath(input.data.next));
 }
 
@@ -152,6 +154,7 @@ export async function confirmEmailAction(_state: FormState, formData: FormData):
   if (error) return done(failure(isRateLimited(error) ? "errors.rate_limited" : "errors.invalid_code", { token: ["errors.invalid_code"] }));
 
   (await cookies()).delete(CONFIRM_COOKIE);
+  await markWelcome();
   redirect(postSignInPath(input.data.next));
 }
 

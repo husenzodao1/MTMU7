@@ -74,6 +74,10 @@ dependencies {
     // The app draws chat notifications itself (AppMessagingService), against
     // the same Firebase the messaging plugin uses.
     implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersion"
+    // Google sign-in from the accounts on the phone (GoogleAccountPlugin).
+    implementation "androidx.credentials:credentials:$credentialsVersion"
+    implementation "androidx.credentials:credentials-play-services-auth:$credentialsVersion"
+    implementation "com.google.android.libraries.identity.googleid:googleid:$googleIdVersion"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
