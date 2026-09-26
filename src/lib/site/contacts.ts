@@ -16,6 +16,9 @@ const X_HANDLE = "edu_system_tj";
 /** Digits only, in international form; wa.me rejects spaces and punctuation. */
 const WHATSAPP_NUMBER = "992179021717";
 
+/** The same line, for a phone to dial when a school has not given its own. */
+export const PLATFORM_PHONE = `+${WHATSAPP_NUMBER}`;
+
 export const PLATFORM_CONTACTS: Required<SocialContacts> = {
   telegram: `https://t.me/${TELEGRAM_HANDLE}`,
   instagram: `https://instagram.com/${INSTAGRAM_HANDLE}`,

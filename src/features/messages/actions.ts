@@ -50,30 +50,6 @@ export async function createGroupAction(name: string, memberIds: string[]): Prom
   redirect(`/messages/${data}`);
 }
 
-export async function sendMessageAction(conversationId: string, content: string, replyToId?: string | null): Promise<ActionResult<{ id: string }>> {
-  const access = await requireMessaging();
-  if (!access) return failure("errors.not_authenticated");
-  const parsed = z
-    .object({ conversationId: uuid, content: z.string().trim().min(1).max(MESSAGE_MAX_LENGTH), replyToId: uuid.nullable().optional() })
-    .safeParse({ conversationId, content, replyToId });
-  if (!parsed.success) return failure("errors.invalid");
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      conversation_id: parsed.data.conversationId,
-      sender_id: access.userId,
-      school_id: access.school!.id,
-      content: parsed.data.content,
-      type: "text",
-      reply_to_id: parsed.data.replyToId ?? null,
-    })
-    .select("id")
-    .single();
-  if (error || !data) return mapDbError(error);
-  return success(undefined, { id: data.id });
-}
-
 export async function editMessageAction(messageId: string, content: string): Promise<ActionResult> {
   const access = await requireMessaging();
   if (!access) return failure("errors.not_authenticated");
@@ -182,20 +158,14 @@ export async function fetchMessageAction(conversationId: string, messageId: stri
   const { data: row } = await supabase.from("messages").select("created_at").eq("id", messageId).maybeSingle();
   if (!row) return success(undefined, null);
   // The cursor is exclusive, so ask for the page just after this message and keep the exact match.
-  const after = new Date(new Date(row.created_at).getTime() + 1).toISOString();
+  const justAfter = new Date(new Date(row.created_at).getTime() + 1).toISOString();
   const { data, error } = await supabase.rpc("get_conversation_messages", {
     p_conversation_id: conversationId,
-    p_before_created_at: after,
+    p_before_created_at: justAfter,
     p_limit: 20,
   });
   if (error) return mapDbError(error);
   return success(undefined, ((data ?? []) as ThreadMessage[]).find((m) => m.id === messageId) ?? null);
-}
-
-export async function markConversationReadAction(conversationId: string): Promise<void> {
-  if (!uuid.safeParse(conversationId).success) return;
-  const supabase = await createClient();
-  await supabase.rpc("mark_conversation_read", { p_conversation_id: conversationId });
 }
 
 export async function setMutedAction(conversationId: string, muted: boolean): Promise<ActionResult> {
@@ -245,51 +215,4 @@ export async function removeGroupMemberAction(conversationId: string, userId: st
   revalidatePath("/messages", "layout");
   if (userId === access.userId) redirect("/messages");
   return success("portal.messages.memberRemoved");
-}
-
-/**
- * Sends where the sender is.
- *
- * The coordinates come from the browser, which means they come from the person:
- * they were asked, they agreed, and they can stop agreeing. Nothing here keeps
- * a trail — a location is a message like any other, it sits in the conversation
- * it was sent to, and deleting the message deletes the place.
- */
-export async function sendLocationAction(
-  conversationId: string,
-  latitude: number,
-  longitude: number,
-  label: string
-): Promise<ActionResult<{ id: string }>> {
-  const access = await requireMessaging();
-  if (!access) return failure("errors.not_authenticated");
-  const parsed = z
-    .object({
-      conversationId: uuid,
-      latitude: z.number().finite().min(-90).max(90),
-      longitude: z.number().finite().min(-180).max(180),
-      label: z.string().trim().max(200),
-    })
-    .safeParse({ conversationId, latitude, longitude, label });
-  if (!parsed.success) return failure("errors.invalid");
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({
-      conversation_id: parsed.data.conversationId,
-      sender_id: access.userId,
-      school_id: access.school!.id,
-      content: parsed.data.label,
-      type: "location",
-      // Rounded here as well as in the column: a browser will happily report
-      // fourteen decimal places, which is a claim about somebody's position
-      // that no phone can support and nobody needs.
-      location_lat: Number(parsed.data.latitude.toFixed(6)),
-      location_lng: Number(parsed.data.longitude.toFixed(6)),
-    })
-    .select("id")
-    .single();
-  if (error || !data) return mapDbError(error);
-  return success(undefined, { id: data.id });
 }

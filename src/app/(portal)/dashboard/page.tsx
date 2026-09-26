@@ -8,11 +8,12 @@ import { RegistrationNotice } from "@/features/auth/registration-notice";
 import { getMyChildren, getStudentOverview, getTeacherToday } from "@/features/academic/queries";
 import { getAdminDashboard } from "@/features/admin/dashboard-query";
 import { SetupGuide } from "@/features/admin/setup-guide";
+import { GreetingCard } from "@/features/dashboard/greeting-card";
 import { AnnouncementList, EventList, NewsCompactList } from "@/features/content/components";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
-import { Alert, Card, CardBody, CardHeader, Metric, PageHeader } from "@/components/ui/surface";
+import { Alert, Card, CardBody, CardHeader, Metric } from "@/components/ui/surface";
 import { can, canAny, canEnterAdmin, hasModule, hasRole } from "@/lib/auth/access";
 import { getPortalSession } from "@/lib/auth/guards";
 import { dayPart, formatDate, todayIso } from "@/lib/i18n/format";
@@ -54,7 +55,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     const name = session.access?.firstName ?? request?.first_name ?? "";
     return (
       <>
-        <PageHeader title={name ? t("greeting", { name }) : t("greetingNoName")} />
+        <GreetingCard name={name} initialPart={dayPart()} />
         <RegistrationNotice stage={stage} rejectionReason={request?.rejection_reason} />
       </>
     );
@@ -88,22 +89,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader
-        /* The greeting is the one line on the portal addressed to the person
-           reading it, so it is set the way a name is set: the hour's greeting
-           quiet, the name carrying the weight and the school's colour. */
-        title={
-          <span className="font-display">
-            <span className="font-normal text-ink">{t(`greetings.${dayPart(access.school?.timezone)}`)},</span>{" "}
-            <span className="font-bold text-brand-text">{access.firstName}</span>
-          </span>
-        }
-        description={`${tc(`weekdays.${weekday}`)}, ${formatDate(today, locale)}`}
+      <GreetingCard
+        name={access.firstName}
+        timeZone={access.school?.timezone}
+        initialPart={dayPart(access.school?.timezone)}
+        dateLine={`${tc(`weekdays.${weekday}`)}, ${formatDate(today, locale)}`}
         actions={
           canEnterAdmin(access) ? (
-            <Link href="/admin" className={buttonClasses("secondary")}>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
               {t("openAdmin")}
-              <ArrowRight aria-hidden />
+              <ArrowRight className="size-4" aria-hidden />
             </Link>
           ) : null
         }

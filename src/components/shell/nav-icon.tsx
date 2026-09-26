@@ -3,7 +3,7 @@ import {
   Bell, BookOpen, BookOpenCheck, CalendarClock, CalendarDays, CalendarRange, ClipboardCheck, ClipboardList, Contact,
   FileBarChart, FileText, FolderOpen, GraduationCap, Image, Landmark, LayoutDashboard, LineChart, Megaphone, MessageSquare,
   MessageSquareWarning, Newspaper, NotebookPen, Presentation, Radio, ScrollText, Settings, ShieldCheck, SquareStack,
-  Ticket, UserCheck, UserCog, Users, UsersRound, Globe, Activity, School, Building2, BookMarked,
+  Ticket, UserCheck, UserCog, Users, UsersRound, Globe, Activity, School, Building2, BookMarked, Headset,
   type LucideIcon,
 } from "lucide-react";
 import type { IconName } from "@/components/shell/navigation";
@@ -41,6 +41,7 @@ const ICONS: Record<IconName, LucideIcon> = {
   website: Globe,
   broadcasts: Radio,
   moderation: MessageSquareWarning,
+  support: Headset,
   school: Landmark,
   roles: ShieldCheck,
   modules: SquareStack,

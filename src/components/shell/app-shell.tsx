@@ -11,6 +11,7 @@ import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
+import { DevicePermissions } from "@/features/push/device-permissions";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
 
@@ -49,30 +50,30 @@ function isActive(pathname: string, href: string) {
 /**
  * The school's own mark, top left, on every page a signed-in person opens.
  *
- * A round frame in the school's colour with the photograph inside it: a crest
- * rather than a thumbnail, which is what a school badge is. The name is set in
- * the display face — the same one the front page uses — so the two read as the
- * same institution.
+ * A crest rather than a thumbnail: the photograph of the school in a ring of
+ * the theme's own colour — turned a little, so it catches the light like a
+ * struck medal — with a hairline of the page between the two, and the name
+ * beside it in a unicase, the way a name is cut into a seal. The ring follows
+ * the theme, so the crest is gold on the school's own theme, blue on Ocean.
  */
 function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: string }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <span
-        aria-hidden
-        className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-50 p-[3px] ring-2 ring-brand-solid/70 ring-offset-2 ring-offset-surface"
-      >
-        {school.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
-          <img src={school.logoUrl} alt="" className="size-full rounded-full object-cover" />
-        ) : (
-          <span className="flex size-full items-center justify-center rounded-full bg-brand-solid font-display text-sm font-bold text-brand-on-solid">
-            {school.name.slice(0, 2).toUpperCase()}
-          </span>
-        )}
+      <span aria-hidden className="crest-ring relative flex size-12 shrink-0 items-center justify-center rounded-full p-[3px]">
+        <span className="flex size-full items-center justify-center overflow-hidden rounded-full bg-surface p-[2px]">
+          {school.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
+            <img src={school.logoUrl} alt="" className="size-full rounded-full object-cover" />
+          ) : (
+            <span className="crest-name flex size-full items-center justify-center rounded-full bg-brand-solid text-base text-brand-on-solid">
+              {school.name.slice(0, 2)}
+            </span>
+          )}
+        </span>
       </span>
       <div className="min-w-0">
-        <p className="truncate font-display text-[0.9375rem] font-bold leading-tight tracking-tight text-ink">{school.name}</p>
-        <p className="truncate text-xs text-ink-muted">{subtitle}</p>
+        <p className="crest-name truncate text-[1.1875rem] leading-none text-ink">{school.name}</p>
+        <p className="mt-1 truncate text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-brand-text">{subtitle}</p>
       </div>
     </div>
   );
@@ -300,6 +301,8 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         </main>
         {footer}
       </div>
+
+      <DevicePermissions locale={locale} userId={user.id} />
 
       {mobileBar && mobileBar.length > 0 ? (
         <nav aria-label={t("nav.quick")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:hidden safe-bottom print:hidden">

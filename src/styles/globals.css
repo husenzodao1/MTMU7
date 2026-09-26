@@ -142,7 +142,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  :root:not([data-theme]),
+  :root[data-theme="ocean"],
+  :root[data-theme="graphite"],
+  :root[data-theme="lavender"] {
     --color-canvas: var(--dk-canvas);
     --color-surface: var(--dk-surface);
     --color-surface-muted: var(--dk-surface-muted);
@@ -306,6 +309,201 @@
   --color-focus-ring: #145c2d;
   --color-brand-text: #145c2d;
   --color-brand-text-strong: #0f4723;
+}
+
+/*
+ * Three accents that follow the device. By day each is the light theme with
+ * its own colour on what is pressed; by night the same accent, lifted for a
+ * dark page, over the shared dark neutrals (which the block above gives them).
+ * Minimal on purpose: one colour changes, everything else stays out of the way.
+ */
+:root[data-theme="ocean"] {
+  --color-brand-50: #eef5fd;
+  --color-brand-100: #d6e8fb;
+  --color-brand-200: #aecff5;
+  --color-brand-300: #7bb0ec;
+  --color-brand-500: #2f7fd8;
+  --color-brand-600: #1f68be;
+  --color-brand-700: #174f93;
+  --color-brand-800: #123f75;
+  --color-brand-900: #0d2f58;
+  --color-brand-solid: #1f68be;
+  --color-brand-solid-hover: #1a5aa6;
+  --color-brand-solid-active: #174f93;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #174f93;
+  --color-brand-text: #174f93;
+  --color-brand-text-strong: #123f75;
+}
+
+:root[data-theme="graphite"] {
+  --color-brand-50: #f2f3f5;
+  --color-brand-100: #e4e6ea;
+  --color-brand-200: #c9cdd4;
+  --color-brand-300: #a3aab4;
+  --color-brand-500: #4b5563;
+  --color-brand-600: #2b323b;
+  --color-brand-700: #1f252c;
+  --color-brand-800: #161a1f;
+  --color-brand-900: #0d1013;
+  --color-brand-solid: #1f252c;
+  --color-brand-solid-hover: #2b323b;
+  --color-brand-solid-active: #0d1013;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #1f252c;
+  --color-brand-text: #1f252c;
+  --color-brand-text-strong: #0d1013;
+}
+
+:root[data-theme="lavender"] {
+  --color-brand-50: #f5f2fd;
+  --color-brand-100: #ebe4fb;
+  --color-brand-200: #d6c8f6;
+  --color-brand-300: #b9a0ee;
+  --color-brand-500: #7c5cd6;
+  --color-brand-600: #6545c0;
+  --color-brand-700: #4f3499;
+  --color-brand-800: #3e2979;
+  --color-brand-900: #2e1f5a;
+  --color-brand-solid: #6545c0;
+  --color-brand-solid-hover: #5a3cb0;
+  --color-brand-solid-active: #4f3499;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #4f3499;
+  --color-brand-text: #4f3499;
+  --color-brand-text-strong: #3e2979;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="ocean"] {
+    --color-brand-50: #0f1f33;
+    --color-brand-100: #132a45;
+    --color-brand-200: #1b3a5f;
+    --color-brand-300: #28548a;
+    --color-brand-500: #3b82d6;
+    --color-brand-600: #4a93e6;
+    --color-brand-700: #7ab3f0;
+    --color-brand-800: #98c5f4;
+    --color-brand-900: #bcd9f8;
+    --color-brand-solid: #4a93e6;
+    --color-brand-solid-hover: #5da1ec;
+    --color-brand-solid-active: #72aff0;
+    --color-brand-on-solid: #06121f;
+    --color-focus-ring: #98c5f4;
+    --color-brand-text: #98c5f4;
+    --color-brand-text-strong: #bcd9f8;
+  }
+
+  :root[data-theme="graphite"] {
+    --color-brand-50: #1d2227;
+    --color-brand-100: #252b31;
+    --color-brand-200: #333a42;
+    --color-brand-300: #4a535d;
+    --color-brand-500: #9aa3ad;
+    --color-brand-600: #c9d0d7;
+    --color-brand-700: #e3e7eb;
+    --color-brand-800: #eef1f4;
+    --color-brand-900: #f8f9fa;
+    --color-brand-solid: #e3e7eb;
+    --color-brand-solid-hover: #f3f5f7;
+    --color-brand-solid-active: #ffffff;
+    --color-brand-on-solid: #0e1317;
+    --color-focus-ring: #eef1f4;
+    --color-brand-text: #e3e7eb;
+    --color-brand-text-strong: #f8f9fa;
+  }
+
+  :root[data-theme="lavender"] {
+    --color-brand-50: #1d1733;
+    --color-brand-100: #261e44;
+    --color-brand-200: #352a5e;
+    --color-brand-300: #4c3c86;
+    --color-brand-500: #8b6fe0;
+    --color-brand-600: #9d84ea;
+    --color-brand-700: #b9a6f1;
+    --color-brand-800: #cbbdf5;
+    --color-brand-900: #ded4f9;
+    --color-brand-solid: #9d84ea;
+    --color-brand-solid-hover: #ab94ee;
+    --color-brand-solid-active: #b9a6f1;
+    --color-brand-on-solid: #120c24;
+    --color-focus-ring: #cbbdf5;
+    --color-brand-text: #cbbdf5;
+    --color-brand-text-strong: #ded4f9;
+  }
+}
+
+/*
+ * The chat's own palette, after the messenger everybody's parents already
+ * use: a warm paper wall with a faint pattern, green for what you sent, white
+ * for what you received, blue ticks once it has been read. It sits on top of
+ * whichever theme is chosen, and turns to the same messenger's night colours
+ * wherever the page is dark.
+ */
+:root {
+  --chat-wall: #efeae2;
+  --chat-wall-dot: rgb(84 69 44 / 0.07);
+  --chat-bar: #f0f2f5;
+  --chat-mine: #d9fdd3;
+  --chat-theirs: #ffffff;
+  --chat-meta: #667781;
+  --chat-seen: #1d9bd1;
+  --chat-notice: #ffffffe8;
+  --chat-quote: rgb(11 20 26 / 0.05);
+  --chat-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  /* Google's own light button. */
+  --google-bg: #ffffff;
+  --google-bg-hover: #f7f8f8;
+  --google-line: #747775;
+  --google-ink: #1f1f1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]),
+  :root[data-theme="ocean"],
+  :root[data-theme="graphite"],
+  :root[data-theme="lavender"] {
+    --chat-wall: #0b141a;
+    --chat-wall-dot: rgb(255 255 255 / 0.035);
+    --chat-bar: #1f2c34;
+    --chat-mine: #005c4b;
+    --chat-theirs: #202c33;
+    --chat-meta: #8fa1ab;
+    --chat-seen: #53bdeb;
+    --chat-notice: #182229f0;
+    --chat-quote: rgb(255 255 255 / 0.06);
+    --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+    --google-bg: #131314;
+    --google-bg-hover: #1f1f20;
+    --google-line: #8e918f;
+    --google-ink: #e3e3e3;
+  }
+}
+
+:root[data-theme="night"],
+:root[data-theme="midnight"] {
+  --chat-wall: #0b141a;
+  --chat-wall-dot: rgb(255 255 255 / 0.035);
+  --chat-bar: #1f2c34;
+  --chat-mine: #005c4b;
+  --chat-theirs: #202c33;
+  --chat-meta: #8fa1ab;
+  --chat-seen: #53bdeb;
+  --chat-notice: #182229f0;
+  --chat-quote: rgb(255 255 255 / 0.06);
+  --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+  /* Google's own dark button. */
+  --google-bg: #131314;
+  --google-bg-hover: #1f1f20;
+  --google-line: #8e918f;
+  --google-ink: #e3e3e3;
+}
+
+:root[data-theme="midnight"] {
+  --chat-wall: #07090b;
+  --chat-mine: #0b3d33;
+  --chat-theirs: #16191d;
+  --chat-bar: #111418;
 }
 
 @layer base {
@@ -662,4 +860,264 @@
 :root[data-theme="night"],
 :root[data-theme="midnight"] {
   color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ chat */
+
+.chat-wall {
+  background-color: var(--chat-wall);
+  background-image: radial-gradient(var(--chat-wall-dot) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+
+.chat-header,
+.chat-composer {
+  background: var(--chat-bar);
+}
+.chat-header {
+  border-bottom: 1px solid var(--color-line);
+}
+.chat-composer {
+  border-top: 1px solid var(--color-line);
+}
+
+/* flow-root holds the floated time in, so it sits at the end of the last line
+   when there is room and drops below the text when there is not. */
+.chat-bubble {
+  position: relative;
+  display: flow-root;
+  border-radius: 0.6rem;
+  box-shadow: var(--chat-shadow);
+  overflow-wrap: anywhere;
+}
+.chat-bubble-mine {
+  background: var(--chat-mine);
+}
+.chat-bubble-theirs {
+  background: var(--chat-theirs);
+}
+
+/* The little flag the first bubble of a run hangs from. */
+.chat-tail-mine {
+  border-start-end-radius: 0;
+}
+.chat-tail-theirs {
+  border-start-start-radius: 0;
+}
+.chat-tail-mine::before,
+.chat-tail-theirs::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+}
+.chat-tail-mine::before {
+  inset-inline-end: -7px;
+  background: var(--chat-mine);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.chat-tail-theirs::before {
+  inset-inline-start: -7px;
+  background: var(--chat-theirs);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+:dir(rtl) .chat-tail-mine::before {
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+:dir(rtl) .chat-tail-theirs::before {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.chat-meta {
+  color: var(--chat-meta);
+}
+.chat-seen {
+  color: var(--chat-seen);
+}
+
+/* A drawing of a map rather than a map: no tile server is told where anybody
+   is. Streets, a block or two, a river — enough to read as "a place". */
+.chat-map {
+  background-color: #e8eee3;
+  background-image:
+    linear-gradient(115deg, transparent 46%, #a9cbe6 46.5%, #a9cbe6 53%, transparent 53.5%),
+    linear-gradient(0deg, transparent 47%, #ffffff 47%, #ffffff 53%, transparent 53%),
+    linear-gradient(90deg, transparent 30%, #ffffff 30%, #ffffff 34%, transparent 34%),
+    linear-gradient(90deg, transparent 70%, #ffffff 70%, #ffffff 73%, transparent 73%),
+    repeating-linear-gradient(0deg, #dfe7d8 0 22px, #e8eee3 22px 44px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .chat-map,
+  :root[data-theme="ocean"] .chat-map,
+  :root[data-theme="graphite"] .chat-map,
+  :root[data-theme="lavender"] .chat-map {
+    background-color: #1d2a24;
+    background-image:
+      linear-gradient(115deg, transparent 46%, #23425b 46.5%, #23425b 53%, transparent 53.5%),
+      linear-gradient(0deg, transparent 47%, #3a4a44 47%, #3a4a44 53%, transparent 53%),
+      linear-gradient(90deg, transparent 30%, #3a4a44 30%, #3a4a44 34%, transparent 34%),
+      linear-gradient(90deg, transparent 70%, #3a4a44 70%, #3a4a44 73%, transparent 73%),
+      repeating-linear-gradient(0deg, #1a2520 0 22px, #1d2a24 22px 44px);
+  }
+}
+:root[data-theme="night"] .chat-map,
+:root[data-theme="midnight"] .chat-map {
+  background-color: #1d2a24;
+  background-image:
+    linear-gradient(115deg, transparent 46%, #23425b 46.5%, #23425b 53%, transparent 53.5%),
+    linear-gradient(0deg, transparent 47%, #3a4a44 47%, #3a4a44 53%, transparent 53%),
+    linear-gradient(90deg, transparent 30%, #3a4a44 30%, #3a4a44 34%, transparent 34%),
+    linear-gradient(90deg, transparent 70%, #3a4a44 70%, #3a4a44 73%, transparent 73%),
+    repeating-linear-gradient(0deg, #1a2520 0 22px, #1d2a24 22px 44px);
+}
+
+/* ---------------------------------------------------- the support button */
+
+/*
+ * Small, in the corner, and alive: two rings leave the button one after the
+ * other and fade, like a ripple from a stone. They are behind the button and
+ * take no clicks, so nothing underneath is ever covered by more than the
+ * button itself.
+ */
+/* No position of its own: the button is `fixed`, the icon on the support page
+   `relative`, and a rule here outside any layer would beat both. */
+.support-fab {
+  isolation: isolate;
+}
+.support-fab::before,
+.support-fab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 9999px;
+  background: var(--color-brand-solid);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .support-fab::before,
+  .support-fab::after {
+    animation: support-wave 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .support-fab::after {
+    animation-delay: 1.3s;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .support-fab::before,
+  .support-fab::after {
+    display: none;
+  }
+}
+@keyframes support-wave {
+  from {
+    transform: scale(1);
+    opacity: 0.42;
+  }
+  to {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------ the greeting */
+
+/*
+ * The one line on the portal addressed to the person reading it, on a night
+ * sky that is the same in every theme: the greeting in white, the name in the
+ * school's gold. The sky is dark whatever the page is, so white is white and
+ * gold is gold, and neither depends on the theme for its contrast.
+ */
+.greeting-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: #ffffff;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgb(227 161 48 / 0.28) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgb(59 130 214 / 0.22) 0%, transparent 60%),
+    linear-gradient(135deg, #0f1a26 0%, #16243a 55%, #1c1a2e 100%);
+}
+.greeting-card[data-part="morning"] {
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgb(255 190 92 / 0.38) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgb(245 110 90 / 0.25) 0%, transparent 60%),
+    linear-gradient(135deg, #1b2440 0%, #2b3560 55%, #4a3a5c 100%);
+}
+.greeting-card[data-part="day"] {
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgb(255 214 110 / 0.35) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgb(64 160 230 / 0.35) 0%, transparent 60%),
+    linear-gradient(135deg, #123353 0%, #1d4b78 55%, #235a82 100%);
+}
+.greeting-card[data-part="evening"] {
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgb(240 140 60 / 0.4) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 100%, rgb(150 70 150 / 0.3) 0%, transparent 60%),
+    linear-gradient(135deg, #1e1b33 0%, #3a2447 55%, #5a2d3c 100%);
+}
+.greeting-card::after {
+  /* A scatter of small stars, drawn rather than loaded. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 68%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 46% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 74%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 78% 30%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 90% 62%, #fff 50%, transparent 51%);
+}
+.greeting-card[data-part="day"]::after {
+  opacity: 0;
+}
+
+.greeting-word {
+  font-family: var(--font-greeting), var(--font-display);
+  font-weight: 400;
+  color: #ffffff;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.35);
+}
+.greeting-name {
+  font-family: var(--font-greeting), var(--font-display);
+  color: #f5c542;
+  /* The face has one weight. A hairline stroke in its own colour thickens it
+     without swapping to a heavier font that would not carry ӯ and ҳ. */
+  -webkit-text-stroke: 0.6px #f5c542;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 22px rgb(245 197 66 / 0.35);
+}
+
+.google-button {
+  background: var(--google-bg);
+  border-color: var(--google-line);
+  color: var(--google-ink);
+}
+.google-button:hover {
+  background: var(--google-bg-hover);
+}
+
+/* ------------------------------------------------------------- the crest */
+
+.crest-name {
+  font-family: var(--font-crest), var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.crest-ring {
+  background: conic-gradient(
+    from 210deg,
+    var(--color-brand-solid),
+    var(--color-brand-300) 18%,
+    var(--color-brand-solid) 38%,
+    var(--color-brand-700) 62%,
+    var(--color-brand-solid) 82%,
+    var(--color-brand-300)
+  );
+  box-shadow: 0 3px 10px -3px color-mix(in srgb, var(--color-brand-solid) 70%, transparent);
 }

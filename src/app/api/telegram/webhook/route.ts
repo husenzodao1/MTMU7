@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
+import { publicEnv } from "@/lib/env";
 import { serverEnv } from "@/lib/env.server";
 import { isTelegramConfigured } from "@/lib/telegram/api";
 import { handleUpdate, type Update } from "@/lib/telegram/conversation";
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  await handleUpdate(update);
+  // The school's photograph is served by this same deployment, so its address
+  // is wherever Telegram just reached us — no configuration to fall out of step.
+  const siteUrl = publicEnv.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+  await handleUpdate(update, { siteUrl });
   return NextResponse.json({ ok: true });
 }

@@ -100,6 +100,18 @@ const WORDS = {
     languageSet: "Забон иваз шуд.",
     help: "Фармонҳо: /start — оғоз, /menu — меню, /add — иловаи фарзанд, /lang — забон",
     unknown: "Фармон нашинохтам. /menu-ро пахш кунед.",
+    morning: "Субҳ ба хайр",
+    day: "Рӯз ба хайр",
+    evening: "Шом ба хайр",
+    night: "Шаб ба хайр",
+    welcomeTitle: "Хуш омадед ба боти волидайн!",
+    whatYouGet: "Ин бот ба шумо мефиристад:",
+    getGrades: "📝 баҳои нав — 12 дақиқа баъди гузоштан",
+    getAbsence: "🚩 ғоиб ё дер омадан — бо номи фан ва соати дарс",
+    getDigest: "🌆 ҳисоботи рӯз — ҳар бегоҳ соати 18:00",
+    getMenu: "📅 ҷадвал ва ҳисоботи ҳафта — ҳар вақт аз меню",
+    nextStep: "Қадами оянда:",
+    chooseLanguageFirst: "Забонро интихоб кунед",
   },
   ru: {
     greeting: "Здравствуйте!",
@@ -150,6 +162,18 @@ const WORDS = {
     languageSet: "Язык изменён.",
     help: "Команды: /start — начать, /menu — меню, /add — добавить ребёнка, /lang — язык",
     unknown: "Не понял команду. Нажмите /menu.",
+    morning: "Доброе утро",
+    day: "Добрый день",
+    evening: "Добрый вечер",
+    night: "Доброй ночи",
+    welcomeTitle: "Добро пожаловать в бот для родителей!",
+    whatYouGet: "Этот бот будет присылать вам:",
+    getGrades: "📝 новую оценку — через 12 минут после выставления",
+    getAbsence: "🚩 пропуск или опоздание — с предметом и номером урока",
+    getDigest: "🌆 итоги дня — каждый вечер в 18:00",
+    getMenu: "📅 расписание и итоги недели — в любой момент из меню",
+    nextStep: "Следующий шаг:",
+    chooseLanguageFirst: "Выберите язык",
   },
   en: {
     greeting: "Hello!",
@@ -200,6 +224,18 @@ const WORDS = {
     languageSet: "Language changed.",
     help: "Commands: /start — begin, /menu — menu, /add — add a child, /lang — language",
     unknown: "I did not understand that. Tap /menu.",
+    morning: "Good morning",
+    day: "Good afternoon",
+    evening: "Good evening",
+    night: "Good night",
+    welcomeTitle: "Welcome to the parents' bot!",
+    whatYouGet: "This bot will send you:",
+    getGrades: "📝 every new mark — 12 minutes after it is entered",
+    getAbsence: "🚩 an absence or a late arrival — with the subject and period",
+    getDigest: "🌆 the day's summary — every evening at 18:00",
+    getMenu: "📅 the timetable and the week — any time from the menu",
+    nextStep: "Next step:",
+    chooseLanguageFirst: "Choose a language",
   },
 } as const;
 
@@ -290,6 +326,75 @@ export function stillNotSubscribed(locale: Loc, channel: string): { text: string
       [{ text: `✅ ${w.checkButton}`, callback_data: "check" }],
     ],
   };
+}
+
+/**
+ * The first thing /start shows: the language, before anything else is said.
+ *
+ * The chat does not have a language yet, so the question is asked in all
+ * three at once and each button names its language in itself.
+ */
+export function startLanguage(): { text: string; keyboard: InlineKeyboard } {
+  return {
+    text: [
+      "🏫 <b>Салом! · Здравствуйте! · Hello!</b>",
+      "",
+      `🌐 ${WORDS.tg.chooseLanguageFirst}`,
+      `🌐 ${WORDS.ru.chooseLanguageFirst}`,
+      `🌐 ${WORDS.en.chooseLanguageFirst}`,
+    ].join("\n"),
+    keyboard: [
+      [{ text: "🇹🇯 Тоҷикӣ", callback_data: "sl:tg" }],
+      [{ text: "🇷🇺 Русский", callback_data: "sl:ru" }],
+      [{ text: "🇬🇧 English", callback_data: "sl:en" }],
+    ],
+  };
+}
+
+export type DayPart = "morning" | "day" | "evening" | "night";
+
+/**
+ * Which greeting the hour calls for, on the school's clock: субҳ until noon,
+ * рӯз through the afternoon, шом from six and шаб from ten — the same hours
+ * the portal greets people by.
+ */
+export function dayPartAt(at: Date, timeZone = "Asia/Dushanbe"): DayPart {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(at)) % 24;
+  if (hour >= 5 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 18) return "day";
+  if (hour >= 18 && hour < 22) return "evening";
+  return "night";
+}
+
+const PART_ICON: Record<DayPart, string> = { morning: "🌅", day: "☀️", evening: "🌇", night: "🌙" };
+
+/** Telegram refuses a photo caption over this many characters. */
+export const CAPTION_LIMIT = 1024;
+
+/**
+ * The first greeting, under the school's photograph, once the subscription is
+ * confirmed: the hour's greeting, what the bot will send and when, and the one
+ * thing to do next. Short enough to be a caption — Telegram stops at 1024.
+ */
+export function firstGreeting(
+  locale: Loc,
+  options: { at?: Date; timeZone?: string; schoolName?: string | null; hasChildren?: boolean } = {}
+): string {
+  const w = words(locale);
+  const part = dayPartAt(options.at ?? new Date(), options.timeZone);
+  const next = options.hasChildren ? `👇 ${w.menuTitle}` : `👨‍👩‍👦 <b>${w.askChild}</b>\n${w.askChildHow} <code>MT10009</code>.`;
+  const head = [
+    `${PART_ICON[part]} <b>${w[part]}!</b> ${w.welcomeTitle}`,
+    `🏫 <i>${escapeHtml((options.schoolName || "Истаравшан").slice(0, 120))}</i>`,
+    "",
+    `✅ ${w.subscribeOk}`,
+  ];
+  const offer = ["", `<b>${w.whatYouGet}</b>`, w.getGrades, w.getAbsence, w.getDigest, w.getMenu];
+  const tail = ["", `<b>${w.nextStep}</b>`, next];
+  const full = [...head, ...offer, ...tail].join("\n");
+  // Whole lines are dropped rather than the text cut, so no tag is ever left
+  // open: first the list of what the bot sends, which the menu repeats.
+  return full.length <= CAPTION_LIMIT ? full : [...head, ...tail].join("\n");
 }
 
 export function askForChild(locale: Loc): string {

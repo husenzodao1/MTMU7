@@ -46,7 +46,8 @@
       "settings": "Settings",
       "system": "System status",
       "globalSearch": "Search",
-      "parents": "Parents (Telegram bot)"
+      "parents": "Parents (Telegram bot)",
+      "support": "Online support"
     },
     "dashboard": {
       "title": "School dashboard",
@@ -1737,6 +1738,22 @@
       "noticeKeep": "We keep only a fingerprint of each code, never the code itself. This file is the only copy.",
       "noticeReissue": "If a code is lost, issue the codes for that class again.",
       "noticeCount": "Rows: {count}"
+    },
+    "support": {
+      "title": "Online support",
+      "description": "Questions from people in the chat, and notes from those who cannot sign in.",
+      "views": "Views",
+      "chats": "Chats",
+      "notes": "Visitor notes",
+      "done": "Done",
+      "emptyChats": "Nobody has written to support yet.",
+      "emptyNotes": "No new notes.",
+      "emptyDone": "Nothing has been closed yet.",
+      "awaiting": "Awaiting reply",
+      "markDone": "Done",
+      "reopen": "Reopen",
+      "markedDone": "Marked as done.",
+      "reopened": "Reopened."
     }
   }
 }

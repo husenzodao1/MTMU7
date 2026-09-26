@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Noto_Sans, Noto_Serif } from "next/font/google";
+import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
+import { SupportFab } from "@/components/site/support-fab";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
@@ -26,6 +27,34 @@ const notoSerif = Noto_Serif({
   weight: ["400", "600", "700"],
   display: "swap",
   variable: "--font-noto-serif",
+});
+
+/**
+ * The greeting's face. A brush script is the least institutional thing on the
+ * portal, which is the point of the one line addressed to the reader — and
+ * Pacifico is one of the few that carries ғ ҷ қ ӣ ӯ ҳ, so "Рӯз ба хайр" does
+ * not change font half-way through a word. Not preloaded: it is used on one
+ * page, and the browser fetches the few glyphs it needs when that page draws.
+ */
+const pacifico = Pacifico({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-greeting",
+});
+
+/**
+ * The school's name on its crest: a unicase, where capitals and small letters
+ * share one height, the way a name is cut into a seal. Checked for the whole
+ * Tajik alphabet for the same reason as above.
+ */
+const unicase = Cormorant_Unicase({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-crest",
 });
 
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
@@ -75,14 +104,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
-      className={`${notoSans.variable} ${notoSerif.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable}`}
     >
       <body className="min-h-dvh">
         <a href="#main" className="skip-link">
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {children}
+            <SupportFab />
+          </ToastProvider>
         </NextIntlClientProvider>
       </body>
     </html>

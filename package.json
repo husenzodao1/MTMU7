@@ -17,7 +17,8 @@
     "db:verify": "node scripts/db/verify-remote.mts",
     "admin:password": "node scripts/admin/set-user-password.mts",
     "import:samples": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import/make-samples.mts",
-    "telegram:install": "node scripts/telegram/install.mts"
+    "telegram:install": "node scripts/telegram/install.mts",
+    "portal:setup": "node scripts/setup/portal.mts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
@@ -37,6 +38,7 @@
     "read-excel-file": "^9.3.10",
     "server-only": "0.0.1",
     "tailwind-merge": "^3.6.0",
+    "web-push": "^3.6.7",
     "write-excel-file": "^4.1.1",
     "zod": "^4.4.3"
   },
@@ -46,6 +48,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",

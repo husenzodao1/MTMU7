@@ -1,6 +1,6 @@
 import "server-only";
 import { TELEGRAM_CHANNEL } from "@/lib/env.server";
-import { answerCallback, editMessage, isChannelMember, sendMessage, TelegramError } from "@/lib/telegram/api";
+import { answerCallback, editMessage, isChannelMember, sendMessage, sendPhoto, TelegramError } from "@/lib/telegram/api";
 import * as db from "@/lib/telegram/db";
 import {
   asLocale,
@@ -8,10 +8,12 @@ import {
   askForCode,
   backKeyboard,
   childMenu,
+  firstGreeting,
   languageMenu,
   linked,
   menu,
   reportMessage,
+  startLanguage,
   stillNotSubscribed,
   welcome,
   words,
@@ -74,6 +76,41 @@ async function gate(chat: number, user: number, locale: Loc, schoolName?: string
   return true;
 }
 
+/** Where the site is, for the school's photograph. Set per update by the webhook. */
+export interface Context {
+  siteUrl?: string | null;
+}
+
+// Telegram hands back an id for every photo it has fetched once. Reusing it
+// is instant and does not make Telegram download the picture again, which on
+// a busy first morning is the difference between one fetch and a thousand.
+let schoolPhotoId: string | null = null;
+
+/**
+ * The school's photograph with the first greeting under it — what a parent
+ * sees the moment the subscription is confirmed. If the picture cannot be
+ * sent, the greeting still goes, as text: a parent is never left without it.
+ */
+async function sendFirstGreeting(chat: number, locale: Loc, hasChildren: boolean, context: Context): Promise<void> {
+  const caption = firstGreeting(locale, { hasChildren });
+  const photo = schoolPhotoId ?? (context.siteUrl ? `${context.siteUrl}/images/school-photo.png` : null);
+  if (photo) {
+    try {
+      const sent = await sendPhoto(chat, photo, caption);
+      const largest = sent.photo?.reduce((a, b) => (b.width > a.width ? b : a));
+      if (largest?.file_id) schoolPhotoId = largest.file_id;
+      return;
+    } catch (error) {
+      if (error instanceof TelegramError && error.gone) throw error;
+      // A stale file id, or a site Telegram could not reach: forget the id and
+      // fall through to the words alone.
+      schoolPhotoId = null;
+      console.warn("Telegram school photo could not be sent", { error: error instanceof Error ? error.message : "unknown" });
+    }
+  }
+  await sendMessage(chat, caption);
+}
+
 async function showMenu(chat: number, state: db.ChatState): Promise<void> {
   const card = menu(state.locale, state.children);
   await sendMessage(chat, card.text, { keyboard: card.keyboard });
@@ -85,8 +122,10 @@ async function handleText(chat: number, user: number, text: string, languageCode
   const w = words(locale);
   const trimmed = text.trim();
 
-  if (trimmed === "/start") {
-    const card = welcome(locale, TELEGRAM_CHANNEL);
+  // A /start from a shared link carries a payload ("/start abc"); it is the
+  // same beginning. The language comes first, before anything is said in one.
+  if (trimmed === "/start" || trimmed.startsWith("/start ")) {
+    const card = startLanguage();
     await sendMessage(chat, card.text, { keyboard: card.keyboard });
     return;
   }
@@ -157,18 +196,35 @@ async function handleCallback(
   user: number,
   messageId: number,
   data: string,
-  languageCode?: string
+  languageCode: string | undefined,
+  context: Context
 ): Promise<void> {
   const state = await db.touchChat(chat, preferred(languageCode));
   let locale = asLocale(state.locale);
   const w = words(locale);
 
+  // The language chosen after /start: the same card turns into the welcome,
+  // in that language, with the channel to follow and the button to check.
+  if (data.startsWith("sl:")) {
+    locale = asLocale(data.slice(3));
+    await db.setLocale(chat, locale);
+    await answerCallback(id, words(locale).languageSet);
+    const card = welcome(locale, TELEGRAM_CHANNEL);
+    await editMessage(chat, messageId, card.text, card.keyboard);
+    return;
+  }
+
   if (data === "check") {
     const ok = await gate(chat, user, locale);
     await answerCallback(id);
     if (ok) {
-      await db.setState(chat, "awaiting_child");
-      await sendMessage(chat, askForChild(locale));
+      const fresh = await db.touchChat(chat);
+      await sendFirstGreeting(chat, locale, fresh.children.length > 0, context);
+      if (fresh.children.length > 0) {
+        await showMenu(chat, fresh);
+      } else {
+        await db.setState(chat, "awaiting_child");
+      }
     }
     return;
   }
@@ -245,7 +301,7 @@ async function handleCallback(
 }
 
 /** Returns nothing: Telegram only needs a 200, and a retry would double-send. */
-export async function handleUpdate(update: Update): Promise<void> {
+export async function handleUpdate(update: Update, context: Context = {}): Promise<void> {
   try {
     if (update.my_chat_member) {
       const status = update.my_chat_member.new_chat_member.status;
@@ -261,7 +317,7 @@ export async function handleUpdate(update: Update): Promise<void> {
         await answerCallback(q.id);
         return;
       }
-      await handleCallback(q.id, q.message.chat.id, q.from.id, q.message.message_id, q.data, q.from.language_code);
+      await handleCallback(q.id, q.message.chat.id, q.from.id, q.message.message_id, q.data, q.from.language_code, context);
       return;
     }
 

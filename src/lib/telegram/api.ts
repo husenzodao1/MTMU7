@@ -70,6 +70,26 @@ export function sendMessage(
   });
 }
 
+/**
+ * A photograph with words under it. The photo is a URL Telegram fetches
+ * itself, or a file_id it handed back from an earlier send — the second is
+ * instant and costs nothing, so callers keep it.
+ */
+export function sendPhoto(
+  chatId: number,
+  photo: string,
+  caption: string,
+  options: { keyboard?: InlineKeyboard } = {}
+): Promise<{ message_id: number; photo?: Array<{ file_id: string; width: number }> }> {
+  return call("sendPhoto", {
+    chat_id: chatId,
+    photo,
+    caption,
+    parse_mode: "HTML",
+    ...(options.keyboard ? { reply_markup: { inline_keyboard: options.keyboard } } : {}),
+  });
+}
+
 export function editMessage(
   chatId: number,
   messageId: number,

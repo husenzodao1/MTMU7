@@ -42,7 +42,13 @@ That is the sender refusing, not a problem with the account.
 5. **Authentication → Email Templates**: the confirmation and recovery templates
    must contain `{{ .Token }}`, because the portal asks for a six-digit code
    rather than a link.
-6. **Authentication → URL Configuration**: Site URL and the redirect list must
+6. **Authentication → Providers → Email → Email OTP Length** must be **6**.
+   The length is the project's setting, not the code's: a project left on 8
+   sends eight digits under a screen that promises six. `npm run portal:setup`
+   sets it (and checks it) with a Supabase personal access token. The form
+   still accepts 6–10 digits, so nobody is locked out while the setting is
+   being changed.
+7. **Authentication → URL Configuration**: Site URL and the redirect list must
    match the deployed address, including `/auth/callback`, `/auth/confirm` and
    `/verify`.
 

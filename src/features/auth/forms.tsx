@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { AuthMark } from "@/features/auth/auth-mark";
+import { GoogleSignInButton } from "@/features/auth/google-button";
 import { TextField } from "@/components/ui/fields";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,14 @@ export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string 
       <SubmitButton className="w-full" size="lg">
         {t("submit")}
       </SubmitButton>
+      {/* Google is a way into the account the school issued, matched by
+          address — never a way to make one. */}
+      <div className="flex items-center gap-3 text-xs text-ink-muted" aria-hidden>
+        <span className="h-px flex-1 bg-line" />
+        {t("or")}
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <GoogleSignInButton label={t("google")} next={next} />
       {/* Consent is given by the act of signing in, so there is no checkbox to
           tick; the sentence states what that act means, including for minors. */}
       <p className="text-center text-xs leading-relaxed text-ink-muted">

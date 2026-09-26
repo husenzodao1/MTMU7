@@ -23,6 +23,14 @@ const serverSchema = z.object({
   TELEGRAM_WEBHOOK_SECRET: z.string().min(32).optional(),
   // The channel a parent must be following before the bot will talk to them.
   TELEGRAM_CHANNEL: z.string().regex(/^@[A-Za-z0-9_]{4,64}$/).optional(),
+  // Web Push. The private half of the VAPID pair signs every push the portal
+  // sends; the public half is NEXT_PUBLIC_VAPID_PUBLIC_KEY. Without both there
+  // is no push, and chat carries on exactly as before. A malformed value is
+  // treated as absent rather than refused: a pasted key with a stray space
+  // must switch push off, not take the whole portal down at start-up.
+  VAPID_PRIVATE_KEY: z.string().regex(/^[A-Za-z0-9_-]{40,50}$/).optional().catch(undefined),
+  // Who the push services should write to if this sender misbehaves.
+  VAPID_SUBJECT: z.string().regex(/^(mailto:|https:\/\/)\S+$/).optional().catch(undefined),
 });
 
 /** Server-only configuration. Never import from client components. */
@@ -34,6 +42,8 @@ export const serverEnv = serverSchema.parse({
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
   TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || undefined,
   TELEGRAM_CHANNEL: process.env.TELEGRAM_CHANNEL || undefined,
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || undefined,
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT || undefined,
 });
 
 /** The channel the school publishes to, and the bot insists on. */

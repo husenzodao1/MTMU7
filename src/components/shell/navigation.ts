@@ -7,7 +7,7 @@ export type IconName =
   | "announcements" | "events" | "documents" | "messages" | "notifications" | "admin" | "contacts"
   | "students" | "staff" | "guardians" | "users" | "approvals" | "invitations" | "years" | "classes" | "subjects"
   | "gradebook" | "timetable" | "media" | "website" | "broadcasts" | "moderation" | "school" | "roles" | "modules"
-  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status" | "search";
+  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status" | "search" | "support";
 
 export interface NavItem {
   key: string;
@@ -126,6 +126,7 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     labelKey: "admin.nav.groups.communication",
     rules: [
       { item: { key: "broadcasts", href: "/admin/notifications", icon: "broadcasts", labelKey: "admin.nav.notifications" }, visible: anyOf("notifications.send") },
+      { item: { key: "support", href: "/admin/support", icon: "support", labelKey: "admin.nav.support" }, visible: anyOf("messages.moderate") },
       { item: { key: "moderation", href: "/admin/moderation", icon: "moderation", labelKey: "admin.nav.moderation" }, visible: anyOf("messages.moderate") },
     ],
   },

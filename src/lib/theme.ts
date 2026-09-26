@@ -9,7 +9,14 @@
  * `system` writes no attribute at all, which is what leaves the media query in
  * charge — that is the default, and the one most people should stay on.
  */
-export const THEMES = ["system", "day", "night", "midnight", "verdant"] as const;
+export const THEMES = ["system", "day", "night", "midnight", "verdant", "ocean", "graphite", "lavender"] as const;
+
+/**
+ * Accent themes that keep following the device: light by day, dark by night,
+ * with their own colour on the things that are pressed. Only the accent is
+ * chosen; the light and the dark are still the device's to decide.
+ */
+export const ADAPTIVE_THEMES: readonly Theme[] = ["ocean", "graphite", "lavender"];
 
 export type Theme = (typeof THEMES)[number];
 
@@ -27,6 +34,6 @@ export const THEME_COOKIE = "theme";
  * `system` is neither, and says so by returning null.
  */
 export function themeIsDark(theme: Theme): boolean | null {
-  if (theme === "system") return null;
+  if (theme === "system" || ADAPTIVE_THEMES.includes(theme)) return null;
   return theme === "night" || theme === "midnight";
 }

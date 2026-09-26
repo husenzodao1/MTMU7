@@ -8,6 +8,9 @@
 export const PORTAL_PREFIXES = [
   "/dashboard", "/admin", "/teach", "/messages", "/library", "/notifications", "/profile", "/settings",
   "/schedule", "/grades", "/attendance", "/homework", "/children", "/friends", "/access-denied",
+  // The support chat itself; /support alone is public, for somebody who cannot
+  // sign in and needs to say so.
+  "/support/chat",
 ] as const;
 
 /**

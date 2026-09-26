@@ -2639,6 +2639,29 @@ export type Database = {
           },
         ];
       };
+      message_push_log: {
+        Row: {
+          message_id: string;
+          pushed_at: string;
+        };
+        Insert: {
+          message_id: string;
+          pushed_at?: string;
+        };
+        Update: {
+          message_id?: string;
+          pushed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "message_push_log_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: true;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       message_reports: {
         Row: {
           id: string;
@@ -3660,6 +3683,57 @@ export type Database = {
           },
         ];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          school_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          locale: string;
+          created_at: string;
+          last_seen_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          school_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          locale?: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          school_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          locale?: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       regions: {
         Row: {
           id: string;
@@ -4618,6 +4692,57 @@ export type Database = {
           },
         ];
       };
+      support_requests: {
+        Row: {
+          id: string;
+          school_id: string;
+          name: string;
+          contact: string;
+          message: string;
+          status: string;
+          handled_by: string | null;
+          handled_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          name: string;
+          contact: string;
+          message: string;
+          status?: string;
+          handled_by?: string | null;
+          handled_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          contact?: string;
+          message?: string;
+          status?: string;
+          handled_by?: string | null;
+          handled_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_handled_by_fkey";
+            columns: ["handled_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "support_requests_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       teacher_subjects: {
         Row: {
           id: string;
@@ -5261,7 +5386,7 @@ export type Database = {
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
-      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null }[] };
+      get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null }[] };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_profile: { Args: Record<PropertyKey, never>; Returns: Json };
       get_registration_options: { Args: { p_school_slug: string }; Returns: Json };
@@ -5274,9 +5399,11 @@ export type Database = {
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_timetable: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       issue_parent_codes: { Args: { p_class: string }; Returns: { student_id: string | null; class_name: string | null; full_name: string | null; nickname: string | null; login: string | null; code: string | null }[] };
-      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null }[] };
+      join_support_conversation: { Args: { p_conversation_id: string }; Returns: undefined };
+      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null; created_by: string | null; last_message_type: string | null }[] };
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
+      list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
@@ -5284,6 +5411,7 @@ export type Database = {
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
+      open_support_conversation: { Args: Record<PropertyKey, never>; Returns: string };
       promote_students: { Args: { p_from_class_id: string; p_to_class_id: string; p_student_ids: string[] }; Returns: number };
       provision_person: { Args: { p_kind: string; p_row: Json; p_role_id?: string }; Returns: Json };
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };
@@ -5297,16 +5425,19 @@ export type Database = {
       report_message: { Args: { p_message_id: string; p_reason: string; p_details?: string }; Returns: string };
       report_teacher_workload: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { staff_id: string | null; teacher_name: string | null; staff_type: string | null; planned_weekly_hours: number | null; scheduled_lessons_per_week: number | null; max_weekly_hours: number | null; classes: number | null; subjects: number | null }[] };
       resolve_public_school: { Args: { p_host?: string; p_slug?: string }; Returns: string };
+      resolve_support_request: { Args: { p_request_id: string; p_done: boolean }; Returns: undefined };
       review_registration: { Args: { p_request_id: string; p_approve: boolean; p_role_id?: string; p_class_id?: string; p_reason?: string }; Returns: undefined };
       role_permission_slugs: { Args: { p_role_id: string }; Returns: string[] };
       rule_journal_column: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_kind: string; p_date?: string; p_assessment_type_id?: string; p_label?: string }; Returns: string };
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
+      save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
       student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
+      submit_support_request: { Args: { p_school_id: string; p_name: string; p_contact: string; p_message: string }; Returns: string };
       teacher_today: { Args: { p_date?: string }; Returns: Json };
       toggle_news_like: { Args: { p_article: string }; Returns: Json };
       transfer_student_class: { Args: { p_student_id: string; p_to_class_id: string; p_reason?: string }; Returns: string };

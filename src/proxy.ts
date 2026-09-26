@@ -119,7 +119,7 @@ function withSecurityHeaders(target: NextResponse, csp: string, cookieSource?: N
 export const config = {
   matcher: [
     {
-      source: "/((?!_next/static|_next/image|favicon.ico|icons/|images/|robots.txt|sitemap.xml|manifest.webmanifest).*)",
+      source: "/((?!_next/static|_next/image|favicon.ico|icons/|images/|robots.txt|sitemap.xml|manifest.webmanifest|sw.js).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

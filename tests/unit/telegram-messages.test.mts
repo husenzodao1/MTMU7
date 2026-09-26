@@ -3,13 +3,17 @@ import assert from "node:assert/strict";
 import {
   absenceMessage,
   asLocale,
+  CAPTION_LIMIT,
   childMenu,
   day,
+  dayPartAt,
+  firstGreeting,
   gradeMessage,
   LOCALES,
   markDot,
   menu,
   reportMessage,
+  startLanguage,
   stillNotSubscribed,
   welcome,
   words,
@@ -156,5 +160,47 @@ describe("the small things a parent reads first", () => {
 
     const single: Report = { child, to: "2026-09-25", grades: [grade], attendance: [] };
     assert.ok(!reportMessage("ru", single, "day", school).includes(words("ru").average));
+  });
+});
+
+describe("the first minute with the bot", () => {
+  it("asks for the language before saying anything in one", () => {
+    const card = startLanguage();
+    assert.ok(tagsBalance(card.text));
+    assert.deepEqual(
+      card.keyboard.map((row) => row[0]!.callback_data),
+      ["sl:tg", "sl:ru", "sl:en"]
+    );
+    // All three questions are there, since the chat has no language yet.
+    for (const locale of LOCALES) assert.ok(card.text.includes(words(locale).chooseLanguageFirst), locale);
+  });
+
+  it("greets by the school's clock, not the server's", () => {
+    // 03:30 UTC is 08:30 in Dushanbe: a morning, whatever the server thinks.
+    assert.equal(dayPartAt(new Date("2026-09-26T03:30:00Z")), "morning");
+    assert.equal(dayPartAt(new Date("2026-09-26T08:00:00Z")), "day");
+    assert.equal(dayPartAt(new Date("2026-09-26T14:00:00Z")), "evening");
+    assert.equal(dayPartAt(new Date("2026-09-26T18:30:00Z")), "night");
+    // Midnight is night, not "24 o'clock" in the afternoon.
+    assert.equal(dayPartAt(new Date("2026-09-26T19:00:00Z")), "night");
+  });
+
+  it("fits under the photograph, in every language, and closes its tags", () => {
+    const evening = new Date("2026-09-26T14:00:00Z");
+    for (const locale of LOCALES) {
+      for (const hasChildren of [false, true]) {
+        const caption = firstGreeting(locale, { at: evening, schoolName: "МТМУ №7", hasChildren });
+        assert.ok(caption.length <= CAPTION_LIMIT, `${locale}: ${caption.length}`);
+        assert.ok(tagsBalance(caption), locale);
+        assert.ok(caption.includes(words(locale).evening), locale);
+      }
+      assert.ok(firstGreeting(locale, { at: evening }).includes("MT10009"), "a parent without a child is told what to send");
+    }
+  });
+
+  it("drops whole lines rather than cutting one, for an absurdly long name", () => {
+    const caption = firstGreeting("tg", { schoolName: "Я".repeat(2000) });
+    assert.ok(caption.length <= CAPTION_LIMIT);
+    assert.ok(tagsBalance(caption));
   });
 });

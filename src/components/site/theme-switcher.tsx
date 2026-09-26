@@ -17,6 +17,10 @@ const SWATCH: Record<Theme, { page: string; accent: string }> = {
   night: { page: "#0e1317", accent: "#d9962b" },
   midnight: { page: "#0a0a0c", accent: "#bd8526" },
   verdant: { page: "#f4f5f7", accent: "#1f7a3e" },
+  // The three that follow the device show both halves, like "system" does.
+  ocean: { page: "linear-gradient(135deg, #f4f5f7 50%, #0e1317 50%)", accent: "#1f68be" },
+  graphite: { page: "linear-gradient(135deg, #f4f5f7 50%, #0e1317 50%)", accent: "#1f252c" },
+  lavender: { page: "linear-gradient(135deg, #f4f5f7 50%, #0e1317 50%)", accent: "#6545c0" },
 };
 
 export async function ThemeSwitcher({ className }: { className?: string }) {

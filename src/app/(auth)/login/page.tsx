@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { signOutAction } from "@/app/actions/session";
 import { buttonClasses } from "@/components/ui/button";
@@ -52,6 +53,22 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           ) : null}
           {reason === "password-updated" ? <Alert tone="success">{t("passwordUpdated")}</Alert> : null}
           {reason === "link-invalid" ? <Alert tone="warning">{t("linkInvalid")}</Alert> : null}
+          {/* Google recognised the person, the school did not recognise the
+              address. Said plainly, with the way to the desk right there. */}
+          {reason === "google-unknown" ? (
+            <Alert
+              tone="warning"
+              actions={
+                <Link href="/support" className={buttonClasses("secondary", "sm")}>
+                  {t("contactUs")}
+                </Link>
+              }
+            >
+              {t("googleUnknown")}
+            </Alert>
+          ) : null}
+          {reason === "google-failed" ? <Alert tone="warning">{t("googleFailed")}</Alert> : null}
+          {reason === "google-inactive" ? <Alert tone="warning">{t("inactive")}</Alert> : null}
           <SignInForm next={next} markUrl={school?.logoUrl ?? school?.photoUrl ?? null} />
           {/* There is no self-service door: logins come from the school. The
               card says so rather than offering a form that no longer exists. */}

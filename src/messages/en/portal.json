@@ -61,6 +61,12 @@
         "day": "Good afternoon",
         "evening": "Good evening",
         "night": "Good night"
+      },
+      "wishes": {
+        "morning": "Have a great day and good lessons!",
+        "day": "Wishing you a smooth and successful day!",
+        "evening": "Have a pleasant evening and a good rest!",
+        "night": "Sleep well — tomorrow is a new day."
       }
     },
     "lessons": {
@@ -448,7 +454,13 @@
       "openMap": "Open on a map",
       "locationUnsupported": "This browser cannot report a location.",
       "locationDenied": "Location was not allowed. Turn it on in the browser's settings.",
-      "locationFailed": "Could not work out where you are. Try again."
+      "locationFailed": "Could not work out where you are. Try again.",
+      "supportTitle": "Online support",
+      "supportSubtitle": "We usually reply within a few minutes",
+      "supportDeskSubtitle": "Online support · you are replying for the school",
+      "supportBadge": "Support",
+      "supportEmpty": "Write your question — a member of the school staff will answer right here. Two ticks (✓✓) mean your message has been read.",
+      "locationShort": "📍 Location"
     },
     "notifications": {
       "title": "Notifications",
@@ -521,6 +533,10 @@
         "friend_accepted": {
           "title": "Contact request accepted",
           "body": "{name} accepted your request."
+        },
+        "support_request": {
+          "title": "New support note from {name}",
+          "body": "Open it in the support inbox."
         }
       }
     },

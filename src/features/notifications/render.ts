@@ -10,7 +10,7 @@ export const NOTIFICATION_TYPES = [
 
 export const TEMPLATE_KEYS = [
   "message.new", "grade.new", "attendance.absent", "attendance.late", "homework.published", "announcement.published",
-  "registration.pending", "moderation.report", "friend.request", "friend.accepted",
+  "registration.pending", "moderation.report", "friend.request", "friend.accepted", "support.request",
 ] as const;
 
 export interface NotificationRow {
@@ -60,7 +60,7 @@ export async function renderNotifications(rows: NotificationRow[], locale: Local
     return {
       ...row,
       heading: t(`${id}.title`, values),
-      detail: key === "message.new" && row.body ? row.body : t(`${id}.body`, values),
+      detail: (key === "message.new" || key === "support.request") && row.body ? row.body : t(`${id}.body`, values),
     };
   });
 }
