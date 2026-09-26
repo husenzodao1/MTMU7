@@ -268,6 +268,14 @@ export function Thread({
     [initialMembers, readSince]
   );
   const memberMap = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
+  // The realtime handlers read the members through this, so a read receipt —
+  // which changes the members — does not tear the subscription down and set it
+  // up again. It used to: every receipt left a gap in which the next one was
+  // lost, and the second tick then waited for a reload.
+  const memberMapRef = useRef(memberMap);
+  useEffect(() => {
+    memberMapRef.current = memberMap;
+  }, [memberMap]);
 
   // The moment the last of the others caught up. One number, however many
   // people are in the room: a second tick that appeared when the first of
@@ -748,7 +756,7 @@ export function Thread({
       .channel(`thread:${conversation.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
         const row = payload.new as MessageRow;
-        const sender = row.sender_id ? memberMap.get(row.sender_id) : undefined;
+        const sender = row.sender_id ? memberMapRef.current.get(row.sender_id) : undefined;
         if (row.sender_id === currentUserId) {
           // Our own message, back from realtime before the insert answered:
           // it takes the place of the bubble already on screen instead of
@@ -829,7 +837,7 @@ export function Thread({
         setPinned((current) => {
           const without = current.filter((p) => p.id !== row.id);
           if (!row.is_pinned || row.is_deleted) return without;
-          const sender = row.sender_id ? memberMap.get(row.sender_id) : undefined;
+          const sender = row.sender_id ? memberMapRef.current.get(row.sender_id) : undefined;
           return [...without, { id: row.id, content: row.content, sender_first_name: sender?.first_name ?? null, sender_last_name: sender?.last_name ?? null }];
         });
       })
@@ -853,7 +861,7 @@ export function Thread({
       document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
-  }, [conversation.id, currentUserId, memberMap, upsert, applyReaction]);
+  }, [conversation.id, currentUserId, upsert, applyReaction]);
 
   // --------------------------------------------------------- full screen
 

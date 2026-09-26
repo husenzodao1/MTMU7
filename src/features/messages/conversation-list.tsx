@@ -38,6 +38,9 @@ interface Live {
   unread: number;
 }
 
+/** Timestamps from the server and from realtime are compared as instants, not as text. */
+const time = (value: string) => new Date(value).getTime();
+
 export function ConversationList({ conversations, currentUserId, timeZone }: { conversations: ConversationSummary[]; currentUserId: string; timeZone: string }) {
   const t = useTranslations("portal.messages");
   const locale = useLocale() as Locale;
@@ -55,11 +58,16 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
   // list here; the server is asked only about a conversation the list has
   // never seen.
   const [live, setLive] = useState<Record<string, Live>>({});
+  // When this person last read each conversation, as realtime reported it —
+  // here, in another tab or on the phone — so its count clears at once
+  // instead of waiting for the list to be rendered again.
+  const [readAt, setReadAt] = useState<Record<string, string>>({});
   const [base, setBase] = useState(conversations);
   if (base !== conversations) {
     // Fresh rows from the server supersede whatever realtime said before them.
     setBase(conversations);
     setLive({});
+    setReadAt({});
   }
   const known = useRef(new Set<string>());
   const active = useRef<string | null>(null);
@@ -87,6 +95,21 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
         () => {
           if (refreshTimer.current) clearTimeout(refreshTimer.current);
           refreshTimer.current = setTimeout(() => router.refresh(), 400);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${currentUserId}` },
+        (payload) => {
+          const row = payload.new as { conversation_id: string; last_read_at: string | null };
+          const at = row.last_read_at;
+          if (!at) return;
+          setReadAt((current) => ({ ...current, [row.conversation_id]: at }));
+          // What arrived before the read is read; what arrives after counts again.
+          setLive((current) => {
+            const l = current[row.conversation_id];
+            return l && l.unread > 0 && time(l.created_at) <= time(at) ? { ...current, [row.conversation_id]: { ...l, unread: 0 } } : current;
+          });
         }
       )
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", ...(idFilter ? { filter: idFilter } : {}) }, (payload) => {
@@ -121,6 +144,9 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
     return conversations
       .map((c) => {
         const l = live[c.id];
+        const read = readAt[c.id];
+        // Read since the server counted: everything it counted is read.
+        const counted = read !== undefined && (!c.last_message_at || time(c.last_message_at) <= time(read)) ? 0 : c.unread_count;
         const merged: ConversationSummary =
           l && (!c.last_message_at || l.created_at > c.last_message_at)
             ? {
@@ -130,16 +156,16 @@ export function ConversationList({ conversations, currentUserId, timeZone }: { c
                 last_message_at: l.created_at,
                 last_message_deleted: false,
                 last_message_type: l.type,
-                unread_count: c.unread_count + l.unread,
+                unread_count: counted + l.unread,
               }
-            : c;
+            : { ...c, unread_count: counted };
         const askedByMe = c.type === "support" && c.created_by === currentUserId;
         const title = askedByMe ? t("supportTitle") : conversationTitle(merged, currentUserId, t("unknownUser"));
         return { ...merged, title, askedByMe };
       })
       .filter((c) => !normalized || c.title.toLowerCase().includes(normalized))
       .sort((a, b) => (b.last_message_at ?? b.updated_at).localeCompare(a.last_message_at ?? a.updated_at));
-  }, [conversations, live, currentUserId, filter, t]);
+  }, [conversations, live, readAt, currentUserId, filter, t]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

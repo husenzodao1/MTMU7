@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bell, ChevronDown, LogOut, Menu, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
@@ -159,6 +159,54 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       void supabase.removeChannel(channel);
     };
   }, [user.id]);
+
+  // The unread messages on the bar's Messages button. The layout counts them
+  // once, and layouts are not rendered again on navigation, so a conversation
+  // read here left the old number standing until a reload. Asked again when
+  // this person reads a conversation anywhere (their membership row changes),
+  // when the tab comes back, and on the way into or out of the messages.
+  const tracksMessages = Boolean(mobileBar?.some((item) => item.key === "messages"));
+  const [messagesUnread, setMessagesUnread] = useState(unreadMessages);
+  const [prevMessages, setPrevMessages] = useState(unreadMessages);
+  if (prevMessages !== unreadMessages) {
+    setPrevMessages(unreadMessages);
+    setMessagesUnread(unreadMessages);
+  }
+  const recountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recountMessages = useCallback(() => {
+    if (recountTimer.current) clearTimeout(recountTimer.current);
+    recountTimer.current = setTimeout(() => {
+      getBrowserClient()
+        .rpc("get_unread_message_count")
+        .then(({ data, error }) => {
+          if (!error && data !== null) setMessagesUnread(Number(data));
+        });
+    }, 300);
+  }, []);
+  useEffect(() => {
+    if (!tracksMessages) return;
+    const supabase = getBrowserClient();
+    const channel = supabase
+      .channel(`unread-messages:${user.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${user.id}` }, recountMessages)
+      .subscribe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") recountMessages();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (recountTimer.current) clearTimeout(recountTimer.current);
+      void supabase.removeChannel(channel);
+    };
+  }, [tracksMessages, user.id, recountMessages]);
+  const inMessages = pathname.startsWith("/messages");
+  const wasInMessages = useRef(inMessages);
+  useEffect(() => {
+    if (wasInMessages.current === inMessages) return;
+    wasInMessages.current = inMessages;
+    if (tracksMessages) recountMessages();
+  }, [inMessages, tracksMessages, recountMessages]);
 
   const subtitle = variant === "admin" ? t("admin.nav.title") : t("common.platformShort");
   const searchable = variant === "admin";
@@ -330,7 +378,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                     >
                       <span className="relative">
                         <NavIcon name={item.icon} className="size-5" />
-                        {item.key === "messages" ? <CountBadge count={unreadMessages} label={t("nav.messagesUnread", { count: unreadMessages })} /> : null}
+                        {item.key === "messages" ? <CountBadge count={messagesUnread} label={t("nav.messagesUnread", { count: messagesUnread })} /> : null}
                       </span>
                       <span className="max-w-full truncate">{t(item.labelKey)}</span>
                     </Link>
