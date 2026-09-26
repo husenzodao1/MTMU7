@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAppUserAgent } from "@/lib/native/app";
 import { postSignInPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,7 +14,12 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const next = postSignInPath(url.searchParams.get("next"));
-  const callback = new URL("/auth/callback", url.origin);
+  // In the phone app Google's page opens in the system browser — Google will
+  // not sign anybody in inside an app's web view — and the way back into the
+  // app is /auth/app-return. The verifier cookie set below stays in the app,
+  // which is where the code is finally exchanged.
+  const inApp = isAppUserAgent(request.headers.get("user-agent"));
+  const callback = new URL(inApp ? "/auth/app-return" : "/auth/callback", url.origin);
   callback.searchParams.set("via", "google");
   if (next !== "/dashboard") callback.searchParams.set("next", next);
 

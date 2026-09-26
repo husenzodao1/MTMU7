@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
+import { NativeApp } from "@/features/native/native-app";
 import { ToastProvider } from "@/components/ui/toast";
 import { publicEnv } from "@/lib/env";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
@@ -114,6 +115,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ToastProvider>
             {children}
             <SupportFab />
+            <NativeApp />
           </ToastProvider>
         </NextIntlClientProvider>
       </body>

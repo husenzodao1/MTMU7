@@ -3,6 +3,7 @@
 import { Bell, Check, MapPin, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { nativePush } from "@/features/native/bridge";
 import { enablePush, pushState, registerWorker, syncPush, type PushState } from "@/features/push/client";
 import { cn } from "@/lib/utils/cn";
 
@@ -48,17 +49,30 @@ export function DevicePermissions({ locale, userId }: { locale: string; userId: 
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"push" | "geo" | null>(null);
 
+  const [native, setNative] = useState<Awaited<ReturnType<typeof nativePush>>>(null);
+
   useEffect(() => {
     let cancelled = false;
-    void registerWorker();
-    void syncPush(locale, userId);
-    void geoState().then((location) => {
+    void (async () => {
+      // In the phone app notifications come from Firebase, not Web Push; the
+      // question and the card are the same.
+      const app = await nativePush();
+      let notifications: PushState;
+      if (app) {
+        notifications = await app.state();
+        if (notifications === "granted") void app.sync(locale);
+      } else {
+        void registerWorker();
+        void syncPush(locale, userId);
+        notifications = pushState();
+      }
+      const location = await geoState();
       if (cancelled) return;
-      const notifications = pushState();
+      setNative(app);
       setPush(notifications);
       setGeo(location);
       setOpen((notifications === "default" || location === "prompt") && !dismissedRecently());
-    });
+    })();
     return () => {
       cancelled = true;
     };
@@ -83,7 +97,7 @@ export function DevicePermissions({ locale, userId }: { locale: string; userId: 
 
   const askPush = async () => {
     setBusy("push");
-    const answer = await enablePush(locale);
+    const answer = native ? await native.enable(locale) : await enablePush(locale);
     setBusy(null);
     setPush(answer);
     finishIfDone(answer, geo);

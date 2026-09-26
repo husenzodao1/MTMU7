@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bell, ChevronDown, LogOut, Menu, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
+import { forgetNativeToken } from "@/features/native/bridge";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { Avatar } from "@/components/ui/misc";
@@ -210,7 +211,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur-[2px] sm:px-5 safe-top print:hidden">
+        <header className="sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur-[2px] sm:px-5 safe-top print:hidden">
           <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DialogPrimitive.Trigger asChild>
               <button
@@ -286,7 +287,14 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                 ))}
               </div>
               <Overlay.DropdownMenuSeparator />
-              <form action={signOutAction}>
+              <form
+                action={async () => {
+                  // In the phone app this phone stops getting this person's
+                  // notifications first; in a browser it returns at once.
+                  await forgetNativeToken();
+                  await signOutAction();
+                }}
+              >
                 <button type="submit" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-danger-700 hover:bg-danger-50">
                   <LogOut className="size-4" aria-hidden />
                   {t("nav.signOut")}

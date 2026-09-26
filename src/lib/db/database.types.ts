@@ -927,6 +927,54 @@ export type Database = {
           },
         ];
       };
+      device_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          school_id: string;
+          token: string;
+          platform: string;
+          locale: string;
+          created_at: string;
+          last_seen_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          school_id: string;
+          token: string;
+          platform: string;
+          locale?: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          school_id?: string;
+          token?: string;
+          platform?: string;
+          locale?: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "device_tokens_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       directors: {
         Row: {
           id: string;
@@ -5395,6 +5443,7 @@ export type Database = {
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
+      forget_my_device_token: { Args: { p_token: string }; Returns: undefined };
       get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null }[] };
       get_member_card: { Args: { p_user_id: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
@@ -5439,6 +5488,7 @@ export type Database = {
       review_registration: { Args: { p_request_id: string; p_approve: boolean; p_role_id?: string; p_class_id?: string; p_reason?: string }; Returns: undefined };
       role_permission_slugs: { Args: { p_role_id: string }; Returns: string[] };
       rule_journal_column: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_kind: string; p_date?: string; p_assessment_type_id?: string; p_label?: string }; Returns: string };
+      save_device_token: { Args: { p_token: string; p_platform: string; p_locale?: string }; Returns: undefined };
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
       save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };

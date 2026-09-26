@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { isUuid } from "@/lib/validation/uuid";
-import { dispatchMessagePush, isPushConfigured } from "@/lib/push/send";
+import { dispatchMessagePush, isAnyPushConfigured } from "@/lib/push/send";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  * Answers before a single push is sent; the pushes go out after the response.
  */
 export async function POST(request: Request) {
-  if (!isPushConfigured()) return NextResponse.json({ queued: false }, { status: 202 });
+  if (!isAnyPushConfigured()) return NextResponse.json({ queued: false }, { status: 202 });
 
   let id: unknown;
   try {

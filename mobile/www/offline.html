@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>МТМУ №7</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      display: grid; place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      background: radial-gradient(120% 90% at 50% 0%, #16242d 0%, #0b141a 60%);
+      color: #f4f6f8; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-align: center;
+    }
+    main { max-width: 340px; }
+    .mark {
+      width: 88px; height: 88px; margin: 0 auto 22px; border-radius: 50%;
+      border: 6px solid #e3a130; display: grid; place-items: center;
+      box-shadow: 0 0 0 8px rgb(227 161 48 / 0.12);
+    }
+    .mark svg { width: 36px; height: 36px; stroke: #e3a130; }
+    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+    p { margin: 0 0 4px; color: #a9b4bf; font-size: 14px; }
+    button {
+      margin-top: 22px; border: 0; border-radius: 999px; padding: 13px 28px;
+      background: #e3a130; color: #14181f; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    button:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/>
+        <path d="M19 12.86a10 10 0 0 0-2-1.39"/><path d="M2 8.82a15 15 0 0 1 4.18-2.64"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/>
+        <path d="m2 2 20 20"/>
+      </svg>
+    </div>
+    <h1>Пайваст нест</h1>
+    <p>Интернетро санҷед ва аз нав кӯшиш кунед.</p>
+    <p>Нет подключения · No connection</p>
+    <button type="button" id="retry">Аз нав · Повторить</button>
+  </main>
+  <script>
+    document.getElementById("retry").addEventListener("click", function () {
+      location.href = "https://mtmuraqami7.vercel.app/dashboard";
+    });
+    // Back as soon as the phone is back online.
+    window.addEventListener("online", function () {
+      location.href = "https://mtmuraqami7.vercel.app/dashboard";
+    });
+  </script>
+</body>
+</html>

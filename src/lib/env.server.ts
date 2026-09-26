@@ -31,6 +31,10 @@ const serverSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().regex(/^[A-Za-z0-9_-]{40,50}$/).optional().catch(undefined),
   // Who the push services should write to if this sender misbehaves.
   VAPID_SUBJECT: z.string().regex(/^(mailto:|https:\/\/)\S+$/).optional().catch(undefined),
+  // The phone app's notifications: a Firebase service account's JSON key, as
+  // it downloads or base64-encoded. Absent or unreadable means the app simply
+  // gets no pushes; nothing else is affected.
+  FIREBASE_SERVICE_ACCOUNT: z.string().min(100).optional().catch(undefined),
 });
 
 /** Server-only configuration. Never import from client components. */
@@ -44,6 +48,7 @@ export const serverEnv = serverSchema.parse({
   TELEGRAM_CHANNEL: process.env.TELEGRAM_CHANNEL || undefined,
   VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || undefined,
   VAPID_SUBJECT: process.env.VAPID_SUBJECT || undefined,
+  FIREBASE_SERVICE_ACCOUNT: process.env.FIREBASE_SERVICE_ACCOUNT || undefined,
 });
 
 /** The channel the school publishes to, and the bot insists on. */

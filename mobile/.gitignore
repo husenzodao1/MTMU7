@@ -1,0 +1,11 @@
+node_modules/
+# Firebase keys are per-project and are written by CI from secrets, or added
+# by hand for a local build; they never enter the repository.
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+# Signing material.
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+android/keystore.properties
