@@ -73,6 +73,18 @@ Locally: `cd mobile && npm ci && npx cap sync`, then `npx cap open android`
 
 ## Notifications: Firebase, once
 
+On Windows, steps 2 and 5 are one command in PowerShell. It waits for the two
+files in Downloads, checks they belong to `tj.mtmu7.app` and to one project,
+sets the GitHub secret through the GitHub CLI (installing it if needed), puts
+the service account on the clipboard with the Vercel page open, removes the
+key file, and starts an Android build:
+
+```powershell
+irm https://raw.githubusercontent.com/husenzodao1/MTMU7/main/scripts/setup/firebase.ps1 | iex
+```
+
+By hand:
+
 1. <https://console.firebase.google.com> → *Add project*.
 2. *Add app* → Android, package `tj.mtmu7.app` → download
    `google-services.json` → repository secret `GOOGLE_SERVICES_JSON`.
