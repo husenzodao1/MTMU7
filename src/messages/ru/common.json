@@ -258,6 +258,12 @@
     "signOut": "Выйти",
     "adminCenter": "Центр управления",
     "backToPortal": "Вернуться в портал",
-    "myClass": "Мой класс"
+    "myClass": "Мой класс",
+    "version": "Версия {site}",
+    "versionInApp": "Приложение {app} · сайт {site}",
+    "about": "О сайте",
+    "aboutTitle": "Портал МТМУ №7",
+    "aboutBody": "Сайт и приложение школы для учеников, родителей и учителей.",
+    "aboutClose": "Хорошо"
   }
 }

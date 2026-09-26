@@ -25,8 +25,21 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
+/**
+ * The site's version as the menu shows it: the day it was built and, on
+ * Vercel, the commit — 2026.09.27 · 4948fca.
+ */
+function buildVersion(): string {
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, ".");
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+  return commit ? `${day} · ${commit}` : day;
+}
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_BUILD_VERSION: buildVersion(),
+  },
   images: {
     remotePatterns: supabaseImagePattern(),
   },

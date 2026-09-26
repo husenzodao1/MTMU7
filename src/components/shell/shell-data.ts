@@ -31,6 +31,7 @@ export async function loadShellData(access: Access): Promise<ShellData> {
     locale,
     school: {
       name: access.school?.shortName ?? "",
+      fullName: access.school?.fullName ?? "",
       logoUrl: access.school?.logoUrl ?? null,
     },
     user: {

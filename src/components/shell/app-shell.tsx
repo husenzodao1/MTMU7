@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bell, ChevronDown, LogOut, Menu, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
+import { Bell, ChevronDown, CircleAlert, LogOut, Menu, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
 import { NavIcon } from "@/components/shell/nav-icon";
@@ -13,6 +13,7 @@ import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
+import { appPlugin } from "@/features/native/bridge";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
 
@@ -25,6 +26,8 @@ export interface ShellUser {
 
 export interface ShellSchool {
   name: string;
+  /** The official name, as the drawer shows it at the top. */
+  fullName: string;
   logoUrl: string | null;
 }
 
@@ -80,6 +83,71 @@ function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: strin
       </div>
     </div>
   );
+}
+
+/** The top of the phone's menu: the app's mark and the school's official name. */
+function DrawerHeading({ name }: { name: string }) {
+  return (
+    <div className="flex items-center gap-3 pr-1">
+      {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
+      <img src="/brand/app-icon.svg" alt="" width={44} height={44} className="size-11 shrink-0 rounded-xl shadow-sm" />
+      <p className="drawer-school">{name}</p>
+    </div>
+  );
+}
+
+/** The foot of the phone's menu: which version this is, and "about the site". */
+function DrawerFooter() {
+  const t = useTranslations("nav");
+  const version = useAppVersion();
+  const [aboutOpen, setAboutOpen] = useState(false);
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-ink-muted">
+      <span className="min-w-0 truncate tabular">{version}</span>
+      <DialogPrimitive.Root open={aboutOpen} onOpenChange={setAboutOpen}>
+        <DialogPrimitive.Trigger asChild>
+          <button type="button" className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-ink-secondary hover:bg-surface-muted hover:text-ink">
+            <CircleAlert className="size-4" aria-hidden />
+            {t("about")}
+          </button>
+        </DialogPrimitive.Trigger>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-ink/40 data-[state=open]:animate-fade" />
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 text-center shadow-overlay focus:outline-none">
+            {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
+            <img src="/brand/app-icon.svg" alt="" width={64} height={64} className="mx-auto size-16 rounded-2xl shadow-sm" />
+            <DialogPrimitive.Title className="mt-4 text-base font-semibold text-ink">{t("aboutTitle")}</DialogPrimitive.Title>
+            <DialogPrimitive.Description className="mt-1 text-sm text-ink-secondary">{t("aboutBody")}</DialogPrimitive.Description>
+            <p className="mt-3 text-xs text-ink-muted tabular">{version}</p>
+            <DialogPrimitive.Close className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-brand-solid px-5 text-sm font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
+              {t("aboutClose")}
+            </DialogPrimitive.Close>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
+    </div>
+  );
+}
+
+/**
+ * "Version …": the site's build, and inside the phone app the app's own
+ * version beside it — two things that update separately, so both are shown.
+ */
+function useAppVersion(): string {
+  const t = useTranslations("nav");
+  const site = process.env.NEXT_PUBLIC_BUILD_VERSION ?? "dev";
+  const [app, setApp] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    void appPlugin().then(async (plugin) => {
+      const info = await plugin?.getInfo().catch(() => null);
+      if (live && info?.version) setApp(info.version);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return app ? t("versionInApp", { app, site }) : t("version", { site });
 }
 
 function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[]; pathname: string; onNavigate?: () => void; filter: string }) {
@@ -275,7 +343,12 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                   <Menu className="size-5" aria-hidden />
                 </button>
               </DialogPrimitive.Trigger>
-              <Overlay.DrawerContent title={school.name} closeLabel={t("common.close")}>
+              <Overlay.DrawerContent
+                title={school.fullName || school.name}
+                closeLabel={t("common.close")}
+                header={<DrawerHeading name={school.fullName || school.name} />}
+                footer={<DrawerFooter />}
+              >
                 {sidebar(() => setDrawerOpen(false))}
               </Overlay.DrawerContent>
             </DialogPrimitive.Root>

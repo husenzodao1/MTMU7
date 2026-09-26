@@ -258,6 +258,12 @@
     "signOut": "Sign out",
     "adminCenter": "Admin Control Center",
     "backToPortal": "Back to portal",
-    "myClass": "My class"
+    "myClass": "My class",
+    "version": "Version {site}",
+    "versionInApp": "App {app} · site {site}",
+    "about": "About the site",
+    "aboutTitle": "MTMU No. 7 portal",
+    "aboutBody": "The school’s website and app for pupils, parents and teachers.",
+    "aboutClose": "OK"
   }
 }

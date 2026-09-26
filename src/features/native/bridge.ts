@@ -39,6 +39,8 @@ interface AppPlugin {
   addListener(event: "appUrlOpen", handler: (event: { url: string }) => void): Promise<Listener>;
   /** The link the app was started with, when a link (or a notification) started it. */
   getLaunchUrl(): Promise<{ url?: string } | undefined>;
+  /** The installed app's own version, e.g. 1.0.12. */
+  getInfo(): Promise<{ version: string; build: string }>;
 }
 
 async function plugin<T>(name: string): Promise<T | null> {
