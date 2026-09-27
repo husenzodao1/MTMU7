@@ -945,7 +945,7 @@
   background:
     radial-gradient(60% 45% at 50% 38%, rgb(255 181 71 / 0.3), transparent 70%),
     linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
-  transition: opacity 0.42s ease, visibility 0.42s;
+  transition: opacity 0.5s ease, visibility 0.5s;
   /* If JavaScript never arrives, the page is still revealed. */
   animation: app-launch-fallback 0.4s ease 4s forwards;
 }
@@ -957,15 +957,24 @@
   width: 132px;
   height: 132px;
   overflow: visible;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+/* On the way out the mark opens towards the reader as the night blue fades. */
+.app-launch-leaving .app-launch-mark {
+  transform: scale(1.35);
+}
+/*
+ * Until data-play (set once the phone's own splash is gone) nothing moves:
+ * the dot and the leaves wait at their first frame, so the whole drawing is
+ * seen rather than played out under the splash.
+ */
 .app-launch-dot {
+  opacity: 0;
   transform-origin: 256px 190px;
-  animation: app-launch-dot 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 .app-launch-glow {
   opacity: 0;
   transform-origin: 256px 190px;
-  animation: app-launch-glow 1.6s ease-in-out 0.3s infinite;
 }
 .app-launch-leaf {
   fill: none;
@@ -974,14 +983,29 @@
   stroke-linecap: round;
   stroke-dasharray: 220;
   stroke-dashoffset: 220;
-  animation: app-launch-leaf 0.55s cubic-bezier(0.5, 0, 0.2, 1) 0.12s forwards;
+}
+.app-launch[data-play] .app-launch-dot {
+  animation: app-launch-dot 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.app-launch[data-play] .app-launch-glow {
+  animation: app-launch-glow 1.6s ease-in-out 0.3s infinite;
+}
+.app-launch[data-play] .app-launch-leaf {
+  animation: app-launch-leaf 0.55s cubic-bezier(0.5, 0, 0.2, 1) 0.15s forwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  .app-launch-dot,
-  .app-launch-glow,
-  .app-launch-leaf {
+  .app-launch .app-launch-dot,
+  .app-launch .app-launch-glow,
+  .app-launch .app-launch-leaf {
     animation: none;
+    opacity: 1;
     stroke-dashoffset: 0;
+  }
+  .app-launch .app-launch-glow {
+    opacity: 0;
+  }
+  .app-launch-leaving .app-launch-mark {
+    transform: none;
   }
 }
 @keyframes app-launch-dot {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
+import { report } from "@/features/native/diagnostics";
 import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 import { cn } from "@/lib/utils/cn";
 
@@ -87,12 +88,16 @@ export function SignInVeil() {
       document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
       return;
     }
+    report("signin.submit");
     const show = window.setTimeout(() => {
       setShown(true);
       document.documentElement.setAttribute(VEIL_ATTRIBUTE, "");
     }, 250);
+    // In the app: a sign-in still waiting after ten seconds is worth knowing about.
+    const stuck = window.setTimeout(() => report("signin.stuck", {}, true), 10_000);
     return () => {
       window.clearTimeout(show);
+      window.clearTimeout(stuck);
       setShown(false);
     };
   }, [pending]);

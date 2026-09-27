@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
-import { appPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { appPlugin, googleAccountPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
+import { report, watchErrors } from "@/features/native/diagnostics";
 import { registerWorker } from "@/features/push/client";
 import { pathForAppLink } from "@/lib/native/app";
+
+/** What Capacitor's bridge puts on window, as far as the diagnostics look. */
+interface CapacitorGlobal {
+  isNativePlatform?: () => boolean;
+  getPlatform?: () => string;
+  PluginHeaders?: Array<{ name: string }>;
+}
 
 /**
  * What only the app needs from every page: somewhere to go when a link opens
@@ -12,6 +21,39 @@ import { pathForAppLink } from "@/lib/native/app";
  * nothing at all.
  */
 export function NativeApp() {
+  const pathname = usePathname();
+
+  // What the app's page could see as it woke — for reading back when
+  // something inside the app does not work (features/native/diagnostics.ts).
+  useEffect(() => {
+    if (!isInApp()) return;
+    const stop = watchErrors();
+    void (async () => {
+      const capacitor = (window as { Capacitor?: CapacitorGlobal }).Capacitor;
+      const google = await googleAccountPlugin();
+      const googleReady = google ? await google.available().then((answer) => answer.available, () => "error") : null;
+      const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      report("boot", {
+        bridge: Boolean(capacitor),
+        native: capacitor?.isNativePlatform?.() ?? false,
+        platform: capacitor?.getPlatform?.() ?? null,
+        plugins: (capacitor?.PluginHeaders ?? []).map((plugin) => plugin.name).slice(0, 30),
+        google: googleReady,
+        awakeMs: Math.round(performance.now()),
+        htmlMs: navigation ? Math.round(navigation.responseEnd) : null,
+        launch: (window as { __appLaunch?: unknown }).__appLaunch ?? null,
+      });
+    })();
+    return stop;
+  }, []);
+
+  // Every page after the first, so a sign-in can be followed to where it led.
+  const firstPage = useRef(true);
+  useEffect(() => {
+    if (firstPage.current) firstPage.current = false;
+    else report("page");
+  }, [pathname]);
+
   // Every page, browser or app: the service worker keeps the portal's own
   // files on the device, so the next visit starts at once.
   useEffect(() => {

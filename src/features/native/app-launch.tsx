@@ -1,30 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
+import { INTRO_MS } from "@/features/native/launch-script";
 import { cn } from "@/lib/utils/cn";
 
 /**
  * What the app shows while it opens, over the page: the mark on the app's
  * night blue — the dot rises, the two leaves of the book draw out from the
- * spine — and then it fades into the page.
+ * spine — and then the mark opens towards the reader as it fades into the
+ * page.
  *
  * Rendered only inside the app (the layout checks the User-Agent), and only
  * on a full page load: the server sends it with the HTML, so it covers the page
- * from the first frame until React has taken over, then gets out of the way.
- * The phone's own splash is the same picture standing still, so the hand-over
- * from native to web is invisible. A CSS fallback fades it out after four
- * seconds even if JavaScript never runs.
+ * from the first frame until React has taken over.
+ *
+ * The phone shows its own splash — the same mark standing still — until the
+ * page asks it to go, and the animation used to play underneath it, over and
+ * done with before anybody could see it. Now it waits: LAUNCH_SCRIPT
+ * (launch-script.ts), inline right after this markup, hides the phone's
+ * splash the moment the page's styles are in and only then starts the
+ * animation, long before React arrives. React then lets it finish, and takes
+ * it away once the page is ready. A CSS fallback fades it out after four
+ * seconds even if no script runs at all.
  */
 export function AppLaunch() {
+  const overlay = useRef<HTMLDivElement>(null);
   const [leaving, setLeaving] = useState(false);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
+    // Normally done already by LAUNCH_SCRIPT; harmless when it was.
     void splashPlugin().then((splash) => splash?.hide({ fadeOutDuration: 150 }).catch(() => undefined));
-    // Long enough for the leaves to finish drawing, no longer.
-    const leave = window.setTimeout(() => setLeaving(true), 700);
-    const remove = window.setTimeout(() => setGone(true), 1150);
+    const started = (window as { __appLaunch?: { at?: number } }).__appLaunch?.at;
+    if (overlay.current && !overlay.current.hasAttribute("data-play")) overlay.current.setAttribute("data-play", "");
+    // The leaves take 0.7s to draw; the page is ready by now, so it goes as
+    // soon as they have.
+    const wait = typeof started === "number" ? Math.max(200, started + INTRO_MS - performance.now()) : INTRO_MS;
+    const leave = window.setTimeout(() => setLeaving(true), wait);
+    const remove = window.setTimeout(() => setGone(true), wait + 520);
     return () => {
       window.clearTimeout(leave);
       window.clearTimeout(remove);
@@ -33,7 +47,8 @@ export function AppLaunch() {
 
   if (gone) return null;
   return (
-    <div className={cn("app-launch", leaving && "app-launch-leaving")} aria-hidden>
+    // data-play is set by LAUNCH_SCRIPT before React hydrates.
+    <div ref={overlay} className={cn("app-launch", leaving && "app-launch-leaving")} aria-hidden suppressHydrationWarning>
       <svg viewBox="0 0 512 512" className="app-launch-mark">
         <defs>
           <linearGradient id="launch-dot" x1="0.2" y1="0" x2="0.8" y2="1">

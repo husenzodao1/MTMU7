@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
-import { isInApp, nativeGoogleSignIn } from "@/features/native/bridge";
+import { useTranslations } from "next-intl";
+import { isInApp, nativeGoogleSignIn, type NativeGoogleResult } from "@/features/native/bridge";
+import { report } from "@/features/native/diagnostics";
 
 /**
  * Google's own four-colour "G", drawn at its published proportions. The mark
@@ -19,47 +21,72 @@ function GoogleMark({ className }: { className?: string }) {
   );
 }
 
+/** Which sentence explains a reason nativeGoogleSignIn gave. */
+function problemKey(reason: string): "notReady" | "noAccount" | "network" | "failed" {
+  if (reason === "no_bridge" || reason === "not_configured" || reason === "not_accepted") return "notReady";
+  if (reason === "no_account") return "noAccount";
+  if (reason === "network") return "network";
+  return "failed";
+}
+
 /**
  * The quiet alternative under the password form: a white pill with Google's
  * mark, as Google asks it to be drawn, and nothing else.
  *
  * A plain link, never next/link. /auth/google answers with a redirect to
  * Google, and a client-side navigation that ends on another site leaves the
- * router waiting for a page that never arrives — which inside the app, where
- * that page opens in Chrome instead, froze every form after it, the password
- * form included.
+ * router waiting for a page that never arrives.
  *
- * In the app the link is only the fallback: the phone's own account sheet
- * comes first, and the sign-in never leaves the app.
+ * In the app the link is not followed at all: the phone's own account sheet
+ * is the only way, because Google's page would open in Chrome and nobody has
+ * come back from there signed in. When the phone's way cannot be used the
+ * button stops spinning and says why, with the reason's code for whoever has
+ * to fix it.
  */
 export function GoogleSignInButton({ label, next }: { label: string; next?: string }) {
+  const t = useTranslations("auth.login.googleApp");
   const href = next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google";
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<{ key: ReturnType<typeof problemKey>; reason: string } | null>(null);
 
   async function onClick(event: MouseEvent<HTMLAnchorElement>) {
     if (!isInApp()) return;
     event.preventDefault();
     if (busy) return;
     setBusy(true);
-    const answer = await nativeGoogleSignIn(next);
-    if (answer === "cancelled") {
-      setBusy(false);
+    setProblem(null);
+    let answer: NativeGoogleResult;
+    try {
+      answer = await nativeGoogleSignIn(next);
+    } catch (error) {
+      // Whatever happens, the button does not stay spinning.
+      answer = { kind: "unavailable", reason: "error", message: String(error).slice(0, 200) };
+    }
+    report("google.result", { ...answer, path: undefined }, true);
+    if (answer.kind === "signed-in") {
+      window.location.assign(answer.path);
       return;
     }
-    // Signed in (or turned away, with the reason on the sign-in page), or the
-    // browser's way when the phone's could not be used.
-    window.location.assign(answer ?? href);
+    setBusy(false);
+    if (answer.kind === "unavailable") setProblem({ key: problemKey(answer.reason), reason: answer.reason });
   }
 
   return (
-    <a
-      href={href}
-      onClick={onClick}
-      aria-busy={busy || undefined}
-      className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-full border px-4 text-sm font-medium shadow-xs transition-colors aria-busy:opacity-70"
-    >
-      {busy ? <span className="size-[18px] animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden /> : <GoogleMark className="size-[18px]" />}
-      <span>{label}</span>
-    </a>
+    <div>
+      <a
+        href={href}
+        onClick={onClick}
+        aria-busy={busy || undefined}
+        className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-full border px-4 text-sm font-medium shadow-xs transition-colors aria-busy:opacity-70"
+      >
+        {busy ? <span className="size-[18px] animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden /> : <GoogleMark className="size-[18px]" />}
+        <span>{label}</span>
+      </a>
+      {problem ? (
+        <p role="alert" className="mt-2 text-center text-xs leading-relaxed text-ink-secondary">
+          {t(problem.key)} <span className="text-ink-muted">({problem.reason})</span>
+        </p>
+      ) : null}
+    </div>
   );
 }

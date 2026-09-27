@@ -1,6 +1,7 @@
 "use client";
 
 import { APP_USER_AGENT_MARK } from "@/lib/native/app";
+import { notThenable } from "@/lib/native/not-thenable";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import type { PushState } from "@/features/push/client";
 
@@ -43,16 +44,29 @@ interface AppPlugin {
   getInfo(): Promise<{ version: string; build: string }>;
 }
 
+/**
+ * A plugin, or null where there is none.
+ *
+ * Capacitor's plugin is a Proxy that answers every property with a native
+ * method — `then` included. Handed out of an async function as it is, the
+ * promise takes it for a promise, calls its `then`, and the phone answers
+ * "GoogleAccount.then() is not implemented": the await never produced the
+ * plugin, so no plugin ever worked in the app — the Google button spun for
+ * good, the splash was never hidden from the page, no phone was registered
+ * for notifications. The wrapper below says it has no `then`, and passes
+ * everything else through.
+ */
 async function plugin<T>(name: string): Promise<T | null> {
   if (!isInApp()) return null;
   try {
     const { Capacitor, registerPlugin } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable(name)) return null;
-    return registerPlugin<T & object>(name) as T;
+    return notThenable(registerPlugin<T & object>(name)) as T;
   } catch {
     return null;
   }
 }
+
 
 /** The part of @capacitor/splash-screen the site uses. */
 interface SplashPlugin {
@@ -61,6 +75,7 @@ interface SplashPlugin {
 
 /** The app's own Google sign-in (GoogleAccountPlugin.java). */
 interface GoogleAccountPlugin {
+  available(): Promise<{ available: boolean }>;
   signIn(options?: { nonce?: string }): Promise<{ idToken: string; email: string }>;
 }
 
@@ -154,22 +169,35 @@ export async function forgetNativeToken(): Promise<void> {
   }
 }
 
+/** How a Google sign-in from the phone's own accounts ended. */
+export type NativeGoogleResult =
+  | { kind: "signed-in"; path: string }
+  | { kind: "cancelled" }
+  /**
+   * Why it could not be done here: "no_bridge" (the page cannot reach the
+   * app), the plugin's own codes ("not_configured", "no_account", "failed",
+   * "unexpected"), "not_accepted" (the portal does not take this app's
+   * tokens yet), "server" or "network".
+   */
+  | { kind: "unavailable"; reason: string; message?: string };
+
 /**
  * Google sign-in inside the app, from the accounts already on the phone.
  *
- * Returns where to go once signed in, "cancelled" when the person closed the
- * account sheet, or null when this cannot be done here — a browser, a build
- * without Google configured, a portal that does not accept the phone's
- * token yet — so the caller takes the browser's way instead.
+ * The browser's way is not a fallback here: in the app Google's page opens in
+ * Chrome, and nobody has ever come back from there signed in. So when the
+ * phone's way cannot be used the caller is told why, and says so.
  */
-export async function nativeGoogleSignIn(next?: string): Promise<string | "cancelled" | null> {
+export async function nativeGoogleSignIn(next?: string): Promise<NativeGoogleResult> {
   const google = await googleAccountPlugin();
-  if (!google) return null;
+  if (!google) return { kind: "unavailable", reason: "no_bridge" };
   let idToken: string;
   try {
     ({ idToken } = await google.signIn());
   } catch (error) {
-    return (error as { code?: string }).code === "cancelled" ? "cancelled" : null;
+    const { code, message } = error as { code?: string; message?: string };
+    if (code === "cancelled") return { kind: "cancelled" };
+    return { kind: "unavailable", reason: code ?? "failed", message: message?.slice(0, 200) };
   }
   try {
     const response = await fetch("/auth/google/native", {
@@ -178,11 +206,12 @@ export async function nativeGoogleSignIn(next?: string): Promise<string | "cance
       credentials: "same-origin",
       body: JSON.stringify({ idToken, next: next ?? null }),
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { kind: "unavailable", reason: "server", message: String(response.status) };
     const answer = (await response.json()) as { path?: unknown; fallback?: unknown };
-    if (answer.fallback === true) return null;
-    return typeof answer.path === "string" && answer.path.startsWith("/") && !answer.path.startsWith("//") ? answer.path : null;
+    if (answer.fallback === true) return { kind: "unavailable", reason: "not_accepted" };
+    const path = typeof answer.path === "string" && answer.path.startsWith("/") && !answer.path.startsWith("//") ? answer.path : null;
+    return path ? { kind: "signed-in", path } : { kind: "unavailable", reason: "server" };
   } catch {
-    return null;
+    return { kind: "unavailable", reason: "network" };
   }
 }

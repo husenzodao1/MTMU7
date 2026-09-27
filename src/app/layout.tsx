@@ -5,6 +5,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
 import { AppLaunch } from "@/features/native/app-launch";
+import { LAUNCH_SCRIPT } from "@/features/native/launch-script";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
@@ -107,7 +108,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Inside the phone or desktop app a page opens behind the app's own
   // launch animation (src/features/native/app-launch.tsx).
   // …except the first page after signing in, which opens with the welcome.
-  const inApp = isAppUserAgent((await headers()).get("user-agent")) && !(await isWelcome());
+  const requestHeaders = await headers();
+  const inApp = isAppUserAgent(requestHeaders.get("user-agent")) && !(await isWelcome());
 
   return (
     <html
@@ -118,7 +120,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable}`}
     >
       <body className="min-h-dvh">
-        {inApp ? <AppLaunch /> : null}
+        {inApp ? (
+          <>
+            <AppLaunch />
+            {/* The per-request nonce the CSP allows (src/proxy.ts). */}
+            <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: LAUNCH_SCRIPT }} />
+          </>
+        ) : null}
         <a href="#main" className="skip-link">
           {t("skipToContent")}
         </a>

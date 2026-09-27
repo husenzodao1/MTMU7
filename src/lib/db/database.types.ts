@@ -276,6 +276,40 @@ export type Database = {
           },
         ];
       };
+      app_diagnostics: {
+        Row: {
+          id: number;
+          created_at: string;
+          device: string;
+          event: string;
+          path: string | null;
+          detail: Json;
+          user_agent: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          id?: number;
+          created_at?: string;
+          device: string;
+          event: string;
+          path?: string | null;
+          detail?: Json;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          id?: number;
+          created_at?: string;
+          device?: string;
+          event?: string;
+          path?: string | null;
+          detail?: Json;
+          user_agent?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       assessment_types: {
         Row: {
           id: string;
@@ -5595,6 +5629,7 @@ export type Database = {
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
       list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
+      log_app_diagnostics: { Args: { p_device: string; p_user_agent: string; p_events: Json }; Returns: number };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       mfa_required: { Args: Record<PropertyKey, never>; Returns: boolean };
