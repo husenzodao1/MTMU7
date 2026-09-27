@@ -471,7 +471,8 @@
         "too_long": "too long",
         "invalid_code": "A code is Latin letters, digits, - and _ only (up to 20)",
         "invalid_hours": "Hours must be between 0.5 and 20",
-        "code_taken": "This code already belongs to another subject"
+        "code_taken": "This code already belongs to another subject",
+        "phone_taken": "this number is already on another account"
       },
       "workbook": {
         "instructions": "Download the workbook, fill it in with Excel and send it back. The check tells you what is wrong; the import then returns the same file with the logins and passwords filled in.",
@@ -1975,7 +1976,8 @@
       "unknown_student": "Pupil not found",
       "invalid_enum": "Invalid value",
       "too_long": "Too long",
-      "kind_locked": "A pupil's or parent's post cannot be changed"
+      "kind_locked": "A pupil's or parent's post cannot be changed",
+      "phone_taken": "This number is already on another account"
     }
   }
 }

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { readPeopleSheet, type PeopleOutcome } from "@/features/admin/import/people-import";
 import { isPeopleKind, PEOPLE_TEMPLATES } from "@/features/admin/import/templates";
 import { guardianIssues } from "@/features/admin/import/guardians";
+import { phoneConflicts } from "@/features/admin/import/phone-conflicts";
 import { gradeLimits } from "@/features/accounts/queries";
 import { sendCredentialsToParents } from "@/features/accounts/send-credentials";
 
@@ -51,6 +52,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
   }
 
   const supabase = await createClient();
+  // The same check as the preview: a number on two accounts stops the import
+  // here, row by row, rather than half-way through it.
+  const clashes = await phoneConflicts(supabase, sheet.rows);
+  if (clashes.length > 0) {
+    return NextResponse.json({ ok: false, message: "errors.validation", data: { errors: clashes } }, { status: 400 });
+  }
   const credentials = new Map<number, { login: string; password: string }>();
   let created = 0;
   let updated = 0;

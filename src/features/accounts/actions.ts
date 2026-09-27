@@ -84,6 +84,12 @@ export async function saveAccountAction(userId: string | null, input: unknown): 
   if (!parsed.success) return failure("errors.invalid");
 
   const supabase = await createClient();
+  // A number already on somebody else's account is named on its field, as
+  // a taken address is (the database refuses it anyway: 00077).
+  if (parsed.data.phone) {
+    const { data: taken } = await supabase.rpc("phone_in_use", { p_phone: parsed.data.phone, p_except: userId ?? undefined });
+    if (taken) return failure("errors.validation", { phone: ["accounts.errors.phone_taken"] });
+  }
   const { data, error } = await supabase.rpc("save_account", {
     // A new account has no id yet; the function takes NULL for "create".
     p_user_id: userId as string,
@@ -91,6 +97,7 @@ export async function saveAccountAction(userId: string | null, input: unknown): 
   });
   if (error) {
     if (/kind_locked/.test(error.message)) return failure("accounts.errors.kind_locked");
+    if (/phone_taken/.test(error.message)) return failure("errors.validation", { phone: ["accounts.errors.phone_taken"] });
     return mapDbError(error);
   }
   const outcome = data as unknown as {

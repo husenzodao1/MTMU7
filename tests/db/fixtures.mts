@@ -37,6 +37,11 @@ export interface Tenants {
   };
 }
 
+// Every account its own number: a number already on another account of the
+// school is refused (00077).
+let phoneSerial = 0;
+const nextPhone = () => `+99255${String(++phoneSerial).padStart(7, "0")}`;
+
 async function createUser(
   db: Db,
   school: string,
@@ -49,8 +54,8 @@ async function createUser(
   await db.query(`INSERT INTO auth.users (id, email, email_confirmed_at) VALUES ($1, $2, now())`, [id, email]);
   await db.query(
     `INSERT INTO public.users (id, school_id, email, first_name, last_name, phone, status, is_active)
-     VALUES ($1, $2, $3, $4, 'Test', '+992000000000', $5, $6)`,
-    [id, school, email, label, opts.status ?? "active", opts.active ?? true]
+     VALUES ($1, $2, $3, $4, 'Test', $7, $5, $6)`,
+    [id, school, email, label, opts.status ?? "active", opts.active ?? true, nextPhone()]
   );
   if (roleSlug) {
     await db.query(

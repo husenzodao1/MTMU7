@@ -18,7 +18,7 @@ const KNOWN_TOKENS = new Set([
   "promotion_requires_new_year", "empty_import", "import_too_large", "invalid_import_size", "no_current_academic_year",
   "messaging_not_allowed", "messaging_blocked", "group_creation_not_allowed", "invalid_group_name", "invalid_group_size",
   "member_not_allowed", "cannot_report_own_message", "invalid_action", "invalid_period", "user_not_available",
-  "unsupported status",
+  "unsupported status", "phone_taken",
 ]);
 
 const MESSAGE_PATTERNS: Array<[RegExp, string]> = [

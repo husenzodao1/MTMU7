@@ -5619,6 +5619,7 @@ export type Database = {
       import_classes: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_guardians: { Args: { p_rows: Json }; Returns: number };
       import_people: { Args: { p_kind: string; p_rows: Json; p_dry_run?: boolean; p_offset?: number; p_limit?: number }; Returns: Json };
+      import_phone_conflicts: { Args: { p_rows: Json }; Returns: Json };
       import_staff: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_students: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_subjects: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
@@ -5639,6 +5640,7 @@ export type Database = {
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
       open_support_conversation: { Args: Record<PropertyKey, never>; Returns: string };
+      phone_in_use: { Args: { p_phone: string; p_except?: string }; Returns: boolean };
       promote_students: { Args: { p_from_class_id: string; p_to_class_id: string; p_student_ids: string[] }; Returns: number };
       provision_person: { Args: { p_kind: string; p_row: Json; p_role_id?: string }; Returns: Json };
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };

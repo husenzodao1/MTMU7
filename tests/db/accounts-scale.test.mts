@@ -18,7 +18,7 @@ import { seedAcademic, type Academic } from "./academic-fixtures.mts";
  * stay exact at the size of a real school, and that nothing is quadratic.
  */
 const GRADES = 11;
-const LETTERS = ["В", "Г"];
+const LETTERS = ["Г", "Д"];
 const PER_CLASS = 24;
 const PUPILS = GRADES * LETTERS.length * PER_CLASS;
 
@@ -124,7 +124,7 @@ describe("a school filled in September", { timeout: 600_000 }, () => {
              count(DISTINCT sg.guardian_id)::int AS parents
       FROM public.students s
       JOIN public.enrollments e ON e.student_id = s.id AND e.status = 'active'
-      JOIN public.classes c ON c.id = e.class_id AND c.name ~ '^[1-4][ВГ]$'
+      JOIN public.classes c ON c.id = e.class_id AND c.name ~ '^[1-4][ГД]$'
       LEFT JOIN public.student_guardians sg ON sg.student_id = s.id`);
     assert.equal(young!.pupils, 4 * LETTERS.length * PER_CLASS);
     assert.equal(young!.linked, young!.pupils, "every young pupil has a parent");
@@ -173,24 +173,24 @@ describe("a school filled in September", { timeout: 600_000 }, () => {
   });
 
   it("filters by class and finds by name, login fragment or class", async () => {
-    const klass = await timed(5_000, "one class", () => directory(t.users.adminA, "students", null, classIds.get("7Г")!, 100, 0));
+    const klass = await timed(5_000, "one class", () => directory(t.users.adminA, "students", null, classIds.get("7Д")!, 100, 0));
     assert.equal(klass.total, PER_CLASS);
-    assert.ok(klass.rows.every((r) => r.class_name === "7Г"));
+    assert.ok(klass.rows.every((r) => r.class_name === "7Д"));
 
     const byName = await timed(5_000, "search by surname", () => directory(t.users.adminA, "all", "pupil0042", null, 50, 0));
     assert.equal(byName.total, 1);
 
-    const young = await directory(t.users.adminA, "students", null, classIds.get("2В")!, 100, 0);
+    const young = await directory(t.users.adminA, "students", null, classIds.get("2Г")!, 100, 0);
     assert.ok(young.rows.every((r) => (r.parents ?? 0) >= 1), "the register shows the parents of the young");
   });
 
   it("shows a homeroom teacher their own class and nobody else's", async () => {
-    const teacher = homeroomOf.get("3Г")!;
+    const teacher = homeroomOf.get("3Д")!;
     const own = await timed(5_000, "homeroom register", () => directory(teacher, "all", null, null, 100, 0));
     assert.equal(own.scope, "homeroom");
     assert.equal(own.total, PER_CLASS);
-    assert.ok(own.rows.every((r) => r.class_name === "3Г" && r.category === "student"));
-    const other = await directory(teacher, "all", null, classIds.get("3В")!, 100, 0);
+    assert.ok(own.rows.every((r) => r.class_name === "3Д" && r.category === "student"));
+    const other = await directory(teacher, "all", null, classIds.get("3Г")!, 100, 0);
     assert.equal(other.total, 0);
   });
 
@@ -209,18 +209,18 @@ describe("a school filled in September", { timeout: 600_000 }, () => {
   });
 
   it("moves a pupil between classes and keeps every count right", async () => {
-    const pupil = (await directory(t.users.adminA, "students", null, classIds.get("8В")!, 1, 0)).rows[0]!;
+    const pupil = (await directory(t.users.adminA, "students", null, classIds.get("8Г")!, 1, 0)).rows[0]!;
     const details = await asUser(db, t.users.adminA, async (tx) =>
       (await one<{ d: { first_name: string; last_name: string; email: string | null; date_of_birth: string | null } }>(tx,
         `SELECT public.account_details($1) AS d`, [pupil.id]))!.d);
     const moved = await asUser(db, t.users.adminA, async (tx) =>
       (await one<{ r: { valid: boolean; errors: unknown[] } }>(tx, `SELECT public.save_account($1, $2) AS r`, [pupil.id, JSON.stringify({
         kind: "student", first_name: details.first_name, last_name: details.last_name, email: details.email,
-        date_of_birth: details.date_of_birth, student: { class_id: classIds.get("8Г"), positions: ["monitor"] },
+        date_of_birth: details.date_of_birth, student: { class_id: classIds.get("8Д"), positions: ["monitor"] },
       })]))!.r);
     assert.equal(moved.valid, true, JSON.stringify(moved.errors));
-    const from = await directory(t.users.adminA, "students", null, classIds.get("8В")!, 100, 0);
-    const to = await directory(t.users.adminA, "students", null, classIds.get("8Г")!, 100, 0);
+    const from = await directory(t.users.adminA, "students", null, classIds.get("8Г")!, 100, 0);
+    const to = await directory(t.users.adminA, "students", null, classIds.get("8Д")!, 100, 0);
     assert.equal(from.total, PER_CLASS - 1);
     assert.equal(to.total, PER_CLASS + 1);
   });

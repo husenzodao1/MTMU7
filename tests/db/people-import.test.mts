@@ -99,8 +99,8 @@ describe("the first import", () => {
   before(async () => {
     first = await run([
       pupil(),
-      pupil({ first_name: "Салим", last_name: "Раҳимов", email: "salim@maktab.tj", date_of_birth: "2015-07-19" }),
-      pupil({ class_name: "5Б", first_name: "Нилуфар", last_name: "Саидова", email: "nilufar@maktab.tj", date_of_birth: "2015-01-30" }),
+      pupil({ first_name: "Салим", last_name: "Раҳимов", email: "salim@maktab.tj", date_of_birth: "2015-07-19", phone: "+992900000002" }),
+      pupil({ class_name: "5Б", first_name: "Нилуфар", last_name: "Саидова", email: "nilufar@maktab.tj", date_of_birth: "2015-01-30", phone: "+992900000003" }),
     ]);
   });
 

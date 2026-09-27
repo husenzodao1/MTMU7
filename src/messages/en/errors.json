@@ -69,7 +69,8 @@
     "invalid_credentials": "The email or password is incorrect.",
     "invalid_code": "The code is incorrect or has expired.",
     "account_inactive": "This account is not active. Contact the school administrator.",
-    "friend_request_exists": "A contact request between you already exists."
+    "friend_request_exists": "A contact request between you already exists.",
+    "phone_taken": "This phone number is already on another account."
   },
   "validation": {
     "required": "This field is required.",
