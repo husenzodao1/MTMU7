@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Eye, EyeOff } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { getClassOptions } from "@/features/admin/queries";
-import { setUserStatusAction } from "@/features/admin/users/actions";
+import { setAccountHiddenAction, setUserStatusAction } from "@/features/admin/users/actions";
 import { allowedKinds } from "@/features/accounts/access";
 import { AccountForm } from "@/features/accounts/account-form";
 import { AccountSecurity } from "@/features/accounts/account-security";
@@ -21,6 +21,7 @@ import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -48,6 +49,10 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
   const kind = kindFromDetails(details);
   const kinds = allowedKinds(access, "school");
   const canChangeStatus = can(access, "users.deactivate") && details.can_edit && !details.is_self && ["active", "blocked"].includes(details.status);
+  const canHide = can(access, "users.deactivate") && details.can_edit && !details.is_self && !["pending", "rejected"].includes(details.status);
+  const hidden = canHide
+    ? Boolean((await (await createClient()).from("users").select("hidden_at").eq("id", details.id).maybeSingle()).data?.hidden_at)
+    : false;
 
   return (
     <>
@@ -67,7 +72,21 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
             <Link href={`/admin/users/${details.id}`} className={buttonClasses("ghost")}>
               {t("moreRoles")}
             </Link>
-            {canChangeStatus ? (
+            {canHide ? (
+              hidden ? (
+                <FormDialog action={setAccountHiddenAction} trigger={<Button variant="secondary"><Eye aria-hidden />{t("unhide")}</Button>} title={t("unhideTitle")} description={t("unhideDescription")} submitLabel={t("unhide")}>
+                  <input type="hidden" name="userId" value={details.id} />
+                  <input type="hidden" name="hidden" value="false" />
+                </FormDialog>
+              ) : (
+                <FormDialog action={setAccountHiddenAction} trigger={<Button variant="ghost"><EyeOff aria-hidden />{t("hide")}</Button>} title={t("hideTitle")} description={t("hideDescription")} submitLabel={t("hide")} tone="danger">
+                  <input type="hidden" name="userId" value={details.id} />
+                  <input type="hidden" name="hidden" value="true" />
+                  <TextAreaField name="reason" label={tu("reason")} rows={3} maxLength={500} />
+                </FormDialog>
+              )
+            ) : null}
+            {canChangeStatus && !hidden ? (
               details.status === "active" ? (
                 <FormDialog action={setUserStatusAction} trigger={<Button variant="danger-outline">{tu("block")}</Button>} title={tu("blockTitle")} description={tu("blockDescription")} submitLabel={tu("block")} tone="danger">
                   <input type="hidden" name="userId" value={details.id} />

@@ -115,6 +115,7 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/library/${r.id}`}
         empty={<EmptyState icon={<BookOpen />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {

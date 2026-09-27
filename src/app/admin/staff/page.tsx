@@ -77,6 +77,7 @@ export default async function AdminStaffPage({ searchParams }: { searchParams: P
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/staff/${r.id}`}
         empty={<EmptyState icon={<Users />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {

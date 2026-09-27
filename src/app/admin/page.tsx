@@ -166,9 +166,16 @@ export default async function AdminDashboardPage() {
             ) : (
               <ul className="divide-y divide-line">
                 {data.recent_announcements.map((a) => (
-                  <li key={a.id} className="flex items-start justify-between gap-2 py-2.5">
-                    <span>
-                      <span className="block font-medium">{a.title}</span>
+                  <li key={a.id} className="relative flex items-start justify-between gap-2 py-2.5">
+                    <span className="min-w-0">
+                      {/* The whole row opens the announcement, where it is edited, hidden or archived. */}
+                      {can(access, "announcements.publish") ? (
+                        <Link href={`/admin/announcements/${a.id}`} className="block font-medium after:absolute after:inset-0 after:content-[''] hover:text-brand-text">
+                          {a.title}
+                        </Link>
+                      ) : (
+                        <span className="block font-medium">{a.title}</span>
+                      )}
                       <span className="block text-sm text-ink-muted">{formatDate(a.publish_at, locale, timeZone)}</span>
                     </span>
                     {a.priority !== "normal" ? <Badge tone={a.priority === "critical" ? "danger" : "warning"}>{tp(a.priority === "critical" ? "critical" : "important")}</Badge> : null}

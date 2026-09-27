@@ -30,6 +30,27 @@ export async function setUserStatusAction(_state: FormState, formData: FormData)
   return done(success(parsed.data.status === "blocked" ? "admin.users.blocked" : "admin.users.unblocked"));
 }
 
+/** Hides an account from every list (blocked too), or brings it back (00078). */
+export async function setAccountHiddenAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const access = await getAccess();
+  if (!access?.school) return done(failure("errors.not_authenticated"));
+  const parsed = z
+    .object({ userId: uuid, hidden: z.enum(["true", "false"]), reason: z.string().trim().max(500).optional() })
+    .safeParse({ userId: formData.get("userId"), hidden: formData.get("hidden"), reason: formData.get("reason") ?? undefined });
+  if (!parsed.success) return done(failure("errors.invalid"));
+  const hidden = parsed.data.hidden === "true";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_account_hidden", {
+    p_user_id: parsed.data.userId,
+    p_hidden: hidden,
+    p_reason: parsed.data.reason || undefined,
+  });
+  if (error) return done(mapDbError(error));
+  revalidatePath("/admin/accounts", "layout");
+  revalidatePath(`/admin/users/${parsed.data.userId}`);
+  return done(success(hidden ? "accounts.hiddenDone" : "accounts.unhiddenDone"));
+}
+
 export async function setUserRolesAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));

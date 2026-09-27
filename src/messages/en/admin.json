@@ -1796,7 +1796,8 @@
       "directors": "Leadership",
       "parents": "Parents",
       "admins": "Administrators",
-      "staff": "Other staff"
+      "staff": "Other staff",
+      "hidden": "Hidden"
     },
     "kinds": {
       "student": "Pupil",
@@ -1844,7 +1845,8 @@
       "noTelegram": "No parent on Telegram",
       "homeroom": "Homeroom of {name}",
       "openProfile": "{name}'s profile",
-      "blocked": "Blocked"
+      "blocked": "Blocked",
+      "hidden": "Hidden"
     },
     "sections": {
       "kind": "Post",
@@ -1978,6 +1980,14 @@
       "too_long": "Too long",
       "kind_locked": "A pupil's or parent's post cannot be changed",
       "phone_taken": "This number is already on another account"
-    }
+    },
+    "hide": "Hide",
+    "unhide": "Bring back",
+    "hideTitle": "Hide this account?",
+    "hideDescription": "The account is blocked and disappears from every list. Marks, messages and history stay; it can be brought back from the Hidden tab.",
+    "unhideTitle": "Bring this account back?",
+    "unhideDescription": "The account becomes active again and returns to the lists.",
+    "hiddenDone": "The account is hidden.",
+    "unhiddenDone": "The account is back."
   }
 }

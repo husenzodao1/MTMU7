@@ -44,6 +44,7 @@ export default async function ModerationPage({ searchParams }: { searchParams: P
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/moderation/${r.id}`}
         empty={<EmptyState icon={<ShieldCheck />} title={view === "open" ? t("emptyOpen") : t("emptyResolved")} />}
         columns={[
           { key: "reason", header: t("reason"), primary: true, cell: (r) => <span className="font-medium">{tr(r.reason as "other")}</span> },

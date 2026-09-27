@@ -70,6 +70,7 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/announcements/${r.id}`}
         empty={<EmptyState icon={<Megaphone />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {

@@ -163,7 +163,8 @@
         "normal": "Announcement",
         "important": "Important",
         "critical": "Urgent"
-      }
+      },
+      "manage": "Manage"
     },
     "events": {
       "title": "Events",

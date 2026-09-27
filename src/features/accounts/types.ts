@@ -8,7 +8,7 @@ export const ACCOUNT_KINDS = ["student", "teacher", "director", "vice_principal"
 export type AccountKind = (typeof ACCOUNT_KINDS)[number];
 
 /** The filter chips, in the order they are shown. */
-export const ACCOUNT_CATEGORIES = ["all", "students", "teachers", "directors", "parents", "admins", "staff"] as const;
+export const ACCOUNT_CATEGORIES = ["all", "students", "teachers", "directors", "parents", "admins", "staff", "hidden"] as const;
 export type AccountCategory = (typeof ACCOUNT_CATEGORIES)[number];
 
 /** What the database calls each kind of account in its counts. */
@@ -19,6 +19,8 @@ export const CATEGORY_OF_ROW: Record<Exclude<AccountCategory, "all">, string> = 
   parents: "parent",
   admins: "admin",
   staff: "staff",
+  // Not a kind: the accounts hidden from every other tab (00078).
+  hidden: "hidden",
 };
 
 export const CLASS_POSITIONS = ["monitor", "assistant_monitor", "cleanliness", "studies", "culture", "sports", "health", "press"] as const;
@@ -47,6 +49,8 @@ export interface AccountRow {
   date_of_birth: string | null;
   status: string;
   is_active: boolean;
+  /** On the hidden tab only (00078). */
+  hidden?: boolean;
   credentials_issued_at: string | null;
   last_login_at: string | null;
   category: string;

@@ -113,6 +113,7 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
         caption={t("title")}
         rows={data ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/news/${r.id}`}
         empty={<EmptyState icon={<Newspaper />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {

@@ -50,7 +50,8 @@ export async function AccountsView({
 
   if (!directory) return <Alert tone="danger">{tRoot("errors.unexpected")}</Alert>;
   const counts = directory.counts;
-  const total = Object.values(counts).reduce((sum, n) => sum + Number(n), 0);
+  // Hidden accounts are counted on their own tab, not in "all".
+  const total = Object.entries(counts).reduce((sum, [kind, n]) => (kind === "hidden" ? sum : sum + Number(n)), 0);
   // A class narrows pupils only, so it is kept for pupils and "all" and
   // dropped for every other kind.
   const chipHref = (next: AccountCategory) =>
@@ -67,6 +68,8 @@ export async function AccountsView({
           {ACCOUNT_CATEGORIES.map((key) => {
             const count = key === "all" ? total : Number(counts[CATEGORY_OF_ROW[key]] ?? 0);
             const active = key === category;
+            // The hidden tab appears once something is hidden.
+            if (key === "hidden" && count === 0 && !active) return null;
             return (
               <Link
                 key={key}
@@ -165,7 +168,11 @@ function AccountRowItem({
           )
         ) : null}
         <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", CATEGORY_TONE[row.category] ?? CATEGORY_TONE.staff)}>{kindLabel}</span>
-        {row.status !== "active" ? <Badge tone="danger">{row.status === "blocked" ? t("row.blocked") : row.status}</Badge> : null}
+        {row.hidden ? (
+          <Badge tone="neutral">{t("row.hidden")}</Badge>
+        ) : row.status !== "active" ? (
+          <Badge tone="danger">{row.status === "blocked" ? t("row.blocked") : row.status}</Badge>
+        ) : null}
       </div>
       <ChevronRight className="size-4 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180" aria-hidden />
     </li>

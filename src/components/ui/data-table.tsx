@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -25,6 +26,7 @@ export function DataTable<T>({
   caption,
   empty,
   actions,
+  rowHref,
   className,
 }: {
   columns: Column<T>[];
@@ -33,6 +35,11 @@ export function DataTable<T>({
   caption: string;
   empty: ReactNode;
   actions?: (row: T) => ReactNode;
+  /**
+   * Where a row leads. On a phone the whole card is then one tap target, not
+   * just the name in it; the row's own buttons stay on top and keep working.
+   */
+  rowHref?: (row: T) => string;
   className?: string;
 }) {
   if (rows.length === 0) {
@@ -78,10 +85,11 @@ export function DataTable<T>({
 
       <ul className="divide-y divide-line md:hidden" aria-label={caption}>
         {rows.map((row) => (
-          <li key={rowKey(row)} className="px-4 py-3">
+          <li key={rowKey(row)} className={cn("px-4 py-3", rowHref && "relative active:bg-surface-muted/60")}>
+            {rowHref ? <Link href={rowHref(row)} className="absolute inset-0" aria-hidden tabIndex={-1} /> : null}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1 font-medium text-ink">{primary.cell(row)}</div>
-              {actions ? <div className="shrink-0">{actions(row)}</div> : null}
+              {actions ? <div className="relative z-10 shrink-0">{actions(row)}</div> : null}
             </div>
             {secondary.length > 0 ? (
               <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 min-[420px]:grid-cols-2">

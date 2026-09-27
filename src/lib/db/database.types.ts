@@ -5519,6 +5519,7 @@ export type Database = {
           years_in_school: number | null;
           nickname: string | null;
           credentials_issued_at: string | null;
+          hidden_at: string | null;
         };
         Insert: {
           id: string;
@@ -5544,6 +5545,7 @@ export type Database = {
           years_in_school?: number | null;
           nickname?: string | null;
           credentials_issued_at?: string | null;
+          hidden_at?: string | null;
         };
         Update: {
           id?: string;
@@ -5569,6 +5571,7 @@ export type Database = {
           years_in_school?: number | null;
           nickname?: string | null;
           credentials_issued_at?: string | null;
+          hidden_at?: string | null;
         };
         Relationships: [
           {
@@ -5667,6 +5670,7 @@ export type Database = {
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
+      set_account_hidden: { Args: { p_user_id: string; p_hidden: boolean; p_reason?: string }; Returns: undefined };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       set_message_reaction: { Args: { p_message_id: string; p_emoji: string }; Returns: undefined };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };

@@ -56,6 +56,7 @@ export default async function RolesPage() {
         caption={t("title")}
         rows={roles ?? []}
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/roles/${r.id}`}
         empty={<EmptyState icon={<ShieldCheck />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
           {

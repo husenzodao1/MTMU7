@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Megaphone, Paperclip } from "lucide-react";
+import Link from "next/link";
+import { Megaphone, Paperclip, Settings2 } from "lucide-react";
 import { getVisibleAnnouncements } from "@/features/content/queries";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownBlocks, splitLeadImage } from "@/components/ui/misc";
@@ -23,6 +24,8 @@ export default async function AnnouncementsPage() {
   const t = await getTranslations("portal.announcements");
   const locale = (await getLocale()) as Locale;
   const items = await getVisibleAnnouncements(access.school!.id, 50);
+  // Whoever publishes announcements can open each one to change, hide or archive it.
+  const canManage = can(access, "announcements.publish");
 
   return (
     <>
@@ -48,6 +51,12 @@ export default async function AnnouncementsPage() {
                       <Badge tone={item.priority === "critical" ? "danger" : "warning"}>{t(`priority.${item.priority}`)}</Badge>
                     ) : null}
                     <h2 className="text-lg font-semibold">{item.title}</h2>
+                    {canManage ? (
+                      <Link href={`/admin/announcements/${item.id}`} className="ms-auto inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-medium text-ink-secondary hover:border-brand-300 hover:text-ink">
+                        <Settings2 className="size-3.5" aria-hidden />
+                        {t("manage")}
+                      </Link>
+                    ) : null}
                   </div>
                   <p className="text-sm text-ink-muted tabular">
                     {formatDateTime(item.publishAt, locale)}

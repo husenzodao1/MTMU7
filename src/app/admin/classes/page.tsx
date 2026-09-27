@@ -96,6 +96,7 @@ export default async function AdminClassesPage({ searchParams }: { searchParams:
             caption={t("title")}
             rows={rows}
             rowKey={(r) => r.id}
+        rowHref={(r) => `/admin/classes/${r.id}`}
             empty={<EmptyState icon={<School />} title={t("empty")} description={t("emptyHint")} />}
             columns={[
               {
