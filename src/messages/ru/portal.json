@@ -43,7 +43,8 @@
         "students": "Учащиеся",
         "teachers": "Учителя",
         "classes": "Классы",
-        "pending": "Заявки на рассмотрении"
+        "pending": "Заявки на рассмотрении",
+        "accounts": "Аккаунты"
       },
       "incomplete": {
         "profileTitle": "Завершите регистрацию",

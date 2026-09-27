@@ -237,10 +237,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 actions={<Link href="/admin" className={buttonClasses("secondary", "sm")}>{t("openAdmin")}</Link>} />
               <CardBody>
                 <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <Metric label={t("admin.students")} value={admin.counts.students_active} href="/admin/students" />
-                  <Metric label={t("admin.teachers")} value={admin.counts.teachers_active} href="/admin/staff" />
+                  <Metric label={t("admin.students")} value={admin.counts.students_active} href="/admin/accounts?category=students" />
+                  <Metric label={t("admin.teachers")} value={admin.counts.teachers_active} href="/admin/accounts?category=teachers" />
                   <Metric label={t("admin.classes")} value={admin.counts.classes_active} href="/admin/classes" />
-                  <Metric label={t("admin.pending")} value={admin.queues.pending_registrations} href="/admin/approvals" tone={admin.queues.pending_registrations > 0 ? "attention" : "default"} />
+                  {/* Registration requests went with self-registration (00045). */}
+                  <Metric label={t("admin.accounts")} value={admin.counts.accounts_active} href="/admin/accounts" />
                 </dl>
               </CardBody>
             </Card>

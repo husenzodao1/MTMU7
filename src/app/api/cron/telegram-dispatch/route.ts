@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env.server";
 import { hasValidCronAuthorization } from "@/lib/security/cron";
-import { isTelegramConfigured, sendMessage, TelegramError } from "@/lib/telegram/api";
+import { isTelegramConfigured, sendMessage, sendPhotoFile, TelegramError } from "@/lib/telegram/api";
 import * as db from "@/lib/telegram/db";
-import { absenceMessage, asLocale, gradeMessage, reportMessage } from "@/lib/telegram/messages";
+import { absenceMessage, asLocale, gradeMessage, reportCaption, reportMessage } from "@/lib/telegram/messages";
+import { renderReportCard } from "@/lib/telegram/report-card";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,16 +56,24 @@ async function dispatch(request: Request) {
   let failed = 0;
   let dropped = 0;
 
+  const started = Date.now();
   for (const item of due) {
+    // Drawing report pictures takes time; what is left when the minute runs
+    // short stays claimed and comes round again, never lost.
+    if (Date.now() - started > 45_000) break;
     const locale = asLocale(item.locale);
     let text: string | null = null;
+    let picture: Uint8Array | null = null;
 
     if (item.kind === "grade" && item.grade) {
       text = gradeMessage(locale, item.child, item.grade, item.school);
     } else if (item.kind === "absence" && item.absence) {
       text = absenceMessage(locale, item.child, item.absence, item.school);
     } else if (item.kind === "digest" && item.digest) {
-      text = reportMessage(locale, item.digest, "day", item.school);
+      // The evening report is a picture with a line under it; the text is
+      // kept for when the picture cannot be drawn.
+      picture = await renderReportCard(locale, item.digest, "day", item.school);
+      text = picture ? reportCaption(locale, item.digest, "day", item.school) : reportMessage(locale, item.digest, "day", item.school);
     }
 
     if (!text) {
@@ -76,7 +85,8 @@ async function dispatch(request: Request) {
     }
 
     try {
-      await sendMessage(item.chat, text);
+      if (picture) await sendPhotoFile(item.chat, picture, text);
+      else await sendMessage(item.chat, text);
       delivered.push(item.id);
     } catch (error) {
       if (error instanceof TelegramError && error.gone) {

@@ -125,16 +125,19 @@ export function AttendanceRoster({
                         value={status}
                         checked={current === status}
                         onChange={() => setStatuses((s) => ({ ...s, [row.id]: status }))}
+                        aria-label={ts(status)}
                         className="peer sr-only"
                       />
                       <span
                         className={cn(
-                          "flex h-10 cursor-pointer items-center justify-center rounded-md border border-line-strong px-1 text-sm font-medium text-ink-secondary",
+                          // Short words, and room for a second line: "Бо сабаби узрнок"
+                          // in a quarter of a phone used to run out of its box.
+                          "flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-line-strong px-1 py-1 text-center text-xs leading-tight font-medium text-ink-secondary sm:text-sm",
                           "peer-focus-visible:ring-2 peer-focus-visible:ring-brand-600 peer-disabled:cursor-not-allowed",
                           tone[status]
                         )}
                       >
-                        {ts(status)}
+                        {t(`short.${status}`)}
                       </span>
                     </label>
                   ))}

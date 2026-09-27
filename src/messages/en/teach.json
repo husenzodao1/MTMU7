@@ -56,7 +56,13 @@
       "notePlaceholder": "Reason or comment",
       "save": "Save register",
       "saved": "The register has been saved.",
-      "nothingToSave": "Mark at least one student before saving."
+      "nothingToSave": "Mark at least one student before saving.",
+      "short": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late",
+        "excused": "Excused"
+      }
     },
     "gradebook": {
       "title": "Gradebook",

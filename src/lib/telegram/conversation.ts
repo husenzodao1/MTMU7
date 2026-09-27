@@ -1,6 +1,7 @@
 import "server-only";
 import { TELEGRAM_CHANNEL } from "@/lib/env.server";
-import { answerCallback, editMessage, isChannelMember, sendMessage, sendPhoto, TelegramError } from "@/lib/telegram/api";
+import { answerCallback, deleteMessage, editMessage, isChannelMember, sendMessage, sendPhoto, sendPhotoFile, TelegramError } from "@/lib/telegram/api";
+import { renderReportCard } from "@/lib/telegram/report-card";
 import * as db from "@/lib/telegram/db";
 import {
   asLocale,
@@ -12,11 +13,13 @@ import {
   languageMenu,
   linked,
   menu,
+  reportCaption,
   reportMessage,
   startLanguage,
   stillNotSubscribed,
   welcome,
   words,
+  type InlineKeyboard,
   type Loc,
 } from "@/lib/telegram/messages";
 
@@ -190,6 +193,21 @@ async function handleText(chat: number, user: number, text: string, languageCode
   await sendMessage(chat, askForCode(locale));
 }
 
+/**
+ * Puts a menu card where the tapped message was. A report now arrives as a
+ * picture, and a picture's text cannot be edited into a menu: that message is
+ * replaced by a new one instead.
+ */
+async function showCard(chat: number, messageId: number, text: string, keyboard?: InlineKeyboard): Promise<void> {
+  try {
+    await editMessage(chat, messageId, text, keyboard);
+  } catch (error) {
+    if (!(error instanceof TelegramError) || error.code !== 400 || /not modified/i.test(error.message)) throw error;
+    await sendMessage(chat, text, keyboard ? { keyboard } : {});
+    await deleteMessage(chat, messageId).catch(() => undefined);
+  }
+}
+
 async function handleCallback(
   id: string,
   chat: number,
@@ -210,7 +228,7 @@ async function handleCallback(
     await db.setLocale(chat, locale);
     await answerCallback(id, words(locale).languageSet);
     const card = welcome(locale, TELEGRAM_CHANNEL);
-    await editMessage(chat, messageId, card.text, card.keyboard);
+    await showCard(chat, messageId, card.text, card.keyboard);
     return;
   }
 
@@ -236,7 +254,7 @@ async function handleCallback(
 
   if (data === "menu") {
     const card = menu(locale, state.children);
-    await editMessage(chat, messageId, card.text, card.keyboard);
+    await showCard(chat, messageId, card.text, card.keyboard);
     await answerCallback(id);
     return;
   }
@@ -250,7 +268,7 @@ async function handleCallback(
 
   if (data === "lang") {
     const card = languageMenu(locale);
-    await editMessage(chat, messageId, card.text, card.keyboard);
+    await showCard(chat, messageId, card.text, card.keyboard);
     await answerCallback(id);
     return;
   }
@@ -261,7 +279,7 @@ async function handleCallback(
     await answerCallback(id, words(locale).languageSet);
     const fresh = await db.touchChat(chat);
     const card = menu(locale, fresh.children);
-    await editMessage(chat, messageId, card.text, card.keyboard);
+    await showCard(chat, messageId, card.text, card.keyboard);
     return;
   }
 
@@ -273,7 +291,7 @@ async function handleCallback(
       return;
     }
     const card = childMenu(locale, child, childId);
-    await editMessage(chat, messageId, card.text, card.keyboard);
+    await showCard(chat, messageId, card.text, card.keyboard);
     await answerCallback(id);
     return;
   }
@@ -287,7 +305,15 @@ async function handleCallback(
     try {
       const body = await db.report(chat, childId, kind);
       const shape = kind === "week" ? "week" : kind === "timetable" ? "timetable" : "day";
-      await editMessage(chat, messageId, reportMessage(locale, body, shape), backKeyboard(locale, childId));
+      // A picture, which reads on a phone as the table never did; the menu
+      // it came from gives way to it. The words, if it cannot be drawn.
+      const picture = await renderReportCard(locale, body, shape);
+      if (picture) {
+        await sendPhotoFile(chat, picture, reportCaption(locale, body, shape), { keyboard: backKeyboard(locale, childId) });
+        await deleteMessage(chat, messageId).catch(() => undefined);
+      } else {
+        await showCard(chat, messageId, reportMessage(locale, body, shape), backKeyboard(locale, childId));
+      }
       await answerCallback(id);
     } catch {
       // The only way here is a forged button: the database refused a pupil this

@@ -43,7 +43,8 @@
         "students": "Students",
         "teachers": "Teachers",
         "classes": "Classes",
-        "pending": "Pending approvals"
+        "pending": "Pending approvals",
+        "accounts": "Accounts"
       },
       "incomplete": {
         "profileTitle": "Finish your registration",

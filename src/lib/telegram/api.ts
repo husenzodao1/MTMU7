@@ -90,6 +90,43 @@ export function sendPhoto(
   });
 }
 
+/**
+ * A picture the portal drew itself (the report card), uploaded with the
+ * message rather than fetched by Telegram from a URL.
+ */
+export async function sendPhotoFile(
+  chatId: number,
+  png: Uint8Array,
+  caption: string,
+  options: { keyboard?: InlineKeyboard } = {}
+): Promise<{ message_id: number }> {
+  const token = serverEnv.TELEGRAM_BOT_TOKEN;
+  if (!token) throw new Error("TELEGRAM_BOT_TOKEN is not configured");
+  const form = new FormData();
+  form.set("chat_id", String(chatId));
+  form.set("caption", caption);
+  form.set("parse_mode", "HTML");
+  if (options.keyboard) form.set("reply_markup", JSON.stringify({ inline_keyboard: options.keyboard }));
+  form.set("photo", new Blob([png as BlobPart], { type: "image/png" }), "report.png");
+  const response = await fetch(`${API}/bot${token}/sendPhoto`, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(20_000),
+    cache: "no-store",
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { ok: boolean; result?: { message_id: number }; description?: string; error_code?: number }
+    | null;
+  if (!payload || !payload.ok) {
+    throw new TelegramError(payload?.error_code ?? response.status, payload?.description ?? "telegram call failed");
+  }
+  return payload.result as { message_id: number };
+}
+
+export function deleteMessage(chatId: number, messageId: number): Promise<unknown> {
+  return call("deleteMessage", { chat_id: chatId, message_id: messageId });
+}
+
 export function editMessage(
   chatId: number,
   messageId: number,

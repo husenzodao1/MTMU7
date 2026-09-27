@@ -52,6 +52,9 @@ export default async function AdminDashboardPage() {
   }
 
   const attendanceTotal = data.attendance_today.present + data.attendance_today.late + data.attendance_today.absent + data.attendance_today.excused;
+  // Only what is actually waiting. Registration requests belong to the
+  // self-registration the school closed (00045); they show only if some are
+  // still left over from that time.
   const queues = [
     { key: "pending_registrations", value: data.queues.pending_registrations, href: "/admin/approvals", show: can(access, "users.approve") },
     { key: "news_in_review", value: data.queues.news_in_review, href: "/admin/news?status=review", show: can(access, "news.publish") },
@@ -60,7 +63,7 @@ export default async function AdminDashboardPage() {
     { key: "news_scheduled", value: data.queues.news_scheduled, href: "/admin/news?status=scheduled", show: canAny(access, ["news.publish", "news.update"]) },
     { key: "library_drafts", value: data.queues.library_drafts, href: "/admin/library?status=draft", show: canAny(access, ["library.update", "library.publish"]) },
     { key: "documents_drafts", value: data.queues.documents_drafts, href: "/admin/documents?status=draft", show: canAny(access, ["documents.create", "documents.publish"]) },
-  ].filter((q) => q.show);
+  ].filter((q) => q.show && Number(q.value) > 0);
 
   return (
     <>
@@ -93,12 +96,13 @@ export default async function AdminDashboardPage() {
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Metric label={t("counts.students")} value={data.counts.students_active} href="/admin/students" />
-        <Metric label={t("counts.teachers")} value={data.counts.teachers_active} href="/admin/staff" />
-        <Metric label={t("counts.staff")} value={data.counts.staff_active} href="/admin/staff" />
+        {/* People open in the one account block, on the tab of their kind. */}
+        <Metric label={t("counts.students")} value={data.counts.students_active} href="/admin/accounts?category=students" />
+        <Metric label={t("counts.teachers")} value={data.counts.teachers_active} href="/admin/accounts?category=teachers" />
+        <Metric label={t("counts.staff")} value={data.counts.staff_active} href="/admin/accounts?category=staff" />
         <Metric label={t("counts.classes")} value={data.counts.classes_active} href="/admin/classes" />
-        <Metric label={t("counts.guardians")} value={data.counts.guardians} href="/admin/guardians" />
-        <Metric label={t("counts.accounts")} value={data.counts.accounts_active} href="/admin/users" />
+        <Metric label={t("counts.guardians")} value={data.counts.guardians} href="/admin/accounts?category=parents" />
+        <Metric label={t("counts.accounts")} value={data.counts.accounts_active} href="/admin/accounts" />
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-3">

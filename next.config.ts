@@ -43,6 +43,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: supabaseImagePattern(),
   },
+  // The parents' report is drawn with these fonts (src/lib/telegram/report-card.tsx),
+  // read from disk by the two routes that send it.
+  outputFileTracingIncludes: {
+    "/api/cron/telegram-dispatch": ["src/lib/telegram/fonts/*.ttf"],
+    "/api/telegram/webhook": ["src/lib/telegram/fonts/*.ttf"],
+  },
   experimental: {
     serverActions: {
       // Book files are uploaded directly to storage from the browser; action

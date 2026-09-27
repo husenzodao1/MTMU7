@@ -54,7 +54,7 @@ export function pick(name: Named | null | undefined, locale: Loc): string {
 }
 
 /** The same, unescaped: for a table, which escapes its whole body at once. */
-function pickRaw(name: Named | null | undefined, locale: Loc): string {
+export function pickRaw(name: Named | null | undefined, locale: Loc): string {
   if (!name) return "";
   return name[locale] || name.tg || name.ru || name.en || "";
 }
@@ -304,12 +304,12 @@ export function statusWord(status: string, locale: Loc): string {
   return status === "late" ? w.late : status === "excused" ? w.excused : w.absent;
 }
 
-function number(value: number): string {
+export function number(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
 }
 
 /** A mark as it is written on a school form: "5", or "18/20" when not out of five. */
-function markText(score: number, max: number): string {
+export function markText(score: number, max: number): string {
   return max === 5 ? number(score) : `${number(score)}/${number(max)}`;
 }
 
@@ -319,7 +319,7 @@ function shortStatus(status: string, locale: Loc): string {
 }
 
 /** dd.MM — enough inside a week, and short enough for a phone-wide table. */
-function dayMonth(iso: string): string {
+export function dayMonth(iso: string): string {
   const [, m, d] = iso.slice(0, 10).split("-");
   return d && m ? `${d}.${m}` : iso;
 }
@@ -743,6 +743,26 @@ export function reportMessage(
   }
 
   return fit(lines.join("\n") + footer(school));
+}
+
+/**
+ * What goes under the report picture: which report, for whom — the picture
+ * says the rest — and the school, as under every message.
+ */
+export function reportCaption(
+  locale: Loc,
+  report: Report,
+  kind: "day" | "week" | "timetable",
+  school?: { name?: string | null } | null
+): string {
+  const w = words(locale);
+  const heading =
+    kind === "timetable"
+      ? `🕘 <b>${w.timetable}</b>`
+      : kind === "week"
+        ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
+        : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
+  return `${heading}\n${childLine(report.child)}${footer(school)}`;
 }
 
 export function backKeyboard(locale: Loc, childId?: string): InlineKeyboard {
