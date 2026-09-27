@@ -107,9 +107,11 @@ out to Chrome and back loses them on the way. In the app the Google button
 first asks Android itself: `GoogleAccountPlugin` shows the phone's own account
 sheet (Credential Manager) and hands back a Google ID token, which the portal
 turns into a session at `/auth/google/native` — the same checks as the
-browser's way (`finishGoogleSignIn`). If the build has no Google client, or
-Supabase does not accept its tokens yet, the button quietly takes the
-browser's way instead.
+browser's way (`finishGoogleSignIn`). There is no browser fallback inside the
+app: Google's page would open in Chrome, and nobody ever came back from there
+signed in. If the build has no Google client, or Supabase does not accept its
+tokens yet, the button stops and says so, with the reason's code in brackets
+(`not_configured`, `not_accepted`, `no_account`, …).
 
 It needs three settings, which `scripts/setup/android.ps1` walks through on
 Windows (it also makes the release key, below):
@@ -122,10 +124,41 @@ Windows (it also makes the release key, below):
 3. Supabase → Authentication → Providers → Google → **Client IDs**: the web
    client id from that file added after the existing one, comma-separated.
 
+Every plugin reaches the page through `plugin()` in
+`src/features/native/bridge.ts`, which wraps it so it has no `then`. A
+Capacitor plugin answers every property with a native method, so an `await`
+that hands one over calls `plugin.then()` and the phone answers "not
+implemented": until this was found, no plugin ever reached the page — the
+Google button spun for good, the page never hid the splash, and no phone was
+registered for notifications.
+
 The Google button is a plain link, never `next/link`: a client-side
 navigation that ends on another site leaves Next's router waiting for a page
 that never comes, and inside the app, where that page opens in Chrome
 instead, it froze every form after it.
+
+## When the app misbehaves
+
+The app's pages note a few plain facts in `app_diagnostics` (migration
+00075, `src/features/native/diagnostics.ts`): whether Capacitor's bridge
+arrived and which plugins it brought, how long the page took to wake, how the
+opening animation started, what the Google sheet answered, sign-ins still
+waiting after ten seconds, and uncaught errors. Never a password, an address
+or a message; the path is kept without its query, under a random id per
+installation, for fourteen days. Only the service role reads it:
+
+```sql
+select created_at, device, event, path, detail
+from public.app_diagnostics
+where created_at > now() - interval '1 day'
+order by created_at desc;
+```
+
+The keyboard is the phone's own: `android.captureInput` stays `false`. With
+it on, Capacitor swaps the web view's input connection for a bare one that
+holds a word back until the keyboard commits it — the send button then
+appeared seconds after typing, and a login typed on Gboard could arrive after
+the form had gone.
 
 ## Stores
 
