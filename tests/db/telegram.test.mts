@@ -312,6 +312,48 @@ describe("what the parent is told, and when", () => {
     assert.deepEqual(await due(), []);
   });
 
+  it("sends the evening report once a day, not once a minute", async () => {
+    // The report is asked for every minute from the evening hour to midnight.
+    // It used to be queued again the minute after it went out.
+    // Something to report on the school's own today (which is not always
+    // the server's: Dushanbe is five hours ahead).
+    await asUser(db, t.users.teacherA, (tx) =>
+      tx.query(
+        `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, status)
+         VALUES ($1, $2, $3, $4, app.school_today($1), 'absent') ON CONFLICT DO NOTHING`,
+        [SCHOOL_A, a.students.studentA, a.class9A, a.mathA]
+      )
+    );
+    await db.query(`DELETE FROM public.telegram_outbox`);
+    await db.query(`UPDATE public.schools SET settings = coalesce(settings, '{}'::jsonb) || '{"telegram_digest_hour": 0}' WHERE id = $1`, [SCHOOL_A]);
+    const enqueue = () =>
+      service<{ n: number }>(`SELECT public.telegram_enqueue_digests() AS n`).then((r) => Number(r!.n));
+    assert.equal(await enqueue(), 1, "a mark today: one report for the one chat that follows");
+    assert.equal(await enqueue(), 0, "still waiting: not a second one");
+
+    await db.query(`UPDATE public.telegram_outbox SET send_after = now() - interval '1 minute'`);
+    const batch = await due();
+    assert.deepEqual(batch.map((m) => m.kind), ["digest"]);
+    await asService(db, (tx) =>
+      tx.query(`SELECT public.telegram_delivered($1::uuid[])`, [`{${batch.map((m) => m.id).join(",")}}`])
+    );
+    assert.equal(await enqueue(), 0, "sent: not again the next minute");
+    assert.equal(await enqueue(), 0, "nor the one after");
+    const reports = await rows<{ n: string }>(db, `SELECT count(*)::text AS n FROM public.telegram_outbox WHERE kind = 'digest'`);
+    assert.deepEqual(reports, [{ n: "1" }]);
+    assert.match(
+      (await errorOf(() =>
+        db.query(
+          `INSERT INTO public.telegram_outbox (chat_id, school_id, student_id, kind, payload, dedupe_key)
+           SELECT chat_id, school_id, student_id, kind, payload, dedupe_key FROM public.telegram_outbox WHERE kind = 'digest'`
+        )
+      )) ?? "",
+      /duplicate key/,
+      "and the table would not take a second copy anyway"
+    );
+    await db.query(`UPDATE public.schools SET settings = settings - 'telegram_digest_hour' WHERE id = $1`, [SCHOOL_A]);
+  });
+
   it("forgets a chat that blocked the bot, and its queue with it", async () => {
     await asService(db, (tx) => tx.query(`SELECT public.telegram_forget($1)`, [CHAT.toString()]));
     const left = await rows<{ n: string }>(
