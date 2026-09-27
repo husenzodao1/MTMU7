@@ -253,6 +253,7 @@ export function Thread({
   // button trailed the first letter by a visible moment. Now it renders the
   // one button that depends on it (ComposerAction) and nothing else.
   const draft = useDraft(inputRef);
+  useKeyboardSync(inputRef, draft);
   const preserveScroll = useRef<number | null>(null);
   const stickToBottom = useRef(true);
   const farFromBottom = useRef(false);
@@ -1875,6 +1876,54 @@ function useDraft(input: RefObject<HTMLTextAreaElement | null>): Draft {
     };
   });
   return draft;
+}
+
+/**
+ * Keeps the draft in step with the box however the phone's keyboard delivers
+ * its letters.
+ *
+ * React hears the box through "input" events, and a browser sends one per
+ * letter. Some Android keyboards in a web view do not: a word still being
+ * composed can reach the box through composition or key events alone, and the
+ * send button then waited for the next "input" to appear — seconds, or the
+ * next space. Every other event a letter can arrive by is listened to as well,
+ * and while the box has focus it is also looked at five times a second, which
+ * costs nothing when nothing changed.
+ */
+function useKeyboardSync(input: RefObject<HTMLTextAreaElement | null>, draft: Draft) {
+  useEffect(() => {
+    // On the document, because the box itself comes and goes (a voice note
+    // being recorded takes its place).
+    const sync = () => {
+      const box = input.current;
+      if (box && box.value !== draft.get()) draft.typed(box.value);
+    };
+    const mine = (event: Event) => event.target === input.current;
+    const onEvent = (event: Event) => {
+      if (mine(event)) sync();
+    };
+    const events = ["input", "keyup", "compositionstart", "compositionupdate", "compositionend", "textInput", "paste", "cut"] as const;
+    for (const name of events) document.addEventListener(name, onEvent, true);
+    let timer: number | null = null;
+    const onFocus = (event: FocusEvent) => {
+      if (mine(event) && timer === null) timer = window.setInterval(sync, 200);
+    };
+    const onBlur = (event: FocusEvent) => {
+      if (!mine(event)) return;
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+      sync();
+    };
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    if (input.current && document.activeElement === input.current) timer = window.setInterval(sync, 200);
+    return () => {
+      for (const name of events) document.removeEventListener(name, onEvent, true);
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", onBlur);
+      if (timer !== null) window.clearInterval(timer);
+    };
+  }, [input, draft]);
 }
 
 /**

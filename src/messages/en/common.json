@@ -207,7 +207,15 @@
       "allowed": "On",
       "blocked": "Blocked",
       "blockedHint": "If it says “Blocked”, change it in your browser settings (the lock icon in the address bar).",
-      "later": "Later"
+      "later": "Later",
+      "appTitle": "App permissions",
+      "appText": "The app needs these for notifications, sharing your location, photos and voice messages.",
+      "camera": "Camera",
+      "cameraHint": "To take and send photos in chat",
+      "microphone": "Microphone",
+      "microphoneHint": "For voice messages",
+      "openSettings": "Settings",
+      "appBlockedHint": "Turn the refused permission on in Settings → Permissions, then come back to the app."
     },
     "support": {
       "open": "Online support — write to us",
@@ -228,6 +236,12 @@
     "welcome": {
       "title": "Welcome",
       "signingIn": "Signing you in…"
+    },
+    "appUpdate": {
+      "title": "A new version of the app",
+      "text": "The keyboard and permissions work better.",
+      "action": "Update",
+      "later": "Later"
     }
   },
   "nav": {

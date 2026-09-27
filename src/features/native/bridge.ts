@@ -73,6 +73,17 @@ interface SplashPlugin {
   hide(options?: { fadeOutDuration?: number }): Promise<void>;
 }
 
+export type DevicePermission = "notifications" | "location" | "camera" | "microphone";
+export type DevicePermissionState = "granted" | "denied" | "prompt";
+export type DevicePermissionStates = Record<DevicePermission, DevicePermissionState>;
+
+/** What the phone allows the app (DevicePermissionsPlugin.java, from build 10). */
+interface DevicePermissionsPlugin {
+  check(): Promise<DevicePermissionStates>;
+  request(options: { which: DevicePermission[] }): Promise<DevicePermissionStates>;
+  openSettings(): Promise<void>;
+}
+
 /** The app's own Google sign-in (GoogleAccountPlugin.java). */
 interface GoogleAccountPlugin {
   available(): Promise<{ available: boolean }>;
@@ -81,6 +92,7 @@ interface GoogleAccountPlugin {
 
 export const appPlugin = () => plugin<AppPlugin>("App");
 export const googleAccountPlugin = () => plugin<GoogleAccountPlugin>("GoogleAccount");
+export const devicePermissionsPlugin = () => plugin<DevicePermissionsPlugin>("DevicePermissions");
 export const splashPlugin = () => plugin<SplashPlugin>("SplashScreen");
 export const messagingPlugin = () => plugin<FirebaseMessaging>("FirebaseMessaging");
 

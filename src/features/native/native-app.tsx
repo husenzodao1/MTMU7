@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Download, X } from "lucide-react";
 import { appPlugin, googleAccountPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
 import { report, watchErrors } from "@/features/native/diagnostics";
 import { registerWorker } from "@/features/push/client";
 import { pathForAppLink } from "@/lib/native/app";
+
+/**
+ * The first Android build with everything the site now expects from the app:
+ * the phone's own keyboard connection (captureInput off, build 9) and the
+ * permissions plugin (build 10). An older one is offered the update.
+ */
+const MIN_APP_BUILD = 10;
 
 /** What Capacitor's bridge puts on window, as far as the diagnostics look. */
 interface CapacitorGlobal {
@@ -22,6 +31,8 @@ interface CapacitorGlobal {
  */
 export function NativeApp() {
   const pathname = usePathname();
+  const t = useTranslations("common.appUpdate");
+  const [outdated, setOutdated] = useState(false);
 
   // What the app's page could see as it woke — for reading back when
   // something inside the app does not work (features/native/diagnostics.ts).
@@ -33,7 +44,20 @@ export function NativeApp() {
       const google = await googleAccountPlugin();
       const googleReady = google ? await google.available().then((answer) => answer.available, () => "error") : null;
       const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      const info = await appPlugin()
+        .then((app) => app?.getInfo())
+        .catch(() => undefined);
+      const build = Number(info?.build);
+      if (Number.isFinite(build) && build > 0 && build < MIN_APP_BUILD && capacitor?.getPlatform?.() === "android") {
+        try {
+          if (sessionStorage.getItem("app-update-dismissed") !== "1") setOutdated(true);
+        } catch {
+          setOutdated(true);
+        }
+      }
       report("boot", {
+        app: info?.version ?? null,
+        build: info?.build ?? null,
         bridge: Boolean(capacitor),
         native: capacitor?.isNativePlatform?.() ?? false,
         platform: capacitor?.getPlatform?.() ?? null,
@@ -114,5 +138,37 @@ export function NativeApp() {
     };
   }, []);
 
-  return null;
+  if (!outdated) return null;
+  return (
+    <div
+      role="status"
+      className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-40 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-overlay animate-fade print:hidden"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-text">
+        <Download className="size-4" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-ink">{t("title")}</span>
+        <span className="block text-xs text-ink-muted">{t("text")}</span>
+      </span>
+      <a href="/download/android" download className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
+        {t("action")}
+      </a>
+      <button
+        type="button"
+        onClick={() => {
+          setOutdated(false);
+          try {
+            sessionStorage.setItem("app-update-dismissed", "1");
+          } catch {
+            // Shown again next time, which is fine.
+          }
+        }}
+        className="-me-1 shrink-0 rounded-md p-1 text-ink-muted hover:bg-surface-muted"
+        aria-label={t("later")}
+      >
+        <X className="size-4" aria-hidden />
+      </button>
+    </div>
+  );
 }
