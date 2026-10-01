@@ -1,0 +1,46 @@
+name: Dispatch notifications
+
+# Scheduled announcements and broadcasts are delivered by
+# /api/cron/dispatch-notifications. Vercel's Hobby plan runs a cron only once a
+# day, which is too coarse for a notice that says "in 15 minutes", so this
+# workflow calls the same endpoint every ten minutes. It is a no-op when there
+# is nothing due, and the endpoint is idempotent, so it may run alongside the
+# daily Vercel cron kept in vercel.json.
+#
+# Requires two repository secrets:
+#   APP_URL      the deployed https:// origin, without a trailing slash
+#   CRON_SECRET  the same value as the CRON_SECRET environment variable
+# Without them the job exits quietly, so a fork or a fresh clone stays green.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dispatch-notifications
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the dispatch endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET is not configured; skipping."
+            exit 0
+          fi
+          status=$(curl -sS -o response.json -w "%{http_code}" \
+            -X POST "$APP_URL/api/cron/dispatch-notifications" \
+            -H "Authorization: Bearer $CRON_SECRET")
+          echo "HTTP $status"
+          # The response carries counters only, never secret material.
+          cat response.json
+          [ "$status" = "200" ]

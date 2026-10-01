@@ -1,0 +1,38 @@
+{
+  "name": "mtmu7-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "МТМУ №7 — the portal as a Windows app.",
+  "author": "МТМУ №7",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "tj.mtmu7.app",
+    "productName": "MTMU7",
+    "copyright": "МТМУ №7",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "offline.html", "build/icon.png"],
+    "protocols": [{ "name": "МТМУ №7", "schemes": ["tj.mtmu7.app"] }],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "MTMU7-windows-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "МТМУ №7",
+      "uninstallDisplayName": "МТМУ №7",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

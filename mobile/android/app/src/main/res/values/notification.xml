@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The school's gold, behind the status-bar mark of a notification. -->
+    <color name="notification">#E3A130</color>
+    <string name="channel_messages">Паёмҳо</string>
+    <string name="channel_messages_description">Паёмҳои нав дар чат ва дастгирӣ</string>
+</resources>
