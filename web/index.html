@@ -208,6 +208,16 @@ body.secure{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none
 .fapp:hover{color:var(--fg);border-color:var(--fa)}.fapp svg{width:14px;height:14px;color:#3DDC84}
 .apic2{flex:none;width:38px;height:38px;border-radius:12px;background:#3DDC84;color:#0b2e1a;display:grid;place-items:center}.apic2 svg{width:22px;height:22px}
 .chipg.okc{background:color-mix(in srgb,var(--ok) 14%,var(--card));color:var(--ok)}
+.netb{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;gap:8px;align-items:center;max-width:calc(100% - 24px);padding:10px 14px;border-radius:14px;background:var(--fg);color:var(--bg);font-size:12.5px;box-shadow:0 8px 24px rgba(0,0,0,.2)}.netb svg{width:16px;height:16px;flex:none}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);z-index:61;padding:10px 14px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:13px}
+.modal.warn .mbox{text-align:center;border-color:color-mix(in srgb,#e8a400 50%,var(--ln))}
+.wic{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 12px;border-radius:16px;background:color-mix(in srgb,#e8a400 16%,var(--card));color:#c98a00}.wic svg{width:26px;height:26px}
+.modal.warn h2{font-size:19px}.modal.warn .sub{font-size:14px;margin-top:8px}
+.zero{margin-bottom:14px;padding:28px 20px;border-radius:20px;text-align:center;background:linear-gradient(160deg,#d93025,#a51d14);color:#fff;box-shadow:0 14px 30px -14px rgba(201,40,30,.8)}
+.zero .sad{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:rgba(255,255,255,.16)}.zero .sad svg{width:38px;height:38px}
+.zero h2{font-size:21px;color:#fff}.zero .zg{font-family:Geologica,Onest,sans-serif;font-size:30px;font-weight:500;margin:6px 0 10px}
+.zero p{font-size:13.5px;opacity:.92}.zero .zs{display:block;font-size:12px;opacity:.75;margin-top:10px}
+.vline{display:flex;gap:6px;align-items:flex-start;margin-top:6px;padding:6px 9px;border-radius:9px;background:color-mix(in srgb,var(--no) 9%,var(--card));color:var(--no);font-size:12px}.vline svg{width:14px;height:14px;flex:none;margin-top:1px}
 footer{text-align:center;padding:12px 20px 32px}
 footer>span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--fa);margin-bottom:4px}
 footer em{font-family:"Instrument Serif",Georgia,serif;font-size:24px;letter-spacing:.01em;color:var(--fg)}
@@ -254,6 +264,8 @@ const I={
  signin:sv_('<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>'),
  userplus:sv_('<circle cx="9" cy="8" r="3.6"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/>'),
  apple:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.1 5.8c.6-.8 1.1-1.8 1-2.8-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.7-1 2.7 1 .1 2.1-.5 2.7-1.3z"/></svg>`,
+ wifi:sv_('<path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0"/><path d="M12 19h.01"/><path d="M3 3l18 18"/>',1.9),
+ sad:sv_('<circle cx="12" cy="12" r="9"/><path d="M8.5 16.5c2-2 5-2 7 0"/><path d="M9 10h.01M15 10h.01"/>',1.8),
  phone:sv_('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
  down:sv_('<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 20h14"/>',2),
  droid:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 9.2h10.8a.8.8 0 0 1 .8.8v6.6a1.6 1.6 0 0 1-1.6 1.6h-.6v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-3.2v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-.6a1.6 1.6 0 0 1-1.6-1.6V10a.8.8 0 0 1 .8-.8zM4 9.6a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 4 9.6zm16 0a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 20 9.6zM8.3 3.2l1 1.5A5.9 5.9 0 0 1 12 4.1c1 0 1.9.2 2.7.6l1-1.5a.3.3 0 0 1 .5.3l-1 1.5a5.3 5.3 0 0 1 2.9 3.6H5.9a5.3 5.3 0 0 1 2.9-3.6l-1-1.5a.3.3 0 0 1 .5-.3zM9.6 6.2a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zm4.8 0a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"/></svg>`,
@@ -288,9 +300,29 @@ const LANGS=[['ru','Русский'],['tj','Тоҷикӣ'],['en','English'],['uz
 const flag=c=>`<span class="flag"><svg viewBox="0 0 36 24" preserveAspectRatio="none">${FL[c]||`<rect width="36" height="24" fill="#e5e5ea"/><text x="18" y="16" font-size="10" font-family="system-ui" font-weight="600" text-anchor="middle" fill="#555">${esc((c||'?').toUpperCase())}</text>`}</svg></span>`;
 
 /* ---------- API ---------- */
-async function api(path,opt={}){const r=await fetch(SBU+'/rest/v1/'+path,{...opt,headers:{apikey:KEY,'Content-Type':'application/json',...(opt.headers||{})}});
- if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();return t?JSON.parse(t):null}
+class NetErr extends Error{}
+/* reads are cached on the device so the site keeps working offline */
+const CACHEABLE=/^(subjects|topics|results|rpc\/(list_topics|my_topic_state|student_flags))/;
+async function api(path,opt={}){const key='c:'+path+(opt.body||'');let r;
+ try{r=await fetch(SBU+'/rest/v1/'+path,{...opt,headers:{apikey:KEY,'Content-Type':'application/json',...(opt.headers||{})}})}
+ catch(e){const c=CACHEABLE.test(path)?ld(key,undefined):undefined;if(c!==undefined){setNet(false);return c}setNet(false);throw new NetErr('offline')}
+ setNet(true);if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();const v=t?JSON.parse(t):null;
+ if(CACHEABLE.test(path)&&t.length<300000)sv(key,v);return v}
 const rpc=(fn,a)=>api('rpc/'+fn,{method:'POST',body:JSON.stringify(a)});
+/* connection indicator */
+let ONLINE=true;function setNet(on){if(on===ONLINE)return;ONLINE=on;let b=document.getElementById('netb');
+ if(!on){if(!b){b=document.createElement('div');b.id='netb';b.className='netb';document.body.appendChild(b)}b.innerHTML=`${I.wifi}<span>Нет подключения — работаем офлайн. Результаты отправятся автоматически.</span>`}
+ else{if(b)b.remove();flushQueue()}}
+window.addEventListener('offline',()=>setNet(false));window.addEventListener('online',()=>{setNet(true);flushQueue()});
+/* results finished offline wait here and are sent when the connection returns */
+const QK='pending';
+function queueAdd(item){const q=ld(QK,[]);if(!q.some(x=>x.p_attempt===item.p_attempt))q.push(item);sv(QK,q)}
+let FLUSHING=false;
+async function flushQueue(){if(FLUSHING)return;const q=ld(QK,[]);if(!q.length)return;FLUSHING=true;const left=[];let sent=0;
+ for(const it of q){try{const r=await rpc('submit_attempt2',it);if(r&&(r.ok||r.error==='already'||r.error==='expired'||r.error==='not_found')){sent++;if(r.ok&&LAST&&LAST.att===it.p_attempt){LAST.res=r;LAST.queued=false;if(location.hash==='#/done')donePage()}}else left.push(it)}catch(e){left.push(it)}}
+ sv(QK,left);FLUSHING=false;if(sent)toast(`Отправлено результатов: ${sent}`)}
+setInterval(flushQueue,20000);
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}
 let SUBJ=null;
 async function subjects(force){if(!SUBJ||force)SUBJ=await api('subjects?select=id,name,code,sort&order=sort,id');return SUBJ}
 const topicsOf=sid=>rpc('list_topics',{p_subject_id:sid});
@@ -310,7 +342,7 @@ window.addEventListener('hashchange',route);
 function route(){
  if(skip){skip=false;return}
  const p=(location.hash.slice(1)||'/').split('/').filter(Boolean);
- if(RUN&&!RUN.done&&p[0]!=='test'&&p[0]!=='done'){skip=true;location.hash=prevHash;ask('Выйти из теста?','Если выйти сейчас, тест будет завершён с баллом 0.','Выйти, балл 0').then(y=>{if(y)violate('Тест прерван учеником')});return}
+ if(RUN&&!RUN.done&&p[0]!=='test'&&p[0]!=='done'){skip=true;location.hash=prevHash;ask('Выйти из теста?','Если выйти сейчас, тест будет завершён с баллом 0.','Выйти, балл 0').then(y=>{if(y)violate('Тест прерван учеником',true)});return}
  if(PREP&&p[0]!=='test')PREP=null;
  prevHash=location.hash||'#/';const tk=++RT;
  if(p[0]==='grant')return grantPage(p[1],tk);
@@ -426,9 +458,9 @@ async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
   if(IS_APP){try{TestruApp.lockTask()}catch(e){}let ok=false;for(let k=0;k<60&&!ok;k++){await new Promise(r=>setTimeout(r,250));try{ok=TestruApp.isPinned()}catch(e){ok=true}}
    if(!ok){document.getElementById('er').textContent='Чтобы начать, подтвердите закрепление экрана («Закрепить»).';gb.disabled=false;return}}
   else{try{const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;if(rq){await rq.call(el,{navigationUI:'hide'});fs=true}}catch(e){}}
-  let r;try{r=await rpc('start_attempt',{p_token:U.token,p_topic_id:tid})}catch(e){r={ok:false,error:'net'}}
+  let r;try{r=await rpc('start_attempt',{p_token:U.token,p_topic_id:tid})}catch(e){r={ok:false,error:e instanceof NetErr?'net':'server'}}
   if(!r.ok&&r.error==='retake_needed'){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}return retakePage(tid,title,false)}
-  if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent=r.error==='session'?'Сессия устарела. Выйдите и войдите заново.':'Не удалось начать тест. Проверьте интернет.';gb.disabled=false;return}
+  if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent={session:'Сессия устарела. Выйдите и войдите заново.',net:'Нет подключения к интернету. Чтобы начать тест, нужен интернет — после начала тест работает и без него.',empty:'В этой теме нет вопросов.',not_found:'Тема не найдена.'}[r.error]||'Не удалось начать тест. Попробуйте ещё раз.';gb.disabled=false;return}
   begin(fs,r)}}
 const appUnlock=()=>{if(IS_APP){try{TestruApp.unlockTask()}catch(e){}}};
 function begin(fs,r){const P=PREP;if(!P)return;PREP=null;
@@ -442,7 +474,13 @@ function begin(fs,r){const P=PREP;if(!P)return;PREP=null;
  show()}
 /* anti-cheat: leaving the test window, tab or full screen, or screenshot keys => grade 0 */
 const live=()=>RUN&&!RUN.done&&!RUN.modal&&Date.now()>RUN.guard;
-function violate(reason){if(!RUN||RUN.done)return;RUN.violation=reason;finish()}
+function violate(reason,hard){const R=RUN;if(!R||R.done)return;
+ if(R.warned||hard){R.violation=(R.warned?'1) '+R.warned+'; 2) ':'')+reason;return finish()}
+ R.warned=reason;R.modal=true;const d=document.createElement('div');d.className='modal warn';
+ d.innerHTML=`<div class="mbox"><span class="wic">${I.alert}</span><h2>Предупреждение</h2><p class="sub">Вы нарушили правило: <b>${esc(reason)}</b>.</p><p class="sub">Это первое и последнее предупреждение. При следующем нарушении тест завершится с оценкой <b>0</b>.</p><button class="btn mt20" data-ok>Понятно, продолжить тест</button></div>`;
+ document.body.appendChild(d);d.querySelector('[data-ok]').onclick=async()=>{d.remove();
+  if(IS_APP){try{TestruApp.lockTask()}catch(e){}for(let k=0;k<80;k++){let p=true;try{p=TestruApp.isPinned()}catch(e){}if(p)break;await new Promise(r=>setTimeout(r,250))}}else if(R.fs&&!(document.fullscreenElement||document.webkitFullscreenElement)){try{const el=document.documentElement;await (el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){R.fs=false}}
+  R.modal=false;R.guard=Date.now()+1200}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&live())violate('Переход в другую вкладку или приложение')});
 window.addEventListener('blur',()=>{if(live()&&!IS_APP)violate('Выход из окна теста')});
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{if(RUN&&RUN.fs&&!(document.fullscreenElement||document.webkitFullscreenElement)&&live())violate('Выход из полноэкранного режима')}));
@@ -454,7 +492,8 @@ window.addEventListener('keyup',e=>{if(RUN&&!RUN.done&&(e.key==='PrintScreen'||e
 window.addEventListener('beforeunload',e=>{if(RUN&&!RUN.done){e.preventDefault();e.returnValue=''}});
 const payload=R=>R.Q.map((q,n)=>{const a=R.ans[n];if(q.k==='m'){const o={};q.L.forEach((l,k)=>{if(a[k]>=0)o[l[0]]=q.R[a[k]]});return o}return a.map(k=>q.a[k][0])});
 window.addEventListener('pagehide',()=>{if(RUN&&!RUN.done){const R=RUN;R.done=true;
- try{fetch(SBU+'/rest/v1/rpc/submit_attempt',{method:'POST',keepalive:true,headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:'Закрытие или перезагрузка страницы'})})}catch(e){}}});
+ const it={p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:(R.warned?'1) '+R.warned+'; 2) ':'')+'Закрытие или перезагрузка страницы',p_finished_at:new Date().toISOString()};queueAdd(it);
+ try{fetch(SBU+'/rest/v1/rpc/submit_attempt2',{method:'POST',keepalive:true,headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(it)})}catch(e){}}});
 /* in-page dialog (native confirm() would blur the window during a test) */
 function ask(title,text,okLabel){return new Promise(res=>{if(RUN)RUN.modal=true;const d=document.createElement('div');d.className='modal';
  d.innerHTML=`<div class="mbox"><h2 style="font-size:17px">${title}</h2><p class="sub" style="font-size:14px">${text}</p><div class="nav"><button class="btn gh" data-r="0">Отмена</button><button class="btn" data-r="1">${okLabel||'Да'}</button></div></div>`;
@@ -484,15 +523,17 @@ function show(keep){const R=RUN,q=R.Q[R.i],a=R.ans[R.i];const y=scrollY;
 function finish(){const R=RUN;if(!R||R.done)return;clearInterval(R.tick);R.done=true;document.body.classList.remove('secure');document.querySelectorAll('.modal').forEach(m=>m.remove());
  try{if(document.fullscreenElement)document.exitFullscreen();else if(document.webkitFullscreenElement)document.webkitExitFullscreen()}catch(e){}
  appUnlock();
- LAST={tid:R.tid,title:R.title,Q:R.Q,ans:R.ans,violation:R.violation,used:R.limit-Math.max(R.left,0),res:null,err:null};RUN=null;
- const L=LAST;rpc('submit_attempt',{p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:R.violation||null})
+ LAST={tid:R.tid,att:R.att,title:R.title,Q:R.Q,ans:R.ans,violation:R.violation,used:R.limit-Math.max(R.left,0),res:null,err:null,queued:false};RUN=null;
+ const L=LAST,it={p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:R.violation||null,p_finished_at:new Date().toISOString()};
+ rpc('submit_attempt2',it)
   .then(r=>{if(r&&r.ok){L.res=r;const pc=Math.round(r.score/r.total*100);if(!r.violation){const b=ld('best2',{});if(!(b[L.tid]>=pc)){b[L.tid]=pc;sv('best2',b)}}}else L.err=r&&r.error==='session'?'Сессия устарела. Войдите заново.':'Не удалось сохранить результат.'})
-  .catch(()=>{L.err='Нет связи с сервером. Результат не сохранён.'}).finally(()=>{if(LAST===L&&location.hash==='#/done')donePage()});
+  .catch(()=>{queueAdd(it);L.queued=true}).finally(()=>{if(LAST===L&&location.hash==='#/done')donePage()});
  go('/done')}
 function donePage(){if(!LAST)return go('/tests');const L=LAST,r=L.res;
- if(!r){page({title:'Результат теста',back:'/tests',body:L.err?`<div class="viol">${I.alert}<div><b>Ошибка</b><span>${esc(L.err)}</span></div></div>`:'<div class="card ld">Проверка ответов…</div>'});return}
+ const zero=v=>`<div class="zero"><span class="sad">${I.sad}</span><h2>Вы нарушили правила</h2><div class="zg">Ваша оценка: 0</div><p>${esc(v)}</p><span class="zs">Результат с оценкой 0 и причиной опубликован в результатах.</span></div>`;
+ if(!r){page({title:'Результат теста',back:'/tests',body:(L.violation?zero(L.violation):'')+(L.err?`<div class="viol">${I.alert}<div><b>Ошибка</b><span>${esc(L.err)}</span></div></div>`:L.queued?`<div class="card"><div class="prof"><span class="ic">${I.wifi}</span><div><div class="t1" style="font-weight:500">Нет подключения</div><div class="sub" style="font-size:13px;margin-top:2px">Ваши ответы сохранены на устройстве и будут отправлены автоматически, как только появится интернет. Не удаляйте данные браузера.</div></div></div></div>`:'<div class="card ld">Проверка ответов…</div>')});return}
  const pc=Math.round(r.score/r.total*100);
- let h=`${r.violation?`<div class="viol">${I.alert}<div><b>Тест аннулирован — балл 0</b><span>Причина: ${esc(r.violation)}.</span></div></div>`:''}<div class="card"><div class="sub" style="margin:0 0 14px">${esc(L.title)}</div><div class="sub" style="margin:0 0 6px;font-size:12px">Результат теста</div><div class="big">${r.score}<small> / ${r.total}</small></div>
+ let h=`${r.violation?zero(r.violation):''}<div class="card"><div class="sub" style="margin:0 0 14px">${esc(L.title)}</div><div class="sub" style="margin:0 0 6px;font-size:12px">Результат теста</div><div class="big">${r.score}<small> / ${r.total}</small></div>
  <div class="kv"><span>Балл<b>${r.grade} / 10</b></span><span>Верно<b>${pc}%</b></span><span>Время<b>${fmt(L.used)}</b></span></div><p class="sub" style="font-size:13px;margin-top:14px">Результат сохранён</p></div>
  <div class="nav"><a class="btn gh" href="#/results">${I.chart} Результаты</a><a class="btn" href="#/test/${L.tid}">Пересдать</a></div>
  <div class="sec">Ваши ответы</div><div class="card">`;
@@ -535,7 +576,7 @@ function draw(){const R=document.getElementById('rs'),C=document.getElementById(
  if(!ROWS.length){R.innerHTML=`<div class="empty">${me?'Вы ещё не проходили тесты':'Пока нет результатов'}</div>`;return}
  if(!rows.length){R.innerHTML='<div class="empty">Ничего не найдено</div>';return}
  R.innerHTML=rows.map(x=>{const d=new Date(x.created_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  return `<div class="rrow"><span class="tx"><span class="t1">${esc(x.full_name)}</span><span class="rmeta"><span class="chipg">Группа ${esc(x.group_name)}</span><span class="chipg">Результат теста: ${x.score} / ${x.total}</span>${x.violation?`<span class="chipg vio" title="${esc(x.violation)}">Нарушение: ${esc(x.violation)}</span>`:''}</span><span class="t3">${esc(tname(x.topic))} · ${esc(d)}</span></span><span class="gr"><small>Балл</small><b>${x.grade}<i> / 10</i></b></span></div>`}).join('')}
+  return `<div class="rrow"><span class="tx"><span class="t1">${esc(x.full_name)}</span><span class="rmeta"><span class="chipg">Группа ${esc(x.group_name)}</span><span class="chipg">Результат теста: ${x.score} / ${x.total}</span></span><span class="t3">${esc(tname(x.topic))} · ${esc(d)}</span>${x.violation?`<span class="vline">${I.alert}<span>Оценка 0 — нарушение правил: ${esc(x.violation)}</span></span>`:''}</span><span class="gr"><small>Балл</small><b>${x.grade}<i> / 10</i></b></span></div>`}).join('')}
 
 /* ---------- admin ---------- */
 const arpc=async(fn,a)=>{const r=await rpc(fn,{p_login:ADM.l,p_pass:ADM.p,...a});if(r===null||r===false){alert('Сессия администратора недействительна. Войдите снова.');admOut(true);throw new Error('auth')}return r};
@@ -760,5 +801,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
   <button class="btn mt16" data-ok>Понятно</button></div>`;
   document.body.appendChild(d);d.querySelector('[data-ok]').onclick=()=>d.remove();d.onclick=x=>{if(x.target===d)d.remove()}},150)});
 if(!IS_APP){const f=document.querySelector('footer'),a=document.createElement('a');a.className='fapp';a.href=APK;a.download='testru.apk';a.innerHTML=`${I.droid}<span>Приложение для Android</span>`;f.prepend(a)}
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('/sw.js').catch(()=>{});
+flushQueue();
 route();
 </script></body></html>
