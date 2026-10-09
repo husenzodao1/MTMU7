@@ -406,18 +406,20 @@ async function register(tk){page({title:'Тестирование',body:authTabs
  let sel=S[0]?S[0].id:null;
  main().innerHTML=authTabs('up')+`<form class="card mt16" id="f" autocomplete="off">
  <span class="lbl" style="margin-top:0">Язык теста</span><div class="langs" id="ls">${S.map(s=>`<button type="button" class="lng${s.id===sel?' on':''}" data-id="${s.id}">${flag(s.code)}<span>${esc(s.name)}</span></button>`).join('')||'<div class="empty">Языки ещё не добавлены</div>'}</div>
- <label class="lbl" for="g">Группа</label><input class="in" id="g" maxlength="30" placeholder="Например: 1_26.03.01та" required>
+ <label class="lbl" for="g">Группа</label><input class="in" id="g" maxlength="20" autocapitalize="none" spellcheck="false" placeholder="Например: 1_26.03.01та" required><div class="hint" id="gh">Формат: х_хх.хх.ххта или х_хх.хх.ххра</div>
  <label class="lbl" for="nm">Фамилия и имя</label><input class="in" id="nm" maxlength="80" placeholder="Например: Ҳусейнзода Руслан" required>
  <label class="lbl" for="lg">Логин</label><input class="in" id="lg" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" placeholder="Латиница и цифры, от 3 символов" required>
  <label class="lbl" for="pw">Пароль</label><input class="in" id="pw" type="password" name="new-password" autocomplete="new-password" maxlength="72" placeholder="Минимум 4 символа" required>
  <button class="btn mt20" type="submit">Зарегистрироваться</button><div class="err" id="er"></div></form>`;
  document.querySelectorAll('.lng').forEach(b=>b.onclick=()=>{sel=+b.dataset.id;document.querySelectorAll('.lng').forEach(x=>x.classList.toggle('on',x===b))});
  const f=document.getElementById('f'),er=document.getElementById('er');
- const M={login_taken:'Такой логин уже существует',name_taken:'Студент с таким именем в этой группе уже существует',bad_login:'Логин: 3–30 символов — латинские буквы, цифры, точка, _ или -',bad_pass:'Пароль должен быть не короче 4 символов',bad_name:'Укажите фамилию и имя полностью',bad_group:'Укажите группу'};
+ const M={login_taken:'Такой логин уже существует',name_taken:'Студент с таким именем в этой группе уже существует',bad_login:'Логин: 3–30 символов — латинские буквы, цифры, точка, _ или -',bad_pass:'Пароль должен быть не короче 4 символов',bad_name:'Укажите фамилию и имя полностью',bad_group:'Укажите группу',group_format:'Неверный формат группы. Нужно так: 1_26.03.01та или 1_26.03.01ра'};
+ const gi=document.getElementById('g'),gh=document.getElementById('gh');gi.oninput=()=>{const v=gi.value.replace(/\s+/g,''),ok=GRX.test(v);gi.classList.toggle('bad',!!v&&!ok);gh.classList.toggle('bad',!!v&&!ok);gh.textContent=!v||ok?'Формат: х_хх.хх.ххта или х_хх.хх.ххра':'Неверный формат. Пример: 1_26.03.01та или 1_26.03.01ра'};
  f.onsubmit=async e=>{e.preventDefault();er.textContent='';
-  const g=f.g.value.trim().replace(/\s+/g,' '),n=cap(f.nm.value.trim().replace(/\s+/g,' ')),l=f.lg.value.trim().toLowerCase(),p=f.pw.value;
+  const g=f.g.value.replace(/\s+/g,'').toLowerCase(),n=cap(f.nm.value.trim().replace(/\s+/g,' ')),l=f.lg.value.trim().toLowerCase(),p=f.pw.value;
   if(!sel)return er.textContent='Выберите язык теста';
   if(!g)return er.textContent=M.bad_group;
+  if(!GRX.test(g)){gi.oninput();gi.focus();return er.textContent=M.group_format}
   if(n.split(' ').length<2)return er.textContent=M.bad_name;
   if(!/^[a-z0-9._-]{3,30}$/.test(l))return er.textContent=M.bad_login;
   if(p.length<4)return er.textContent=M.bad_pass;
@@ -670,42 +672,47 @@ function admin(p,tk){
  if(p[0]==='q')return aQuestion({id:+p[1]},tk);if(p[0]==='new')return aQuestion({tid:+p[1],kind:p[2]},tk);
  if(p[0]==='news')return aNews(tk);if(p[0]==='students')return aStudents(tk);if(p[0]==='st')return aStudent(+p[1],tk);if(p[0]==='me')return aMe();go('/admin')}
 const GRX=/^[0-9]_[0-9]{2}\.[0-9]{2}\.[0-9]{2}(та|ра)$/i;
-async function aNews(tk){page({title:'Объявления',back:'/admin'});
- let L,G,TT;try{const S=await subjects();[L,G,TT]=await Promise.all([arpc('admin_list_announcements',{}),arpc('admin_groups',{}),Promise.all(S.map(sb=>topicsOf(sb.id).then(l=>l.map(t=>({...t,sn:sb.name}))))).then(x=>x.flat())])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
- main().innerHTML=`<form class="card" id="f" novalidate><label class="lbl" style="margin-top:0" for="bd">Текст объявления</label><textarea class="in" id="bd" maxlength="1000" placeholder="Например: Ребята, завтра рубежный контроль по теме 3. Не опаздывайте!" required></textarea>
+function composeHTML(G,TT){return `<form class="card" id="cf" novalidate><label class="lbl" style="margin-top:0" for="bd">Текст объявления</label><textarea class="in" id="bd" maxlength="1000" placeholder="Например: Ребята, завтра рубежный контроль по теме 3. Не опаздывайте!" required></textarea>
  <label class="lbl" for="dt">Дата и время (необязательно)</label><input class="in" id="dt" type="datetime-local">
  <label class="lbl" for="tp">Тема (необязательно)</label><select class="in" id="tp"><option value="">— Без темы —</option>${TT.map(t=>`<option value="${t.id}">${esc(t.sn)} · ${esc(tname(t.title))}</option>`).join('')}</select>
  <label class="lbl">Кому отправить</label><div class="seg2" id="who"><button type="button" class="on" data-w="all">${I.users} Всем</button><button type="button" data-w="grp">Группе</button></div>
  <div id="gb" hidden><label class="lbl" for="gr">Группа</label><input class="in" id="gr" list="grl" maxlength="20" autocapitalize="none" spellcheck="false" placeholder="1_26.03.01та"><datalist id="grl">${G.filter(x=>GRX.test(x.g)).map(x=>`<option value="${esc(x.g)}">`).join('')}</datalist>
  <div class="hint" id="gh">Формат: х_хх.хх.ххта или х_хх.хх.ххра — например 1_26.03.01та</div></div>
- <button class="btn mt20" id="snd">${I.send} Отправить</button><div class="err" id="er"></div></form>
- <div class="sec">Отправленные (${L.length})</div><div class="stack">${L.map(a=>`<div class="card ann"><span class="ic">${I.bell}</span><div class="bd"><div class="tx2">${esc(a.body)}</div>
-  <div class="mt">${a.event_at?`<span class="chipg">${I.cal} ${esc(fmtDT(a.event_at))}</span>`:''}${a.topic?`<span class="chipg">${I.book} ${esc(tname(a.topic))}</span>`:''}<span class="chipg">${I.users} ${a.group?'Группа '+esc(a.group):'Всем'} · ${plural(a.students,'студент','студента','студентов')}</span></div>
-  <div class="tm">${esc(fmtDT(a.created_at))}</div></div><button class="ib x" data-hide="${a.id}" aria-label="Удалить">${I.trash}</button></div>`).join('')||'<div class="card empty">Пока ничего не отправлено</div>'}</div>`;
- const f=document.getElementById('f'),gr=document.getElementById('gr'),gh=document.getElementById('gh'),er=document.getElementById('er');let who='all';
+ <button class="btn mt20" id="snd">${I.send} Отправить</button><div class="err" id="cer"></div></form>`}
+function bindCompose(onSent){
+ const f=document.getElementById('cf'),gr=document.getElementById('gr'),gh=document.getElementById('gh'),er=document.getElementById('cer');let who='all';
  document.querySelectorAll('#who button').forEach(b=>b.onclick=()=>{who=b.dataset.w;document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('gb').hidden=who!=='grp';if(who==='grp')gr.focus()});
- const chk=()=>{const v=gr.value.trim(),ok=GRX.test(v);gr.classList.toggle('bad',!!v&&!ok);gh.classList.toggle('bad',!!v&&!ok);gh.textContent=!v||ok?'Формат: х_хх.хх.ххта или х_хх.хх.ххра — например 1_26.03.01та':'Неверный формат. Нужно так: 1_26.03.01та или 1_26.03.01ра';return ok};
+ const chk=()=>{const v=gr.value.replace(/\s+/g,''),ok=GRX.test(v);gr.classList.toggle('bad',!!v&&!ok);gh.classList.toggle('bad',!!v&&!ok);gh.textContent=!v||ok?'Формат: х_хх.хх.ххта или х_хх.хх.ххра — например 1_26.03.01та':'Неверный формат. Нужно так: 1_26.03.01та или 1_26.03.01ра';return ok};
  gr.oninput=chk;
  f.onsubmit=async e=>{e.preventDefault();er.textContent='';er.className='err';const body=f.bd.value.trim();
   if(!body){er.textContent='Напишите текст объявления';f.bd.focus();return}
   if(who==='grp'&&!chk()){er.textContent='Укажите группу в формате х_хх.хх.ххта или х_хх.хх.ххра';gr.focus();return}
   const bt=document.getElementById('snd');bt.disabled=true;
-  try{const r=await arpc('admin_send_announcement',{p_body:body,p_event_at:f.dt.value?new Date(f.dt.value).toISOString():null,p_topic_id:+f.tp.value||null,p_group:who==='grp'?gr.value.trim().toLowerCase():null});
+  try{const r=await arpc('admin_send_announcement',{p_body:body,p_event_at:f.dt.value?new Date(f.dt.value).toISOString():null,p_topic_id:+f.tp.value||null,p_group:who==='grp'?gr.value.replace(/\s+/g,'').toLowerCase():null});
    if(!r.ok){er.textContent=r.error==='group_format'?'Неверный формат группы':'Не удалось отправить';bt.disabled=false;return}
    let dev='';try{const x=await fetch(SBU+'/functions/v1/announce',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({id:r.id})}).then(x=>x.json());if(x&&x.ok&&!x.skipped)dev=`, уведомление на ${plural(x.sent,'устройство','устройства','устройств')}`}catch(x){}
-   toast(`Отправлено: ${plural(r.students,'студент','студента','студентов')}${dev}`);aNews(++RT)}
-  catch(x){bt.disabled=false;if(x.message!=='auth')er.textContent=x instanceof NetErr?'Нет подключения к интернету':'Не удалось отправить'}};
+   toast(`Отправлено: ${plural(r.students,'студент','студента','студентов')}${dev}`);onSent()}
+  catch(x){bt.disabled=false;if(x.message!=='auth')er.textContent=x instanceof NetErr?'Нет подключения к интернету':'Не удалось отправить'}}}
+async function aNews(tk){page({title:'Объявления',back:'/admin'});
+ let L,G,TT;try{const S=await subjects();[L,G,TT]=await Promise.all([arpc('admin_list_announcements',{}),arpc('admin_groups',{}),Promise.all(S.map(sb=>topicsOf(sb.id).then(l=>l.map(t=>({...t,sn:sb.name}))))).then(x=>x.flat())])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ main().innerHTML=composeHTML(G,TT)+`
+ <div class="sec">Отправленные (${L.length})</div><div class="stack">${L.map(a=>`<div class="card ann"><span class="ic">${I.bell}</span><div class="bd"><div class="tx2">${esc(a.body)}</div>
+  <div class="mt">${a.event_at?`<span class="chipg">${I.cal} ${esc(fmtDT(a.event_at))}</span>`:''}${a.topic?`<span class="chipg">${I.book} ${esc(tname(a.topic))}</span>`:''}<span class="chipg">${I.users} ${a.group?'Группа '+esc(a.group):'Всем'} · ${plural(a.students,'студент','студента','студентов')}</span></div>
+  <div class="tm">${esc(fmtDT(a.created_at))}</div></div><button class="ib x" data-hide="${a.id}" aria-label="Удалить">${I.trash}</button></div>`).join('')||'<div class="card empty">Пока ничего не отправлено</div>'}</div>`;
+ bindCompose(()=>aNews(++RT));
  main().querySelectorAll('[data-hide]').forEach(b=>b.onclick=async()=>{if(!await ask('Удалить объявление?','Студенты больше не увидят его.','Удалить'))return;try{await arpc('admin_hide_announcement',{p_id:+b.dataset.hide});aNews(++RT)}catch(x){}})}
 const langOpts=c=>LANGS.map(([k,n])=>`<option value="${k}"${k===c?' selected':''}>${n}</option>`).join('');
 async function aHome(tk){page({title:'Админ-панель',right:`<button class="ib" id="lo" aria-label="Выйти">${I.out}</button>`});document.getElementById('lo').onclick=()=>admOut();
- let S,C=[];try{let all;[S,all]=await Promise.all([subjects(true),api('topics?select=id,subject_id')]);C=S.map(s=>all.filter(t=>t.subject_id===s.id))}catch(e){return fail(e)}if(tk!==RT)return;
+ let S,C=[],G=[],TT=[];try{let all;[S,all,G]=await Promise.all([subjects(true),api('topics?select=id,subject_id,title,sort&order=sort,id'),arpc('admin_groups',{}).catch(e=>{if(e.message==='auth')throw e;return []})]);C=S.map(s=>all.filter(t=>t.subject_id===s.id));TT=S.flatMap(s=>all.filter(t=>t.subject_id===s.id).map(t=>({...t,sn:s.name})))}catch(e){return fail(e)}if(tk!==RT)return;
  main().innerHTML=`<div class="card prof"><span class="av">${I.shield.replace('<svg','<svg style="width:20px;height:20px"')}</span><div><div class="nm">Администратор</div><div class="sub" style="margin-top:2px;font-size:13px">Управление языками, тестами и вопросами</div></div></div>
+ <div class="sec">Отправить объявление</div>${composeHTML(G,TT)}
  <div class="sec">Языки тестов</div><div class="stack">${S.map((s,k)=>`<a class="tile" href="#/admin/s/${s.id}"><span class="ic">${flag(s.code)}</span><span class="tx"><span class="t1">${esc(s.name)}</span><span class="t2">${plural(C[k].length,'тема','темы','тем')}</span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Пока нет языков</div>'}</div>
  <div class="sec">Добавить язык</div><form class="card" id="f"><label class="lbl" style="margin-top:0">Название</label><input class="in" id="nm" maxlength="60" placeholder="Например: Английский язык" required>
  <label class="lbl">Флаг / иконка</label><select class="in" id="cd">${langOpts('en')}</select><button class="btn mt16">${I.plus} Добавить язык</button><div class="err" id="er"></div></form>
- <div class="sec">Объявления</div><a class="tile" href="#/admin/news"><span class="ic">${I.bell}</span><span class="tx"><span class="t1">Объявления и уведомления</span><span class="t2">Сообщить всем или группе о рубеже, тесте, сроках</span></span><span class="ch">${I.chev}</span></a>
+ <div class="sec">Объявления</div><a class="tile" href="#/admin/news"><span class="ic">${I.bell}</span><span class="tx"><span class="t1">Отправленные объявления</span><span class="t2">История и удаление объявлений</span></span><span class="ch">${I.chev}</span></a>
  <div class="sec">Пользователи</div><a class="tile" href="#/admin/students"><span class="ic">${I.users}</span><span class="tx"><span class="t1">Студенты</span><span class="t2">Аккаунты, смена логина и пароля</span></span><span class="ch">${I.chev}</span></a>
  <a class="tile mt16" href="#/admin/me"><span class="ic">${I.key}</span><span class="tx"><span class="t1">Безопасность администратора</span><span class="t2">Логин, пароль и Google Authenticator (2FA)</span></span><span class="ch">${I.chev}</span></a>`;
+ bindCompose(()=>aHome(++RT));
  const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();const n=f.nm.value.trim();if(!n)return;f.querySelector('button').disabled=true;
   try{const id=await arpc('admin_save_subject',{p_id:null,p_name:n,p_code:f.cd.value});SUBJ=null;go('/admin/s/'+id)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения';f.querySelector('button').disabled=false}}}
 async function aSubject(id,tk){page({title:'Язык',back:'/admin'});
