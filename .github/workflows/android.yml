@@ -1,0 +1,59 @@
+name: Android app
+
+on:
+  push:
+    branches: [testru]
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Create signing key
+        run: |
+          PASS=$(openssl rand -hex 16)
+          echo "::add-mask::$PASS"
+          echo "KEYSTORE_PASS=$PASS" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias testru -keyalg RSA -keysize 2048 \
+            -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=Testru, O=Testru, C=TJ"
+
+      - name: Build APK
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          gradle -p android assembleRelease --no-daemon
+          cp android/app/build/outputs/apk/release/app-release.apk testru.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testru-apk
+          path: testru.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: testru-app
+          target_commitish: ${{ github.sha }}
+          name: Testru — приложение для Android
+          body: |
+            Защищённое приложение для https://testru.vercel.app
+            Скачайте testru.apk, откройте файл на телефоне и разрешите установку.
+            Сборка №${{ github.run_number }}.
+          files: testru.apk
+          make_latest: false

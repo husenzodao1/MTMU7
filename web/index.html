@@ -401,7 +401,8 @@ async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
   <button class="btn mt16" id="go" disabled>Начать тест</button><div class="err" id="er"></div></div>`});
  const ag=document.getElementById('ag'),gb=document.getElementById('go');ag.onchange=()=>gb.disabled=!ag.checked;
  gb.onclick=async()=>{gb.disabled=true;let fs=false;
-  if(IS_APP){try{TestruApp.lockTask()}catch(e){}}
+  if(IS_APP){try{TestruApp.lockTask()}catch(e){}let ok=false;for(let k=0;k<60&&!ok;k++){await new Promise(r=>setTimeout(r,250));try{ok=TestruApp.isPinned()}catch(e){ok=true}}
+   if(!ok){document.getElementById('er').textContent='Чтобы начать, подтвердите закрепление экрана («Закрепить»).';gb.disabled=false;return}}
   else{try{const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;if(rq){await rq.call(el,{navigationUI:'hide'});fs=true}}catch(e){}}
   let r;try{r=await rpc('start_attempt',{p_token:U.token,p_topic_id:tid})}catch(e){r={ok:false,error:'net'}}
   if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent=r.error==='session'?'Сессия устарела. Выйдите и войдите заново.':'Не удалось начать тест. Проверьте интернет.';gb.disabled=false;return}
@@ -413,7 +414,8 @@ function begin(fs,r){const P=PREP;if(!P)return;PREP=null;
  document.body.classList.add('secure');
  RUN.tick=setInterval(()=>{const R=RUN;if(!R)return;R.left--;
   if(R.qtime){R.qleft--;const q=document.getElementById('qtm');if(q){q.textContent=R.qleft+' с';q.classList.toggle('low',R.qleft<=5)}if(R.qleft<=0){if(R.i<R.Q.length-1){R.i++;R.act=-1;R.qleft=R.qtime;show()}else return finish()}}
-  const e=document.getElementById('tm');if(e){e.textContent=fmt(Math.max(R.left,0));e.classList.toggle('low',R.left<60)}if(R.left<=0)finish()},1000);
+  const e=document.getElementById('tm');if(e){e.textContent=fmt(Math.max(R.left,0));e.classList.toggle('low',R.left<60)}if(R.left<=0)return finish();
+  if(IS_APP&&live()){try{if(!TestruApp.isPinned())violate('Откреплён экран приложения')}catch(x){}}},1000);
  show()}
 /* anti-cheat: leaving the test window, tab or full screen, or screenshot keys => grade 0 */
 const live=()=>RUN&&!RUN.done&&!RUN.modal&&Date.now()>RUN.guard;
