@@ -6,7 +6,9 @@
 <title>Тестирование</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111'/%3E%3Cpath d='M10 16.5l4 4 8-9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500&family=Onest:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500&family=Onest:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://mcbqcneytgnnzxcmxddm.supabase.co" crossorigin>
+<link rel="apple-touch-icon" href="/icon-192.png"><link rel="manifest" href="/manifest.webmanifest">
 <style>
 :root{--bg:#f7f7f8;--card:#fff;--fg:#0b0b0c;--mu:#6e6e73;--fa:#a1a1a6;--ln:#ebebed;--sf:#f2f2f4;--ok:#1a7f37;--no:#c62828;--sh:0 1px 2px rgba(16,16,20,.04),0 4px 16px rgba(16,16,20,.04);color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0b0c;--card:#141416;--fg:#f2f2f3;--mu:#8e8e93;--fa:#5c5c60;--ln:#232326;--sf:#1c1c1f;--ok:#3fb950;--no:#f0605a;--sh:none;color-scheme:dark}}
@@ -44,6 +46,15 @@ h2{font-family:Geologica,Onest,sans-serif;font-size:18px;font-weight:400;letter-
 .tile .t2{display:block;font-size:13px;color:var(--mu);margin-top:1px}
 .tile .ch{flex:none;color:var(--fa)}.tile .ch svg{width:16px;height:16px}
 .tile.on{border-color:var(--fg)}
+.bellb{position:relative}.bdg{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:99px;background:var(--no);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 5px;border:2px solid var(--bg)}
+.ann{display:flex;gap:12px;align-items:flex-start}.ann .ic{flex:none}.ann .bd{flex:1;min-width:0}.ann .tx2{font-size:15px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.ann .mt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ann .mt .chipg{display:inline-flex;align-items:center;gap:4px}.ann .mt svg{width:12px;height:12px}
+.ann .tm{font-size:12px;color:var(--fa);margin-top:8px}.card.ann.nw{border-color:var(--fg)}
+.ann .x{flex:none}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--sf);border-radius:12px;padding:4px}.seg2 button{border:0;background:transparent;border-radius:9px;padding:9px;font-size:14px;color:var(--mu)}.seg2 button{display:flex;align-items:center;justify-content:center;gap:6px}.seg2 svg{width:16px;height:16px}.seg2 button.on{background:var(--card);color:var(--fg);box-shadow:var(--sh)}
+textarea.in{min-height:110px;resize:vertical;line-height:1.45;padding-top:12px;font-family:inherit}
+.hint{font-size:12px;color:var(--fa);margin-top:6px}.hint.bad{color:var(--no)}.in.bad{border-color:var(--no)}
+.ntf{display:flex;gap:12px;align-items:center}.ntf .tx{flex:1}.ntf .btn{width:auto;padding:0 16px;height:38px;font-size:14px}
 .tile.off{opacity:.5;background:var(--sf);box-shadow:none}.tile.off:hover{border-color:var(--ln)}.tile.off .num{background:transparent}
 .lkc{display:inline-flex;align-items:center;gap:4px}.lkc svg{width:12px;height:12px}
 .opn{display:flex;align-items:center;gap:12px}.opn .tx{flex:1}.opn .st{font-size:13px;color:var(--fa);margin-top:2px}
@@ -255,7 +266,10 @@ const I={
  out:sv_('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>'),
  search:sv_('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',2),
  clock:sv_('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
- plus:sv_('<path d="M12 5v14M5 12h14"/>',2),edit:sv_('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
+ plus:sv_('<path d="M12 5v14M5 12h14"/>',2),
+ bell:sv_('<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9"/><path d="M10 19.5a2 2 0 0 0 4 0"/>'),
+ send:sv_('<path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>'),
+ cal:sv_('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),edit:sv_('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
  trash:sv_('<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>'),
  up:sv_('<path d="M12 19V5M6 11l6-6 6 6"/>'),down:sv_('<path d="M12 5v14M6 13l6 6 6-6"/>'),
  check:sv_('<path d="M5 12.5l4.5 4.5L19 7.5"/>',2.4),x:sv_('<path d="M6 6l12 12M18 6L6 18"/>',2),
@@ -306,13 +320,26 @@ const flag=c=>`<span class="flag"><svg viewBox="0 0 36 24" preserveAspectRatio="
 /* ---------- API ---------- */
 class NetErr extends Error{}
 /* reads are cached on the device so the site keeps working offline */
-const CACHEABLE=/^(subjects|topics|results|rpc\/(list_topics|my_topic_state|student_flags))/;
-async function api(path,opt={}){const key='c:'+path+(opt.body||'');let r;
+const CACHEABLE=/^(subjects|topics|results|rpc\/(list_topics|my_topic_state|student_flags|my_announcements))/;
+/* Speed: identical reads are sent once (de-duplicated), kept in memory for a short time,
+   and pages paint instantly from the device cache while fresh data loads in the background. */
+const MC=new Map(),INF=new Map(),TTL=20000;let SWRT=null;
+async function net(path,opt,key,read){let r;
  try{r=await fetch(SBU+'/rest/v1/'+path,{...opt,headers:{apikey:KEY,'Content-Type':'application/json',...(opt.headers||{})}})}
- catch(e){const c=CACHEABLE.test(path)?ld(key,undefined):undefined;if(c!==undefined){setNet(false);return c}setNet(false);throw new NetErr('offline')}
+ catch(e){const c=read?ld(key,undefined):undefined;setNet(false);if(c!==undefined)return c;throw new NetErr('offline')}
  setNet(true);if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();const v=t?JSON.parse(t):null;
- if(CACHEABLE.test(path)&&t.length<300000)sv(key,v);return v}
-const rpc=(fn,a)=>api('rpc/'+fn,{method:'POST',body:JSON.stringify(a)});
+ if(read){MC.set(key,{v,t:Date.now()});if(t.length<300000)sv(key,v)}return v}
+const swrOK=()=>!RUN&&!PREP&&!location.hash.startsWith('#/admin')&&!location.hash.startsWith('#/test/')&&location.hash!=='#/done';
+const busy=()=>{const a=document.activeElement;return !!document.querySelector('.modal')||!!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))};
+function api(path,opt={}){const read=CACHEABLE.test(path)&&!opt.fresh,key='c:'+path+(opt.body||'');
+ if(!read){if(!CACHEABLE.test(path))MC.clear();return net(path,opt,key,CACHEABLE.test(path))}   /* any write invalidates the memory cache */
+ const m=MC.get(key);if(m&&Date.now()-m.t<TTL)return Promise.resolve(m.v);
+ let p=INF.get(key);if(!p){p=net(path,opt,key,true).finally(()=>INF.delete(key));INF.set(key,p)}
+ if(!m&&swrOK()){const c=ld(key,undefined);if(c!==undefined){const h=location.hash,cs=JSON.stringify(c);
+  p.then(v=>{if(JSON.stringify(v)!==cs&&location.hash===h&&swrOK()&&!busy()){clearTimeout(SWRT);SWRT=setTimeout(()=>{if(location.hash===h&&swrOK()&&!busy())route()},60)}}).catch(()=>{});
+  return Promise.resolve(c)}}
+ return p}
+const rpc=(fn,a,o)=>api('rpc/'+fn,{method:'POST',body:JSON.stringify(a),...(o||{})});
 /* connection indicator */
 let ONLINE=true;function setNet(on){if(on===ONLINE)return;ONLINE=on;let b=document.getElementById('netb');
  if(!on){if(!b){b=document.createElement('div');b.id='netb';b.className='netb';document.body.appendChild(b)}b.innerHTML=`${I.wifi}<span>Нет подключения — работаем офлайн. Результаты отправятся автоматически.</span>`}
@@ -335,7 +362,7 @@ const IS_APP=typeof window.TestruApp!=='undefined';
 const APK='/testru.apk';
 
 /* ---------- state & router ---------- */
-let U=ld('u',null),ADM=ses?ld('adm',null,ses):null,RUN=null,LAST=null,RT=0,skip=false,prevHash=location.hash||'#/';
+let U=ld('u',null),ADM=(a=>a&&Date.now()-(a.t||0)<12*3600e3?a:null)(ld('adm',null)),RUN=null,LAST=null,RT=0,skip=false,prevHash=location.hash||'#/';
 const go=p=>{location.hash='#'+p};
 function page(o){$.innerHTML=`<header class="bar">${o.back!=null?`<a class="bk" href="#${o.back}" aria-label="Назад">${I.back}</a>`:`<span class="logo">${I.logo}</span>`}<div class="ttl">${o.title||''}</div><div class="rt">${o.right||''}</div></header>${appBanner()}<main>${o.body||'<div class="ld">Загрузка…</div>'}</main>`;const x=document.getElementById('apx');if(x)x.onclick=e=>{e.preventDefault();sv('apphide',Date.now());document.querySelector('.appb').remove()};scrollTo(0,0)}
 function appBanner(){if(IS_APP||RUN||PREP||location.hash.startsWith('#/admin')||location.hash.startsWith('#/grant')||location.hash.startsWith('#/retake'))return '';const h=ld('apphide',0);if(h&&Date.now()-h<3*864e5)return '';
@@ -354,12 +381,12 @@ function route(){
  if(p[0]==='admin'){if(!ADM)return go('/login');return admin(p.slice(1),tk)}
  if(!U){if(p[0]==='register')return register(tk);if(p[0]!=='login')return go('/login');return login()}
  switch(p[0]){case undefined:return home(tk);case 'lang':return langPage(tk);case 'tests':return testsPage(tk);case 'test':return startTest(+p[1],tk);
-  case 'done':return donePage();case 'results':return resultsPage(tk);case 'account':return accountPage();case 'login':if(ses&&ld('after',null,ses))return login();return go('/');case 'register':return go('/');default:return go('/')}}
+  case 'done':return donePage();case 'results':return resultsPage(tk);case 'account':return accountPage();case 'news':return newsPage(tk);case 'login':if(ses&&ld('after',null,ses))return login();return go('/');case 'register':return go('/');default:return go('/')}}
 
 /* ---------- auth ---------- */
 function authTabs(on){return `<div class="hero"><span class="logo">${I.logo}</span><h1>${on==='in'?'Вход':'Регистрация'}</h1><p class="sub">${on==='in'?'Войдите по логину и паролю':'Создайте аккаунт для прохождения тестов'}</p></div>
  <div class="seg"><a href="#/login" class="${on==='in'?'on':''}">${I.signin}<span>Вход</span></a><a href="#/register" class="${on==='up'?'on':''}">${I.userplus}<span>Регистрация</span></a></div>`}
-function login(){page({title:'Тестирование',body:authTabs('in')+`<form class="card mt16" id="f" autocomplete="on">
+function login(){const AF=ses&&ld('after',null,ses);page({title:'Тестирование',body:(AF?`<div class="card prof" style="margin-bottom:16px"><span class="ic">${I.shield}</span><div><div class="t1" style="font-weight:500">Подтверждение запроса</div><div class="sub" style="font-size:13px;margin-top:2px">Войдите как администратор — после входа сразу откроется окно разрешения.</div></div></div>`:'')+authTabs('in')+`<form class="card mt16" id="f" autocomplete="on">
  <label class="lbl" for="lg" style="margin-top:0">Логин</label><input class="in" id="lg" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required>
  <label class="lbl" for="pw">Пароль</label><input class="in" id="pw" type="password" name="password" autocomplete="current-password" maxlength="72" required>
  <div id="otpb" hidden><label class="lbl" for="otp">Код из Google Authenticator</label><input class="in otp" id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"><p class="sub" style="font-size:12px;margin-top:6px">${I.lock.replace('<svg','<svg style="width:13px;height:13px;display:inline;vertical-align:-2px"')} Для этого аккаунта включена двухфакторная защита</p></div>
@@ -369,8 +396,8 @@ function login(){page({title:'Тестирование',body:authTabs('in')+`<fo
   const l=f.lg.value.trim().toLowerCase(),p=f.pw.value;
   const ob=document.getElementById('otpb'),ot=f.otp.value.replace(/\D/g,'');
   try{const r=await rpc('auth_login',{p_login:l,p_pass:p,p_otp:ob.hidden?null:ot});
-   if(r.ok&&r.admin){ADM={l:'#session',p:r.token,login:r.login};if(ses)sv('adm',ADM,ses);const af=ses&&ld('after',null,ses);if(af){sv('after',null,ses);return go(af)}return go('/admin')}
-   if(r.ok){U={token:r.token,...r.user};sv('u',U);return go('/')}
+   if(r.ok&&r.admin){ADM={l:'#session',p:r.token,login:r.login,t:Date.now()};sv('adm',ADM);const af=ses&&ld('after',null,ses);if(af){sv('after',null,ses);return go(af)}return go('/admin')}
+   if(r.ok){U={token:r.token,...r.user};sv('u',U);appSession(U.token);syncPush();const af=ses&&ld('after',null,ses);if(af){sv('after',null,ses);return go(af)}return go('/')}
    if(r.need_otp){const first=ob.hidden;ob.hidden=false;f.otp.focus();if(!first||r.error==='bad_otp')er.textContent=r.error==='bad_otp'?'Неверный код. Проверьте время на телефоне и попробуйте ещё раз.':'Введите 6-значный код'}
    else er.textContent=r.error==='locked'?'Слишком много попыток. Попробуйте через 10 минут.':'Неверный логин или пароль'}
   catch(x){er.textContent='Нет связи с сервером'}b.disabled=false}}
@@ -396,20 +423,69 @@ async function register(tk){page({title:'Тестирование',body:authTabs
   if(p.length<4)return er.textContent=M.bad_pass;
   const b=f.querySelector('button');b.disabled=true;
   try{const r=await rpc('student_register',{p_login:l,p_pass:p,p_full_name:n,p_group:g,p_subject_id:sel});
-   if(r.ok){U={token:r.token,...r.user};sv('u',U);return go('/')}er.textContent=M[r.error]||'Ошибка регистрации'}
+   if(r.ok){U={token:r.token,...r.user};sv('u',U);appSession(U.token);syncPush();const af=ses&&ld('after',null,ses);if(af){sv('after',null,ses);return go(af)}return go('/')}er.textContent=M[r.error]||'Ошибка регистрации'}
   catch(x){er.textContent='Нет связи с сервером'}b.disabled=false}}
 const WA='https://wa.me/992179021717?text='+encodeURIComponent('Здравствуйте! Я забыл(а) логин или пароль на сайте тестов.');
 function support(){return `<a class="sup mt16" href="${WA}" target="_blank" rel="noopener"><span class="wa">${I.wa}</span><span class="tx"><span class="t1">Забыли пароль или логин?</span><span class="t2">Свяжитесь с администратором в WhatsApp</span></span><span class="ch">${I.chev}</span></a>`}
-function logout(){if(!confirm('Выйти из аккаунта?'))return;U=null;sv('u',null);go('/login')}
+function logout(){if(!confirm('Выйти из аккаунта?'))return;appSession(null);U=null;sv('u',null);go('/login')}
+
+/* ---------- announcements ---------- */
+const VAPID='BKVrMcc57DNxV4XnCpPffh5_Qxxl9VyjBkPCI4aJ1FCEzt7TRZXVwLgUb5pJrK676_SEqFMnP9fsIvW3XzpEQNo';
+const fmtDT=x=>new Date(x).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+const annKey=k=>k+':'+(U&&U.id);
+let ANN=null;
+const unread=()=>(ANN||[]).filter(a=>a.id>ld(annKey('annSeen'),0)).length;
+function annCard(a,nw){return `<div class="card ann${nw?' nw':''}"><span class="ic">${I.bell}</span><div class="bd"><div class="tx2">${esc(a.body)}</div>
+ <div class="mt">${a.event_at?`<span class="chipg">${I.cal} ${esc(fmtDT(a.event_at))}</span>`:''}${a.topic?`<span class="chipg">${I.book} ${esc(tname(a.topic))}</span>`:''}<span class="chipg">${I.users} ${a.group?'Группа '+esc(a.group):'Всем'}</span></div>
+ <div class="tm">${esc(fmtDT(a.created_at))}</div></div></div>`}
+async function loadAnn(){if(!U)return ANN;try{const r=await rpc('my_announcements',{p_token:U.token,p_after:0});if(Array.isArray(r))ANN=r}catch(e){}return ANN}
+/* show a system notification for announcements the device has not been told about yet */
+function notifyNew(){if(!U||!ANN||RUN)return;const k=annKey('annNote'),last=ld(k,null);const top=ANN.length?ANN[0].id:0;
+ if(last===null){sv(k,top);return}  /* first run on this device: don't replay old ones */
+ const fresh=ANN.filter(a=>a.id>last).reverse();if(!fresh.length)return;sv(k,top);
+ for(const a of fresh){const body=a.body+(a.event_at?'\nКогда: '+fmtDT(a.event_at):'')+(a.topic?'\nТема: '+tname(a.topic):'');
+  if(IS_APP){try{TestruApp.showNotice(a.id,'Объявление',body)}catch(e){}continue}
+  if(!('Notification' in window)||Notification.permission!=='granted')continue;
+  const o={body,tag:'ann-'+a.id,icon:'/icon-192.png',data:{url:'/#/news'}};
+  (navigator.serviceWorker&&navigator.serviceWorker.controller?navigator.serviceWorker.ready.then(r=>r.showNotification('Объявление',o)):Promise.reject()).catch(()=>{try{new Notification('Объявление',o)}catch(e){}})}}
+function setBadge(){const b=document.getElementById('bell');if(!b)return;const n=unread();b.innerHTML=I.bell+(n?`<span class="bdg">${n>9?'9+':n}</span>`:'')}
+async function pollAnn(){if(!U||RUN||document.hidden)return;await loadAnn();notifyNew();setBadge()}
+setInterval(pollAnn,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollAnn()});
+/* notification permission */
+const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function notifState(){if(IS_APP){try{return TestruApp.canNotify()?'on':'off'}catch(e){return 'na'}}
+ if(IOS&&!STANDALONE)return 'ios';if(!('Notification' in window))return 'na';
+ return Notification.permission==='granted'?'on':Notification.permission==='denied'?'denied':'off'}
+const b64u=x=>{const p='='.repeat((4-x.length%4)%4),r=atob((x+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+async function syncPush(){if(!U||IS_APP||!('serviceWorker' in navigator)||!('PushManager' in window)||Notification.permission!=='granted'||location.protocol!=='https:')return;
+ try{const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});
+  const j=sub.toJSON();await rpc('save_push_sub',{p_token:U.token,p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth})}catch(e){}}
+async function enableNotif(){if(IS_APP){try{TestruApp.requestNotify()}catch(e){}setTimeout(()=>route(),1500);return}
+ if(!('Notification' in window))return;let r;try{r=await Notification.requestPermission()}catch(e){}
+ if(r==='granted'){await syncPush();toast('Уведомления включены');sv(annKey('annNote'),ANN&&ANN.length?ANN[0].id:0)}
+ else if(r==='denied')toast('Уведомления запрещены в настройках браузера');route()}
+function notifCard(){const st=notifState();if(st==='on'||st==='na'||ld('ntfHide',false))return '';
+ const t=st==='ios'?'На iPhone: нажмите «Поделиться» → «На экран Домой», откройте сайт оттуда и включите уведомления.':st==='denied'?'Уведомления запрещены. Разрешите их в настройках браузера для этого сайта.':'Получайте объявления о тестах и рубежах сразу на телефон.';
+ return `<div class="card ntf mt16"><span class="ic">${I.bell}</span><div class="tx"><div class="t1" style="font-weight:500">Уведомления</div><div class="sub" style="font-size:13px;margin-top:2px">${t}</div></div>${st==='off'?`<button class="btn" id="ntfon">Включить</button>`:`<button class="ib" id="ntfx" aria-label="Скрыть">${I.x||'×'}</button>`}</div>`}
+function bindNotif(){const b=document.getElementById('ntfon');if(b)b.onclick=enableNotif;const x=document.getElementById('ntfx');if(x)x.onclick=()=>{sv('ntfHide',true);route()}}
+function appSession(t){if(IS_APP){try{TestruApp.setSession(t||'')}catch(e){}}}
+async function newsPage(tk){page({title:'Объявления',back:'/'});await loadAnn();if(tk!==RT)return;
+ const seen=ld(annKey('annSeen'),0),L=ANN||[];
+ main().innerHTML=notifCard()+(L.length?`<div class="stack${notifState()==='on'?'':' mt16'}">${L.map(a=>annCard(a,a.id>seen)).join('')}</div>`:'<div class="card empty mt16">Объявлений пока нет</div>');
+ bindNotif();if(L.length)sv(annKey('annSeen'),L[0].id)}
 
 /* ---------- student pages ---------- */
 const curSub=()=>SUBJ&&(SUBJ.find(s=>s.id===U.sid)||SUBJ[0]);
 const initials=n=>n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-async function home(tk){page({title:'Тестирование',right:`<button class="ib" id="lo" aria-label="Выйти">${I.out}</button>`});
- document.getElementById('lo').onclick=logout;
- let S,T=[];try{S=await subjects();const s=curSub();if(s){U.sid=s.id;T=await topicsOf(s.id)}}catch(e){return fail(e)}if(tk!==RT)return;
+async function home(tk){page({title:'Тестирование',right:`<a class="ib bellb" id="bell" href="#/news" aria-label="Объявления">${I.bell}</a>`});
+ let S,T=[];try{[S,T]=await Promise.all([subjects(),U.sid?topicsOf(U.sid):null,loadAnn()]);const s=curSub();if(s&&(!T||s.id!==U.sid)){U.sid=s.id;T=await topicsOf(s.id)}T=T||[]}catch(e){return fail(e)}if(tk!==RT)return;
+ rpc('my_topic_state',{p_token:U.token}).catch(()=>{});
+ const seen=ld(annKey('annSeen'),0),NW=(ANN||[]).filter(a=>a.id>seen).slice(0,2);
  const s=curSub();
  main().innerHTML=`<div class="card"><div class="prof"><span class="av">${esc(initials(U.name))}</span><div class="tx"><div class="nm">${esc(U.name)}</div><div class="sub" style="margin-top:2px;font-size:13px">Группа ${esc(U.group)} · ${esc(U.login)}</div></div></div><button class="lo2" id="lo3">${I.out} Выйти из профиля</button></div>
+ ${NW.length?`<div class="sec">Новые объявления</div><div class="stack">${NW.map(a=>annCard(a,true)).join('')}</div><a class="btn gh mt16" href="#/news">${I.bell} Все объявления</a>`:''}${notifCard()}
  <div class="sec">Язык теста</div>
  <a class="tile" href="#/lang"><span class="ic">${s?flag(s.code):I.globe}</span><span class="tx"><span class="t1">${s?esc(s.name):'Не выбран'}</span><span class="t2">Нажмите, чтобы сменить язык</span></span><span class="ch">${I.chev}</span></a>
  <div class="sec">Разделы</div>
@@ -418,7 +494,7 @@ async function home(tk){page({title:'Тестирование',right:`<button cl
  <div class="sec">Аккаунт</div>
  <a class="tile" href="#/account"><span class="ic">${I.key}</span><span class="tx"><span class="t1">Логин, пароль и 2FA</span><span class="t2">Данные для входа и двухфакторная защита</span></span><span class="ch">${I.chev}</span></a>
  <div class="sec">Поддержка</div>${support().replace(' mt16','')}`;
- document.getElementById('lo3').onclick=logout}
+ document.getElementById('lo3').onclick=logout;bindNotif();setBadge();notifyNew()}
 async function langPage(tk){page({title:'Язык теста',back:'/'});
  let S;try{S=await subjects()}catch(e){return fail(e)}if(tk!==RT)return;const c=curSub();
  main().innerHTML=`<div class="stack">${S.map(s=>`<button class="tile${c&&s.id===c.id?' on':''}" data-id="${s.id}"><span class="ic">${flag(s.code)}</span><span class="tx"><span class="t1">${esc(s.name)}</span></span><span class="ch">${c&&s.id===c.id?I.check:''}</span></button>`).join('')}</div>`;
@@ -434,14 +510,14 @@ async function testsPage(tk){page({title:'Тесты',back:'/'});
 let PREP=null;
 function stopRun(){if(RUN)clearInterval(RUN.tick);RUN=null;document.body.classList.remove('secure')}
 async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
- let T,L;try{T=(await api(`topics?select=id,title,time_limit,subject_id&id=eq.${tid}`))[0];if(T)L=(await topicsOf(T.subject_id)).find(x=>x.id===tid)}catch(e){return fail(e)}if(tk!==RT)return;
+ let T,L,MS=null,FLG=null;try{const[a,st,fl]=await Promise.all([api(`topics?select=id,title,time_limit,subject_id&id=eq.${tid}`),rpc('my_topic_state',{p_token:U.token}).catch(()=>null),rpc('student_flags',{p_token:U.token}).catch(()=>null)]);
+  T=a&&a[0];if(T)L=(await topicsOf(T.subject_id)).find(x=>x.id===tid);MS=(st||[]).find(x=>x.topic_id===tid);FLG=fl}catch(e){return fail(e)}if(tk!==RT)return;
  if(!T||!L)return go('/tests');
  if(!L.is_open){page({title:esc(tname(T.title)),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.lock}</span><div><div class="nm">Тема пока закрыта</div><div class="sub" style="font-size:13px;margin-top:2px">Администратор ещё не открыл эту тему. Попробуйте позже.</div></div></div></div>`});return}
  if(!L.qcount){main().innerHTML='<div class="card empty">В этой теме пока нет вопросов</div>';return}
  stopRun();const title=tname(T.title);
- let MS=null;try{MS=((await rpc('my_topic_state',{p_token:U.token}))||[]).find(x=>x.topic_id===tid)}catch(e){}if(tk!==RT)return;
  if(MS&&MS.attempts>0&&!MS.retake_allowed)return retakePage(tid,title,MS.retake_pending);
- if(L.require_app&&!IS_APP){let ex=false;try{const f=await rpc('student_flags',{p_token:U.token});ex=!!(f&&f.ios_exempt)}catch(e){}if(tk!==RT)return;
+ if(L.require_app&&!IS_APP){const ex=!!(FLG&&FLG.ios_exempt);
   if(!ex){page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.phone}</span><div><div class="nm">Только в приложении</div><div class="sub" style="font-size:13px;margin-top:2px">Этот тест можно пройти только в защищённом приложении для Android.</div></div></div><a class="btn mt20" href="${APK}" download="testru.apk">${I.down} Скачать приложение</a><p class="sub" style="font-size:12px;margin-top:10px">После установки войдите в приложение под своим логином и откройте этот тест.</p></div>
    <div class="card mt16 ios"><div class="prof"><span class="ic">${I.apple}</span><div><div class="t1" style="font-weight:500">У вас iPhone (iOS)?</div><div class="sub" style="font-size:13px;margin-top:2px">Приложения для iPhone нет. Обратитесь к администратору — он может разрешить пройти тест в браузере.</div></div></div>
    <button class="btn gh mt16" id="ios">${I.wa.replace('<svg','<svg style="width:18px;height:18px;color:#25D366"')} Написать администратору</button><div class="err" id="ier"></div></div>`});
@@ -586,20 +662,48 @@ function draw(){const R=document.getElementById('rs'),C=document.getElementById(
 
 /* ---------- admin ---------- */
 const arpc=async(fn,a)=>{const r=await rpc(fn,{p_login:ADM.l,p_pass:ADM.p,...a});if(r===null||r===false){alert('Сессия администратора недействительна. Войдите снова.');admOut(true);throw new Error('auth')}return r};
-function admOut(force){if(!force&&!confirm('Выйти из админ-панели?'))return;ADM=null;if(ses)sv('adm',null,ses);go('/login')}
+function admOut(force){if(!force&&!confirm('Выйти из админ-панели?'))return;ADM=null;sv('adm',null);go('/login')}
 const KIND={s:['Один ответ',I.one],x:['Несколько ответов',I.many],m:['Соответствие',I.pair]};
 function admin(p,tk){
  if(!p.length)return aHome(tk);
  if(p[0]==='s')return aSubject(+p[1],tk);if(p[0]==='t')return aTopic(+p[1],tk);
  if(p[0]==='q')return aQuestion({id:+p[1]},tk);if(p[0]==='new')return aQuestion({tid:+p[1],kind:p[2]},tk);
- if(p[0]==='students')return aStudents(tk);if(p[0]==='st')return aStudent(+p[1],tk);if(p[0]==='me')return aMe();go('/admin')}
+ if(p[0]==='news')return aNews(tk);if(p[0]==='students')return aStudents(tk);if(p[0]==='st')return aStudent(+p[1],tk);if(p[0]==='me')return aMe();go('/admin')}
+const GRX=/^[0-9]_[0-9]{2}\.[0-9]{2}\.[0-9]{2}(та|ра)$/i;
+async function aNews(tk){page({title:'Объявления',back:'/admin'});
+ let L,G,TT;try{const S=await subjects();[L,G,TT]=await Promise.all([arpc('admin_list_announcements',{}),arpc('admin_groups',{}),Promise.all(S.map(sb=>topicsOf(sb.id).then(l=>l.map(t=>({...t,sn:sb.name}))))).then(x=>x.flat())])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ main().innerHTML=`<form class="card" id="f" novalidate><label class="lbl" style="margin-top:0" for="bd">Текст объявления</label><textarea class="in" id="bd" maxlength="1000" placeholder="Например: Ребята, завтра рубежный контроль по теме 3. Не опаздывайте!" required></textarea>
+ <label class="lbl" for="dt">Дата и время (необязательно)</label><input class="in" id="dt" type="datetime-local">
+ <label class="lbl" for="tp">Тема (необязательно)</label><select class="in" id="tp"><option value="">— Без темы —</option>${TT.map(t=>`<option value="${t.id}">${esc(t.sn)} · ${esc(tname(t.title))}</option>`).join('')}</select>
+ <label class="lbl">Кому отправить</label><div class="seg2" id="who"><button type="button" class="on" data-w="all">${I.users} Всем</button><button type="button" data-w="grp">Группе</button></div>
+ <div id="gb" hidden><label class="lbl" for="gr">Группа</label><input class="in" id="gr" list="grl" maxlength="20" autocapitalize="none" spellcheck="false" placeholder="1_26.03.01та"><datalist id="grl">${G.filter(x=>GRX.test(x.g)).map(x=>`<option value="${esc(x.g)}">`).join('')}</datalist>
+ <div class="hint" id="gh">Формат: х_хх.хх.ххта или х_хх.хх.ххра — например 1_26.03.01та</div></div>
+ <button class="btn mt20" id="snd">${I.send} Отправить</button><div class="err" id="er"></div></form>
+ <div class="sec">Отправленные (${L.length})</div><div class="stack">${L.map(a=>`<div class="card ann"><span class="ic">${I.bell}</span><div class="bd"><div class="tx2">${esc(a.body)}</div>
+  <div class="mt">${a.event_at?`<span class="chipg">${I.cal} ${esc(fmtDT(a.event_at))}</span>`:''}${a.topic?`<span class="chipg">${I.book} ${esc(tname(a.topic))}</span>`:''}<span class="chipg">${I.users} ${a.group?'Группа '+esc(a.group):'Всем'} · ${plural(a.students,'студент','студента','студентов')}</span></div>
+  <div class="tm">${esc(fmtDT(a.created_at))}</div></div><button class="ib x" data-hide="${a.id}" aria-label="Удалить">${I.trash}</button></div>`).join('')||'<div class="card empty">Пока ничего не отправлено</div>'}</div>`;
+ const f=document.getElementById('f'),gr=document.getElementById('gr'),gh=document.getElementById('gh'),er=document.getElementById('er');let who='all';
+ document.querySelectorAll('#who button').forEach(b=>b.onclick=()=>{who=b.dataset.w;document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on',x===b));document.getElementById('gb').hidden=who!=='grp';if(who==='grp')gr.focus()});
+ const chk=()=>{const v=gr.value.trim(),ok=GRX.test(v);gr.classList.toggle('bad',!!v&&!ok);gh.classList.toggle('bad',!!v&&!ok);gh.textContent=!v||ok?'Формат: х_хх.хх.ххта или х_хх.хх.ххра — например 1_26.03.01та':'Неверный формат. Нужно так: 1_26.03.01та или 1_26.03.01ра';return ok};
+ gr.oninput=chk;
+ f.onsubmit=async e=>{e.preventDefault();er.textContent='';er.className='err';const body=f.bd.value.trim();
+  if(!body){er.textContent='Напишите текст объявления';f.bd.focus();return}
+  if(who==='grp'&&!chk()){er.textContent='Укажите группу в формате х_хх.хх.ххта или х_хх.хх.ххра';gr.focus();return}
+  const bt=document.getElementById('snd');bt.disabled=true;
+  try{const r=await arpc('admin_send_announcement',{p_body:body,p_event_at:f.dt.value?new Date(f.dt.value).toISOString():null,p_topic_id:+f.tp.value||null,p_group:who==='grp'?gr.value.trim().toLowerCase():null});
+   if(!r.ok){er.textContent=r.error==='group_format'?'Неверный формат группы':'Не удалось отправить';bt.disabled=false;return}
+   let dev='';try{const x=await fetch(SBU+'/functions/v1/announce',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({id:r.id})}).then(x=>x.json());if(x&&x.ok&&!x.skipped)dev=`, уведомление на ${plural(x.sent,'устройство','устройства','устройств')}`}catch(x){}
+   toast(`Отправлено: ${plural(r.students,'студент','студента','студентов')}${dev}`);aNews(++RT)}
+  catch(x){bt.disabled=false;if(x.message!=='auth')er.textContent=x instanceof NetErr?'Нет подключения к интернету':'Не удалось отправить'}};
+ main().querySelectorAll('[data-hide]').forEach(b=>b.onclick=async()=>{if(!await ask('Удалить объявление?','Студенты больше не увидят его.','Удалить'))return;try{await arpc('admin_hide_announcement',{p_id:+b.dataset.hide});aNews(++RT)}catch(x){}})}
 const langOpts=c=>LANGS.map(([k,n])=>`<option value="${k}"${k===c?' selected':''}>${n}</option>`).join('');
 async function aHome(tk){page({title:'Админ-панель',right:`<button class="ib" id="lo" aria-label="Выйти">${I.out}</button>`});document.getElementById('lo').onclick=()=>admOut();
- let S,C=[];try{S=await subjects(true);C=await Promise.all(S.map(s=>api(`topics?select=id&subject_id=eq.${s.id}`)))}catch(e){return fail(e)}if(tk!==RT)return;
+ let S,C=[];try{let all;[S,all]=await Promise.all([subjects(true),api('topics?select=id,subject_id')]);C=S.map(s=>all.filter(t=>t.subject_id===s.id))}catch(e){return fail(e)}if(tk!==RT)return;
  main().innerHTML=`<div class="card prof"><span class="av">${I.shield.replace('<svg','<svg style="width:20px;height:20px"')}</span><div><div class="nm">Администратор</div><div class="sub" style="margin-top:2px;font-size:13px">Управление языками, тестами и вопросами</div></div></div>
  <div class="sec">Языки тестов</div><div class="stack">${S.map((s,k)=>`<a class="tile" href="#/admin/s/${s.id}"><span class="ic">${flag(s.code)}</span><span class="tx"><span class="t1">${esc(s.name)}</span><span class="t2">${plural(C[k].length,'тема','темы','тем')}</span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Пока нет языков</div>'}</div>
  <div class="sec">Добавить язык</div><form class="card" id="f"><label class="lbl" style="margin-top:0">Название</label><input class="in" id="nm" maxlength="60" placeholder="Например: Английский язык" required>
  <label class="lbl">Флаг / иконка</label><select class="in" id="cd">${langOpts('en')}</select><button class="btn mt16">${I.plus} Добавить язык</button><div class="err" id="er"></div></form>
+ <div class="sec">Объявления</div><a class="tile" href="#/admin/news"><span class="ic">${I.bell}</span><span class="tx"><span class="t1">Объявления и уведомления</span><span class="t2">Сообщить всем или группе о рубеже, тесте, сроках</span></span><span class="ch">${I.chev}</span></a>
  <div class="sec">Пользователи</div><a class="tile" href="#/admin/students"><span class="ic">${I.users}</span><span class="tx"><span class="t1">Студенты</span><span class="t2">Аккаунты, смена логина и пароля</span></span><span class="ch">${I.chev}</span></a>
  <a class="tile mt16" href="#/admin/me"><span class="ic">${I.key}</span><span class="tx"><span class="t1">Безопасность администратора</span><span class="t2">Логин, пароль и Google Authenticator (2FA)</span></span><span class="ch">${I.chev}</span></a>`;
  const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();const n=f.nm.value.trim();if(!n)return;f.querySelector('button').disabled=true;
@@ -723,12 +827,13 @@ function aMe(){page({title:'Логин, пароль и 2FA',back:'/admin',body:
  const f=document.getElementById('f'),er=document.getElementById('er');
  f.onsubmit=async e=>{e.preventDefault();const c=credCheck(f,er,5);if(!c)return;const b=f.querySelector('button');b.disabled=true;
   try{const r=await arpc('admin_change_credentials',{p_new_login:c.l,p_new_pass:c.p});
-   if(r.ok){ADM.login=r.login;if(ses)sv('adm',ADM,ses);f.np.value=f.np2.value='';er.className='okm';er.textContent='Сохранено. Запомните новые данные для входа.'}
+   if(r.ok){ADM.login=r.login;sv('adm',ADM);f.np.value=f.np2.value='';er.className='okm';er.textContent='Сохранено. Запомните новые данные для входа.'}
    else er.textContent=AM[r.error]||(r.error==='bad_pass'?'Пароль должен быть не короче 5 символов':'Ошибка сохранения')}
   catch(x){if(x.message!=='auth')er.textContent='Ошибка сохранения'}b.disabled=false}}
 
 /* ---------- retakes: only with the administrator's permission ---------- */
-function retakePage(tid,title,pending){
+function retakePage(tid,title,pending){const tk0=RT;
+ setTimeout(function w(){if(RT!==tk0||!U)return;rpc('my_topic_state',{p_token:U.token},{fresh:1}).then(st=>{if(RT!==tk0)return;const m=(st||[]).find(x=>x.topic_id===tid);if(m&&m.retake_allowed){MC.clear();toast('Администратор разрешил пересдачу');route()}else setTimeout(w,8000)}).catch(()=>setTimeout(w,15000))},8000);
  page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic ok2">${I.check}</span><div><div class="nm">Тест уже пройден</div><div class="sub" style="font-size:13px;margin-top:2px">Повторная попытка возможна только с разрешения администратора.</div></div></div>
   ${pending?`<p class="sub" style="font-size:13px;margin-top:14px">Запрос уже отправлен — пожалуйста, ожидайте ответа администратора. Можно отправить напоминание.</p>`:''}
   <button class="btn gh mt16" id="rq">${I.wa.replace('<svg','<svg style="width:18px;height:18px;color:#25D366"')} ${pending?'Напомнить администратору':'Попросить пересдачу'}</button><div class="err" id="rer"></div>
@@ -738,7 +843,10 @@ function retakePage(tid,title,pending){
    const link=location.origin+location.pathname+'#/retake/'+r.code;
    const msg=`Здравствуйте! Прошу разрешить пересдать тест.\nТема: ${tname(r.topic)}\nСтудент: ${r.name}\nГруппа: ${r.group}\nЛогин: ${r.login}\n\nСсылка для администратора: ${link}`;
    location.href='https://wa.me/992179021717?text='+encodeURIComponent(msg)}catch(e){er.textContent='Нет связи с сервером'}b.disabled=false}}
-function onlyAdmin(code,kind,text){page({title:'Запрос',back:U?'/':'/login',body:`<div class="card" style="text-align:center;padding:30px 20px"><span class="ic" style="margin:0 auto 14px;width:52px;height:52px;border-radius:16px">${I.lock}</span>
+function onlyAdmin(code,kind,text){
+ /* nobody is signed in on this device: ask for the admin login right away, then come back here */
+ if(!U){if(ses)sv('after','/'+kind+'/'+code,ses);return go('/login')}
+ page({title:'Запрос',back:U?'/':'/login',body:`<div class="card" style="text-align:center;padding:30px 20px"><span class="ic" style="margin:0 auto 14px;width:52px;height:52px;border-radius:16px">${I.lock}</span>
   <div class="nm" style="font-family:Geologica,Onest,sans-serif;font-size:17px">Изменить может только администратор</div>
   <p class="sub" style="font-size:14px;margin-top:8px">${text}</p>
   <a class="btn gh sm" style="margin:18px auto 0" id="iam" href="#/login">Я администратор — войти</a></div>`});
@@ -810,5 +918,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 if(!IS_APP){const f=document.querySelector('footer'),a=document.createElement('a');a.className='fapp';a.href=APK;a.download='testru.apk';a.innerHTML=`${I.droid}<span>Приложение для Android</span>`;f.prepend(a)}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('/sw.js').catch(()=>{});
 flushQueue();
+if(U){appSession(U.token);syncPush()}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.open==='news'&&!RUN)go('/news')});
 route();
 </script></body></html>

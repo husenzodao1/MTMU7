@@ -80,9 +80,22 @@ public class MainActivity extends Activity {
         });
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        else web.loadUrl(HOME);
+        else web.loadUrl(isNews(getIntent()) ? HOME + "#/news" : HOME);
 
         showOnboardingIfNeeded();
+    }
+
+    private static boolean isNews(Intent i) {
+        return i != null && "news".equals(i.getStringExtra("open"));
+    }
+
+    /** A notification was tapped while the app is open: show announcements (never during a test). */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (isNews(intent) && web != null && !isPinned()) {
+            web.evaluateJavascript("if(typeof RUN==='undefined'||!RUN)location.hash='#/news'", null);
+        }
     }
 
     private boolean isAllowed(Uri uri) {
@@ -112,7 +125,8 @@ public class MainActivity extends Activity {
                 .setMessage("Это приложение нужно для честного прохождения тестов.\n\n"
                         + "• Снимки экрана и запись экрана заблокированы.\n"
                         + "• Во время теста экран будет закреплён — подтвердите «Закрепить», когда система спросит.\n"
-                        + "• Выход из приложения, открепление экрана или переход в другое приложение завершат тест с баллом 0.\n\n"
+                        + "• Выход из приложения, открепление экрана или переход в другое приложение завершат тест с баллом 0.\n"
+                        + "• Объявления администратора (рубежи, сроки) будут приходить уведомлениями.\n\n"
                         + "Сейчас приложение попросит разрешения. Пожалуйста, разрешите их.")
                 .setCancelable(false)
                 .setPositiveButton("Продолжить", (d, w) -> {
@@ -155,6 +169,40 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean isPinned() {
             return MainActivity.this.isPinned();
+        }
+
+        /** Logged-in student's session, used by the background announcement check. Empty = logged out. */
+        @JavascriptInterface
+        public void setSession(String token) {
+            Notifier.setSession(MainActivity.this, token);
+        }
+
+        @JavascriptInterface
+        public void showNotice(long id, String title, String body) {
+            if (!MainActivity.this.isPinned()) Notifier.show(MainActivity.this, id, title, body);
+        }
+
+        @JavascriptInterface
+        public boolean canNotify() {
+            return Notifier.allowed(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void requestNotify() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= 33
+                        && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        && !getSharedPreferences("testru", MODE_PRIVATE).getBoolean("ntfAsked", false)) {
+                    getSharedPreferences("testru", MODE_PRIVATE).edit().putBoolean("ntfAsked", true).apply();
+                    requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_PERMISSIONS);
+                } else {
+                    // Denied before (or switched off): open the app's notification settings.
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName()));
+                    } catch (Exception ignored) { }
+                }
+            });
         }
 
         @JavascriptInterface
