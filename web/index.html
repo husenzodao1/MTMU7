@@ -206,6 +206,7 @@ body.secure{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none
 .pg.ro button{cursor:default}
 .fapp{display:inline-flex;align-items:center;gap:6px;margin:0 auto 18px;padding:5px 11px 5px 8px;border-radius:99px;border:1px solid var(--ln);background:var(--card);font-size:11.5px;color:var(--mu);transition:color .15s,border-color .15s}
 .fapp:hover{color:var(--fg);border-color:var(--fa)}.fapp svg{width:14px;height:14px;color:#3DDC84}
+.apic2{flex:none;width:38px;height:38px;border-radius:12px;background:#3DDC84;color:#0b2e1a;display:grid;place-items:center}.apic2 svg{width:22px;height:22px}
 footer{text-align:center;padding:12px 20px 32px}
 footer>span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--fa);margin-bottom:4px}
 footer em{font-family:"Instrument Serif",Georgia,serif;font-size:24px;letter-spacing:.01em;color:var(--fg)}
@@ -293,14 +294,14 @@ async function subjects(force){if(!SUBJ||force)SUBJ=await api('subjects?select=i
 const topicsOf=sid=>rpc('list_topics',{p_subject_id:sid});
 const qcount=t=>t.qcount||0;
 const IS_APP=typeof window.TestruApp!=='undefined';
-const APK='https://github.com/husenzodao1/MTMU7/releases/download/testru-app/testru.apk';
+const APK='/testru.apk';
 
 /* ---------- state & router ---------- */
 let U=ld('u',null),ADM=ses?ld('adm',null,ses):null,RUN=null,LAST=null,RT=0,skip=false,prevHash=location.hash||'#/';
 const go=p=>{location.hash='#'+p};
 function page(o){$.innerHTML=`<header class="bar">${o.back!=null?`<a class="bk" href="#${o.back}" aria-label="Назад">${I.back}</a>`:`<span class="logo">${I.logo}</span>`}<div class="ttl">${o.title||''}</div><div class="rt">${o.right||''}</div></header>${appBanner()}<main>${o.body||'<div class="ld">Загрузка…</div>'}</main>`;const x=document.getElementById('apx');if(x)x.onclick=e=>{e.preventDefault();sv('apphide',Date.now());document.querySelector('.appb').remove()};scrollTo(0,0)}
 function appBanner(){if(IS_APP||RUN||PREP||location.hash.startsWith('#/admin'))return '';const h=ld('apphide',0);if(h&&Date.now()-h<3*864e5)return '';
- return `<a class="appb" href="${APK}"><span class="apic">${I.droid}</span><span class="tx"><span class="t1">Установите приложение для Android</span><span class="t2">Защищённый режим тестов</span></span><span class="apdl">${I.down}</span><button class="apx" id="apx" aria-label="Скрыть">${I.x}</button></a>`}
+ return `<a class="appb" href="${APK}" download="testru.apk"><span class="apic">${I.droid}</span><span class="tx"><span class="t1">Установите приложение для Android</span><span class="t2">Защищённый режим тестов</span></span><span class="apdl">${I.down}</span><button class="apx" id="apx" aria-label="Скрыть">${I.x}</button></a>`}
 const main=()=>$.querySelector('main');
 const fail=e=>{const m=main();if(m)m.innerHTML=`<div class="card empty">Не удалось загрузить данные. Проверьте интернет и обновите страницу.</div>`};
 window.addEventListener('hashchange',route);
@@ -396,7 +397,7 @@ async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
  if(!T||!L)return go('/tests');
  if(!L.qcount){main().innerHTML='<div class="card empty">В этой теме пока нет вопросов</div>';return}
  stopRun();const title=tname(T.title);
- if(L.require_app&&!IS_APP){page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.phone}</span><div><div class="nm">Только в приложении</div><div class="sub" style="font-size:13px;margin-top:2px">Этот тест можно пройти только в защищённом приложении для Android.</div></div></div><a class="btn mt20" href="${APK}">${I.down} Скачать приложение</a><p class="sub" style="font-size:12px;margin-top:10px">После установки войдите в приложение под своим логином и откройте этот тест.</p></div>`});return}
+ if(L.require_app&&!IS_APP){page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.phone}</span><div><div class="nm">Только в приложении</div><div class="sub" style="font-size:13px;margin-top:2px">Этот тест можно пройти только в защищённом приложении для Android.</div></div></div><a class="btn mt20" href="${APK}" download="testru.apk">${I.down} Скачать приложение</a><p class="sub" style="font-size:12px;margin-top:10px">После установки войдите в приложение под своим логином и откройте этот тест.</p></div>`});return}
  const n=L.pick_count?Math.min(L.pick_count,L.qcount):L.qcount;PREP={tid,title};
  const tm=L.q_time>0?`${L.q_time} сек на каждый вопрос, вопросов: ${n}. Когда время вопроса выходит, тест переходит к следующему.`:`${L.time_limit} мин на ${plural(n,'вопрос','вопроса','вопросов')}. Когда время выйдет, тест завершится автоматически.`;
  const R_=[[I.full,'Полный экран',IS_APP?'Приложение закрепит экран: выйти из теста, свернуть приложение или сделать снимок экрана нельзя.':'Тест откроется во весь экран. Выход из полноэкранного режима завершит тест.'],[I.win,'Не покидайте окно','Переход в другую вкладку, окно или приложение — тест сразу завершается с баллом 0, даже если окно не закрыто.'],[I.cam,'Без снимков экрана',IS_APP?'В приложении снимки и запись экрана заблокированы системой.':'Скриншоты и копирование запрещены. Попытка снимка экрана завершает тест с баллом 0.'],[I.clock,'Время ограничено',tm]];
@@ -687,6 +688,15 @@ async function twofa(kind,token){const box=document.createElement('div');box.inn
    try{const x=await rpc('totp_enable',{p_kind:kind,p_token:token,p_code:c,p_on:true});if(x.ok)on();else er.textContent=x.error==='bad_otp'?'Неверный код. Проверьте, что время на телефоне установлено автоматически.':'Сессия устарела. Войдите заново.'}catch(e){er.textContent='Нет связи с сервером'}}};
  st()}
 
-if(!IS_APP){const f=document.querySelector('footer'),a=document.createElement('a');a.className='fapp';a.href=APK;a.innerHTML=`${I.droid}<span>Приложение для Android</span>`;f.prepend(a)}
+/* download the APK from this site and explain how to install it */
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href="'+APK+'"]');if(!a||e.target.closest('.apx'))return;
+ setTimeout(()=>{const d=document.createElement('div');d.className='modal';
+  d.innerHTML=`<div class="mbox"><div class="prof" style="margin-bottom:6px"><span class="apic2">${I.droid}</span><h2 style="font-size:17px">Установка приложения</h2></div>
+  <ol class="steps" style="margin-top:14px"><li><b>Дождитесь загрузки</b><span>Файл testru.apk (около 15 КБ) скачивается сейчас.</span></li>
+  <li><b>Откройте файл</b><span>Нажмите на уведомление о загрузке или откройте «Файлы → Загрузки → testru.apk».</span></li>
+  <li><b>Разрешите установку</b><span>Если телефон спросит — разрешите установку из этого источника (браузера), затем вернитесь и нажмите «Установить». Если появится Play Защита — нажмите «Подробнее → Всё равно установить».</span></li></ol>
+  <button class="btn mt16" data-ok>Понятно</button></div>`;
+  document.body.appendChild(d);d.querySelector('[data-ok]').onclick=()=>d.remove();d.onclick=x=>{if(x.target===d)d.remove()}},150)});
+if(!IS_APP){const f=document.querySelector('footer'),a=document.createElement('a');a.className='fapp';a.href=APK;a.download='testru.apk';a.innerHTML=`${I.droid}<span>Приложение для Android</span>`;f.prepend(a)}
 route();
 </script></body></html>
