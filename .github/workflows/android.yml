@@ -57,3 +57,47 @@ jobs:
             Сборка №${{ github.run_number }}.
           files: testru.apk
           make_latest: false
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: testru-apk
+
+      - name: Check signature and manifest
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --verbose --print-certs testru.apk
+          "$BT/aapt2" dump badging testru.apk | head -20
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+
+      - name: Install and launch on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          disable-animations: true
+          script: |
+            adb install -r testru.apk
+            adb shell pm list packages | grep tj.testru.app
+            adb logcat -c
+            adb shell monkey -p tj.testru.app -c android.intent.category.LAUNCHER 1
+            sleep 20
+            adb shell pidof tj.testru.app && echo "APP IS RUNNING"
+            adb exec-out screencap -p > screen.png || true
+            adb logcat -d -s AndroidRuntime:E chromium:E ActivityManager:W > logcat.txt || true
+            grep -i "FATAL EXCEPTION" logcat.txt && exit 1 || echo "no crash"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-check
+          path: |
+            screen.png
+            logcat.txt
