@@ -71,8 +71,10 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .seg{display:flex;gap:2px;padding:3px;background:var(--sf);border-radius:12px;border:1px solid var(--ln)}
 .seg>*{flex:1;height:36px;border-radius:9px;color:var(--mu);font-size:14px;font-weight:500;display:grid;place-items:center;transition:background .15s,color .15s}
 .seg .on{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 1px var(--ln)}
-.hero{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:28px 2px 22px}
-.hero .logo{width:48px;height:48px;border-radius:14px}.hero .logo svg{width:22px;height:22px}
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:26px 2px 20px}
+.hero .logo{width:44px;height:44px;border-radius:13px;margin-bottom:4px}.hero .logo svg{width:20px;height:20px}
+.hero h1{font-size:20px;letter-spacing:-.02em}.hero .sub{margin:0;font-size:13px}
+.seg>* svg{width:15px;height:15px;flex:none}.seg>a{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px}
 .langs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .lng{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--ln);border-radius:12px;background:var(--card);text-align:left;font-size:14px;font-weight:500;transition:border-color .15s}
 .lng.on{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
@@ -202,8 +204,10 @@ body.secure{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none
 .appb .apdl{flex:none;width:34px;height:34px;border-radius:10px;background:var(--fg);color:var(--card);display:grid;place-items:center}.appb .apdl svg{width:16px;height:16px}
 .appb .apx{flex:none;width:26px;height:34px;display:grid;place-items:center;color:var(--fa)}.appb .apx svg{width:14px;height:14px}
 .pg.ro button{cursor:default}
+.fapp{display:inline-flex;align-items:center;gap:6px;margin:0 auto 18px;padding:5px 11px 5px 8px;border-radius:99px;border:1px solid var(--ln);background:var(--card);font-size:11.5px;color:var(--mu);transition:color .15s,border-color .15s}
+.fapp:hover{color:var(--fg);border-color:var(--fa)}.fapp svg{width:14px;height:14px;color:#3DDC84}
 footer{text-align:center;padding:12px 20px 32px}
-footer span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--fa);margin-bottom:4px}
+footer>span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--fa);margin-bottom:4px}
 footer em{font-family:"Instrument Serif",Georgia,serif;font-size:24px;letter-spacing:.01em;color:var(--fg)}
 @media(max-width:380px){.add3{grid-template-columns:1fr}.kv{grid-template-columns:1fr 1fr}}
 </style></head><body><div id="app"></div><footer><span>Created by</span><em>Ibrohimkhon and Ruslan</em></footer>
@@ -245,6 +249,8 @@ const I={
  many:sv_('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12.5l2.5 2.5L16 9.5"/>'),
  pair:sv_('<path d="M4 7h6M4 17h6M14 7h6M14 17h6"/><path d="M10 7l4 10M10 17l4-10"/>'),
  user:sv_('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+ signin:sv_('<path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>'),
+ userplus:sv_('<circle cx="9" cy="8" r="3.6"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/>'),
  phone:sv_('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
  down:sv_('<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 20h14"/>',2),
  droid:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 9.2h10.8a.8.8 0 0 1 .8.8v6.6a1.6 1.6 0 0 1-1.6 1.6h-.6v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-3.2v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-.6a1.6 1.6 0 0 1-1.6-1.6V10a.8.8 0 0 1 .8-.8zM4 9.6a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 4 9.6zm16 0a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 20 9.6zM8.3 3.2l1 1.5A5.9 5.9 0 0 1 12 4.1c1 0 1.9.2 2.7.6l1-1.5a.3.3 0 0 1 .5.3l-1 1.5a5.3 5.3 0 0 1 2.9 3.6H5.9a5.3 5.3 0 0 1 2.9-3.6l-1-1.5a.3.3 0 0 1 .5-.3zM9.6 6.2a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zm4.8 0a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"/></svg>`,
@@ -294,7 +300,7 @@ let U=ld('u',null),ADM=ses?ld('adm',null,ses):null,RUN=null,LAST=null,RT=0,skip=
 const go=p=>{location.hash='#'+p};
 function page(o){$.innerHTML=`<header class="bar">${o.back!=null?`<a class="bk" href="#${o.back}" aria-label="Назад">${I.back}</a>`:`<span class="logo">${I.logo}</span>`}<div class="ttl">${o.title||''}</div><div class="rt">${o.right||''}</div></header>${appBanner()}<main>${o.body||'<div class="ld">Загрузка…</div>'}</main>`;const x=document.getElementById('apx');if(x)x.onclick=e=>{e.preventDefault();sv('apphide',Date.now());document.querySelector('.appb').remove()};scrollTo(0,0)}
 function appBanner(){if(IS_APP||RUN||PREP||location.hash.startsWith('#/admin'))return '';const h=ld('apphide',0);if(h&&Date.now()-h<3*864e5)return '';
- return `<a class="appb" href="${APK}"><span class="apic">${I.droid}</span><span class="tx"><span class="t1">Установите приложение для Android</span><span class="t2">Защищённый режим тестов · без скриншотов</span></span><span class="apdl">${I.down}</span><button class="apx" id="apx" aria-label="Скрыть">${I.x}</button></a>`}
+ return `<a class="appb" href="${APK}"><span class="apic">${I.droid}</span><span class="tx"><span class="t1">Установите приложение для Android</span><span class="t2">Защищённый режим тестов</span></span><span class="apdl">${I.down}</span><button class="apx" id="apx" aria-label="Скрыть">${I.x}</button></a>`}
 const main=()=>$.querySelector('main');
 const fail=e=>{const m=main();if(m)m.innerHTML=`<div class="card empty">Не удалось загрузить данные. Проверьте интернет и обновите страницу.</div>`};
 window.addEventListener('hashchange',route);
@@ -310,8 +316,8 @@ function route(){
   case 'done':return donePage();case 'results':return resultsPage(tk);case 'account':return accountPage();case 'login':case 'register':return go('/');default:return go('/')}}
 
 /* ---------- auth ---------- */
-function authTabs(on){return `<div class="hero"><span class="logo">${I.logo}</span><div><h1>${on==='in'?'Вход':'Регистрация'}</h1><p class="sub">${on==='in'?'Войдите по логину и паролю.':'Создайте аккаунт, чтобы проходить тесты.'}</p></div></div>
- <div class="seg"><a href="#/login" class="${on==='in'?'on':''}">Вход</a><a href="#/register" class="${on==='up'?'on':''}">Регистрация</a></div>`}
+function authTabs(on){return `<div class="hero"><span class="logo">${I.logo}</span><h1>${on==='in'?'Вход':'Регистрация'}</h1><p class="sub">${on==='in'?'Войдите по логину и паролю':'Создайте аккаунт для прохождения тестов'}</p></div>
+ <div class="seg"><a href="#/login" class="${on==='in'?'on':''}">${I.signin}<span>Вход</span></a><a href="#/register" class="${on==='up'?'on':''}">${I.userplus}<span>Регистрация</span></a></div>`}
 function login(){page({title:'Тестирование',body:authTabs('in')+`<form class="card mt16" id="f" autocomplete="on">
  <label class="lbl" for="lg" style="margin-top:0">Логин</label><input class="in" id="lg" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required>
  <label class="lbl" for="pw">Пароль</label><input class="in" id="pw" type="password" name="password" autocomplete="current-password" maxlength="72" required>
@@ -681,5 +687,6 @@ async function twofa(kind,token){const box=document.createElement('div');box.inn
    try{const x=await rpc('totp_enable',{p_kind:kind,p_token:token,p_code:c,p_on:true});if(x.ok)on();else er.textContent=x.error==='bad_otp'?'Неверный код. Проверьте, что время на телефоне установлено автоматически.':'Сессия устарела. Войдите заново.'}catch(e){er.textContent='Нет связи с сервером'}}};
  st()}
 
+if(!IS_APP){const f=document.querySelector('footer'),a=document.createElement('a');a.className='fapp';a.href=APK;a.innerHTML=`${I.droid}<span>Приложение для Android</span>`;f.prepend(a)}
 route();
 </script></body></html>
