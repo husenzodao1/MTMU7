@@ -44,6 +44,10 @@ h2{font-family:Geologica,Onest,sans-serif;font-size:18px;font-weight:400;letter-
 .tile .t2{display:block;font-size:13px;color:var(--mu);margin-top:1px}
 .tile .ch{flex:none;color:var(--fa)}.tile .ch svg{width:16px;height:16px}
 .tile.on{border-color:var(--fg)}
+.tile.off{opacity:.5;background:var(--sf);box-shadow:none}.tile.off:hover{border-color:var(--ln)}.tile.off .num{background:transparent}
+.lkc{display:inline-flex;align-items:center;gap:4px}.lkc svg{width:12px;height:12px}
+.opn{display:flex;align-items:center;gap:12px}.opn .tx{flex:1}.opn .st{font-size:13px;color:var(--fa);margin-top:2px}
+.sw{position:relative;width:46px;height:28px;border-radius:99px;background:var(--ln);border:0;padding:0;flex:none;transition:background .2s}.sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.sw.on{background:var(--ok)}.sw.on::after{transform:translateX(18px)}
 .ic{flex:none;width:42px;height:42px;border-radius:13px;background:var(--sf);display:grid;place-items:center}
 .ic svg{width:20px;height:20px}
 .num{flex:none;width:42px;height:42px;border-radius:13px;background:var(--sf);display:grid;place-items:center;font-family:Geologica,Onest,sans-serif;font-weight:300;font-size:13px;color:var(--mu)}
@@ -325,7 +329,7 @@ setInterval(flushQueue,20000);
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}
 let SUBJ=null;
 async function subjects(force){if(!SUBJ||force)SUBJ=await api('subjects?select=id,name,code,sort&order=sort,id');return SUBJ}
-const topicsOf=sid=>rpc('list_topics',{p_subject_id:sid});
+const topicsOf=sid=>rpc('list_topics2',{p_subject_id:sid});
 const qcount=t=>t.qcount||0;
 const IS_APP=typeof window.TestruApp!=='undefined';
 const APK='/testru.apk';
@@ -423,7 +427,8 @@ async function testsPage(tk){page({title:'Тесты',back:'/'});
  let T,ST={};try{await subjects();const s=curSub();if(!s){main().innerHTML='<div class="card empty">Тестов пока нет</div>';return}let st;[T,st]=await Promise.all([topicsOf(s.id),rpc('my_topic_state',{p_token:U.token}).catch(()=>[])]);(st||[]).forEach(x=>ST[x.topic_id]=x)}catch(e){return fail(e)}if(tk!==RT)return;
  const s=curSub(),b=ld('best2',{});
  $.querySelector('.ttl').innerHTML=esc(s.name);$.querySelector('.rt').innerHTML=flag(s.code);
- main().innerHTML=T.length?`<div class="stack">${T.map((t,k)=>`<a class="tile" href="#/test/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин${b[t.id]!=null?' · лучший '+b[t.id]+'%':''}</span>${ST[t.id]&&ST[t.id].attempts>0?`<span class="rmeta"><span class="chipg ${ST[t.id].retake_allowed?'okc':''}">${ST[t.id].retake_allowed?'Пересдача разрешена':ST[t.id].retake_pending?'Пройден · запрос на пересдачу отправлен':'Пройден'}</span></span>`:''}</span><span class="ch">${I.chev}</span></a>`).join('')}</div>`:'<div class="card empty">В этом языке пока нет тестов</div>'}
+ main().innerHTML=T.length?`<div class="stack">${T.map((t,k)=>!t.is_open?`<button class="tile off" data-closed="1"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">Пока закрыта</span></span><span class="ch">${I.lock}</span></button>`:`<a class="tile" href="#/test/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин${b[t.id]!=null?' · лучший '+b[t.id]+'%':''}</span>${ST[t.id]&&ST[t.id].attempts>0?`<span class="rmeta"><span class="chipg ${ST[t.id].retake_allowed?'okc':''}">${ST[t.id].retake_allowed?'Пересдача разрешена':ST[t.id].retake_pending?'Пройден · запрос на пересдачу отправлен':'Пройден'}</span></span>`:''}</span><span class="ch">${I.chev}</span></a>`).join('')}</div>`:'<div class="card empty">В этом языке пока нет тестов</div>';
+ main().querySelectorAll('[data-closed]').forEach(b=>b.onclick=()=>toast('Эта тема пока закрыта. Администратор откроет её позже.'))}
 
 /* ---------- test ---------- */
 let PREP=null;
@@ -431,6 +436,7 @@ function stopRun(){if(RUN)clearInterval(RUN.tick);RUN=null;document.body.classLi
 async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
  let T,L;try{T=(await api(`topics?select=id,title,time_limit,subject_id&id=eq.${tid}`))[0];if(T)L=(await topicsOf(T.subject_id)).find(x=>x.id===tid)}catch(e){return fail(e)}if(tk!==RT)return;
  if(!T||!L)return go('/tests');
+ if(!L.is_open){page({title:esc(tname(T.title)),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.lock}</span><div><div class="nm">Тема пока закрыта</div><div class="sub" style="font-size:13px;margin-top:2px">Администратор ещё не открыл эту тему. Попробуйте позже.</div></div></div></div>`});return}
  if(!L.qcount){main().innerHTML='<div class="card empty">В этой теме пока нет вопросов</div>';return}
  stopRun();const title=tname(T.title);
  let MS=null;try{MS=((await rpc('my_topic_state',{p_token:U.token}))||[]).find(x=>x.topic_id===tid)}catch(e){}if(tk!==RT)return;
@@ -460,7 +466,7 @@ async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
   else{try{const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;if(rq){await rq.call(el,{navigationUI:'hide'});fs=true}}catch(e){}}
   let r;try{r=await rpc('start_attempt',{p_token:U.token,p_topic_id:tid})}catch(e){r={ok:false,error:e instanceof NetErr?'net':'server'}}
   if(!r.ok&&r.error==='retake_needed'){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}return retakePage(tid,title,false)}
-  if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent={session:'Сессия устарела. Выйдите и войдите заново.',net:'Нет подключения к интернету. Чтобы начать тест, нужен интернет — после начала тест работает и без него.',empty:'В этой теме нет вопросов.',not_found:'Тема не найдена.'}[r.error]||'Не удалось начать тест. Попробуйте ещё раз.';gb.disabled=false;return}
+  if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent={session:'Сессия устарела. Выйдите и войдите заново.',net:'Нет подключения к интернету. Чтобы начать тест, нужен интернет — после начала тест работает и без него.',empty:'В этой теме нет вопросов.',closed:'Эта тема закрыта администратором.',not_found:'Тема не найдена.'}[r.error]||'Не удалось начать тест. Попробуйте ещё раз.';gb.disabled=false;return}
   begin(fs,r)}}
 const appUnlock=()=>{if(IS_APP){try{TestruApp.unlockTask()}catch(e){}}};
 function begin(fs,r){const P=PREP;if(!P)return;PREP=null;
@@ -605,16 +611,16 @@ async function aSubject(id,tk){page({title:'Язык',back:'/admin'});
  <label class="lbl">Название</label><input class="in" id="nm" maxlength="60" value="${esc(s.name)}" required>
  <label class="lbl">Флаг / иконка</label><select class="in" id="cd">${langOpts(s.code)}</select>
  <div class="nav"><button type="button" class="btn dg" id="del">${I.trash} Удалить</button><button class="btn">Сохранить</button></div><div class="err" id="er"></div></form>
- <div class="sec">Темы (${T.length})</div><div class="stack">${T.map((t,k)=>`<a class="tile" href="#/admin/t/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин</span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Тем пока нет</div>'}</div>
- <div class="sec">Новая тема</div><form class="card" id="nt"><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" placeholder="Например: Тема 9. Моя семья" required>
+ <div class="sec">Темы (${T.length})</div><div class="stack">${T.map((t,k)=>`<a class="tile" href="#/admin/t/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин</span><span class="rmeta"><span class="chipg lkc ${t.is_open?'okc':''}">${t.is_open?'Открыта':I.lock+' Закрыта'}</span></span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Тем пока нет</div>'}</div>
+ <div class="sec">Новая тема</div><form class="card" id="nt"><p class="sub lkc" style="font-size:12px;margin:0 0 10px">${I.lock} Новая тема создаётся закрытой — откройте её, когда вопросы будут готовы.</p><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" placeholder="Например: Тема 9. Моя семья" required>
  <label class="lbl">Время на тест, минут</label><input class="in" id="tl" type="number" min="1" max="180" value="10" required><button class="btn mt16">${I.plus} Создать тему</button></form>`;
  const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();try{await arpc('admin_save_subject',{p_id:id,p_name:f.nm.value.trim(),p_code:f.cd.value});SUBJ=null;aSubject(id,++RT)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения'}};
  document.getElementById('del').onclick=async()=>{if(!confirm(`Удалить язык «${s.name}» вместе со всеми темами и вопросами?`))return;try{await arpc('admin_delete',{p_kind:'subject',p_id:id});SUBJ=null;go('/admin')}catch(x){}};
  const n=document.getElementById('nt');n.onsubmit=async e=>{e.preventDefault();try{const t=await arpc('admin_save_topic',{p_id:null,p_subject_id:id,p_title:n.tt.value.trim(),p_time_limit:+n.tl.value||10});go('/admin/t/'+t)}catch(x){}}}
 async function aTopic(id,tk){page({title:'Тема',back:'/admin'});
- let T,Q;try{[T,Q]=await Promise.all([api(`topics?select=id,title,time_limit,subject_id,pick_count,q_time,no_back,require_app&id=eq.${id}`),arpc('admin_get_questions',{p_topic_id:id})])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ let T,Q;try{[T,Q]=await Promise.all([api(`topics?select=id,title,time_limit,subject_id,pick_count,q_time,no_back,require_app,is_open&id=eq.${id}`),arpc('admin_get_questions',{p_topic_id:id})])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
  if(!T[0])return go('/admin');T=T[0];
- page({title:esc(tname(T.title)),back:'/admin/s/'+T.subject_id,body:`<form class="card" id="f"><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" value="${esc(T.title)}" required>
+ page({title:esc(tname(T.title)),back:'/admin/s/'+T.subject_id,body:`<div class="card opn" style="margin-bottom:16px"><span class="ic">${T.is_open?I.check:I.lock}</span><div class="tx"><div class="t1" style="font-weight:500">${T.is_open?'Тема открыта':'Тема закрыта'}</div><div class="st">${T.is_open?'Ученики видят тему и могут её пройти.':'Ученики видят тему серой с замком и не могут её начать.'}</div></div><button type="button" class="sw${T.is_open?' on':''}" id="opn" role="switch" aria-checked="${!!T.is_open}" aria-label="Открыть тему для учеников"></button></div><form class="card" id="f"><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" value="${esc(T.title)}" required>
  <label class="lbl">Время на тест, минут</label><input class="in" id="tl" type="number" min="1" max="180" value="${T.time_limit}" required>
  <label class="lbl">Сколько вопросов выдавать каждому (0 — все)</label><input class="in" id="pc" type="number" min="0" max="500" value="${T.pick_count||0}">
  <p class="sub" style="font-size:12px;margin-top:6px">Каждый студент получит случайный набор из банка вопросов этой темы.</p>
@@ -625,6 +631,7 @@ async function aTopic(id,tk){page({title:'Тема',back:'/admin'});
  <div class="sec">Добавить вопрос</div><div class="add3">${Object.entries(KIND).map(([k,[n,ic]])=>`<a class="btn gh" href="#/admin/new/${id}/${k}">${ic}<span>${n}</span></a>`).join('')}</div>
  <div class="sec">Вопросы (${Q.length})</div><div class="stack">${Q.map((q,k)=>`<div class="card"><div class="qrow"><span class="num" style="width:34px;height:34px;border-radius:10px;font-size:12px">${k+1}</span><div class="tx"><span class="tag">${KIND[q.kind][0]}</span><div class="qt">${esc(q.text)}</div></div></div>
  <div class="acts"><button class="ib" data-mv="${q.id}" data-d="-1" aria-label="Выше"${k===0?' disabled style="opacity:.3"':''}>${I.up}</button><button class="ib" data-mv="${q.id}" data-d="1" aria-label="Ниже"${k===Q.length-1?' disabled style="opacity:.3"':''}>${I.down}</button><span style="flex:1"></span><a class="ib" href="#/admin/q/${q.id}" aria-label="Изменить">${I.edit}</a><button class="ib dgr" data-del="${q.id}" aria-label="Удалить">${I.trash}</button></div></div>`).join('')||'<div class="card empty">Вопросов пока нет</div>'}</div>`});
+ const ob=document.getElementById('opn');ob.onclick=async()=>{ob.disabled=true;try{await arpc('admin_set_topic_open',{p_id:id,p_open:!T.is_open});toast(T.is_open?'Тема закрыта':'Тема открыта для учеников');aTopic(id,++RT)}catch(x){ob.disabled=false;if(x.message!=='auth')toast('Не удалось изменить доступ')}};
  const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();try{await arpc('admin_save_topic2',{p_id:id,p_subject_id:T.subject_id,p_title:f.tt.value.trim(),p_time_limit:+f.tl.value||10,p_pick_count:+f.pc.value||0,p_q_time:+f.qt2.value||0,p_no_back:f.nb.checked,p_require_app:f.ra.checked});aTopic(id,++RT)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения'}};
  document.getElementById('del').onclick=async()=>{if(!confirm('Удалить эту тему вместе со всеми вопросами?'))return;try{await arpc('admin_delete',{p_kind:'topic',p_id:id});go('/admin/s/'+T.subject_id)}catch(x){}};
  main().querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Удалить вопрос?'))return;try{await arpc('admin_delete',{p_kind:'question',p_id:+b.dataset.del});aTopic(id,++RT)}catch(x){}});
