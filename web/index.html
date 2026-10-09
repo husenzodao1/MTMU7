@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)">
+<title>Тестирование</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111'/%3E%3Cpath d='M10 16.5l4 4 8-9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500&family=Onest:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f7f8;--card:#fff;--fg:#0b0b0c;--mu:#6e6e73;--fa:#a1a1a6;--ln:#ebebed;--sf:#f2f2f4;--ok:#1a7f37;--no:#c62828;--sh:0 1px 2px rgba(16,16,20,.04),0 4px 16px rgba(16,16,20,.04);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0b0c;--card:#141416;--fg:#f2f2f3;--mu:#8e8e93;--fa:#5c5c60;--ln:#232326;--sf:#1c1c1f;--ok:#3fb950;--no:#f0605a;--sh:none;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0b0c;--card:#141416;--fg:#f2f2f3;--mu:#8e8e93;--fa:#5c5c60;--ln:#232326;--sf:#1c1c1f;--ok:#3fb950;--no:#f0605a;--sh:none;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 Onest,ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
+svg{display:block}
+.U{font-family:Geologica,Onest,sans-serif}
+#app{max-width:620px;margin:0 auto;min-height:100vh;padding:0 16px 40px}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;height:60px;padding-top:env(safe-area-inset-top);margin:0 -16px 20px;padding-left:16px;padding-right:16px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--ln)}
+.bk,.logo,.ib{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;border:1px solid var(--ln);background:var(--card);transition:background .15s}
+.bk:hover,.ib:hover{background:var(--sf)}
+.logo{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.bk svg,.logo svg,.ib svg{width:18px;height:18px}
+.ttl{flex:1;min-width:0;font-family:Geologica,Onest,sans-serif;font-size:14px;font-weight:500;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt{flex:none;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mu);font-variant-numeric:tabular-nums}
+.tm.low{color:var(--no)}
+h1{font-family:Geologica,Onest,sans-serif;font-size:26px;font-weight:400;letter-spacing:-.03em;line-height:1.2}
+h2{font-family:Geologica,Onest,sans-serif;font-size:18px;font-weight:400;letter-spacing:-.02em;line-height:1.45}
+.sub{color:var(--mu);margin-top:6px}
+.sec{font-size:11px;color:var(--fa);text-transform:uppercase;letter-spacing:.12em;margin:26px 2px 10px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:18px;box-shadow:var(--sh)}
+.stack{display:grid;gap:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:14px 16px;box-shadow:var(--sh);transition:border-color .15s,transform .15s}
+.tile:hover{border-color:var(--fa)}
+.tile:active{transform:scale(.99)}
+.tile.v{flex-direction:column;align-items:flex-start;gap:16px;padding:18px}
+.tile .tx{flex:1;min-width:0}
+.tile .t1{display:block;font-weight:500}
+.tile .t2{display:block;font-size:13px;color:var(--mu);margin-top:1px}
+.tile .ch{flex:none;color:var(--fa)}.tile .ch svg{width:16px;height:16px}
+.tile.on{border-color:var(--fg)}
+.ic{flex:none;width:42px;height:42px;border-radius:13px;background:var(--sf);display:grid;place-items:center}
+.ic svg{width:20px;height:20px}
+.num{flex:none;width:42px;height:42px;border-radius:13px;background:var(--sf);display:grid;place-items:center;font-family:Geologica,Onest,sans-serif;font-weight:300;font-size:13px;color:var(--mu)}
+.flag{flex:none;width:30px;height:20px;border-radius:5px;overflow:hidden;box-shadow:0 0 0 1px var(--ln)}
+.flag svg{width:100%;height:100%}
+.ic .flag{width:26px;height:17px;border-radius:4px}
+.av{flex:none;width:48px;height:48px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-family:Geologica,Onest,sans-serif;font-size:15px;font-weight:400}
+.prof{display:flex;align-items:center;gap:14px}
+.prof .nm{font-family:Geologica,Onest,sans-serif;font-size:16px;font-weight:400;letter-spacing:-.015em}
+.lbl{display:block;font-size:12px;color:var(--mu);margin:16px 2px 6px;font-weight:500}
+.in{width:100%;height:48px;padding:0 14px;border:1px solid var(--ln);border-radius:12px;background:var(--card);outline:0;transition:border-color .15s}
+textarea.in{height:auto;min-height:88px;padding:12px 14px;resize:vertical;line-height:1.5}
+.in:focus{border-color:var(--fg)}
+.in::placeholder{color:var(--fa)}
+select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 19px) 21px,calc(100% - 14px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border-radius:12px;background:var(--fg);color:var(--bg);font-weight:500;transition:opacity .15s}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.gh{background:var(--card);color:var(--fg);border:1px solid var(--ln)}
+.btn.dg{background:transparent;color:var(--no);border:1px solid var(--ln)}
+.btn.sm{height:38px;width:auto;padding:0 14px;font-size:14px;border-radius:10px}
+.btn svg{width:16px;height:16px}
+.mt16{margin-top:16px}.mt20{margin-top:20px}
+.err{color:var(--no);font-size:13px;margin-top:12px;min-height:20px}
+.okm{color:var(--ok);font-size:13px;margin-top:12px}
+.seg{display:flex;gap:2px;padding:3px;background:var(--sf);border-radius:12px;border:1px solid var(--ln)}
+.seg>*{flex:1;height:36px;border-radius:9px;color:var(--mu);font-size:14px;font-weight:500;display:grid;place-items:center;transition:background .15s,color .15s}
+.seg .on{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 1px var(--ln)}
+.hero{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:28px 2px 22px}
+.hero .logo{width:48px;height:48px;border-radius:14px}.hero .logo svg{width:22px;height:22px}
+.langs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.lng{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--ln);border-radius:12px;background:var(--card);text-align:left;font-size:14px;font-weight:500;transition:border-color .15s}
+.lng.on{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.empty{color:var(--mu);padding:28px 8px;text-align:center;font-size:14px}
+.ld{color:var(--fa);padding:40px 0;text-align:center;font-size:14px}
+/* test */
+.prog{margin:-8px 0 22px}.bar2{height:3px;border-radius:3px;background:var(--ln);overflow:hidden}.bar2 i{display:block;height:100%;background:var(--fg);transition:width .25s}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:8px;font-variant-numeric:tabular-nums}
+.qc{padding:22px 18px}
+.hint{color:var(--mu);font-size:13px;margin:8px 0 16px}
+.opt{display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;padding:14px 16px;border:1px solid var(--ln);border-radius:12px;margin-top:8px;background:var(--card);transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--fa)}
+.opt.sel{border-color:var(--fg);background:var(--sf)}
+.box{flex:none;width:18px;height:18px;border:1.5px solid var(--fa);margin-top:2px;display:grid;place-items:center}
+.r .box{border-radius:50%}.c .box{border-radius:5px}
+.sel .box{border-color:var(--fg);background:var(--fg)}
+.sel.r .box::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--card)}
+.sel.c .box::after{content:"";width:8px;height:4px;border:solid var(--card);border-width:0 0 1.5px 1.5px;transform:translateY(-1px) rotate(-45deg)}
+.no_{flex:none;display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:6px;background:var(--sf);color:var(--mu);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.mtb{border:1px solid var(--ln);border-radius:12px;overflow:hidden}
+.mrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;border-top:1px solid var(--ln);background:var(--card);transition:background .15s}
+.mrow:first-child{border-top:0}
+.mrow .ml{flex:1;font-weight:500;min-width:0}
+.mrow .mv{flex:none;max-width:48%;text-align:right;color:var(--fa);font-size:14px}
+.mrow.fil .mv{color:var(--fg)}
+.mrow.on{background:var(--sf);box-shadow:inset 3px 0 0 var(--fg)}
+.mrow.on .no_,.chip.mine .no_,.mrow.fil .no_{background:var(--fg);color:var(--card)}
+.plbl{font-size:12px;color:var(--mu);margin:20px 2px 8px;font-weight:500}
+.pool{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--ln);border-radius:12px;text-align:left;background:var(--card);transition:border-color .15s,background .15s,opacity .15s}
+.chip:hover{border-color:var(--fa)}
+.chip.used{opacity:.45}
+.chip.mine{opacity:1;border-color:var(--fg);background:var(--sf)}
+.nav{display:flex;gap:10px;margin-top:16px}
+.pg{display:flex;flex-wrap:wrap;gap:6px}
+.pg button{width:36px;height:36px;border-radius:10px;font-size:13px;color:var(--fa);border:1px solid var(--ln);background:var(--card);font-variant-numeric:tabular-nums}
+.pg button.dn{color:var(--fg);background:var(--sf);border-color:var(--sf)}
+.pg button.cur{border-color:var(--fg);color:var(--fg)}
+/* done */
+.big{font-family:Geologica,Onest,sans-serif;font-size:56px;font-weight:300;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:22px;color:var(--fa);letter-spacing:0}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px}
+.kv span{background:var(--sf);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--mu)}
+.kv b{display:block;font-size:16px;color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.rv{padding:14px 0;border-top:1px solid var(--ln)}.rv:first-child{border-top:0;padding-top:0}
+.rv .q{font-weight:500;display:flex;gap:10px;justify-content:space-between}
+.rv .q span{flex:none;font-size:12px;font-weight:500}
+.ok{color:var(--ok)}.no{color:var(--no)}
+.rl{font-size:14px;margin-top:6px;color:var(--mu);display:flex;gap:10px}
+.rl i{font-style:normal;width:14px;flex:none}
+.rl.ok,.rl.ok i{color:var(--ok)}.rl.no,.rl.no i{color:var(--no)}
+/* results */
+.srch{position:relative}
+.srch svg{position:absolute;left:14px;top:50%;width:16px;height:16px;transform:translateY(-50%);color:var(--fa);pointer-events:none}
+.srch .in{padding-left:40px;-webkit-appearance:none}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.filters .in{height:42px;font-size:14px}
+.filters .in:nth-child(3){grid-column:1/-1}
+.cnt{font-size:12px;color:var(--fa);margin:14px 2px 8px}
+.rrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--ln)}
+.rrow:first-child{border-top:0;padding-top:0}.rrow:last-child{padding-bottom:0}
+.rrow .tx{flex:1;min-width:0}.rrow .t1{display:block;font-weight:500}.rrow .t2{display:block;font-size:12px;color:var(--mu);margin-top:1px}
+.sc{flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--mu)}
+.gr{flex:none;min-width:58px;padding:6px 10px;border-radius:12px;background:var(--sf);text-align:center;line-height:1.15}
+.gr small{display:block;font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.08em}
+.gr b{font-family:Geologica,Onest,sans-serif;font-size:16px;font-weight:400}.gr b i{font-style:normal;font-size:11px;color:var(--fa)}
+.note{font-size:12px;color:var(--fa);margin:16px 2px 0}
+/* admin */
+.tag{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--sf);color:var(--mu)}
+.qrow{display:flex;gap:12px;align-items:flex-start}
+.qrow .tx{flex:1;min-width:0}
+.qrow .qt{margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.acts{display:flex;gap:6px;margin-top:12px}
+.acts .ib{width:34px;height:34px;border-radius:10px}.acts .ib svg{width:15px;height:15px}
+.acts .ib.dgr{color:var(--no)}
+.erow{display:flex;gap:8px;align-items:center;margin-top:8px}
+.erow .in{height:44px}
+.erow .tg{flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--ln);display:grid;place-items:center;background:var(--card);color:var(--fa)}
+.erow .tg.on{background:var(--fg);border-color:var(--fg);color:var(--card)}
+.erow .tg svg{width:16px;height:16px}
+.erow .x{flex:none;width:36px;height:44px;display:grid;place-items:center;color:var(--fa)}
+.erow .x svg{width:16px;height:16px}
+.erow .ar{flex:none;color:var(--fa)}
+.add3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.add3 .btn{height:auto;min-height:48px;padding:8px;font-size:13px;flex-direction:column;gap:4px}
+.sup{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:1px solid color-mix(in srgb,#25D366 35%,var(--ln));background:color-mix(in srgb,#25D366 7%,var(--card));transition:transform .15s,border-color .15s}
+.sup:hover{border-color:#25D366}.sup:active{transform:scale(.99)}
+.sup .wa{flex:none;width:44px;height:44px;border-radius:14px;background:#25D366;color:#25D366;display:grid;place-items:center;box-shadow:0 6px 18px -6px rgba(37,211,102,.7)}
+.sup .wa svg{width:26px;height:26px;color:#fff}
+.sup .wa svg path:last-child{fill:#25D366}
+.sup .tx{flex:1;min-width:0}.sup .t1{display:block;font-weight:500}.sup .t2{display:block;font-size:13px;color:var(--mu)}
+.sup .ch{color:var(--fa)}.sup .ch svg{width:16px;height:16px}
+.lo2{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:42px;margin-top:16px;border-radius:12px;border:1px solid var(--ln);color:var(--mu);font-size:14px;font-weight:500}
+.lo2:hover{color:var(--no);border-color:color-mix(in srgb,var(--no) 40%,var(--ln))}.lo2 svg{width:16px;height:16px}
+.rmeta{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
+.chipg{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--sf);color:var(--fg)}
+.rrow .t3{display:block;font-size:12px;color:var(--fa);margin-top:3px}
+.steps{margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{position:relative;padding:0 0 22px 40px;counter-increment:st}
+.steps li:last-child{padding-bottom:0}
+.steps li::before{content:counter(st);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--fg);color:var(--card);display:grid;place-items:center;font-size:12px;font-weight:600}
+.steps li:not(:last-child)::after{content:"";position:absolute;left:12.5px;top:30px;bottom:6px;width:1px;background:var(--ln)}
+.steps b{display:block;font-weight:500;margin-bottom:2px}.steps span{display:block;font-size:13px;color:var(--mu)}
+.steps a{text-decoration:underline;text-underline-offset:2px;color:var(--fg)}
+.steps .btn{text-decoration:none}
+.qrw{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:12px}
+.qr{flex:none;width:184px;height:184px;padding:8px;background:#fff;border-radius:12px;border:1px solid var(--ln);display:grid;place-items:center}
+.qr img,.qr canvas{display:block}
+.qrk{flex:1;min-width:180px}.qrk code{display:block;font:500 14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;word-break:break-all;background:var(--sf);border-radius:10px;padding:10px 12px;color:var(--fg)}
+.otp{font:500 22px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5em;text-align:center}
+.ic.ok2{background:color-mix(in srgb,var(--ok) 14%,var(--card));color:var(--ok)}
+.rules{display:grid;gap:14px;margin-top:18px}
+.rule{display:flex;gap:12px;align-items:flex-start}.rule .ic{width:36px;height:36px;border-radius:11px}.rule .ic svg{width:17px;height:17px}
+.rule b{display:block;font-weight:500}.rule span{display:block;font-size:13px;color:var(--mu)}
+.agree{display:flex;gap:10px;align-items:center;margin-top:20px;font-size:14px;cursor:pointer}.agree input{width:18px;height:18px;accent-color:var(--fg)}
+.viol{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin-bottom:12px;border-radius:16px;border:1px solid color-mix(in srgb,var(--no) 40%,var(--ln));background:color-mix(in srgb,var(--no) 8%,var(--card));color:var(--no)}
+.viol svg{flex:none;width:20px;height:20px;margin-top:1px}.viol b{display:block}.viol span{display:block;font-size:13px;color:var(--mu)}
+.chipg.vio{background:color-mix(in srgb,var(--no) 12%,var(--card));color:var(--no)}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,10,12,.45);display:grid;place-items:center;padding:20px;backdrop-filter:blur(4px)}
+.mbox{width:100%;max-width:380px;background:var(--card);border:1px solid var(--ln);border-radius:20px;padding:22px}
+.mbox .sub{margin-top:8px}
+body.secure{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.appb{display:flex;align-items:center;gap:12px;margin:-8px 0 18px;padding:10px 10px 10px 12px;border-radius:16px;border:1px solid var(--ln);background:linear-gradient(135deg,color-mix(in srgb,#3DDC84 10%,var(--card)),var(--card) 70%);box-shadow:var(--sh)}
+.appb .apic{flex:none;width:38px;height:38px;border-radius:12px;background:#3DDC84;color:#0b2e1a;display:grid;place-items:center;box-shadow:0 6px 16px -8px rgba(61,220,132,.9)}
+.appb .apic svg{width:22px;height:22px}
+.appb .tx{flex:1;min-width:0}.appb .t1{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.appb .t2{display:block;font-size:12px;color:var(--mu)}
+.appb .apdl{flex:none;width:34px;height:34px;border-radius:10px;background:var(--fg);color:var(--card);display:grid;place-items:center}.appb .apdl svg{width:16px;height:16px}
+.appb .apx{flex:none;width:26px;height:34px;display:grid;place-items:center;color:var(--fa)}.appb .apx svg{width:14px;height:14px}
+.pg.ro button{cursor:default}
+footer{text-align:center;padding:12px 20px 32px}
+footer span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--fa);margin-bottom:4px}
+footer em{font-family:"Instrument Serif",Georgia,serif;font-size:24px;letter-spacing:.01em;color:var(--fg)}
+@media(max-width:380px){.add3{grid-template-columns:1fr}.kv{grid-template-columns:1fr 1fr}}
+</style></head><body><div id="app"></div><footer><span>Created by</span><em>Ibrohimkhon and Ruslan</em></footer>
+<script>
+const SBU='https://mcbqcneytgnnzxcmxddm.supabase.co',KEY='sb_publishable_m8KFtrf0lJblTvHmU4g_Gg_J8eo_x_J';
+const $=document.getElementById('app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+// 10-point scale: share of correct answers × 10, rounded (e.g. 9 of 18 → 5, 17 of 18 → 9)
+const grade=p=>Math.max(0,Math.min(10,Math.round(p*10)));
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const cap=s=>s.toLowerCase().replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toUpperCase());
+const ld=(k,d,S=localStorage)=>{try{const v=S.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const sv=(k,v,S=localStorage)=>{try{v==null?S.removeItem(k):S.setItem(k,JSON.stringify(v))}catch(e){}};
+const ses=(()=>{try{return sessionStorage}catch(e){return null}})();
+const tname=t=>String(t).replace(/^тема\s*\d+\.\s*/i,'').replace(/\.$/,'').trim().split(/(?<=\.)\s+/).map(x=>{
+ const up=(x.match(/[А-ЯЁ]/g)||[]).length,lo=(x.match(/[а-яё]/g)||[]).length;
+ return up>lo?x.toLowerCase().replace(/^[а-яё]/,c=>c.toUpperCase()).replace(/(^|\s)[сС]ми(?=[\s,.]|$)/g,m=>m.replace(/[сС]ми/,'СМИ')):x}).join(' ');
+const plural=(n,a,b,c)=>{const m=n%10,h=n%100;return n+' '+(m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c)};
+
+/* ---------- icons ---------- */
+const sv_=(d,w=1.7)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I={
+ back:sv_('<path d="M15 18l-6-6 6-6"/>',2),chev:sv_('<path d="M9 6l6 6-6 6"/>',2),
+ logo:sv_('<path d="M5 12.5l4.5 4.5L19 7.5"/>',2.4),
+ book:sv_('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/><path d="M9 7.5h7"/>'),
+ chart:sv_('<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/>'),
+ globe:sv_('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/>'),
+ out:sv_('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>'),
+ search:sv_('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',2),
+ clock:sv_('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+ plus:sv_('<path d="M12 5v14M5 12h14"/>',2),edit:sv_('<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
+ trash:sv_('<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>'),
+ up:sv_('<path d="M12 19V5M6 11l6-6 6 6"/>'),down:sv_('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+ check:sv_('<path d="M5 12.5l4.5 4.5L19 7.5"/>',2.4),x:sv_('<path d="M6 6l12 12M18 6L6 18"/>',2),
+ shield:sv_('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'),
+ users:sv_('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>'),
+ one:sv_('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/>'),
+ many:sv_('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12.5l2.5 2.5L16 9.5"/>'),
+ pair:sv_('<path d="M4 7h6M4 17h6M14 7h6M14 17h6"/><path d="M10 7l4 10M10 17l4-10"/>'),
+ user:sv_('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+ phone:sv_('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
+ down:sv_('<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 20h14"/>',2),
+ droid:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 9.2h10.8a.8.8 0 0 1 .8.8v6.6a1.6 1.6 0 0 1-1.6 1.6h-.6v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-3.2v2.4a1.2 1.2 0 0 1-2.4 0v-2.4h-.6a1.6 1.6 0 0 1-1.6-1.6V10a.8.8 0 0 1 .8-.8zM4 9.6a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 4 9.6zm16 0a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1-2.4 0v-4.6A1.2 1.2 0 0 1 20 9.6zM8.3 3.2l1 1.5A5.9 5.9 0 0 1 12 4.1c1 0 1.9.2 2.7.6l1-1.5a.3.3 0 0 1 .5.3l-1 1.5a5.3 5.3 0 0 1 2.9 3.6H5.9a5.3 5.3 0 0 1 2.9-3.6l-1-1.5a.3.3 0 0 1 .5-.3zM9.6 6.2a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zm4.8 0a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"/></svg>`,
+ full:sv_('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+ win:sv_('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M9 14l6 0M13 12l2 2-2 2"/>'),
+ cam:sv_('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/><path d="M3 3l18 18"/>'),
+ lock:sv_('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>'),
+ alert:sv_('<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',1.9),
+ key:sv_('<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3"/><path d="M16 7l3 3"/><path d="M14 9l2 2"/>'),
+ wa:`<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="currentColor"/><path d="M9.2 7.9c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.9 4.5 3.9 2.2.9 2.7.7 3.1.6.5 0 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3l-1.6-.8c-.2-.1-.4-.1-.6.1l-.7.9c-.1.2-.3.2-.5.1-.3-.1-1.1-.4-2-1.3-.8-.7-1.3-1.5-1.4-1.8-.2-.3 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.5z" fill="#fff"/></svg>`,
+ help:sv_('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5v.4"/><path d="M12 17h.01"/>',1.9),
+};
+/* ---------- flags ---------- */
+const star=(cx,cy,r,f)=>{let p=[];for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5,rr=k%2?r*.4:r;p.push((cx+rr*Math.cos(a)).toFixed(2)+','+(cy+rr*Math.sin(a)).toFixed(2))}return `<polygon points="${p.join(' ')}" fill="${f}"/>`};
+const hz=(c)=>{const h=24/c.length;return c.map((x,k)=>`<rect y="${k*h}" width="36" height="${h+.1}" fill="${x}"/>`).join('')};
+const vt=(c)=>{const w=36/c.length;return c.map((x,k)=>`<rect x="${k*w}" width="${w+.1}" height="24" fill="${x}"/>`).join('')};
+const FL={
+ ru:hz(['#fff','#0039A6','#D52B1E']),
+ tj:`<rect width="36" height="7" fill="#CC0000"/><rect y="7" width="36" height="10" fill="#fff"/><rect y="17" width="36" height="7" fill="#006600"/><path d="M15.6 14.4h4.8l-.5-2-1 .9-1-1.4-1 1.4-1-.9z" fill="#F8C300"/>`+[[14.2,11.6],[14.9,10.4],[16.3,9.4],[18,9],[19.7,9.4],[21.1,10.4],[21.8,11.6]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r=".5" fill="#F8C300"/>`).join(''),
+ en:`<rect width="36" height="24" fill="#012169"/><path d="M0 0L36 24M36 0L0 24" stroke="#fff" stroke-width="4.8"/><path d="M0 0L36 24M36 0L0 24" stroke="#C8102E" stroke-width="1.6"/><path d="M18 0v24M0 12h36" stroke="#fff" stroke-width="8"/><path d="M18 0v24M0 12h36" stroke="#C8102E" stroke-width="4.8"/>`,
+ uz:`<rect width="36" height="24" fill="#fff"/><rect width="36" height="7.6" fill="#0099B5"/><rect y="16.4" width="36" height="7.6" fill="#1EB53A"/><rect y="7.6" width="36" height=".6" fill="#CE1126"/><rect y="15.8" width="36" height=".6" fill="#CE1126"/><circle cx="5.4" cy="3.8" r="2.6" fill="#fff"/><circle cx="6.5" cy="3.8" r="2.3" fill="#0099B5"/>`,
+ de:hz(['#000','#DD0000','#FFCE00']),fr:vt(['#0055A4','#fff','#EF4135']),it:vt(['#009246','#fff','#CE2B37']),
+ tr:`<rect width="36" height="24" fill="#E30A17"/><circle cx="13" cy="12" r="6" fill="#fff"/><circle cx="14.6" cy="12" r="4.8" fill="#E30A17"/>`+star(21,12,2.6,'#fff'),
+ zh:`<rect width="36" height="24" fill="#DE2910"/>`+star(6,6,3.6,'#FFDE00')+star(12,2.4,1.2,'#FFDE00')+star(14.4,4.8,1.2,'#FFDE00')+star(14.4,8.4,1.2,'#FFDE00')+star(12,10.8,1.2,'#FFDE00'),
+ fa:hz(['#239F40','#fff','#DA0000'])+`<circle cx="18" cy="12" r="2.2" fill="none" stroke="#DA0000" stroke-width=".9"/>`,
+ kk:`<rect width="36" height="24" fill="#00AFCA"/><circle cx="18" cy="10.5" r="4" fill="#FEC50C"/><path d="M12 17c2-1.5 4-2 6-2s4 .5 6 2" stroke="#FEC50C" stroke-width="1.2" fill="none"/>`,
+ ky:`<rect width="36" height="24" fill="#E8112D"/><circle cx="18" cy="12" r="5.4" fill="#FFEF00"/><circle cx="18" cy="12" r="3.4" fill="#E8112D"/><circle cx="18" cy="12" r="2.4" fill="#FFEF00"/>`,
+ ar:`<rect width="36" height="24" fill="#006C35"/><path d="M10 10.5h16M11 13h13" stroke="#fff" stroke-width="1.1"/><path d="M12 16.5h12" stroke="#fff" stroke-width=".9"/>`,
+ es:hz(['#AA151B','#F1BF00','#F1BF00','#AA151B']),
+};
+const LANGS=[['ru','Русский'],['tj','Тоҷикӣ'],['en','English'],['uz',"O'zbek"],['kk','Қазақ'],['ky','Кыргыз'],['tr','Türkçe'],['fa','فارسی'],['ar','العربية'],['de','Deutsch'],['fr','Français'],['es','Español'],['it','Italiano'],['zh','中文']];
+const flag=c=>`<span class="flag"><svg viewBox="0 0 36 24" preserveAspectRatio="none">${FL[c]||`<rect width="36" height="24" fill="#e5e5ea"/><text x="18" y="16" font-size="10" font-family="system-ui" font-weight="600" text-anchor="middle" fill="#555">${esc((c||'?').toUpperCase())}</text>`}</svg></span>`;
+
+/* ---------- API ---------- */
+async function api(path,opt={}){const r=await fetch(SBU+'/rest/v1/'+path,{...opt,headers:{apikey:KEY,'Content-Type':'application/json',...(opt.headers||{})}});
+ if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();return t?JSON.parse(t):null}
+const rpc=(fn,a)=>api('rpc/'+fn,{method:'POST',body:JSON.stringify(a)});
+let SUBJ=null;
+async function subjects(force){if(!SUBJ||force)SUBJ=await api('subjects?select=id,name,code,sort&order=sort,id');return SUBJ}
+const topicsOf=sid=>rpc('list_topics',{p_subject_id:sid});
+const qcount=t=>t.qcount||0;
+const IS_APP=typeof window.TestruApp!=='undefined';
+const APK='https://github.com/husenzodao1/MTMU7/releases/download/testru-app/testru.apk';
+
+/* ---------- state & router ---------- */
+let U=ld('u',null),ADM=ses?ld('adm',null,ses):null,RUN=null,LAST=null,RT=0,skip=false,prevHash=location.hash||'#/';
+const go=p=>{location.hash='#'+p};
+function page(o){$.innerHTML=`<header class="bar">${o.back!=null?`<a class="bk" href="#${o.back}" aria-label="Назад">${I.back}</a>`:`<span class="logo">${I.logo}</span>`}<div class="ttl">${o.title||''}</div><div class="rt">${o.right||''}</div></header>${appBanner()}<main>${o.body||'<div class="ld">Загрузка…</div>'}</main>`;const x=document.getElementById('apx');if(x)x.onclick=e=>{e.preventDefault();sv('apphide',Date.now());document.querySelector('.appb').remove()};scrollTo(0,0)}
+function appBanner(){if(IS_APP||RUN||PREP||location.hash.startsWith('#/admin'))return '';const h=ld('apphide',0);if(h&&Date.now()-h<3*864e5)return '';
+ return `<a class="appb" href="${APK}"><span class="apic">${I.droid}</span><span class="tx"><span class="t1">Установите приложение для Android</span><span class="t2">Защищённый режим тестов · без скриншотов</span></span><span class="apdl">${I.down}</span><button class="apx" id="apx" aria-label="Скрыть">${I.x}</button></a>`}
+const main=()=>$.querySelector('main');
+const fail=e=>{const m=main();if(m)m.innerHTML=`<div class="card empty">Не удалось загрузить данные. Проверьте интернет и обновите страницу.</div>`};
+window.addEventListener('hashchange',route);
+function route(){
+ if(skip){skip=false;return}
+ const p=(location.hash.slice(1)||'/').split('/').filter(Boolean);
+ if(RUN&&!RUN.done&&p[0]!=='test'&&p[0]!=='done'){skip=true;location.hash=prevHash;ask('Выйти из теста?','Если выйти сейчас, тест будет завершён с баллом 0.','Выйти, балл 0').then(y=>{if(y)violate('Тест прерван учеником')});return}
+ if(PREP&&p[0]!=='test')PREP=null;
+ prevHash=location.hash||'#/';const tk=++RT;
+ if(p[0]==='admin'){if(!ADM)return go('/login');return admin(p.slice(1),tk)}
+ if(!U){if(p[0]==='register')return register(tk);if(p[0]!=='login')return go('/login');return login()}
+ switch(p[0]){case undefined:return home(tk);case 'lang':return langPage(tk);case 'tests':return testsPage(tk);case 'test':return startTest(+p[1],tk);
+  case 'done':return donePage();case 'results':return resultsPage(tk);case 'account':return accountPage();case 'login':case 'register':return go('/');default:return go('/')}}
+
+/* ---------- auth ---------- */
+function authTabs(on){return `<div class="hero"><span class="logo">${I.logo}</span><div><h1>${on==='in'?'Вход':'Регистрация'}</h1><p class="sub">${on==='in'?'Войдите по логину и паролю.':'Создайте аккаунт, чтобы проходить тесты.'}</p></div></div>
+ <div class="seg"><a href="#/login" class="${on==='in'?'on':''}">Вход</a><a href="#/register" class="${on==='up'?'on':''}">Регистрация</a></div>`}
+function login(){page({title:'Тестирование',body:authTabs('in')+`<form class="card mt16" id="f" autocomplete="on">
+ <label class="lbl" for="lg" style="margin-top:0">Логин</label><input class="in" id="lg" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required>
+ <label class="lbl" for="pw">Пароль</label><input class="in" id="pw" type="password" name="password" autocomplete="current-password" maxlength="72" required>
+ <div id="otpb" hidden><label class="lbl" for="otp">Код из Google Authenticator</label><input class="in otp" id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"><p class="sub" style="font-size:12px;margin-top:6px">${I.lock.replace('<svg','<svg style="width:13px;height:13px;display:inline;vertical-align:-2px"')} Для этого аккаунта включена двухфакторная защита</p></div>
+ <button class="btn mt20" type="submit">Войти</button><div class="err" id="er"></div></form>${support()}`});
+ const f=document.getElementById('f'),er=document.getElementById('er');
+ f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;er.textContent='';
+  const l=f.lg.value.trim().toLowerCase(),p=f.pw.value;
+  const ob=document.getElementById('otpb'),ot=f.otp.value.replace(/\D/g,'');
+  try{const r=await rpc('auth_login',{p_login:l,p_pass:p,p_otp:ob.hidden?null:ot});
+   if(r.ok&&r.admin){ADM={l:'#session',p:r.token,login:r.login};if(ses)sv('adm',ADM,ses);return go('/admin')}
+   if(r.ok){U={token:r.token,...r.user};sv('u',U);return go('/')}
+   if(r.need_otp){const first=ob.hidden;ob.hidden=false;f.otp.focus();if(!first||r.error==='bad_otp')er.textContent=r.error==='bad_otp'?'Неверный код. Проверьте время на телефоне и попробуйте ещё раз.':'Введите 6-значный код'}
+   else er.textContent=r.error==='locked'?'Слишком много попыток. Попробуйте через 10 минут.':'Неверный логин или пароль'}
+  catch(x){er.textContent='Нет связи с сервером'}b.disabled=false}}
+async function register(tk){page({title:'Тестирование',body:authTabs('up')+'<div class="ld">Загрузка…</div>'});
+ let S;try{S=await subjects()}catch(e){return fail(e)}if(tk!==RT)return;
+ let sel=S[0]?S[0].id:null;
+ main().innerHTML=authTabs('up')+`<form class="card mt16" id="f" autocomplete="off">
+ <span class="lbl" style="margin-top:0">Язык теста</span><div class="langs" id="ls">${S.map(s=>`<button type="button" class="lng${s.id===sel?' on':''}" data-id="${s.id}">${flag(s.code)}<span>${esc(s.name)}</span></button>`).join('')||'<div class="empty">Языки ещё не добавлены</div>'}</div>
+ <label class="lbl" for="g">Группа</label><input class="in" id="g" maxlength="30" placeholder="Например: 1_26.03.01та" required>
+ <label class="lbl" for="nm">Фамилия и имя</label><input class="in" id="nm" maxlength="80" placeholder="Например: Ҳусейнзода Руслан" required>
+ <label class="lbl" for="lg">Логин</label><input class="in" id="lg" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" placeholder="Латиница и цифры, от 3 символов" required>
+ <label class="lbl" for="pw">Пароль</label><input class="in" id="pw" type="password" name="new-password" autocomplete="new-password" maxlength="72" placeholder="Минимум 4 символа" required>
+ <button class="btn mt20" type="submit">Зарегистрироваться</button><div class="err" id="er"></div></form>`;
+ document.querySelectorAll('.lng').forEach(b=>b.onclick=()=>{sel=+b.dataset.id;document.querySelectorAll('.lng').forEach(x=>x.classList.toggle('on',x===b))});
+ const f=document.getElementById('f'),er=document.getElementById('er');
+ const M={login_taken:'Такой логин уже существует',name_taken:'Студент с таким именем в этой группе уже существует',bad_login:'Логин: 3–30 символов — латинские буквы, цифры, точка, _ или -',bad_pass:'Пароль должен быть не короче 4 символов',bad_name:'Укажите фамилию и имя полностью',bad_group:'Укажите группу'};
+ f.onsubmit=async e=>{e.preventDefault();er.textContent='';
+  const g=f.g.value.trim().replace(/\s+/g,' '),n=cap(f.nm.value.trim().replace(/\s+/g,' ')),l=f.lg.value.trim().toLowerCase(),p=f.pw.value;
+  if(!sel)return er.textContent='Выберите язык теста';
+  if(!g)return er.textContent=M.bad_group;
+  if(n.split(' ').length<2)return er.textContent=M.bad_name;
+  if(!/^[a-z0-9._-]{3,30}$/.test(l))return er.textContent=M.bad_login;
+  if(p.length<4)return er.textContent=M.bad_pass;
+  const b=f.querySelector('button');b.disabled=true;
+  try{const r=await rpc('student_register',{p_login:l,p_pass:p,p_full_name:n,p_group:g,p_subject_id:sel});
+   if(r.ok){U={token:r.token,...r.user};sv('u',U);return go('/')}er.textContent=M[r.error]||'Ошибка регистрации'}
+  catch(x){er.textContent='Нет связи с сервером'}b.disabled=false}}
+const WA='https://wa.me/992179021717?text='+encodeURIComponent('Здравствуйте! Я забыл(а) логин или пароль на сайте тестов.');
+function support(){return `<a class="sup mt16" href="${WA}" target="_blank" rel="noopener"><span class="wa">${I.wa}</span><span class="tx"><span class="t1">Забыли пароль или логин?</span><span class="t2">Свяжитесь с администратором в WhatsApp</span></span><span class="ch">${I.chev}</span></a>`}
+function logout(){if(!confirm('Выйти из аккаунта?'))return;U=null;sv('u',null);go('/login')}
+
+/* ---------- student pages ---------- */
+const curSub=()=>SUBJ&&(SUBJ.find(s=>s.id===U.sid)||SUBJ[0]);
+const initials=n=>n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+async function home(tk){page({title:'Тестирование',right:`<button class="ib" id="lo" aria-label="Выйти">${I.out}</button>`});
+ document.getElementById('lo').onclick=logout;
+ let S,T=[];try{S=await subjects();const s=curSub();if(s){U.sid=s.id;T=await topicsOf(s.id)}}catch(e){return fail(e)}if(tk!==RT)return;
+ const s=curSub();
+ main().innerHTML=`<div class="card"><div class="prof"><span class="av">${esc(initials(U.name))}</span><div class="tx"><div class="nm">${esc(U.name)}</div><div class="sub" style="margin-top:2px;font-size:13px">Группа ${esc(U.group)} · ${esc(U.login)}</div></div></div><button class="lo2" id="lo3">${I.out} Выйти из профиля</button></div>
+ <div class="sec">Язык теста</div>
+ <a class="tile" href="#/lang"><span class="ic">${s?flag(s.code):I.globe}</span><span class="tx"><span class="t1">${s?esc(s.name):'Не выбран'}</span><span class="t2">Нажмите, чтобы сменить язык</span></span><span class="ch">${I.chev}</span></a>
+ <div class="sec">Разделы</div>
+ <div class="g2"><a class="tile v" href="#/tests"><span class="ic">${I.book}</span><span><span class="t1">Тесты</span><span class="t2">${plural(T.length,'тема','темы','тем')}</span></span></a>
+ <a class="tile v" href="#/results"><span class="ic">${I.chart}</span><span><span class="t1">Результаты</span><span class="t2">Мои и общие</span></span></a></div>
+ <div class="sec">Аккаунт</div>
+ <a class="tile" href="#/account"><span class="ic">${I.key}</span><span class="tx"><span class="t1">Логин, пароль и 2FA</span><span class="t2">Данные для входа и двухфакторная защита</span></span><span class="ch">${I.chev}</span></a>
+ <div class="sec">Поддержка</div>${support().replace(' mt16','')}`;
+ document.getElementById('lo3').onclick=logout}
+async function langPage(tk){page({title:'Язык теста',back:'/'});
+ let S;try{S=await subjects()}catch(e){return fail(e)}if(tk!==RT)return;const c=curSub();
+ main().innerHTML=`<div class="stack">${S.map(s=>`<button class="tile${c&&s.id===c.id?' on':''}" data-id="${s.id}"><span class="ic">${flag(s.code)}</span><span class="tx"><span class="t1">${esc(s.name)}</span></span><span class="ch">${c&&s.id===c.id?I.check:''}</span></button>`).join('')}</div>`;
+ main().querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{U.sid=+b.dataset.id;sv('u',U);rpc('student_set_subject',{p_token:U.token,p_subject_id:U.sid}).catch(()=>{});go('/')})}
+async function testsPage(tk){page({title:'Тесты',back:'/'});
+ let T;try{await subjects();const s=curSub();if(!s){main().innerHTML='<div class="card empty">Тестов пока нет</div>';return}T=await topicsOf(s.id)}catch(e){return fail(e)}if(tk!==RT)return;
+ const s=curSub(),b=ld('best2',{});
+ $.querySelector('.ttl').innerHTML=esc(s.name);$.querySelector('.rt').innerHTML=flag(s.code);
+ main().innerHTML=T.length?`<div class="stack">${T.map((t,k)=>`<a class="tile" href="#/test/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин${b[t.id]!=null?' · лучший '+b[t.id]+'%':''}</span></span><span class="ch">${I.chev}</span></a>`).join('')}</div>`:'<div class="card empty">В этом языке пока нет тестов</div>'}
+
+/* ---------- test ---------- */
+let PREP=null;
+function stopRun(){if(RUN)clearInterval(RUN.tick);RUN=null;document.body.classList.remove('secure')}
+async function startTest(tid,tk){page({title:'Тест',back:'/tests'});
+ let T,L;try{T=(await api(`topics?select=id,title,time_limit,subject_id&id=eq.${tid}`))[0];if(T)L=(await topicsOf(T.subject_id)).find(x=>x.id===tid)}catch(e){return fail(e)}if(tk!==RT)return;
+ if(!T||!L)return go('/tests');
+ if(!L.qcount){main().innerHTML='<div class="card empty">В этой теме пока нет вопросов</div>';return}
+ stopRun();const title=tname(T.title);
+ if(L.require_app&&!IS_APP){page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.phone}</span><div><div class="nm">Только в приложении</div><div class="sub" style="font-size:13px;margin-top:2px">Этот тест можно пройти только в защищённом приложении для Android.</div></div></div><a class="btn mt20" href="${APK}">${I.down} Скачать приложение</a><p class="sub" style="font-size:12px;margin-top:10px">После установки войдите в приложение под своим логином и откройте этот тест.</p></div>`});return}
+ const n=L.pick_count?Math.min(L.pick_count,L.qcount):L.qcount;PREP={tid,title};
+ const tm=L.q_time>0?`${L.q_time} сек на каждый вопрос, вопросов: ${n}. Когда время вопроса выходит, тест переходит к следующему.`:`${L.time_limit} мин на ${plural(n,'вопрос','вопроса','вопросов')}. Когда время выйдет, тест завершится автоматически.`;
+ const R_=[[I.full,'Полный экран',IS_APP?'Приложение закрепит экран: выйти из теста, свернуть приложение или сделать снимок экрана нельзя.':'Тест откроется во весь экран. Выход из полноэкранного режима завершит тест.'],[I.win,'Не покидайте окно','Переход в другую вкладку, окно или приложение — тест сразу завершается с баллом 0, даже если окно не закрыто.'],[I.cam,'Без снимков экрана',IS_APP?'В приложении снимки и запись экрана заблокированы системой.':'Скриншоты и копирование запрещены. Попытка снимка экрана завершает тест с баллом 0.'],[I.clock,'Время ограничено',tm]];
+ if(L.no_back||L.q_time>0)R_.push([I.back,'Без возврата','Вернуться к предыдущему вопросу нельзя — отвечайте сразу.']);
+ page({title:esc(title),back:'/tests',body:`<div class="card"><div class="prof"><span class="ic">${I.shield}</span><div><div class="nm">Правила теста</div><div class="sub" style="font-size:13px;margin-top:2px">Прочитайте перед началом</div></div></div>
+  <div class="rules">${R_.map(([ic,t,d])=>`<div class="rule"><span class="ic">${ic}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>
+  <label class="agree"><input type="checkbox" id="ag"> Я прочитал(а) правила и согласен(на)</label>
+  <button class="btn mt16" id="go" disabled>Начать тест</button><div class="err" id="er"></div></div>`});
+ const ag=document.getElementById('ag'),gb=document.getElementById('go');ag.onchange=()=>gb.disabled=!ag.checked;
+ gb.onclick=async()=>{gb.disabled=true;let fs=false;
+  if(IS_APP){try{TestruApp.lockTask()}catch(e){}}
+  else{try{const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;if(rq){await rq.call(el,{navigationUI:'hide'});fs=true}}catch(e){}}
+  let r;try{r=await rpc('start_attempt',{p_token:U.token,p_topic_id:tid})}catch(e){r={ok:false,error:'net'}}
+  if(!r.ok){appUnlock();try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}document.getElementById('er').textContent=r.error==='session'?'Сессия устарела. Выйдите и войдите заново.':'Не удалось начать тест. Проверьте интернет.';gb.disabled=false;return}
+  begin(fs,r)}}
+const appUnlock=()=>{if(IS_APP){try{TestruApp.unlockTask()}catch(e){}}};
+function begin(fs,r){const P=PREP;if(!P)return;PREP=null;
+ const Q=r.questions.map(q=>q.k==='m'?{k:'m',q:q.q,L:q.left.map(l=>[l]),R:q.right}:{k:q.k,q:q.q,a:q.opts.map(t=>[t])});
+ RUN={tid:P.tid,att:r.attempt,title:P.title,limit:r.seconds,left:r.seconds,qtime:r.q_time||0,qleft:r.q_time||0,noBack:!!r.no_back,Q,ans:Q.map(q=>q.k==='m'?q.L.map(()=>-1):[]),i:0,act:-1,fs:fs&&!!(document.fullscreenElement||document.webkitFullscreenElement),guard:Date.now()+1200};
+ document.body.classList.add('secure');
+ RUN.tick=setInterval(()=>{const R=RUN;if(!R)return;R.left--;
+  if(R.qtime){R.qleft--;const q=document.getElementById('qtm');if(q){q.textContent=R.qleft+' с';q.classList.toggle('low',R.qleft<=5)}if(R.qleft<=0){if(R.i<R.Q.length-1){R.i++;R.act=-1;R.qleft=R.qtime;show()}else return finish()}}
+  const e=document.getElementById('tm');if(e){e.textContent=fmt(Math.max(R.left,0));e.classList.toggle('low',R.left<60)}if(R.left<=0)finish()},1000);
+ show()}
+/* anti-cheat: leaving the test window, tab or full screen, or screenshot keys => grade 0 */
+const live=()=>RUN&&!RUN.done&&!RUN.modal&&Date.now()>RUN.guard;
+function violate(reason){if(!RUN||RUN.done)return;RUN.violation=reason;finish()}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&live())violate('Переход в другую вкладку или приложение')});
+window.addEventListener('blur',()=>{if(live()&&!IS_APP)violate('Выход из окна теста')});
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{if(RUN&&RUN.fs&&!(document.fullscreenElement||document.webkitFullscreenElement)&&live())violate('Выход из полноэкранного режима')}));
+window.__appEvent=e=>{if(e==='hidden'&&live())violate('Выход из приложения');if(e==='unpinned'&&live())violate('Откреплён экран приложения')};
+const shotKey=e=>e.key==='PrintScreen'||e.code==='PrintScreen'||(e.metaKey&&e.shiftKey&&/^(3|4|5|s|S)$/.test(e.key))||(e.ctrlKey&&e.key==='p');
+window.addEventListener('keydown',e=>{if(RUN&&!RUN.done&&shotKey(e)){e.preventDefault();violate('Попытка сделать снимок экрана')}},true);
+window.addEventListener('keyup',e=>{if(RUN&&!RUN.done&&(e.key==='PrintScreen'||e.code==='PrintScreen'))violate('Попытка сделать снимок экрана')},true);
+['contextmenu','copy','cut','dragstart'].forEach(ev=>document.addEventListener(ev,e=>{if(RUN&&!RUN.done)e.preventDefault()}));
+window.addEventListener('beforeunload',e=>{if(RUN&&!RUN.done){e.preventDefault();e.returnValue=''}});
+const payload=R=>R.Q.map((q,n)=>{const a=R.ans[n];if(q.k==='m'){const o={};q.L.forEach((l,k)=>{if(a[k]>=0)o[l[0]]=q.R[a[k]]});return o}return a.map(k=>q.a[k][0])});
+window.addEventListener('pagehide',()=>{if(RUN&&!RUN.done){const R=RUN;R.done=true;
+ try{fetch(SBU+'/rest/v1/rpc/submit_attempt',{method:'POST',keepalive:true,headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:'Закрытие или перезагрузка страницы'})})}catch(e){}}});
+/* in-page dialog (native confirm() would blur the window during a test) */
+function ask(title,text,okLabel){return new Promise(res=>{if(RUN)RUN.modal=true;const d=document.createElement('div');d.className='modal';
+ d.innerHTML=`<div class="mbox"><h2 style="font-size:17px">${title}</h2><p class="sub" style="font-size:14px">${text}</p><div class="nav"><button class="btn gh" data-r="0">Отмена</button><button class="btn" data-r="1">${okLabel||'Да'}</button></div></div>`;
+ document.body.appendChild(d);d.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{d.remove();if(RUN){RUN.modal=false;RUN.guard=Date.now()+300}res(b.dataset.r==='1')})})}
+const done_=k=>{const q=RUN.Q[k];return q.k==='m'?!RUN.ans[k].includes(-1):RUN.ans[k].length>0};
+function next(){const R=RUN;if(R.i<R.Q.length-1){R.i++;R.act=-1;R.qleft=R.qtime;show();return}
+ const un=R.Q.filter((_,k)=>!done_(k)).length;if(!un)return finish();ask('Завершить тест?','Без ответа: '+plural(un,'вопрос','вопроса','вопросов')+'.','Завершить').then(y=>{if(y)finish()})}
+function show(keep){const R=RUN,q=R.Q[R.i],a=R.ans[R.i];const y=scrollY;
+ page({title:esc(R.title),back:'/tests',right:`${I.clock.replace('<svg','<svg style="width:15px;height:15px"')}<span id="tm" class="tm${R.left<60?' low':''}">${fmt(Math.max(R.left,0))}</span>`,body:''});
+ let h=`<div class="prog"><div class="meta"><span>Вопрос ${R.i+1} из ${R.Q.length}</span><span>${R.qtime?`На вопрос: <b id="qtm" class="tm${R.qleft<=5?' low':''}">${R.qleft} с</b>`:R.Q.filter((_,k)=>done_(k)).length+' отвечено'}</span></div><div class="bar2"><i style="width:${(R.i+1)/R.Q.length*100}%"></i></div></div><div class="card qc"><h2>${esc(q.q)}</h2>`;
+ if(q.k==='m'){if(R.act<0||R.act>=q.L.length)R.act=Math.max(0,a.indexOf(-1));
+  h+='<p class="hint">Выберите пункт, затем нажмите на подходящую пару ниже</p><div class="mtb">'+
+  q.L.map((p,n)=>`<button class="mrow${n===R.act?' on':''}${a[n]>=0?' fil':''}" data-n="${n}"><span class="no_">${n+1}</span><span class="ml">${esc(p[0])}</span><span class="mv">${a[n]>=0?esc(q.R[a[n]]):'выбрать'}</span></button>`).join('')+'</div>'+
+  `<p class="plbl">Пара для «${esc(q.L[R.act][0])}»</p><div class="pool">`+
+  q.R.map((r,x)=>{const u=a.indexOf(x);return `<button class="chip${u>=0?' used':''}${u===R.act?' mine':''}" data-x="${x}">${u>=0?`<span class="no_">${u+1}</span>`:''}<span>${esc(r)}</span></button>`}).join('')+'</div>'}
+ else{h+=`<p class="hint">${q.k==='x'?'Несколько верных ответов':'Один верный ответ'}</p>`+q.a.map((o,n)=>`<button class="opt ${q.k==='x'?'c':'r'}${a.includes(n)?' sel':''}" data-n="${n}"><span class="box"></span><span>${esc(o[0])}</span></button>`).join('')}
+ h+=`</div><div class="nav">${R.i>0&&!R.noBack?'<button class="btn gh" id="pv">Назад</button>':''}<button class="btn" id="nx">${R.i<R.Q.length-1?'Далее':'Завершить'}</button></div>
+ <div class="card mt16"><div class="pg${R.noBack?' ro':''}">${R.Q.map((_,k)=>`<button data-i="${k}" class="${k===R.i?'cur':''}${done_(k)?' dn':''}"${R.noBack?' disabled':''}>${k+1}</button>`).join('')}</div></div>`;
+ main().innerHTML=h;scrollTo(0,keep?y:0);
+ main().querySelectorAll('.opt').forEach(e=>e.onclick=()=>{const n=+e.dataset.n;if(q.k==='x'){const x=a.indexOf(n);x<0?a.push(n):a.splice(x,1)}else R.ans[R.i]=[n];show(true)});
+ main().querySelectorAll('.mrow').forEach(e=>e.onclick=()=>{const n=+e.dataset.n;if(n===R.act&&a[n]>=0)a[n]=-1;R.act=n;show(true)});
+ main().querySelectorAll('.chip').forEach(e=>e.onclick=()=>{const x=+e.dataset.x,u=a.indexOf(x);
+  if(u===R.act){a[R.act]=-1}else{if(u>=0)a[u]=-1;a[R.act]=x;const nx=a.findIndex((v,k)=>v<0&&k>R.act),f=a.indexOf(-1);R.act=nx>=0?nx:f>=0?f:R.act}show(true)});
+ if(!R.noBack)main().querySelectorAll('.pg button').forEach(e=>e.onclick=()=>{R.i=+e.dataset.i;R.act=-1;show()});
+ document.getElementById('nx').onclick=next;
+ const pv=document.getElementById('pv');if(pv)pv.onclick=()=>{R.i--;R.act=-1;show()}}
+function finish(){const R=RUN;if(!R||R.done)return;clearInterval(R.tick);R.done=true;document.body.classList.remove('secure');document.querySelectorAll('.modal').forEach(m=>m.remove());
+ try{if(document.fullscreenElement)document.exitFullscreen();else if(document.webkitFullscreenElement)document.webkitExitFullscreen()}catch(e){}
+ appUnlock();
+ LAST={tid:R.tid,title:R.title,Q:R.Q,ans:R.ans,violation:R.violation,used:R.limit-Math.max(R.left,0),res:null,err:null};RUN=null;
+ const L=LAST;rpc('submit_attempt',{p_token:U.token,p_attempt:R.att,p_answers:payload(R),p_violation:R.violation||null})
+  .then(r=>{if(r&&r.ok){L.res=r;const pc=Math.round(r.score/r.total*100);if(!r.violation){const b=ld('best2',{});if(!(b[L.tid]>=pc)){b[L.tid]=pc;sv('best2',b)}}}else L.err=r&&r.error==='session'?'Сессия устарела. Войдите заново.':'Не удалось сохранить результат.'})
+  .catch(()=>{L.err='Нет связи с сервером. Результат не сохранён.'}).finally(()=>{if(LAST===L&&location.hash==='#/done')donePage()});
+ go('/done')}
+function donePage(){if(!LAST)return go('/tests');const L=LAST,r=L.res;
+ if(!r){page({title:'Результат теста',back:'/tests',body:L.err?`<div class="viol">${I.alert}<div><b>Ошибка</b><span>${esc(L.err)}</span></div></div>`:'<div class="card ld">Проверка ответов…</div>'});return}
+ const pc=Math.round(r.score/r.total*100);
+ let h=`${r.violation?`<div class="viol">${I.alert}<div><b>Тест аннулирован — балл 0</b><span>Причина: ${esc(r.violation)}.</span></div></div>`:''}<div class="card"><div class="sub" style="margin:0 0 14px">${esc(L.title)}</div><div class="sub" style="margin:0 0 6px;font-size:12px">Результат теста</div><div class="big">${r.score}<small> / ${r.total}</small></div>
+ <div class="kv"><span>Балл<b>${r.grade} / 10</b></span><span>Верно<b>${pc}%</b></span><span>Время<b>${fmt(L.used)}</b></span></div><p class="sub" style="font-size:13px;margin-top:14px">Результат сохранён</p></div>
+ <div class="nav"><a class="btn gh" href="#/results">${I.chart} Результаты</a><a class="btn" href="#/test/${L.tid}">Пройти заново</a></div>
+ <div class="sec">Ваши ответы</div><div class="card">`;
+ L.Q.forEach((q,n)=>{const ok=r.review[n]&&r.review[n].ok,a=L.ans[n];h+=`<div class="rv"><div class="q">${n+1}. ${esc(q.q)}<span class="${ok?'ok':'no'}">${ok?'Верно':'Ошибка'}</span></div>`;
+  if(q.k==='m')q.L.forEach((p,x)=>{h+=`<div class="rl"><i>•</i><span>${esc(p[0])} → ${a[x]>=0?esc(q.R[a[x]]):'—'}</span></div>`});
+  else h+=a.length?a.map(k=>`<div class="rl"><i>•</i><span>${esc(q.a[k][0])}</span></div>`).join(''):'<div class="rl"><i>•</i><span>Нет ответа</span></div>';
+  h+='</div>'});
+ page({title:'Результат теста',back:'/tests',body:h+'</div><p class="note">Правильные ответы не показываются, чтобы тест оставался честным для других.</p>'})}
+
+/* ---------- results ---------- */
+const SORTS=[['new','Сначала новые'],['old','Сначала старые'],['hi','Балл: от высокого'],['lo','Балл: от низкого'],['name','По имени (А–Я)'],['grp','По группе']];
+let F={scope:'me',q:'',sort:'new',group:'',topic:0},ROWS=[];
+async function resultsPage(tk){page({title:'Результаты',back:'/'});
+ let T;try{await subjects();T=curSub()?await topicsOf(curSub().id):[]}catch(e){return fail(e)}if(tk!==RT)return;
+ const sc=F.scope;
+ main().innerHTML=`<div class="seg"><button data-s="me" class="${sc==='me'?'on':''}">Мои</button><button data-s="all" class="${sc==='all'?'on':''}">Все</button></div>
+ <div class="card mt16"><div class="srch">${I.search}<input class="in" id="qs" type="search" placeholder="${sc==='me'?'Поиск по теме':'Поиск: студент, группа или тема'}" value="${esc(F.q)}" autocomplete="off"></div>
+ <div class="filters"><select class="in" id="ft"><option value="0">Все темы</option>${T.map((t,k)=>`<option value="${t.id}"${F.topic===t.id?' selected':''}>${k+1}. ${esc(tname(t.title))}</option>`).join('')}</select>
+ ${sc==='all'?'<select class="in" id="fg"><option value="">Все группы</option></select>':''}
+ <select class="in" id="fs">${SORTS.map(([v,l])=>`<option value="${v}"${F.sort===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+ <div class="cnt" id="cnt"></div><div class="card" id="rs"><div class="ld" style="padding:16px">Загрузка…</div></div>
+ <p class="note">Результаты хранятся 1 месяц, затем удаляются автоматически.</p>`;
+ main().querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{F.scope=b.dataset.s;F.q='';F.group='';resultsPage(++RT)});
+ document.getElementById('ft').onchange=e=>{F.topic=+e.target.value;resultsPage(++RT)};
+ document.getElementById('fs').onchange=e=>{F.sort=e.target.value;draw()};
+ let tm;document.getElementById('qs').oninput=e=>{clearTimeout(tm);tm=setTimeout(()=>{F.q=e.target.value;draw()},150)};
+ const s=curSub();const p=new URLSearchParams({select:'full_name,group_name,topic,topic_id,score,total,grade,created_at,violation',order:'created_at.desc',limit:'1000'});
+ if(s)p.append('subject_id','eq.'+s.id);if(sc==='me')p.append('student_id','eq.'+U.id);if(F.topic)p.append('topic_id','eq.'+F.topic);
+ try{ROWS=await api('results?'+p);if(tk!==RT&&RT!==tk)return}catch(e){document.getElementById('rs').innerHTML='<div class="empty">Не удалось загрузить результаты</div>';return}
+ const fg=document.getElementById('fg');
+ if(fg){const gs=[...new Set(ROWS.map(x=>x.group_name))].sort((a,b)=>a.localeCompare(b,'ru',{numeric:true}));if(F.group&&!gs.includes(F.group))F.group='';
+  fg.innerHTML='<option value="">Все группы</option>'+gs.map(g=>`<option value="${esc(g)}"${F.group===g?' selected':''}>Группа ${esc(g)}</option>`).join('');fg.onchange=e=>{F.group=e.target.value;draw()}}
+ draw()}
+function draw(){const R=document.getElementById('rs'),C=document.getElementById('cnt');if(!R)return;
+ const q=F.q.trim().toLowerCase(),me=F.scope==='me';
+ let rows=ROWS.filter(x=>(!F.group||x.group_name===F.group)&&(!q||(x.full_name+' '+x.group_name+' '+tname(x.topic)).toLowerCase().includes(q)));
+ const pc=x=>x.score/x.total,ts=x=>+new Date(x.created_at);
+ const cmp={new:(a,b)=>ts(b)-ts(a),old:(a,b)=>ts(a)-ts(b),hi:(a,b)=>pc(b)-pc(a)||b.grade-a.grade||ts(b)-ts(a),lo:(a,b)=>pc(a)-pc(b)||a.grade-b.grade||ts(b)-ts(a),name:(a,b)=>a.full_name.localeCompare(b.full_name,'ru')||ts(b)-ts(a),grp:(a,b)=>a.group_name.localeCompare(b.group_name,'ru',{numeric:true})||a.full_name.localeCompare(b.full_name,'ru')}[F.sort];
+ rows=[...rows].sort(cmp);C.textContent=ROWS.length?`Найдено: ${rows.length}`:'';
+ if(!ROWS.length){R.innerHTML=`<div class="empty">${me?'Вы ещё не проходили тесты':'Пока нет результатов'}</div>`;return}
+ if(!rows.length){R.innerHTML='<div class="empty">Ничего не найдено</div>';return}
+ R.innerHTML=rows.map(x=>{const d=new Date(x.created_at).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return `<div class="rrow"><span class="tx"><span class="t1">${esc(x.full_name)}</span><span class="rmeta"><span class="chipg">Группа ${esc(x.group_name)}</span><span class="chipg">Результат теста: ${x.score} / ${x.total}</span>${x.violation?`<span class="chipg vio" title="${esc(x.violation)}">Нарушение: ${esc(x.violation)}</span>`:''}</span><span class="t3">${esc(tname(x.topic))} · ${esc(d)}</span></span><span class="gr"><small>Балл</small><b>${x.grade}<i> / 10</i></b></span></div>`}).join('')}
+
+/* ---------- admin ---------- */
+const arpc=async(fn,a)=>{const r=await rpc(fn,{p_login:ADM.l,p_pass:ADM.p,...a});if(r===null||r===false){alert('Сессия администратора недействительна. Войдите снова.');admOut(true);throw new Error('auth')}return r};
+function admOut(force){if(!force&&!confirm('Выйти из админ-панели?'))return;ADM=null;if(ses)sv('adm',null,ses);go('/login')}
+const KIND={s:['Один ответ',I.one],x:['Несколько ответов',I.many],m:['Соответствие',I.pair]};
+function admin(p,tk){
+ if(!p.length)return aHome(tk);
+ if(p[0]==='s')return aSubject(+p[1],tk);if(p[0]==='t')return aTopic(+p[1],tk);
+ if(p[0]==='q')return aQuestion({id:+p[1]},tk);if(p[0]==='new')return aQuestion({tid:+p[1],kind:p[2]},tk);
+ if(p[0]==='students')return aStudents(tk);if(p[0]==='st')return aStudent(+p[1],tk);if(p[0]==='me')return aMe();go('/admin')}
+const langOpts=c=>LANGS.map(([k,n])=>`<option value="${k}"${k===c?' selected':''}>${n}</option>`).join('');
+async function aHome(tk){page({title:'Админ-панель',right:`<button class="ib" id="lo" aria-label="Выйти">${I.out}</button>`});document.getElementById('lo').onclick=()=>admOut();
+ let S,C=[];try{S=await subjects(true);C=await Promise.all(S.map(s=>api(`topics?select=id&subject_id=eq.${s.id}`)))}catch(e){return fail(e)}if(tk!==RT)return;
+ main().innerHTML=`<div class="card prof"><span class="av">${I.shield.replace('<svg','<svg style="width:20px;height:20px"')}</span><div><div class="nm">Администратор</div><div class="sub" style="margin-top:2px;font-size:13px">Управление языками, тестами и вопросами</div></div></div>
+ <div class="sec">Языки тестов</div><div class="stack">${S.map((s,k)=>`<a class="tile" href="#/admin/s/${s.id}"><span class="ic">${flag(s.code)}</span><span class="tx"><span class="t1">${esc(s.name)}</span><span class="t2">${plural(C[k].length,'тема','темы','тем')}</span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Пока нет языков</div>'}</div>
+ <div class="sec">Добавить язык</div><form class="card" id="f"><label class="lbl" style="margin-top:0">Название</label><input class="in" id="nm" maxlength="60" placeholder="Например: Английский язык" required>
+ <label class="lbl">Флаг / иконка</label><select class="in" id="cd">${langOpts('en')}</select><button class="btn mt16">${I.plus} Добавить язык</button><div class="err" id="er"></div></form>
+ <div class="sec">Пользователи</div><a class="tile" href="#/admin/students"><span class="ic">${I.users}</span><span class="tx"><span class="t1">Студенты</span><span class="t2">Аккаунты, смена логина и пароля</span></span><span class="ch">${I.chev}</span></a>
+ <a class="tile mt16" href="#/admin/me"><span class="ic">${I.key}</span><span class="tx"><span class="t1">Безопасность администратора</span><span class="t2">Логин, пароль и Google Authenticator (2FA)</span></span><span class="ch">${I.chev}</span></a>`;
+ const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();const n=f.nm.value.trim();if(!n)return;f.querySelector('button').disabled=true;
+  try{const id=await arpc('admin_save_subject',{p_id:null,p_name:n,p_code:f.cd.value});SUBJ=null;go('/admin/s/'+id)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения';f.querySelector('button').disabled=false}}}
+async function aSubject(id,tk){page({title:'Язык',back:'/admin'});
+ let S,T;try{S=await subjects(true);T=await topicsOf(id)}catch(e){return fail(e)}if(tk!==RT)return;const s=S.find(x=>x.id===id);if(!s)return go('/admin');
+ $.querySelector('.ttl').textContent=s.name;
+ main().innerHTML=`<form class="card" id="f"><div class="prof" style="margin-bottom:4px"><span class="ic">${flag(s.code)}</span><div class="nm">${esc(s.name)}</div></div>
+ <label class="lbl">Название</label><input class="in" id="nm" maxlength="60" value="${esc(s.name)}" required>
+ <label class="lbl">Флаг / иконка</label><select class="in" id="cd">${langOpts(s.code)}</select>
+ <div class="nav"><button type="button" class="btn dg" id="del">${I.trash} Удалить</button><button class="btn">Сохранить</button></div><div class="err" id="er"></div></form>
+ <div class="sec">Темы (${T.length})</div><div class="stack">${T.map((t,k)=>`<a class="tile" href="#/admin/t/${t.id}"><span class="num">${String(k+1).padStart(2,'0')}</span><span class="tx"><span class="t1">${esc(tname(t.title))}</span><span class="t2">${plural(qcount(t),'вопрос','вопроса','вопросов')} · ${t.time_limit} мин</span></span><span class="ch">${I.chev}</span></a>`).join('')||'<div class="card empty">Тем пока нет</div>'}</div>
+ <div class="sec">Новая тема</div><form class="card" id="nt"><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" placeholder="Например: Тема 9. Моя семья" required>
+ <label class="lbl">Время на тест, минут</label><input class="in" id="tl" type="number" min="1" max="180" value="10" required><button class="btn mt16">${I.plus} Создать тему</button></form>`;
+ const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();try{await arpc('admin_save_subject',{p_id:id,p_name:f.nm.value.trim(),p_code:f.cd.value});SUBJ=null;aSubject(id,++RT)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения'}};
+ document.getElementById('del').onclick=async()=>{if(!confirm(`Удалить язык «${s.name}» вместе со всеми темами и вопросами?`))return;try{await arpc('admin_delete',{p_kind:'subject',p_id:id});SUBJ=null;go('/admin')}catch(x){}};
+ const n=document.getElementById('nt');n.onsubmit=async e=>{e.preventDefault();try{const t=await arpc('admin_save_topic',{p_id:null,p_subject_id:id,p_title:n.tt.value.trim(),p_time_limit:+n.tl.value||10});go('/admin/t/'+t)}catch(x){}}}
+async function aTopic(id,tk){page({title:'Тема',back:'/admin'});
+ let T,Q;try{[T,Q]=await Promise.all([api(`topics?select=id,title,time_limit,subject_id,pick_count,q_time,no_back,require_app&id=eq.${id}`),arpc('admin_get_questions',{p_topic_id:id})])}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ if(!T[0])return go('/admin');T=T[0];
+ page({title:esc(tname(T.title)),back:'/admin/s/'+T.subject_id,body:`<form class="card" id="f"><label class="lbl" style="margin-top:0">Название темы</label><input class="in" id="tt" maxlength="200" value="${esc(T.title)}" required>
+ <label class="lbl">Время на тест, минут</label><input class="in" id="tl" type="number" min="1" max="180" value="${T.time_limit}" required>
+ <label class="lbl">Сколько вопросов выдавать каждому (0 — все)</label><input class="in" id="pc" type="number" min="0" max="500" value="${T.pick_count||0}">
+ <p class="sub" style="font-size:12px;margin-top:6px">Каждый студент получит случайный набор из банка вопросов этой темы.</p>
+ <label class="lbl">Секунд на один вопрос (0 — без ограничения)</label><input class="in" id="qt2" type="number" min="0" max="600" value="${T.q_time||0}">
+ <label class="agree"><input type="checkbox" id="nb"${T.no_back?' checked':''}> Запретить возврат к предыдущим вопросам</label>
+ <label class="agree" style="margin-top:12px"><input type="checkbox" id="ra"${T.require_app?' checked':''}> Проходить только в приложении Android (скриншоты блокируются)</label>
+ <div class="nav"><button type="button" class="btn dg" id="del">${I.trash} Удалить</button><button class="btn">Сохранить</button></div><div class="err" id="er"></div></form>
+ <div class="sec">Добавить вопрос</div><div class="add3">${Object.entries(KIND).map(([k,[n,ic]])=>`<a class="btn gh" href="#/admin/new/${id}/${k}">${ic}<span>${n}</span></a>`).join('')}</div>
+ <div class="sec">Вопросы (${Q.length})</div><div class="stack">${Q.map((q,k)=>`<div class="card"><div class="qrow"><span class="num" style="width:34px;height:34px;border-radius:10px;font-size:12px">${k+1}</span><div class="tx"><span class="tag">${KIND[q.kind][0]}</span><div class="qt">${esc(q.text)}</div></div></div>
+ <div class="acts"><button class="ib" data-mv="${q.id}" data-d="-1" aria-label="Выше"${k===0?' disabled style="opacity:.3"':''}>${I.up}</button><button class="ib" data-mv="${q.id}" data-d="1" aria-label="Ниже"${k===Q.length-1?' disabled style="opacity:.3"':''}>${I.down}</button><span style="flex:1"></span><a class="ib" href="#/admin/q/${q.id}" aria-label="Изменить">${I.edit}</a><button class="ib dgr" data-del="${q.id}" aria-label="Удалить">${I.trash}</button></div></div>`).join('')||'<div class="card empty">Вопросов пока нет</div>'}</div>`});
+ const f=document.getElementById('f');f.onsubmit=async e=>{e.preventDefault();try{await arpc('admin_save_topic2',{p_id:id,p_subject_id:T.subject_id,p_title:f.tt.value.trim(),p_time_limit:+f.tl.value||10,p_pick_count:+f.pc.value||0,p_q_time:+f.qt2.value||0,p_no_back:f.nb.checked,p_require_app:f.ra.checked});aTopic(id,++RT)}catch(x){if(x.message!=='auth')document.getElementById('er').textContent='Ошибка сохранения'}};
+ document.getElementById('del').onclick=async()=>{if(!confirm('Удалить эту тему вместе со всеми вопросами?'))return;try{await arpc('admin_delete',{p_kind:'topic',p_id:id});go('/admin/s/'+T.subject_id)}catch(x){}};
+ main().querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('Удалить вопрос?'))return;try{await arpc('admin_delete',{p_kind:'question',p_id:+b.dataset.del});aTopic(id,++RT)}catch(x){}});
+ main().querySelectorAll('[data-mv]').forEach(b=>b.onclick=async()=>{try{await arpc('admin_move_question',{p_id:+b.dataset.mv,p_dir:+b.dataset.d});const y=scrollY;await aTopic(id,++RT);scrollTo(0,y)}catch(x){}})}
+async function aQuestion(o,tk){page({title:'Вопрос',back:o.tid?'/admin/t/'+o.tid:'/admin'});
+ let E;
+ if(o.id){let q;try{q=await arpc('admin_get_question',{p_id:o.id})}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;if(!q)return go('/admin');
+  E={id:q.id,tid:q.topic_id,kind:q.kind,text:q.text,a:(q.data.a||[]).map(x=>[x[0],x[1]?1:0]),p:(q.data.p||[]).map(x=>[x[0],x[1]])}}
+ else E={id:null,tid:o.tid,kind:KIND[o.kind]?o.kind:'s',text:'',a:[['',1],['',0],['',0],['',0]],p:[['',''],['',''],['',''],['','']]};
+ if(!E.a.length)E.a=[['',1],['',0]];if(!E.p.length)E.p=[['',''],['','']];
+ const draw=()=>{const k=E.kind;
+  page({title:E.id?'Редактирование':'Новый вопрос',back:'/admin/t/'+E.tid,body:`<div class="seg">${Object.entries(KIND).map(([x,[n]])=>`<button data-k="${x}" class="${x===k?'on':''}">${n}</button>`).join('')}</div>
+  <div class="card mt16"><label class="lbl" style="margin-top:0">Текст вопроса</label><textarea class="in" id="qt" maxlength="1000" placeholder="Введите вопрос">${esc(E.text)}</textarea>
+  ${k==='m'?`<label class="lbl">Пары (левая часть → правильная пара)</label>`+E.p.map((p,n)=>`<div class="erow"><input class="in" data-pl="${n}" value="${esc(p[0])}" placeholder="${p[0]===''&&p.extra?'лишний':'Пункт '+(n+1)}"><span class="ar">→</span><input class="in" data-pr="${n}" value="${esc(p[1])}" placeholder="Пара"><button class="x" data-rm="${n}" aria-label="Удалить">${I.x}</button></div>`).join('')+
+   `<p class="sub" style="font-size:12px;margin-top:10px">Чтобы добавить лишний вариант ответа, оставьте левую часть пустой.</p><button class="btn gh sm mt16" id="add">${I.plus} Добавить пару</button>`
+  :`<label class="lbl">Варианты ответа — отметьте ${k==='s'?'правильный':'правильные'}</label>`+E.a.map((o,n)=>`<div class="erow"><button class="tg${o[1]?' on':''}" data-c="${n}" aria-label="Правильный">${I.check}</button><input class="in" data-a="${n}" value="${esc(o[0])}" placeholder="Вариант ${n+1}"><button class="x" data-rm="${n}" aria-label="Удалить">${I.x}</button></div>`).join('')+
+   `<button class="btn gh sm mt16" id="add">${I.plus} Добавить вариант</button>`}
+  </div><div class="nav"><a class="btn gh" href="#/admin/t/${E.tid}">Отмена</a><button class="btn" id="sv">Сохранить</button></div><div class="err" id="er"></div>`});
+  const m=main();
+  m.querySelector('#qt').oninput=e=>E.text=e.target.value;
+  m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{E.kind=b.dataset.k;if(E.kind==='s'){let f=false;E.a.forEach(o=>{if(o[1]&&!f)f=true;else o[1]=0});if(!f&&E.a[0])E.a[0][1]=1}draw()});
+  m.querySelectorAll('[data-a]').forEach(i=>i.oninput=()=>E.a[+i.dataset.a][0]=i.value);
+  m.querySelectorAll('[data-pl]').forEach(i=>i.oninput=()=>E.p[+i.dataset.pl][0]=i.value);
+  m.querySelectorAll('[data-pr]').forEach(i=>i.oninput=()=>E.p[+i.dataset.pr][1]=i.value);
+  m.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const n=+b.dataset.c;if(E.kind==='s')E.a.forEach((o,k)=>o[1]=k===n?1:0);else E.a[n][1]=E.a[n][1]?0:1;draw()});
+  m.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{const n=+b.dataset.rm;if(E.kind==='m'){if(E.p.length>2)E.p.splice(n,1)}else if(E.a.length>2)E.a.splice(n,1);draw()});
+  m.querySelector('#add').onclick=()=>{E.kind==='m'?E.p.push(['','']):E.a.push(['',0]);draw();const ins=m.querySelectorAll(E.kind==='m'?'[data-pl]':'[data-a]');const el=main().querySelectorAll(E.kind==='m'?'[data-pl]':'[data-a]');el[el.length-1]&&el[el.length-1].focus()};
+  m.querySelector('#sv').onclick=save};
+ const save=async()=>{const er=document.getElementById('er');er.textContent='';const t=E.text.trim();let data;
+  if(!t)return er.textContent='Введите текст вопроса';
+  if(E.kind==='m'){const P=E.p.map(p=>[p[0].trim(),p[1].trim()]).filter(p=>p[0]||p[1]);
+   if(P.some(p=>!p[1]))return er.textContent='У каждого пункта должна быть пара';
+   if(P.filter(p=>p[0]).length<2)return er.textContent='Нужно минимум 2 пары';
+   if(new Set(P.map(p=>p[1].toLowerCase())).size!==P.length)return er.textContent='Варианты в правой части не должны повторяться';
+   data={p:P}}
+  else{const A=E.a.map(o=>[o[0].trim(),o[1]?1:0]).filter(o=>o[0]);
+   if(A.length<2)return er.textContent='Нужно минимум 2 варианта ответа';
+   const c=A.filter(o=>o[1]).length;if(E.kind==='s'&&c!==1)return er.textContent='Отметьте один правильный ответ';if(E.kind==='x'&&c<1)return er.textContent='Отметьте хотя бы один правильный ответ';
+   data={a:A}}
+  const b=document.getElementById('sv');b.disabled=true;
+  try{await arpc('admin_save_question',{p_id:E.id,p_topic_id:E.tid,p_kind:E.kind,p_text:t,p_data:data});go('/admin/t/'+E.tid)}catch(x){if(x.message!=='auth'){er.textContent='Ошибка сохранения';b.disabled=false}}};
+ draw()}
+async function aStudents(tk){page({title:'Студенты',back:'/admin'});
+ let L;try{L=await arpc('admin_list_students',{})}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ main().innerHTML=`<div class="card"><div class="srch">${I.search}<input class="in" id="qs" type="search" placeholder="Поиск: имя, группа или логин" autocomplete="off"></div></div><div class="cnt" id="cnt"></div><div class="card" id="rs"></div>`;
+ const dr=q=>{q=q.trim().toLowerCase();const r=L.filter(s=>!q||(s.full_name+' '+s.group_name+' '+s.login).toLowerCase().includes(q));document.getElementById('cnt').textContent=`Всего: ${r.length}`;
+  document.getElementById('rs').innerHTML=r.map(s=>`<a class="rrow" href="#/admin/st/${s.id}"><span class="av" style="width:38px;height:38px;font-size:12px">${esc(initials(s.full_name))}</span><span class="tx"><span class="t1">${esc(s.full_name)}</span><span class="t2">Группа ${esc(s.group_name)} · логин ${esc(s.login)}</span></span><span class="ch" style="color:var(--fa)">${I.edit.replace('<svg','<svg style="width:16px;height:16px"')}</span></a>`).join('')||'<div class="empty">Нет студентов</div>'};
+ dr('');document.getElementById('qs').oninput=e=>dr(e.target.value)}
+async function aStudent(id,tk){page({title:'Студент',back:'/admin/students'});
+ let L;try{L=await arpc('admin_list_students',{})}catch(e){if(e.message!=='auth')fail(e);return}if(tk!==RT)return;
+ const s=L.find(x=>x.id===id);if(!s)return go('/admin/students');
+ main().innerHTML=`<div class="card prof"><span class="av">${esc(initials(s.full_name))}</span><div><div class="nm">${esc(s.full_name)}</div><div class="sub" style="margin-top:2px;font-size:13px">Зарегистрирован ${new Date(s.created_at).toLocaleDateString('ru-RU')}</div></div></div>
+ <form class="card mt16" id="f" autocomplete="off"><label class="lbl" style="margin-top:0">Фамилия и имя</label><input class="in" id="nm" maxlength="80" value="${esc(s.full_name)}" required>
+ <label class="lbl">Группа</label><input class="in" id="g" maxlength="30" value="${esc(s.group_name)}" required>
+ <label class="lbl">Логин</label><input class="in" id="lg" maxlength="30" autocapitalize="none" spellcheck="false" value="${esc(s.login)}" required>
+ <label class="lbl">Новый пароль</label><input class="in" id="pw" type="text" maxlength="72" placeholder="Оставьте пустым, чтобы не менять" autocomplete="new-password">
+ <button class="btn mt20">Сохранить изменения</button><div class="err" id="er"></div></form>`;
+ const f=document.getElementById('f'),er=document.getElementById('er');
+ const M={login_taken:'Такой логин уже существует',name_taken:'Студент с таким именем в этой группе уже существует',bad_login:'Логин: 3–30 символов — латинские буквы, цифры, точка, _ или -',bad_pass:'Пароль должен быть не короче 4 символов',bad_name:'Укажите фамилию и имя полностью',bad_group:'Укажите группу',not_found:'Студент не найден'};
+ f.onsubmit=async e=>{e.preventDefault();er.className='err';er.textContent='';const b=f.querySelector('button');b.disabled=true;
+  try{const r=await arpc('admin_update_student',{p_id:id,p_new_login:f.lg.value.trim().toLowerCase(),p_new_pass:f.pw.value,p_full_name:cap(f.nm.value.trim().replace(/\s+/g,' ')),p_group:f.g.value.trim()});
+   if(r.ok){er.className='okm';er.textContent='Сохранено';f.pw.value=''}else er.textContent=M[r.error]||'Ошибка сохранения'}catch(x){if(x.message!=='auth')er.textContent='Ошибка сохранения'}b.disabled=false}}
+
+/* ---------- account settings ---------- */
+const AM={login_taken:'Такой логин уже существует',bad_login:'Логин: 3–30 символов — латинские буквы, цифры, точка, _ или -',wrong_pass:'Текущий пароль указан неверно',session:'Сессия устарела. Войдите заново.'};
+function credForm(o){return `<div class="card prof"><span class="av">${o.av}</span><div><div class="nm">${o.title}</div><div class="sub" style="margin-top:2px;font-size:13px">${o.sub}</div></div></div>
+ <form class="card mt16" id="f" autocomplete="off">${o.cur?`<label class="lbl" style="margin-top:0" for="cp">Текущий пароль</label><input class="in" id="cp" type="password" autocomplete="current-password" maxlength="72" required>`:''}
+ <label class="lbl"${o.cur?'':' style="margin-top:0"'} for="lg">Логин</label><input class="in" id="lg" maxlength="30" autocapitalize="none" spellcheck="false" value="${esc(o.login)}" required>
+ <label class="lbl" for="np">Новый пароль</label><input class="in" id="np" type="password" autocomplete="new-password" maxlength="72" placeholder="Оставьте пустым, чтобы не менять">
+ <label class="lbl" for="np2">Повторите новый пароль</label><input class="in" id="np2" type="password" autocomplete="new-password" maxlength="72">
+ <button class="btn mt20">Сохранить</button><div class="err" id="er"></div></form>`}
+function credCheck(f,er,min){const l=f.lg.value.trim().toLowerCase(),p=f.np.value;er.className='err';er.textContent='';
+ if(!/^[a-z0-9._-]{3,30}$/.test(l)){er.textContent=AM.bad_login;return null}
+ if(p&&p.length<min){er.textContent=`Пароль должен быть не короче ${min} символов`;return null}
+ if(p!==f.np2.value){er.textContent='Новые пароли не совпадают';return null}return{l,p}}
+function accountPage(){page({title:'Логин, пароль и 2FA',back:'/',body:credForm({av:esc(initials(U.name)),title:esc(U.name),sub:'Для изменений введите текущий пароль',cur:true,login:U.login})});twofa('student',U.token);
+ const f=document.getElementById('f'),er=document.getElementById('er');
+ f.onsubmit=async e=>{e.preventDefault();const c=credCheck(f,er,4);if(!c)return;const b=f.querySelector('button');b.disabled=true;
+  try{const r=await rpc('student_update_account',{p_token:U.token,p_current_pass:f.cp.value,p_new_login:c.l,p_new_pass:c.p});
+   if(r.ok){U.login=r.login;sv('u',U);f.cp.value=f.np.value=f.np2.value='';er.className='okm';er.textContent='Сохранено. Используйте новые данные при следующем входе.'}
+   else er.textContent=AM[r.error]||(r.error==='bad_pass'?'Пароль должен быть не короче 4 символов':'Ошибка сохранения')}
+  catch(x){er.textContent='Нет связи с сервером'}b.disabled=false}}
+function aMe(){page({title:'Логин, пароль и 2FA',back:'/admin',body:credForm({av:I.shield.replace('<svg','<svg style="width:20px;height:20px"'),title:'Администратор',sub:'Данные для входа в админ-панель',cur:false,login:ADM.login||''})});twofa('admin',ADM.p);
+ const f=document.getElementById('f'),er=document.getElementById('er');
+ f.onsubmit=async e=>{e.preventDefault();const c=credCheck(f,er,5);if(!c)return;const b=f.querySelector('button');b.disabled=true;
+  try{const r=await arpc('admin_change_credentials',{p_new_login:c.l,p_new_pass:c.p});
+   if(r.ok){ADM.login=r.login;if(ses)sv('adm',ADM,ses);f.np.value=f.np2.value='';er.className='okm';er.textContent='Сохранено. Запомните новые данные для входа.'}
+   else er.textContent=AM[r.error]||(r.error==='bad_pass'?'Пароль должен быть не короче 5 символов':'Ошибка сохранения')}
+  catch(x){if(x.message!=='auth')er.textContent='Ошибка сохранения'}b.disabled=false}}
+
+/* ---------- two-factor authentication (Google Authenticator) ---------- */
+let QRLIB=null;
+const loadQR=()=>QRLIB||(QRLIB=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)}));
+async function twofa(kind,token){const box=document.createElement('div');box.innerHTML=`<div class="sec">Двухфакторная защита (2FA)</div><div class="card" id="tf"><div class="ld" style="padding:8px">Загрузка…</div></div>`;main().appendChild(box);
+ const C=()=>document.getElementById('tf');
+ const st=async()=>{let r;try{r=await rpc('totp_status',{p_kind:kind,p_token:token})}catch(e){C().innerHTML='<div class="empty">Нет связи с сервером</div>';return}
+  if(!r.ok){C().innerHTML='<div class="empty">Сессия устарела. Войдите заново.</div>';return}
+  r.enabled?on():off()};
+ const off=()=>{C().innerHTML=`<div class="prof"><span class="ic">${I.lock}</span><div><div class="t1" style="font-weight:500">Защита выключена</div><div class="sub" style="font-size:13px;margin-top:2px">Включите 2FA: при входе кроме пароля понадобится код из приложения Google Authenticator.</div></div></div><button class="btn mt16" id="tfon">${I.shield} Включить 2FA</button><div class="err" id="tfer"></div>`;
+  document.getElementById('tfon').onclick=setup};
+ const on=()=>{C().innerHTML=`<div class="prof"><span class="ic ok2">${I.shield}</span><div><div class="t1" style="font-weight:500">Защита включена</div><div class="sub" style="font-size:13px;margin-top:2px">При каждом входе нужен код из Google Authenticator.</div></div></div>
+  <label class="lbl" for="tfc">Чтобы отключить, введите текущий код</label><input class="in otp" id="tfc" inputmode="numeric" maxlength="6" placeholder="000000"><button class="btn dg mt16" id="tfoff">Отключить 2FA</button><div class="err" id="tfer"></div>`;
+  document.getElementById('tfoff').onclick=async()=>{const c=document.getElementById('tfc').value.replace(/\D/g,''),er=document.getElementById('tfer');if(c.length!==6)return er.textContent='Введите 6-значный код';
+   try{const r=await rpc('totp_enable',{p_kind:kind,p_token:token,p_code:c,p_on:false});if(r.ok)off();else er.textContent=r.error==='bad_otp'?'Неверный код':'Сессия устарела. Войдите заново.'}catch(e){er.textContent='Нет связи с сервером'}}};
+ const setup=async()=>{let r;try{r=await rpc('totp_setup',{p_kind:kind,p_token:token})}catch(e){document.getElementById('tfer').textContent='Нет связи с сервером';return}
+  if(!r.ok){document.getElementById('tfer').textContent='Сессия устарела. Войдите заново.';return}
+  const uri=`otpauth://totp/${encodeURIComponent('Testru:'+r.account)}?secret=${r.secret}&issuer=Testru&algorithm=SHA1&digits=6&period=30`,key=r.secret.replace(/(.{4})/g,'$1 ').trim();
+  C().innerHTML=`<ol class="steps">
+   <li><b>Установите Google Authenticator</b><span>Скачайте бесплатное приложение: <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener">Android (Google Play)</a> или <a href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank" rel="noopener">iPhone (App Store)</a>.</span></li>
+   <li><b>Добавьте аккаунт</b><span>В приложении нажмите «+» → «Сканировать QR-код» и наведите камеру на код ниже. Если сайт открыт на этом же телефоне — нажмите «Открыть в Authenticator» или выберите «Ввести ключ настройки» и вставьте ключ.</span>
+    <div class="qrw"><div id="qr" class="qr"></div><div class="qrk"><span class="lbl" style="margin:0 0 4px">Ключ настройки</span><code id="sk">${key}</code><div class="erow" style="margin-top:10px"><button class="btn gh sm" id="cp">Скопировать ключ</button><a class="btn gh sm" href="${uri}">Открыть в Authenticator</a></div></div></div></li>
+   <li><b>Подтвердите код</b><span>Введите 6 цифр, которые показывает приложение для «Testru».</span>
+    <input class="in otp mt16" id="tfc" inputmode="numeric" maxlength="6" placeholder="000000"><div class="nav"><button class="btn gh" id="tfx">Отмена</button><button class="btn" id="tfok">Подтвердить</button></div><div class="err" id="tfer"></div></li></ol>`;
+  loadQR().then(()=>{new QRCode(document.getElementById('qr'),{text:uri,width:168,height:168,correctLevel:QRCode.CorrectLevel.M})}).catch(()=>{document.getElementById('qr').innerHTML='<div class="sub" style="font-size:12px;padding:10px">QR-код не загрузился — введите ключ вручную.</div>'});
+  document.getElementById('cp').onclick=()=>{try{navigator.clipboard.writeText(r.secret);document.getElementById('cp').textContent='Скопировано'}catch(e){}};
+  document.getElementById('tfx').onclick=off;
+  document.getElementById('tfok').onclick=async()=>{const c=document.getElementById('tfc').value.replace(/\D/g,''),er=document.getElementById('tfer');if(c.length!==6)return er.textContent='Введите 6-значный код';
+   try{const x=await rpc('totp_enable',{p_kind:kind,p_token:token,p_code:c,p_on:true});if(x.ok)on();else er.textContent=x.error==='bad_otp'?'Неверный код. Проверьте, что время на телефоне установлено автоматически.':'Сессия устарела. Войдите заново.'}catch(e){er.textContent='Нет связи с сервером'}}};
+ st()}
+
+route();
+</script></body></html>
