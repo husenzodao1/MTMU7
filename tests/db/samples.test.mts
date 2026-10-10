@@ -62,6 +62,11 @@ describe("the example workbooks, imported in the order the office is given", () 
     const data = await sheet("students");
     const preview = await people("students", data, true);
     assert.deepEqual(problems(preview), [], "an example the importer would reject teaches the wrong thing");
+    // The office's preview also asks about telephone numbers (phone-conflicts.ts).
+    const phones = await asUser(db, t.users.adminA, (tx) =>
+      one<{ r: unknown[] }>(tx, `SELECT public.import_phone_conflicts($1::jsonb) AS r`, [JSON.stringify(data)])
+    );
+    assert.deepEqual(phones!.r, [], "no number in the example is in it twice");
     assert.deepEqual(preview.newClasses, ["1А", "5А", "5Б"]);
 
     const done = await people("students", data, false);

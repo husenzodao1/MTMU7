@@ -64,7 +64,8 @@ const STUDENTS: Row[] = [
   },
   // Two children of one family. One inbox, two addresses: everything after the
   // + is ignored on delivery, so both codes reach the parent while Supabase
-  // still sees two different people.
+  // still sees two different people. A telephone number, though, belongs to
+  // one account in the school: the younger one has none of her own yet.
   {
     class_name: "5А",
     last_name: "Ҳакимов",
@@ -83,7 +84,7 @@ const STUDENTS: Row[] = [
     date_of_birth: "2017-02-14",
     gender: "духтар",
     email: "hakimov.oila+sabina@gmail.com",
-    phone: "+992 93 345 67 89",
+    phone: "",
   },
   {
     class_name: "5Б",

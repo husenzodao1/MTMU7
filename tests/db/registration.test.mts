@@ -27,12 +27,21 @@ async function authUser(verified = true): Promise<string> {
   return id;
 }
 
+// A telephone number belongs to one account in a school (00077), so each
+// registration brings its own.
+let phoneSerial = 0;
 const submit = (uid: string, args: { slug?: string; role?: string | null; classId?: string | null; code?: string | null }) =>
   asUser(db, uid, (tx) =>
     one<{ r: { status: string; request_id: string } }>(
       tx,
-      `SELECT public.submit_registration($1, 'First', 'Last', NULL, $2, $3, '{"phone":"+992900000000","evil":"x"}'::jsonb, $4) AS r`,
-      [args.slug ?? "mtmu-7", args.role ?? null, args.classId ?? null, args.code ?? null]
+      `SELECT public.submit_registration($1, 'First', 'Last', NULL, $2, $3, $5::jsonb, $4) AS r`,
+      [
+        args.slug ?? "mtmu-7",
+        args.role ?? null,
+        args.classId ?? null,
+        args.code ?? null,
+        JSON.stringify({ phone: `+9929000${String(++phoneSerial).padStart(5, "0")}`, evil: "x" }),
+      ]
     )
   );
 
@@ -57,7 +66,7 @@ describe("self-registration", () => {
     assert.equal(user!.status, "pending");
     assert.equal(user!.is_active, false);
     const request = await one<{ additional_data: Record<string, string> }>(db, `SELECT additional_data FROM public.registration_requests WHERE auth_user_id = $1`, [uid]);
-    assert.deepEqual(request!.additional_data, { phone: "+992900000000" });
+    assert.deepEqual(Object.keys(request!.additional_data), ["phone"]);
     const access = await asUser(db, uid, (tx) => one<{ a: { permissions: string[] } }>(tx, `SELECT public.get_my_access() AS a`));
     assert.deepEqual(access!.a.permissions, []);
   });
