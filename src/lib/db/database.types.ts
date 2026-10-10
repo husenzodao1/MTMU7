@@ -5667,6 +5667,7 @@ export type Database = {
       save_device_token: { Args: { p_token: string; p_platform: string; p_locale?: string }; Returns: undefined };
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
       save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };
+      school_faces: { Args: { p_limit?: number }; Returns: Json };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };

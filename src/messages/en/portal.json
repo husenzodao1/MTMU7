@@ -68,6 +68,23 @@
         "day": "Wishing you a smooth and successful day!",
         "evening": "Have a pleasant evening and a good rest!",
         "night": "Sleep well — tomorrow is a new day."
+      },
+      "faces": {
+        "title": "Faces of the school",
+        "active": "Students",
+        "graduates": "Graduates",
+        "none": "none yet"
+      },
+      "showcase": {
+        "title": "Announcements and news",
+        "hint": "Tap to stop, tap again to carry on",
+        "pause": "Pause",
+        "play": "Play",
+        "open": "Open",
+        "announcement": "Announcement",
+        "news": "News",
+        "allAnnouncements": "All announcements",
+        "allNews": "All news"
       }
     },
     "lessons": {

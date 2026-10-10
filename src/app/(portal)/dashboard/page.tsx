@@ -8,9 +8,14 @@ import { RegistrationNotice } from "@/features/auth/registration-notice";
 import { getMyChildren, getStudentOverview, getTeacherToday } from "@/features/academic/queries";
 import { getAdminDashboard } from "@/features/admin/dashboard-query";
 import { SetupGuide } from "@/features/admin/setup-guide";
+import { getSchoolFaces } from "@/features/dashboard/faces";
+import { FacesRibbon } from "@/features/dashboard/faces-ribbon";
 import { GreetingCard } from "@/features/dashboard/greeting-card";
-import { AnnouncementList, EventList, NewsCompactList } from "@/features/content/components";
+import { Showcase, type ShowcaseCard } from "@/features/dashboard/showcase";
+import { EventList } from "@/features/content/components";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements } from "@/features/content/queries";
+import { splitLeadImage } from "@/components/ui/misc";
+import { markdownToPlainText } from "@/lib/content/markdown";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Alert, Card, CardBody, CardHeader, Metric } from "@/components/ui/surface";
@@ -72,14 +77,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const isTeaching = canAny(access, ["grades.enter", "attendance.mark"]);
   const showAdminSummary = canEnterAdmin(access) && canAny(access, ["students.view", "users.view", "reports.view"]) && !isTeaching;
 
-  const [teacher, student, children, admin, announcements, events, news] = await Promise.all([
+  const showAnnouncements = hasModule(access, "announcements") && can(access, "announcements.view");
+  const showNews = hasModule(access, "news") && can(access, "news.view");
+  const [teacher, student, children, admin, announcements, events, news, faces] = await Promise.all([
     isTeaching ? getTeacherToday(today) : Promise.resolve(null),
     isStudent ? getStudentOverview(undefined, today) : Promise.resolve(null),
     isParent ? getMyChildren() : Promise.resolve([]),
     showAdminSummary ? getAdminDashboard() : Promise.resolve(null),
-    hasModule(access, "announcements") && can(access, "announcements.view") ? getVisibleAnnouncements(schoolId, 5) : Promise.resolve([]),
+    showAnnouncements ? getVisibleAnnouncements(schoolId, 8) : Promise.resolve([]),
     hasModule(access, "events") && can(access, "events.view") ? getUpcomingEvents(schoolId, 5) : Promise.resolve([]),
-    hasModule(access, "news") && can(access, "news.view") ? getLatestNews(schoolId, 3) : Promise.resolve([]),
+    showNews ? getLatestNews(schoolId, 8) : Promise.resolve([]),
+    getSchoolFaces(),
   ]);
 
   const firstChild = children[0];
@@ -87,8 +95,38 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
   const tc = await getTranslations("common");
 
+  // The notice board's cards: the picture an announcement leads with (or the
+  // first one in it), a news story's cover, the first words of each.
+  const announcementCards: ShowcaseCard[] = announcements.map((item) => ({
+    id: item.id,
+    title: item.title,
+    excerpt: markdownToPlainText(item.body, 140),
+    image: splitLeadImage(item.body).lead?.src ?? null,
+    href: `/announcements#a-${item.id}`,
+    date: formatDate(item.publishAt, locale),
+    tone: item.priority === "normal" ? null : item.priority,
+  }));
+  const newsCards: ShowcaseCard[] = news.map((item) => ({
+    id: item.id,
+    title: item.title,
+    excerpt: item.summary?.trim() || markdownToPlainText(item.content, 140),
+    image: item.coverImageUrl ?? splitLeadImage(item.content).lead?.src ?? null,
+    href: `/news/${item.slug}`,
+    date: item.publishAt ? formatDate(item.publishAt, locale) : "",
+    tone: null,
+  }));
+
   return (
     <>
+      {faces && (faces.active.length > 0 || faces.graduates.length > 0) ? (
+        <FacesRibbon
+          active={faces.active}
+          graduates={faces.graduates}
+          counts={faces.counts}
+          labels={{ title: t("faces.title"), active: t("faces.active"), graduates: t("faces.graduates"), none: t("faces.none") }}
+        />
+      ) : null}
+
       <GreetingCard
         name={access.firstName}
         timeZone={access.school?.timezone}
@@ -108,6 +146,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       />
 
       {welcome ? <Alert tone="success" className="mb-5">{t("welcome")}</Alert> : null}
+
+      {announcementCards.length > 0 || newsCards.length > 0 ? (
+        <Showcase announcements={announcementCards} news={newsCards} links={{ announcements: showAnnouncements, news: showNews }} />
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
@@ -247,12 +289,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           ) : null}
 
-          {news.length > 0 ? (
-            <Card>
-              <CardHeader title={t("news")} actions={<Link href="/news" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
-              <CardBody><NewsCompactList items={news} /></CardBody>
-            </Card>
-          ) : null}
         </div>
 
         <div className="space-y-5">
@@ -260,12 +296,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <Card>
               <CardHeader title={t("student.attendance")} />
               <CardBody><AttendanceSummary summary={student.attendance_term} /></CardBody>
-            </Card>
-          ) : null}
-          {hasModule(access, "announcements") ? (
-            <Card>
-              <CardHeader title={t("announcements")} actions={<Link href="/announcements" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
-              <CardBody><AnnouncementList items={announcements} compact /></CardBody>
             </Card>
           ) : null}
           {hasModule(access, "events") ? (
