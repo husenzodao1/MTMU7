@@ -69,7 +69,7 @@ export function Radio({ label, description, className, ...props }: InputHTMLAttr
 
 export function Label({ htmlFor, children, required, className }: { htmlFor?: string; children: ReactNode; required?: boolean; className?: string }) {
   return (
-    <label htmlFor={htmlFor} className={cn("block text-sm font-medium text-ink", className)}>
+    <label htmlFor={htmlFor} className={cn("block text-[0.8125rem] font-medium text-ink", className)}>
       {children}
       {required ? (
         <span className="ms-0.5 text-danger-600" aria-hidden>
@@ -103,18 +103,18 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-1", className)}>
       <Label htmlFor={htmlFor} required={required}>
         {label}
       </Label>
       {children}
       {hint && !error ? (
-        <p id={`${htmlFor}-hint`} className="text-sm text-ink-muted">
+        <p id={`${htmlFor}-hint`} className="text-xs text-ink-muted">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={`${htmlFor}-error`} className="text-sm font-medium text-danger-700" role="alert">
+        <p id={`${htmlFor}-error`} className="text-xs font-medium text-danger-700" role="alert">
           {error}
         </p>
       ) : null}

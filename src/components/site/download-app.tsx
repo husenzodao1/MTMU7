@@ -51,15 +51,31 @@ export interface DownloadLabels {
   platforms: Record<AppPlatform, { name: string; hint: string }>;
 }
 
+const TRIGGER = {
+  // The front page's second button, the twin of "Get started".
+  hero: "home-button home-button-quiet",
+  // A link among the footer's links.
+  footer: "inline-flex items-center gap-1 rounded-sm text-[11px] text-ink-muted transition-colors hover:text-ink",
+} as const;
+
 /**
- * The quiet invitation at the very top of every page: a small pill with a
- * download mark and two slow ripples behind it — the support button's rings,
- * at half the pace — and a menu with the three apps.
- *
- * The visitor's own device comes first, and the other two stay one tap away
- * for whoever is fetching the app for somebody else.
+ * The three apps, behind one button: on the front page next to "Get started",
+ * and in the footer of every page. The visitor's own device comes first, and
+ * the other two stay one tap away for whoever is fetching the app for
+ * somebody else.
  */
-export function DownloadApp({ labels, recommended }: { labels: DownloadLabels; recommended: AppPlatform | null }) {
+export function DownloadApp({
+  labels,
+  recommended,
+  variant = "hero",
+  text,
+}: {
+  labels: DownloadLabels;
+  recommended: AppPlatform | null;
+  variant?: keyof typeof TRIGGER;
+  /** The button's words, when they are not the menu's own. */
+  text?: string;
+}) {
   const order: AppPlatform[] = recommended
     ? [recommended, ...(["android", "ios", "windows"] as AppPlatform[]).filter((p) => p !== recommended)]
     : ["android", "ios", "windows"];
@@ -67,18 +83,15 @@ export function DownloadApp({ labels, recommended }: { labels: DownloadLabels; r
   return (
     <DropdownPrimitive.Root modal={false}>
       <DropdownPrimitive.Trigger asChild>
-        <button
-          type="button"
-          className="download-app relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-semibold text-white ring-1 ring-white/30 backdrop-blur-sm transition-colors hover:bg-white/25 data-[state=open]:bg-white/25"
-          aria-label={labels.title}
-        >
-          <Download className="size-3.5" aria-hidden />
-          <span>{labels.button}</span>
+        <button type="button" className={TRIGGER[variant]} aria-label={labels.title}>
+          <Download className={variant === "footer" ? "size-3" : "size-3.5"} aria-hidden />
+          <span>{text ?? labels.button}</span>
         </button>
       </DropdownPrimitive.Trigger>
       <DropdownPrimitive.Portal>
         <DropdownPrimitive.Content
-          align="end"
+          align={variant === "hero" ? "center" : "end"}
+          side={variant === "footer" ? "top" : "bottom"}
           sideOffset={10}
           collisionPadding={12}
           className="z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-surface p-2 shadow-overlay data-[state=open]:animate-fade"

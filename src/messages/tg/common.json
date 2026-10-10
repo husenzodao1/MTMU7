@@ -272,11 +272,13 @@
     "adminCenter": "Маркази идоракунӣ",
     "backToPortal": "Бозгашт ба портал",
     "myClass": "Синфи ман",
-    "version": "Версия {site}",
-    "versionInApp": "Барнома {app} · сомона {site}",
-    "about": "Дар бораи сомона",
-    "aboutTitle": "Портали МТМУ №7",
+    "version": "{site}",
+    "versionInApp": "барнома {app} · сомона {site}",
+    "about": "Дар бораи барнома",
+    "aboutTitle": "Портали мактабии Истаравшан",
     "aboutBody": "Сомона ва барномаи мактаб барои хонандагон, волидон ва омӯзгорон.",
-    "aboutClose": "Хуб"
+    "aboutClose": "Хуб",
+    "appVersion": "Версияи барнома: {version}",
+    "makers": "Созандагон"
   }
 }

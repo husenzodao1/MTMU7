@@ -72,19 +72,14 @@
       "faces": {
         "title": "Faces of the school",
         "active": "Students",
-        "graduates": "Graduates",
-        "none": "none yet"
+        "graduates": "Graduates"
       },
       "showcase": {
-        "title": "Announcements and news",
-        "hint": "Tap to stop, tap again to carry on",
-        "pause": "Pause",
-        "play": "Play",
-        "open": "Open",
+        "title": "Announcements, news and events",
         "announcement": "Announcement",
         "news": "News",
-        "allAnnouncements": "All announcements",
-        "allNews": "All news"
+        "event": "Event",
+        "all": "All"
       }
     },
     "lessons": {
@@ -748,6 +743,19 @@
       "points": "{points} of {max} points",
       "chartLabel": "Percentage over the period",
       "missedDays": "Days missed or late"
+    },
+    "updates": {
+      "title": "Announcements, news and events",
+      "all": "All",
+      "kind": "Kind",
+      "period": "Period",
+      "periods": {
+        "all": "Any time",
+        "week": "Week",
+        "month": "Month"
+      },
+      "search": "Search",
+      "empty": "Nothing found"
     }
   }
 }

@@ -26,7 +26,6 @@ export function setupSteps(data: AdminDashboard): Step[] {
     { key: "classes", href: "/admin/classes", done: Number(data.counts.classes_active) > 0 },
     { key: "staff", href: "/admin/staff", done: Number(data.counts.teachers_active) > 0 },
     { key: "students", href: "/admin/students", done: Number(data.counts.students_active) > 0 },
-    { key: "identity", href: "/admin/school", done: !alerts.has("official_content_not_approved") },
   ];
 }
 

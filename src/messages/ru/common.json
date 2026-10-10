@@ -272,11 +272,13 @@
     "adminCenter": "Центр управления",
     "backToPortal": "Вернуться в портал",
     "myClass": "Мой класс",
-    "version": "Версия {site}",
-    "versionInApp": "Приложение {app} · сайт {site}",
-    "about": "О сайте",
-    "aboutTitle": "Портал МТМУ №7",
+    "version": "{site}",
+    "versionInApp": "приложение {app} · сайт {site}",
+    "about": "О приложении",
+    "aboutTitle": "Школьный портал Истаравшана",
     "aboutBody": "Сайт и приложение школы для учеников, родителей и учителей.",
-    "aboutClose": "Хорошо"
+    "aboutClose": "Хорошо",
+    "appVersion": "Версия приложения: {version}",
+    "makers": "Создатели"
   }
 }

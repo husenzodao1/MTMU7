@@ -25,7 +25,6 @@ const ALERT_LINKS: Record<string, string> = {
   classes_without_homeroom_teacher: "/admin/classes",
   subjects_without_teacher: "/admin/classes",
   no_bell_schedule: "/admin/timetable",
-  official_content_not_approved: "/admin/website",
   students_without_class: "/admin/students?class=none",
 };
 

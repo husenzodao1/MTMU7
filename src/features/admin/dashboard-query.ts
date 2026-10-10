@@ -39,7 +39,9 @@ const dashboardSchema = z.object({
       })
     )
     .nullable(),
-  alerts: z.array(z.string()),
+  // The school's official wording and photograph are no longer edited here
+  // (the public school site is gone), so that reminder is not shown.
+  alerts: z.array(z.string()).transform((alerts) => alerts.filter((alert) => alert !== "official_content_not_approved")),
 });
 
 export type AdminDashboard = z.infer<typeof dashboardSchema>;

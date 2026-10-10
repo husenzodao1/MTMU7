@@ -1,5 +1,5 @@
 import "server-only";
-import { can, canAny, canEnterAdmin, hasAdminScope, hasModule, hasRole, isPlatformAdmin, type Access } from "@/lib/auth/access";
+import { can, canAny, canEnterAdmin, hasModule, hasRole, type Access } from "@/lib/auth/access";
 import type { Permission } from "@/lib/auth/permissions";
 
 export type IconName =
@@ -118,7 +118,6 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
       { item: { key: "library", href: "/admin/library", icon: "library", labelKey: "admin.nav.library" }, visible: anyOf("library.create", "library.update", "library.publish", "library.archive") },
       { item: { key: "documents", href: "/admin/documents", icon: "documents", labelKey: "admin.nav.documents" }, visible: anyOf("documents.create", "documents.publish") },
       { item: { key: "media", href: "/admin/media", icon: "media", labelKey: "admin.nav.media" }, visible: anyOf("media.manage", "media.upload") },
-      { item: { key: "website", href: "/admin/website", icon: "website", labelKey: "admin.nav.website" }, visible: anyOf("cms.manage") },
     ],
   },
   {
@@ -128,16 +127,6 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
       { item: { key: "broadcasts", href: "/admin/notifications", icon: "broadcasts", labelKey: "admin.nav.notifications" }, visible: anyOf("notifications.send") },
       { item: { key: "support", href: "/admin/support", icon: "support", labelKey: "admin.nav.support" }, visible: anyOf("messages.moderate") },
       { item: { key: "moderation", href: "/admin/moderation", icon: "moderation", labelKey: "admin.nav.moderation" }, visible: anyOf("messages.moderate") },
-    ],
-  },
-  {
-    key: "management",
-    labelKey: "admin.nav.groups.management",
-    rules: [
-      { item: { key: "school", href: "/admin/school", icon: "school", labelKey: "admin.nav.school" }, visible: anyOf("schools.update", "settings.view") },
-      { item: { key: "roles", href: "/admin/roles", icon: "roles", labelKey: "admin.nav.roles" }, visible: anyOf("roles.view") },
-      { item: { key: "modules", href: "/admin/modules", icon: "modules", labelKey: "admin.nav.modules" }, visible: anyOf("modules.manage") },
-      { item: { key: "platform", href: "/admin/platform", icon: "platform", labelKey: "admin.nav.platform" }, visible: (a) => isPlatformAdmin(a) || hasAdminScope(a) },
     ],
   },
   {
@@ -154,7 +143,6 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     labelKey: "admin.nav.groups.system",
     rules: [
       { item: { key: "settings", href: "/admin/settings", icon: "settings", labelKey: "admin.nav.settings" }, visible: anyOf("settings.update") },
-      { item: { key: "status", href: "/admin/system", icon: "status", labelKey: "admin.nav.system" }, visible: (a) => isPlatformAdmin(a) || can(a, "settings.update") },
     ],
   },
 ];

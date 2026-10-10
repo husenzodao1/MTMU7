@@ -27,12 +27,12 @@ export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string 
   return (
     <ActionForm
       action={signInAction}
-      className="space-y-4"
+      className="space-y-3"
       lead={
-        <div className="mb-5">
+        <div className="mb-4">
           <AuthMark alt={t("markAlt")} src={markUrl} />
-          <h1 className="text-center text-2xl font-semibold">{t("title")}</h1>
-          <p className="mt-1 text-center text-sm text-ink-secondary">{t("subtitle")}</p>
+          <h1 className="text-center text-lg font-semibold">{t("title")}</h1>
+          <p className="mt-0.5 text-center text-xs text-ink-secondary">{t("subtitle")}</p>
         </div>
       }
     >
@@ -42,10 +42,21 @@ export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string 
           the people who set the school up know their address. All three reach
           the same account, so the field takes whichever they have to hand — and
           capitalises nothing, because a nickname is not a serial number. */}
-      <TextField name="login" label={t("login")} hint={t("loginHint")} autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={254} />
-      <TextField name="password" type="password" label={t("password")} autoComplete="current-password" required />
+      {/* The hint right under the field, very small; the password close after it. */}
+      <TextField
+        name="login"
+        label={t("login")}
+        hint={t("loginHint")}
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        required
+        maxLength={254}
+        className="login-field"
+      />
+      <TextField name="password" type="password" label={t("password")} autoComplete="current-password" required className="!mt-2" />
       <div className="flex items-center justify-end">
-        <Link href="/reset-password" className="text-sm font-medium text-brand-text hover:underline">
+        <Link href="/reset-password" className="text-xs font-medium text-brand-text hover:underline">
           {t("forgot")}
         </Link>
       </div>
@@ -62,7 +73,7 @@ export function SignInForm({ next, markUrl }: { next?: string; markUrl?: string 
       <GoogleSignInButton label={t("google")} next={next} />
       {/* Consent is given by the act of signing in, so there is no checkbox to
           tick; the sentence states what that act means, including for minors. */}
-      <p className="text-center text-xs leading-relaxed text-ink-muted">
+      <p className="text-center text-[0.6875rem] leading-relaxed text-ink-muted">
         {terms.rich("signIn", {
           terms: (chunks) => (
             <Link href="/terms" className="underline underline-offset-2 hover:text-ink-secondary">

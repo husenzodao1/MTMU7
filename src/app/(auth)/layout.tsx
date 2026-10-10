@@ -1,5 +1,5 @@
 import { Unbounded } from "next/font/google";
-import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
+import { SiteFooter } from "@/components/site/official-header";
 import { getAuthSchool, safeImageUrl } from "@/lib/site/auth-school";
 
 /**
@@ -19,9 +19,9 @@ const codeDigits = Unbounded({
 const FALLBACK_BACKGROUND = "/images/school-bg.webp";
 
 /**
- * Chrome for the authentication pages: the government strip on top, the card
- * centred over a quietened photograph of the school being signed in to, the
- * site footer below. The photograph sits only behind the card area and is held
+ * Chrome for the authentication pages: the card centred over a quietened
+ * photograph of the school being signed in to, the site footer below — without
+ * its sign-in link, which is this very page. The photograph sits only behind the card area and is held
  * far enough back that the card's own contrast is untouched.
  */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -30,11 +30,10 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
   return (
     <div className={`${codeDigits.variable} flex min-h-dvh flex-col`}>
-      <OfficialStrip />
       <main
         id="main"
         tabIndex={-1}
-        className="relative isolate flex flex-1 items-center justify-center px-4 py-10 focus:outline-none sm:py-14"
+        className="relative isolate flex flex-1 items-center justify-center px-4 pb-10 pt-[calc(2.5rem+var(--strip-h))] focus:outline-none sm:pb-14 sm:pt-[calc(3.5rem+var(--strip-h))]"
       >
         <div aria-hidden className="absolute inset-0 -z-30 bg-canvas" />
         <div
@@ -49,7 +48,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         />
         <div className="w-full max-w-md">{children}</div>
       </main>
-      <SiteFooter />
+      <SiteFooter hideSignIn />
     </div>
   );
 }

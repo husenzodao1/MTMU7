@@ -513,10 +513,29 @@
 }
 
 @layer base {
+  /*
+   * Small type throughout: every size and space on the portal is set in rem,
+   * so the root sets the scale — 15px, and 14.5px on a phone — as a share of
+   * whatever the reader's browser starts from, never a fixed pixel size.
+   */
   html {
     color-scheme: light dark;
+    font-size: 93.75%;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+  @media (max-width: 640px) {
+    html {
+      font-size: 90.625%;
+    }
+  }
+  /* iOS zooms the page into any field set smaller than 16px. */
+  @supports (-webkit-touch-callout: none) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: max(16px, 1rem);
+    }
   }
 
   body {
@@ -893,45 +912,6 @@
   background:
     radial-gradient(55% 60% at 50% 20%, rgb(255 181 71 / 0.28), transparent 70%),
     linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
-}
-
-/* ------------------------------------------------------ the download pill */
-
-/* The support button's ripples, at half the pace and half the strength: an
-   invitation in the corner of the eye, never a flashing banner. */
-.download-app {
-  isolation: isolate;
-}
-.download-app::before,
-.download-app::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 9999px;
-  border: 1.5px solid rgb(255 255 255 / 0.55);
-  pointer-events: none;
-  opacity: 0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .download-app::before,
-  .download-app::after {
-    animation: download-wave 5.2s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-  .download-app::after {
-    animation-delay: 2.6s;
-  }
-}
-@keyframes download-wave {
-  0% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  70%,
-  100% {
-    transform: scale(1.35, 1.7);
-    opacity: 0;
-  }
 }
 
 /* ------------------------------------------------------------ the opening */
@@ -1427,11 +1407,13 @@
 /* The ministry strip is sticky on every page and always this tall, so
    everything else that sticks — the portal's header, its sidebar, a chat that
    fills the screen — can start exactly below it. */
+/* Only the front page has the strip now. Everywhere else --strip-h is just
+   the phone's status bar, which the portal's header pads itself below. */
 :root {
-  --strip-h: calc(3rem + env(safe-area-inset-top));
+  --strip-h: env(safe-area-inset-top, 0px);
 }
 .official-strip {
-  height: var(--strip-h);
+  height: calc(3rem + env(safe-area-inset-top, 0px));
 }
 @media print {
   :root {
@@ -2086,285 +2068,699 @@ html.chat-lock body {
   text-wrap: balance;
 }
 
+/* --------------------------------------------------------------- the front page */
+/*
+ * (public)/page.tsx: two boxes on a quiet ground. The ground is the canvas
+ * with three soft washes of colour — sage, lilac, apricot — drifting slowly
+ * behind frosted boxes, in every theme (the washes are mostly transparent, so
+ * a dark canvas stays dark). Small type throughout.
+ */
+.home-ground {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  overflow: hidden;
+  padding-bottom: 2.5rem;
+}
+.home-aurora {
+  position: absolute;
+  inset: -10% -20% 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.home-aurora span {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  animation: home-drift 22s ease-in-out infinite alternate;
+}
+.home-aurora span:nth-child(1) {
+  left: -8%;
+  top: -6%;
+  background: radial-gradient(circle, rgb(148 205 190 / 0.75), transparent 65%);
+}
+.home-aurora span:nth-child(2) {
+  right: -10%;
+  top: 8%;
+  background: radial-gradient(circle, rgb(196 178 238 / 0.7), transparent 65%);
+  animation-duration: 27s;
+  animation-delay: -6s;
+}
+.home-aurora span:nth-child(3) {
+  left: 22%;
+  top: 42%;
+  background: radial-gradient(circle, rgb(246 200 150 / 0.55), transparent 65%);
+  animation-duration: 31s;
+  animation-delay: -12s;
+}
+@keyframes home-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vmax, 4vmax, 0) scale(1.12);
+  }
+}
+.home-box {
+  position: relative;
+  border-radius: 1.4rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 78%, transparent);
+  box-shadow: 0 18px 44px -30px rgb(15 23 42 / 0.45);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .home-box {
+    background: color-mix(in oklab, var(--color-surface) 58%, transparent);
+    backdrop-filter: blur(22px) saturate(140%);
+  }
+}
+.home-kicker {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #0f8a8d 70%, var(--color-ink));
+}
+.home-title {
+  margin-top: 0.7rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 5.4vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+/* The city in the kicker's own letters: spaced capitals, a little smaller. */
+.home-city {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  vertical-align: 0.12em;
+  background: linear-gradient(90deg, #2b2a7a, #0f8a8d 60%, #c08a2a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.home-lead {
+  max-width: 34rem;
+  margin: 0.75rem auto 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+  text-wrap: pretty;
+}
+.home-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 10.5rem;
+  height: 2.25rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #24206b, #17306d 55%, #0b6b70);
+  box-shadow: 0 8px 18px -10px rgb(23 48 109 / 0.8);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.home-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px -12px rgb(23 48 109 / 0.9);
+}
+.home-button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.home-button-quiet {
+  color: var(--color-ink);
+  background: color-mix(in oklab, var(--color-surface) 82%, transparent);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.home-button-quiet:hover,
+.home-button-quiet[data-state="open"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #0f8a8d 60%, var(--color-line-strong));
+}
+.home-heading {
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-enter {
+    animation: glass-rise 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .home-enter-late {
+    animation: glass-rise 1100ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+  }
+  .feature-step {
+    animation: glass-line 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-aurora span {
+    animation: none;
+  }
+}
+
+/* The thread of features: a mark, a hairline to the next, a card beside it. */
+.feature-line {
+  display: grid;
+  gap: 0.85rem;
+}
+.feature-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.85rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+.feature-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: calc(0.925rem - 0.5px);
+  top: 2.05rem;
+  bottom: -0.85rem;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, #0f8a8d 55%, transparent),
+    color-mix(in srgb, #2b2a7a 30%, transparent)
+  );
+}
+.feature-dot {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  color: color-mix(in srgb, #0f8a8d 75%, var(--color-ink));
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #0f8a8d 35%, var(--color-line)),
+    0 6px 14px -10px rgb(15 23 42 / 0.6);
+}
+.feature-dot svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.feature-card {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem 0.6rem;
+  border-radius: 0.8rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 70%, transparent);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+.feature-card:hover,
+.feature-card-open {
+  border-color: color-mix(in srgb, #0f8a8d 35%, var(--color-line));
+  background: color-mix(in oklab, var(--color-surface) 92%, transparent);
+}
+.feature-title {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-ink);
+}
+/* Two lines of the text, fading out; the whole of it once opened. */
+.feature-body {
+  display: block;
+  max-height: 2.4rem;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--color-ink-secondary);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  transition: max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.feature-card-open .feature-body {
+  max-height: 20rem;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* The makers' name, outside every box. */
+.home-signature {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 1.25rem 1rem 0.5rem;
+  text-align: center;
+}
+.home-brand {
+  font-family: var(--font-crest), var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  margin-right: -0.42em;
+  background: linear-gradient(90deg, #2b2a7a, #0f8a8d 55%, #c08a2a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.home-motto {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklab, var(--color-ink-muted) 75%, transparent);
+}
+
+/* --------------------------------------------------------------- the footer */
+/*
+ * Small and light, like the boxes above it: the surface a little see-through
+ * over the page, a hairline on top, rows that read across with soft bars
+ * between their items (official-header.tsx, SiteFooter).
+ */
+.site-footer {
+  position: relative;
+  z-index: 10;
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 82%, transparent);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .site-footer {
+    background: color-mix(in oklab, var(--color-surface) 66%, transparent);
+    backdrop-filter: blur(16px) saturate(130%);
+  }
+}
+.footer-flag {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 0.5px rgb(15 23 42 / 0.25),
+    0 1px 3px rgb(15 23 42 / 0.15);
+}
+.footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+}
+.footer-bar {
+  font-size: 0.625rem;
+  color: color-mix(in oklab, var(--color-ink-muted) 45%, transparent);
+  user-select: none;
+}
+.footer-link {
+  border-radius: 2px;
+  color: var(--color-ink-muted);
+  transition: color 0.2s ease;
+}
+.footer-link:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+.footer-social:hover {
+  color: var(--color-ink);
+  background: var(--color-surface-muted);
+}
+
+/* ------------------------------------------------------- the portal header */
+/* "МТМУ №7" beside the emblem (app-shell.tsx, SchoolMark). */
+.shell-mark {
+  font-family: var(--font-mark), var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums;
+  color: var(--color-ink);
+}
+/* One box for the menu button, the bell and the avatar, so their centres line up. */
+.shell-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  color: var(--color-ink-secondary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.shell-icon:hover {
+  color: var(--color-ink);
+  background: var(--color-surface-muted);
+}
+/* Three lines that turn into a cross while the menu is open. */
+.burger {
+  position: relative;
+  display: block;
+  width: 1.1rem;
+  height: 0.8rem;
+}
+.burger > span {
+  position: absolute;
+  left: 0;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    width 0.3s ease;
+}
+.burger > span:nth-child(1) {
+  top: 0;
+  width: 100%;
+}
+.burger > span:nth-child(2) {
+  top: calc(50% - 0.75px);
+  width: 70%;
+}
+.burger > span:nth-child(3) {
+  bottom: 0;
+  width: 85%;
+}
+.burger[data-open] > span:nth-child(1) {
+  width: 100%;
+  transform: translateY(calc(0.4rem - 0.75px)) rotate(45deg);
+}
+.burger[data-open] > span:nth-child(2) {
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.burger[data-open] > span:nth-child(3) {
+  width: 100%;
+  transform: translateY(calc(-0.4rem + 0.75px)) rotate(-45deg);
+}
+.shell-about {
+  font-family: var(--font-mark), var(--font-sans);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+/* Who made it: a small table in a typewriter face. */
+.makers {
+  border-collapse: collapse;
+  font-family: var(--font-mono-ui), ui-monospace, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.625rem;
+  line-height: 1.45;
+}
+.makers td {
+  padding: 0.5rem 0.4rem;
+  vertical-align: top;
+  border-top: 1px solid var(--color-line);
+}
+.makers tr:last-child td {
+  border-bottom: 1px solid var(--color-line);
+}
+.makers td:first-child {
+  width: 38%;
+  padding-left: 0;
+}
+.makers td:last-child {
+  padding-right: 0;
+}
+.makers-level {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--color-brand-text-strong);
+  background: var(--color-brand-50);
+  box-shadow: inset 0 0 0 1px var(--color-brand-200);
+}
+
+/* The terms of use: numbered rules, each in its own small block. */
+.terms-list {
+  display: grid;
+  gap: 0.5rem;
+  counter-reset: rule;
+}
+.terms-list > li {
+  position: relative;
+  padding: 0.55rem 0.7rem 0.55rem 2.2rem;
+  border-radius: 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+  background: var(--color-surface-muted);
+  counter-increment: rule;
+}
+.terms-list > li::before {
+  content: counter(rule);
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-brand-on-solid);
+  background: var(--color-brand-solid);
+}
+/* Sign-in: the login's hint tucked right under its field, very small. */
+.login-field > p[id$="-hint"] {
+  margin-top: 0.2rem;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+/* ---------------------------------------------------------- drifting rows */
+/* drift-row.tsx: the track is moved by script; the finger pans the page up
+   and down as usual and the row sideways. */
+.drift-row {
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+}
+.drift-row:active {
+  cursor: grabbing;
+}
+.drift-row a,
+.drift-row img {
+  -webkit-user-drag: none;
+}
+.drift-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.drift-set {
+  display: flex;
+}
+
 /* --------------------------------------------------------- dashboard faces */
 /*
- * The two ribbons across the top of the dashboard
- * (src/features/dashboard/faces-ribbon.tsx): pupils drifting left, graduates
- * drifting right. Each ribbon is two identical copies moved by half its
- * width, so the loop has no seam.
+ * The two ribbons across the top of the dashboard (faces-ribbon.tsx): pupils
+ * drifting left, graduates drifting right. Two quiet boxes, a small label in
+ * each, round photographs in a thin ring with a tiny name under them.
  */
 .faces {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.625rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
 }
 .faces-half {
-  position: relative;
   min-width: 0;
-  overflow: hidden;
-  padding: 0.6rem 0 0.45rem;
-  border: 1px solid var(--color-line);
+  padding: 0.55rem 0 0.4rem;
   border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
   background:
-    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-brand-100) 55%, transparent), transparent 60%),
+    linear-gradient(160deg, color-mix(in oklab, var(--color-brand-100) 35%, transparent), transparent 55%),
     var(--color-surface);
 }
 .faces-graduates {
   background:
-    radial-gradient(120% 90% at 100% 0%, rgb(15 138 141 / 0.12), transparent 60%),
+    linear-gradient(200deg, color-mix(in srgb, #14a3a6 12%, transparent), transparent 55%),
     var(--color-surface);
 }
 .faces-title {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
   padding: 0 0.75rem;
-  font-family: var(--font-crest), var(--font-display);
-  font-size: 0.75rem;
+  text-align: center;
+  font-size: 0.5625rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-  color: var(--color-ink-secondary);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
   white-space: nowrap;
-}
-.faces-title > span:first-child {
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.faces-graduates .faces-title {
-  flex-direction: row-reverse;
-}
-.faces-count {
-  flex-shrink: 0;
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-brand-text);
-}
-.faces-graduates .faces-count {
-  color: color-mix(in srgb, #0f8a8d 70%, var(--color-ink));
-}
 .faces-window {
-  margin-top: 0.5rem;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-}
-.faces-track {
-  display: flex;
-  width: max-content;
-  animation: faces-left var(--faces-duration, 30s) linear infinite;
-}
-.faces-graduates .faces-track {
-  animation-name: faces-right;
-}
-.faces-half:hover .faces-track {
-  animation-play-state: paused;
-}
-.faces-set {
-  display: flex;
-  gap: 0.25rem;
-  padding-right: 0.25rem;
+  margin-top: 0.4rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
 .face {
   display: grid;
   justify-items: center;
-  width: 3.9rem;
-  gap: 0.2rem;
-  border-radius: 0.75rem;
-  padding: 0.1rem 0;
+  align-content: start;
+  width: 3.4rem;
+  gap: 0.25rem;
+  padding: 0.15rem 0;
   text-decoration: none;
 }
+/* The ring is a box of its own around the picture, so the circle is whole. */
+.face-ring {
+  display: block;
+  padding: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--color-brand-300), var(--color-brand-600));
+}
+.faces-graduates .face-ring {
+  background: linear-gradient(135deg, #7fd6d3, #0f8a8d);
+}
 .face-img {
-  width: 2.5rem;
-  height: 2.5rem;
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 999px;
   object-fit: cover;
+  border: 1.5px solid var(--color-surface);
   background: var(--color-surface-muted);
-  box-shadow:
-    0 0 0 2px var(--color-surface),
-    0 0 0 3.5px var(--color-brand-500);
-}
-.faces-graduates .face-img {
-  box-shadow:
-    0 0 0 2px var(--color-surface),
-    0 0 0 3.5px #14a3a6;
 }
 .face-initials {
   display: grid;
   place-items: center;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 700;
   color: var(--color-brand-text-strong);
-  background: var(--color-brand-100);
+  background: var(--color-brand-50);
 }
 .faces-graduates .face-initials {
   color: color-mix(in srgb, #0f8a8d 70%, var(--color-ink));
-  background: color-mix(in srgb, #14a3a6 16%, var(--color-surface));
+  background: color-mix(in srgb, #14a3a6 12%, var(--color-surface));
 }
 .face-empty {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 .face-name {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-crest), var(--font-display);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  line-height: 1.15;
-  color: var(--color-ink);
-}
-.face-detail {
   font-size: 0.5625rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  color: var(--color-ink-muted);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-ink-secondary);
 }
 a.face:hover .face-name {
-  color: var(--color-brand-text);
-}
-@keyframes faces-left {
-  to {
-    transform: translateX(-50%);
-  }
-}
-@keyframes faces-right {
-  from {
-    transform: translateX(-50%);
-  }
-  to {
-    transform: none;
-  }
+  color: var(--color-ink);
 }
 
 /* -------------------------------------------------------- dashboard notices */
 /*
- * The moving notice board (src/features/dashboard/showcase.tsx):
- * announcements drift left, the news under them drifts right, set half a card
- * along like courses of brick. A tap stops and restarts both (data-paused).
+ * The moving notice board (showcase.tsx): announcements drift left, news
+ * right, events left, each row set half a card along from the one above like
+ * courses of brick. The whole card is the link.
  */
 .showcase {
-  --card-w: min(68vw, 16.5rem);
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 1.25rem;
-  padding: 1rem 0 0.85rem;
-  border-radius: 1.5rem;
-  color: #ffffff;
+  --card-w: min(56vw, 13.5rem);
+  margin-bottom: 1.1rem;
+  padding: 0.85rem 0 0.75rem;
+  border-radius: 1.25rem;
   background:
-    radial-gradient(70% 60% at 85% 0%, rgb(255 181 71 / 0.28), transparent 65%),
-    radial-gradient(60% 70% at 0% 100%, rgb(20 163 166 / 0.3), transparent 60%),
+    radial-gradient(70% 60% at 85% 0%, rgb(255 181 71 / 0.24), transparent 65%),
+    radial-gradient(60% 70% at 0% 100%, rgb(20 163 166 / 0.26), transparent 60%),
     linear-gradient(150deg, #231a5c 0%, #17306d 55%, #0a5f66 100%);
-  box-shadow: 0 18px 40px -22px rgb(23 48 109 / 0.7);
-}
-.showcase-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0 1rem 0.75rem;
+  box-shadow: 0 16px 36px -24px rgb(23 48 109 / 0.7);
 }
 .showcase-title {
-  color: #ffffff;
-  font-family: var(--font-display);
-  font-size: 1.125rem;
+  margin-bottom: 0.65rem;
+  padding: 0 1rem;
+  text-align: center;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.005em;
-  line-height: 1.25;
-}
-.showcase-hint {
-  margin-top: 0.15rem;
-  font-size: 0.75rem;
-  line-height: 1.35;
-  color: rgb(255 255 255 / 0.66);
-}
-.showcase-toggle {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 2.25rem;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #ffffff;
-  background: rgb(255 255 255 / 0.12);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
-  transition: background-color 0.2s ease;
-}
-.showcase-toggle:hover {
-  background: rgb(255 255 255 / 0.2);
-}
-.showcase-toggle svg {
-  width: 0.9rem;
-  height: 0.9rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.82);
 }
 .showcase-rows {
   display: grid;
-  gap: 0.75rem;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  gap: 0.55rem;
 }
 .show-row {
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
 }
-.show-track {
-  display: flex;
-  width: max-content;
-  animation: faces-left var(--show-duration, 42s) linear infinite;
+.show-row-news .drift-track {
+  margin-left: calc(var(--card-w) / -2);
 }
-/* The news runs the other way, and starts half a card along: brickwork. */
-.show-row-news .show-track {
-  margin-inline-start: calc(var(--card-w) / -2);
-  animation-name: faces-right;
-}
-.showcase[data-paused] .show-track {
-  animation-play-state: paused;
-}
-.show-set {
-  display: flex;
-  gap: 0.75rem;
-  padding-right: 0.75rem;
+.show-row .drift-set {
+  gap: 0.55rem;
+  padding-right: 0.55rem;
 }
 .show-card {
   display: flex;
   flex-direction: column;
   width: var(--card-w);
   overflow: hidden;
-  border-radius: 1.1rem;
+  border-radius: 0.9rem;
   color: var(--color-ink);
   background: var(--color-surface);
-  box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.55);
-  transition: transform 0.3s ease;
-}
-.showcase[data-paused] .show-card {
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.6);
+  text-decoration: none;
 }
 .show-card[data-tone="critical"] {
   box-shadow:
-    inset 0 0 0 2px var(--color-danger-600),
-    0 10px 24px -14px rgb(0 0 0 / 0.55);
+    inset 0 0 0 1.5px var(--color-danger-600),
+    0 8px 20px -14px rgb(0 0 0 / 0.6);
 }
 .show-card[data-tone="important"] {
   box-shadow:
-    inset 0 0 0 2px var(--color-brand-500),
-    0 10px 24px -14px rgb(0 0 0 / 0.55);
+    inset 0 0 0 1.5px var(--color-brand-500),
+    0 8px 20px -14px rgb(0 0 0 / 0.6);
 }
 .show-img {
   display: block;
   width: 100%;
-  height: calc(var(--card-w) * 0.5);
+  height: calc(var(--card-w) * 0.46);
   object-fit: cover;
   background: var(--color-surface-muted);
 }
@@ -2382,35 +2778,43 @@ a.face:hover .face-name {
     radial-gradient(60% 80% at 70% 20%, color-mix(in srgb, #14a3a6 20%, var(--color-surface)), transparent 70%),
     linear-gradient(135deg, color-mix(in srgb, #14a3a6 8%, var(--color-surface)), var(--color-surface-muted));
 }
+.show-row-event .show-img-empty {
+  color: color-mix(in srgb, #6d4bd8 70%, var(--color-ink));
+  background:
+    radial-gradient(60% 80% at 50% 20%, color-mix(in srgb, #8b6cf0 18%, var(--color-surface)), transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, #8b6cf0 8%, var(--color-surface)), var(--color-surface-muted));
+}
 .show-img-empty svg {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.6rem;
+  height: 1.6rem;
   opacity: 0.75;
 }
 .show-body {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  gap: 0.3rem;
-  padding: 0.7rem 0.85rem 0.8rem;
+  gap: 0.2rem;
+  padding: 0.5rem 0.65rem 0.6rem;
 }
 .show-kicker {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 0.6rem;
-  font-family: var(--font-crest), var(--font-display);
-  font-size: 0.6875rem;
+  gap: 0 0.45rem;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-brand-text);
 }
 .show-row-news .show-kicker {
   color: color-mix(in srgb, #0f8a8d 70%, var(--color-ink));
 }
+.show-row-event .show-kicker {
+  color: color-mix(in srgb, #6d4bd8 70%, var(--color-ink));
+}
 .show-kicker span + span {
-  font-family: var(--font-sans);
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--color-ink-muted);
 }
 .show-title {
@@ -2418,8 +2822,8 @@ a.face:hover .face-name {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.9375rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 650;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
@@ -2428,84 +2832,176 @@ a.face:hover .face-name {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   line-height: 1.4;
   color: var(--color-ink-secondary);
   overflow-wrap: anywhere;
 }
-.show-open {
+.showcase-foot {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.7rem;
+}
+.showcase-all {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
-  gap: 0.2rem;
-  margin-top: auto;
-  padding-top: 0.35rem;
-  font-size: 0.8125rem;
+  height: 1.75rem;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--color-brand-text);
-}
-.show-open svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-.show-open:hover {
-  text-decoration: underline;
-}
-.showcase-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  padding: 0.85rem 1rem 0;
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-.showcase-links a {
-  color: rgb(255 255 255 / 0.85);
-}
-.showcase-links a:hover {
+  letter-spacing: 0.04em;
   color: #ffffff;
-  text-decoration: underline;
+  background: rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+  transition: background-color 0.2s ease;
+}
+.showcase-all:hover {
+  background: rgb(255 255 255 / 0.22);
 }
 @media (min-width: 640px) {
-  .faces-title {
-    font-size: 0.8125rem;
-    letter-spacing: 0.1em;
-  }
   .face {
-    width: 4.5rem;
+    width: 3.9rem;
   }
   .face-img {
-    width: 2.85rem;
-    height: 2.85rem;
+    width: 2.6rem;
+    height: 2.6rem;
   }
-  .showcase {
-    padding: 1.25rem 0 1rem;
-  }
-  .showcase-head,
-  .showcase-links {
-    padding-inline: 1.25rem;
-  }
-  .showcase-title {
-    font-size: 1.3rem;
+  .faces-title {
+    font-size: 0.625rem;
   }
 }
-/* Nothing drifts: both rows scroll by hand, one copy each. */
-@media (prefers-reduced-motion: reduce) {
-  .faces-track,
-  .show-track {
-    animation: none;
+
+/* ------------------------------------------------- announcements, news, events */
+/* updates/page.tsx: filters as small chips, the items in columns like bricks. */
+.updates-filters {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  margin: 0.75rem 0 1rem;
+}
+.updates-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+}
+.updates-chip {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-ink-secondary);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+.updates-chip:hover {
+  color: var(--color-ink);
+}
+.updates-chip-on {
+  font-weight: 600;
+  color: var(--color-brand-on-solid);
+  background: var(--color-brand-solid);
+  box-shadow: none;
+}
+.updates-search {
+  position: relative;
+  width: min(100%, 18rem);
+}
+.updates-search svg {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+}
+.updates-search input {
+  width: 100%;
+  height: 2rem;
+  padding: 0 0.75rem 0 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  font-size: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.updates-search input:focus {
+  outline: none;
+  border-color: var(--color-brand-600);
+}
+.updates-grid {
+  columns: 2 10.5rem;
+  column-gap: 0.6rem;
+}
+@media (min-width: 900px) {
+  .updates-grid {
+    columns: 3 14rem;
   }
-  .faces-window,
-  .show-row {
-    overflow-x: auto;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-  .faces-set + .faces-set,
-  .show-set + .show-set {
-    display: none;
-  }
-  .show-row-news .show-track {
-    margin-inline-start: 0;
-  }
+}
+.updates-item {
+  break-inside: avoid;
+  margin-bottom: 0.6rem;
+}
+.updates-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  background: var(--color-surface);
+  text-decoration: none;
+  color: var(--color-ink);
+  transition: border-color 0.2s ease;
+}
+a.updates-card:hover {
+  border-color: var(--color-brand-300);
+}
+.updates-item[data-tone="critical"] .updates-card {
+  border-color: var(--color-danger-600);
+}
+.updates-item[data-tone="important"] .updates-card {
+  border-color: var(--color-brand-500);
+}
+.updates-img {
+  display: block;
+  width: 100%;
+  max-height: 11rem;
+  object-fit: cover;
+}
+.updates-body {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+}
+.updates-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-brand-text);
+}
+.updates-kicker svg {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+.updates-title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.updates-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--color-ink-secondary);
+  overflow-wrap: anywhere;
 }

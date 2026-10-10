@@ -14,7 +14,8 @@
       "instagram": "Instagram",
       "siteLinks": "Site links",
       "quickLinks": "Quick access",
-      "x": "X"
+      "x": "X",
+      "flag": "The national flag of the Republic of Tajikistan"
     },
     "public": {
       "directoryTitle": "Schools",
@@ -47,55 +48,35 @@
     },
     "authority": "Ministry of Education and Science of the Republic of Tajikistan",
     "home": {
-      "title": "The Istaravshan school portal",
-      "lead": "The class register, the timetable, marks and attendance — in one place. For the teacher, for the pupil, for the parents.",
-      "start": "Start",
-      "whyTitle": "Why this portal",
-      "why": {
-        "journal": {
-          "title": "The same register",
-          "body": "The page opens exactly as a Tajik class register looks: dates written upwards across the top, surnames down the left, and in each square either a mark or a letter for an absence. A teacher has nothing to relearn."
-        },
-        "parents": {
-          "title": "Parents know the same day",
-          "body": "A mark a teacher enters is in the parents' Telegram twelve minutes later, and the day's summary arrives in the evening — not at the end of the term, when nothing can be put right."
-        },
-        "official": {
-          "title": "Everyone sees their own",
-          "body": "What a person may see is decided by the database, not by the look of a page. The teacher sees their class register, the pupil their marks, the parents only their own child."
-        }
-      },
-      "featuresTitle": "What the portal does",
+      "title": "<city>Istaravshan</city> School Portal",
+      "titlePlain": "Istaravshan School Portal",
+      "lead": "The shared online system of the schools of Istaravshan, built on the scientific and technical progress of education in Tajikistan",
+      "start": "Get started",
+      "download": "Download the app",
+      "featuresTitle": "What the system does",
       "features": {
-        "journal": {
-          "title": "The class register and marks",
-          "body": "A mark or an absence in one square, the term column at the end, the topic of each lesson on the facing page. Every mark keeps its date, its subject and the name of the teacher who entered it."
-        },
-        "timetable": {
-          "title": "Timetable and attendance",
-          "body": "The weekly timetable of classes and teachers, bells, rooms and substitutions. Two lessons at the same hour simply will not save."
+        "school": {
+          "title": "The school, online",
+          "body": "Every day-to-day task of the school runs online, in one system: marks, notices, attendance, every pupil's statistics and oversight of the teachers giving lessons, the timetable, school and class news and announcements. All of it is kept in the system without technical limits and fully accountable."
         },
         "parents": {
-          "title": "The parents' Telegram bot",
-          "body": "Parents sign in with their child's nickname and the code the school printed. Marks, absences, timetable and the day's summary — with no account and no portal password."
+          "title": "Parents on Telegram",
+          "body": "Every parent and guardian receives regular messages on Telegram — one after another, tied to the lesson schedule, with everything current about their child at the set time."
         },
-        "people": {
-          "title": "Starting from one file",
-          "body": "Pupils, staff and the timetable are read from an Excel file. The portal issues everyone a login and a password and hands the same file back with them filled in."
+        "chat": {
+          "title": "Chats and groups",
+          "body": "Chats and group chats with all pupils, teachers and other accounts — with files, location, voice messages and text."
         },
-        "content": {
-          "title": "The life of the school",
-          "body": "Announcements, news, events, official documents and an electronic library — with photographs, comments and pupils mentioned by name."
+        "support": {
+          "title": "Online support",
+          "body": "Full online support for everyone who uses it: an answer within 20 minutes, and any system problem put right."
         },
-        "languages": {
-          "title": "Three languages, in full",
-          "body": "Tajik, Russian and English — every page, every message and every document. Each person chooses their own."
+        "trust": {
+          "title": "Safe and fast",
+          "body": "The system gives you a full and worthy guarantee: to do your work safely, more easily, reliably and, above all, faster."
         }
       },
-      "aboutTitle": "About the system and about us",
-      "aboutBody": "This portal was built for the schools of Istaravshan. It has one aim: to gather what is scattered today across paper registers and WhatsApp groups into one orderly, dependable place — without making a teacher do the same work twice.",
-      "startTitle": "Ready?",
-      "startBody": "The school administration issues the login and password. Enter them on the sign-in page."
+      "motto": "The future of the nation's digital growth is in our hands"
     },
     "download": {
       "button": "App",

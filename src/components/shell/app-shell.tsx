@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bell, ChevronDown, CircleAlert, LogOut, Menu, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
+import { Bell, ChevronDown, CircleAlert, LogOut, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
 import { NavIcon } from "@/components/shell/nav-icon";
@@ -44,8 +44,6 @@ interface ShellProps {
   children: ReactNode;
   /** Rendered under the content — the portal passes the site footer here. */
   footer?: ReactNode;
-  /** The ministry strip, sticky above everything (a server component). */
-  strip?: ReactNode;
 }
 
 function isActive(pathname: string, href: string) {
@@ -53,73 +51,94 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** The emblem of the Republic, shipped with the build. */
+const EMBLEM = "/gov/emblem-tj.svg";
+
 /**
- * The school's own mark, top left, on every page a signed-in person opens.
- *
- * A crest rather than a thumbnail: the photograph of the school in a ring of
- * the theme's own colour — turned a little, so it catches the light like a
- * struck medal — with a hairline of the page between the two, and the name
- * beside it in a unicase, the way a name is cut into a seal. The ring follows
- * the theme, so the crest is gold on the school's own theme, blue on Ocean.
+ * Top left on every page a signed-in person opens: the emblem of the
+ * Republic, and beside it the school's short name in a small wide face whose
+ * figures stand on the line with the letters — "МТМУ №7" in one row — with
+ * what this part of the portal is under it.
  */
 function SchoolMark({ school, subtitle }: { school: ShellSchool; subtitle: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <span aria-hidden className="crest-ring relative flex size-12 shrink-0 items-center justify-center rounded-full p-[3px]">
-        <span className="flex size-full items-center justify-center overflow-hidden rounded-full bg-surface p-[2px]">
-          {school.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- school logo from storage, small and fixed size
-            <img src={school.logoUrl} alt="" className="size-full rounded-full object-cover" />
-          ) : (
-            <span className="crest-name flex size-full items-center justify-center rounded-full bg-brand-solid text-base text-brand-on-solid">
-              {school.name.slice(0, 2)}
-            </span>
-          )}
-        </span>
-      </span>
+    <div className="flex min-w-0 items-center gap-2.5">
+      {/* eslint-disable-next-line @next/next/no-img-element -- the state emblem, a static SVG */}
+      <img src={EMBLEM} alt="" aria-hidden width={36} height={36} className="size-9 shrink-0 object-contain" />
       <div className="min-w-0">
-        <p className="crest-name truncate text-[1.1875rem] leading-none text-ink">{school.name}</p>
-        <p className="mt-1 truncate text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-brand-text">{subtitle}</p>
+        <p className="shell-mark truncate">{school.name}</p>
+        <p className="mt-0.5 truncate text-[0.5625rem] font-semibold uppercase tracking-[0.18em] text-ink-muted">{subtitle}</p>
       </div>
     </div>
   );
 }
 
-/** The top of the phone's menu: the app's mark and the school's official name. */
-function DrawerHeading({ name }: { name: string }) {
-  return (
-    <div className="flex items-center gap-3 pr-1">
-      {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
-      <img src="/brand/app-icon.svg" alt="" width={44} height={44} className="size-11 shrink-0 rounded-xl shadow-sm" />
-      <p className="drawer-school">{name}</p>
-    </div>
-  );
-}
+/** Who made it, in the "about" dialog. */
+const MAKERS = [
+  {
+    name: "Носирзода Меҳровар",
+    latin: "Nosirzoda Mehrovar",
+    roles: "Cybersecurity Specialist, Systems Troubleshooter, Backend Developer, IT Manager",
+    level: "Senior Developer",
+  },
+  {
+    name: "Ҷӯраев Илёс",
+    latin: "Juraev Ilyos",
+    roles: "UX Designer, Company Director, System Integration Engineer, Infrastructure Engineer",
+    level: "Pre-Junior Developer",
+  },
+  {
+    name: "Ҳусейнзода Руслан",
+    latin: "Huseynzoda Ruslan",
+    roles: "UI/UX Designer, Fullstack Developer, AI Prompter, System Engineer, Network Engineer",
+    level: "Pre-Junior Developer",
+  },
+] as const;
 
-/** The foot of the phone's menu: which version this is, and "about the site". */
+/**
+ * The foot of the phone's menu: a small "!" and "About the app". It opens the
+ * version of the app and who made it, in a small table set in a typewriter
+ * face.
+ */
 function DrawerFooter() {
   const t = useTranslations("nav");
   const version = useAppVersion();
   const [aboutOpen, setAboutOpen] = useState(false);
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-ink-muted">
-      <span className="min-w-0 truncate tabular">{version}</span>
+    <div className="flex items-center justify-center px-4 py-2.5">
       <DialogPrimitive.Root open={aboutOpen} onOpenChange={setAboutOpen}>
         <DialogPrimitive.Trigger asChild>
-          <button type="button" className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-ink-secondary hover:bg-surface-muted hover:text-ink">
-            <CircleAlert className="size-4" aria-hidden />
+          <button type="button" className="shell-about inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink">
+            <CircleAlert className="size-3.5" aria-hidden />
             {t("about")}
           </button>
         </DialogPrimitive.Trigger>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-ink/40 data-[state=open]:animate-fade" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 text-center shadow-overlay focus:outline-none">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] max-h-[calc(100dvh-2rem)] w-[min(26rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-surface p-5 text-center shadow-overlay focus:outline-none">
             {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
-            <img src="/brand/app-icon.svg" alt="" width={64} height={64} className="mx-auto size-16 rounded-2xl shadow-sm" />
-            <DialogPrimitive.Title className="mt-4 text-base font-semibold text-ink">{t("aboutTitle")}</DialogPrimitive.Title>
-            <DialogPrimitive.Description className="mt-1 text-sm text-ink-secondary">{t("aboutBody")}</DialogPrimitive.Description>
-            <p className="mt-3 text-xs text-ink-muted tabular">{version}</p>
-            <DialogPrimitive.Close className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-brand-solid px-5 text-sm font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
+            <img src="/brand/app-icon.svg" alt="" width={48} height={48} className="mx-auto size-12 rounded-xl shadow-sm" />
+            <DialogPrimitive.Title className="mt-3 text-sm font-semibold text-ink">{t("aboutTitle")}</DialogPrimitive.Title>
+            <DialogPrimitive.Description className="mt-1 text-xs text-ink-secondary">{t("aboutBody")}</DialogPrimitive.Description>
+            <p className="mt-2 font-mono text-[0.6875rem] text-ink-muted tabular">{t("appVersion", { version })}</p>
+            <p className="mt-4 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">{t("makers")}</p>
+            <table className="makers mt-2 w-full text-left">
+              <tbody>
+                {MAKERS.map((maker) => (
+                  <tr key={maker.latin}>
+                    <td>
+                      <span className="block font-semibold text-ink">{maker.name}</span>
+                      <span className="block text-ink-muted">{maker.latin}</span>
+                    </td>
+                    <td>
+                      <span className="block text-ink-secondary">{maker.roles}</span>
+                      <span className="makers-level">{maker.level}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <DialogPrimitive.Close className="mt-4 inline-flex h-9 min-w-24 items-center justify-center rounded-full bg-brand-solid px-5 text-xs font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
               {t("aboutClose")}
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>
@@ -201,10 +220,56 @@ function CountBadge({ count, label }: { count: number; label: string }) {
   );
 }
 
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children, footer, strip }: ShellProps) {
+/**
+ * On a phone the menu also opens with a swipe to the right anywhere on the
+ * page, and closes with a swipe back to the left — except where the finger is
+ * on something that moves sideways itself: a horizontal list, a ribbon, a
+ * text field, a slider.
+ */
+function useSwipeMenu(open: boolean, setOpen: (open: boolean) => void) {
+  useEffect(() => {
+    let start: { x: number; y: number; at: number } | null = null;
+    const movesSideways = (target: EventTarget | null) => {
+      for (let el = target instanceof Element ? target : null; el && el !== document.body; el = el.parentElement) {
+        if (el.matches("input, textarea, select, [contenteditable='true'], [role='slider'], [data-swipe='own']")) return true;
+        const style = getComputedStyle(el);
+        if ((style.overflowX === "auto" || style.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 1) return true;
+      }
+      return false;
+    };
+    const onStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || window.innerWidth >= 1024) {
+        start = null;
+        return;
+      }
+      const touch = event.touches[0]!;
+      start = movesSideways(event.target) ? null : { x: touch.clientX, y: touch.clientY, at: performance.now() };
+    };
+    const onEnd = (event: TouchEvent) => {
+      if (!start) return;
+      const touch = event.changedTouches[0]!;
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      const quick = performance.now() - start.at < 700;
+      start = null;
+      if (!quick || Math.abs(dy) > 45 || Math.abs(dx) < 70) return;
+      if (dx > 0 && !open) setOpen(true);
+      if (dx < 0 && open) setOpen(false);
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchend", onEnd);
+    };
+  }, [open, setOpen]);
+}
+
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  useSwipeMenu(drawerOpen, setDrawerOpen);
   const [filter, setFilter] = useState("");
   const [notifications, setNotifications] = useState(unreadNotifications);
 
@@ -319,10 +384,9 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
   return (
     <>
-      {strip}
-      <div className="min-h-[calc(100dvh-var(--strip-h))] lg:grid lg:grid-cols-[16.5rem_1fr]">
-        <aside className="sticky top-[var(--strip-h)] hidden h-[calc(100dvh-var(--strip-h))] flex-col border-r border-line bg-surface lg:flex print:hidden">
-          <div className="flex h-16 shrink-0 items-center border-b border-line px-4">
+      <div className="min-h-dvh lg:grid lg:grid-cols-[16.5rem_1fr]">
+        <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface pt-[var(--strip-h)] lg:flex print:hidden">
+          <div className="flex h-14 shrink-0 items-center border-b border-line px-4">
             <Link href={variant === "admin" ? "/admin" : "/dashboard"} className="min-w-0 rounded-md">
               <SchoolMark school={school} subtitle={subtitle} />
             </Link>
@@ -331,24 +395,19 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-[var(--strip-h)] z-30 flex h-16 items-center gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur-[2px] sm:px-5 print:hidden">
+          {/* The phone's status bar is above it (--strip-h), so it pads itself below. */}
+          <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
             <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
               <DialogPrimitive.Trigger asChild>
-                <button
-                  type="button"
-                  className="rounded-md p-2 text-ink-secondary hover:bg-surface-muted hover:text-ink lg:hidden"
-                  aria-label={t("nav.openMenu")}
-                  aria-expanded={drawerOpen}
-                >
-                  <Menu className="size-5" aria-hidden />
+                <button type="button" className="shell-icon lg:hidden" aria-label={t("nav.openMenu")} aria-expanded={drawerOpen}>
+                  <span className="burger" data-open={drawerOpen || undefined} aria-hidden>
+                    <span />
+                    <span />
+                    <span />
+                  </span>
                 </button>
               </DialogPrimitive.Trigger>
-              <Overlay.DrawerContent
-                title={school.fullName || school.name}
-                closeLabel={t("common.close")}
-                header={<DrawerHeading name={school.fullName || school.name} />}
-                footer={<DrawerFooter />}
-              >
+              <Overlay.DrawerContent title={school.fullName || school.name} closeLabel={t("common.close")} bare footer={<DrawerFooter />}>
                 {sidebar(() => setDrawerOpen(false))}
               </Overlay.DrawerContent>
             </DialogPrimitive.Root>
@@ -358,22 +417,24 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             </div>
             <div className="hidden flex-1 lg:block" />
 
+            {/* The bell, the avatar and the emblem share one centre line: each
+                sits in a box of the same height. */}
             <Link
               href="/notifications"
-              className="relative rounded-md p-2 text-ink-secondary hover:bg-surface-muted hover:text-ink"
+              className="shell-icon relative"
               aria-label={notifications > 0 ? t("nav.notificationsUnread", { count: notifications }) : t("nav.notifications")}
             >
-              <Bell className="size-5" aria-hidden />
+              <Bell className="size-[1.125rem]" strokeWidth={1.75} aria-hidden />
               <CountBadge count={notifications} label={t("nav.notificationsUnread", { count: notifications })} />
             </Link>
 
             <Overlay.DropdownMenu>
               <Overlay.DropdownMenuTrigger asChild>
-                <button type="button" className="flex items-center gap-2 rounded-md py-1 pl-1 pr-2 hover:bg-surface-muted" aria-label={t("nav.accountMenu")}>
+                <button type="button" className="flex h-10 items-center gap-2 rounded-full px-0.5 hover:bg-surface-muted sm:pr-2" aria-label={t("nav.accountMenu")}>
                   <Avatar name={user.name} src={user.avatarUrl} size="sm" />
                   <span className="hidden min-w-0 text-left sm:block">
-                    <span className="block max-w-40 truncate text-sm font-medium text-ink">{user.name}</span>
-                    <span className="block max-w-40 truncate text-xs text-ink-muted">{user.roleLabel}</span>
+                    <span className="block max-w-40 truncate text-xs font-medium text-ink">{user.name}</span>
+                    <span className="block max-w-40 truncate text-[0.6875rem] text-ink-muted">{user.roleLabel}</span>
                   </span>
                   <ChevronDown className="hidden size-4 text-ink-muted sm:block" aria-hidden />
                 </button>

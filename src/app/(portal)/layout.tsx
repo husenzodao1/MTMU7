@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
-import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
+import { SiteFooter } from "@/components/site/official-header";
 import { getLocale, getTranslations } from "next-intl/server";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { welcomeScript } from "@/features/intro/greetings";
@@ -15,11 +15,10 @@ export default async function PortalLayout({ children }: { children: React.React
   if (session.stage !== "member" || !session.access) {
     return (
       <div className="flex min-h-dvh flex-col bg-canvas">
-        <OfficialStrip />
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 focus:outline-none sm:py-12">
           {children}
         </main>
-        <SiteFooter signedIn />
+        <SiteFooter hideSignIn />
       </div>
     );
   }
@@ -53,8 +52,7 @@ export default async function PortalLayout({ children }: { children: React.React
         unreadMessages={shell.unreadMessages}
         locale={shell.locale}
         switchHref={nav.switchHref}
-        strip={<OfficialStrip />}
-        footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} signedIn />}
+        footer={<SiteFooter schoolName={shell.school?.name ?? null} quickLinks={quickLinks} hideSignIn />}
       >
         {children}
       </AppShell>

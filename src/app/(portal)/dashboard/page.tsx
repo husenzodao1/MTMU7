@@ -12,8 +12,7 @@ import { getSchoolFaces } from "@/features/dashboard/faces";
 import { FacesRibbon } from "@/features/dashboard/faces-ribbon";
 import { GreetingCard } from "@/features/dashboard/greeting-card";
 import { Showcase, type ShowcaseCard } from "@/features/dashboard/showcase";
-import { EventList } from "@/features/content/components";
-import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements } from "@/features/content/queries";
+import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements, publicMediaUrl } from "@/features/content/queries";
 import { splitLeadImage } from "@/components/ui/misc";
 import { markdownToPlainText } from "@/lib/content/markdown";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +84,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     isParent ? getMyChildren() : Promise.resolve([]),
     showAdminSummary ? getAdminDashboard() : Promise.resolve(null),
     showAnnouncements ? getVisibleAnnouncements(schoolId, 8) : Promise.resolve([]),
-    hasModule(access, "events") && can(access, "events.view") ? getUpcomingEvents(schoolId, 5) : Promise.resolve([]),
+    hasModule(access, "events") && can(access, "events.view") ? getUpcomingEvents(schoolId, 8) : Promise.resolve([]),
     showNews ? getLatestNews(schoolId, 8) : Promise.resolve([]),
     getSchoolFaces(),
   ]);
@@ -115,6 +114,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     date: item.publishAt ? formatDate(item.publishAt, locale) : "",
     tone: null,
   }));
+  const eventCards: ShowcaseCard[] = events.map((item) => ({
+    id: item.id,
+    title: item.title,
+    excerpt: [item.location, item.description ? markdownToPlainText(item.description, 120) : null].filter(Boolean).join(" · "),
+    image: publicMediaUrl(item.imagePath),
+    href: `/updates?type=event#e-${item.id}`,
+    date: formatDate(item.startsAt, locale),
+    tone: null,
+  }));
 
   return (
     <>
@@ -122,8 +130,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <FacesRibbon
           active={faces.active}
           graduates={faces.graduates}
-          counts={faces.counts}
-          labels={{ title: t("faces.title"), active: t("faces.active"), graduates: t("faces.graduates"), none: t("faces.none") }}
+          labels={{ title: t("faces.title"), active: t("faces.active"), graduates: t("faces.graduates") }}
         />
       ) : null}
 
@@ -147,12 +154,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {welcome ? <Alert tone="success" className="mb-5">{t("welcome")}</Alert> : null}
 
-      {announcementCards.length > 0 || newsCards.length > 0 ? (
-        <Showcase announcements={announcementCards} news={newsCards} links={{ announcements: showAnnouncements, news: showNews }} />
+      {announcementCards.length > 0 || newsCards.length > 0 || eventCards.length > 0 ? (
+        <Showcase announcements={announcementCards} news={newsCards} events={eventCards} />
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <div className="space-y-5 xl:col-span-2">
+      {/* The side column is a pupil's attendance; without it the main column takes the width. */}
+      <div className={student ? "grid gap-5 xl:grid-cols-3" : "grid gap-5"}>
+        <div className={student ? "space-y-5 xl:col-span-2" : "space-y-5"}>
           {teacher ? (
             <Card>
               <CardHeader
@@ -288,23 +296,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               </CardBody>
             </Card>
           ) : null}
-
         </div>
 
-        <div className="space-y-5">
-          {student ? (
+        {student ? (
+          <div className="space-y-5">
             <Card>
               <CardHeader title={t("student.attendance")} />
               <CardBody><AttendanceSummary summary={student.attendance_term} /></CardBody>
             </Card>
-          ) : null}
-          {hasModule(access, "events") ? (
-            <Card>
-              <CardHeader title={t("events")} actions={<Link href="/events" className="text-sm font-medium text-brand-text hover:underline">{t("all")}</Link>} />
-              <CardBody><EventList items={events} /></CardBody>
-            </Card>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </>
   );

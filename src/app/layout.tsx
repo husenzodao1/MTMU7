@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Bad_Script, Cormorant_Unicase, Great_Vibes, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
+import { Bad_Script, Cormorant_Unicase, Great_Vibes, JetBrains_Mono, Noto_Sans, Noto_Serif, Pacifico, Unbounded } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
 import { openingScript } from "@/features/intro/greetings";
 import { Intro } from "@/features/intro/intro";
@@ -85,6 +85,27 @@ const hand = Bad_Script({
   variable: "--font-hand",
 });
 
+/**
+ * The school's short name in the portal's header, "МТМУ №7": a small, wide,
+ * geometric face whose figures stand on the line with the capitals (the
+ * unicase set the number below them).
+ */
+const mark = Unbounded({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["500", "600"],
+  display: "swap",
+  variable: "--font-mark",
+});
+
+/** The typewriter face of the "about the app" table. Loaded only when it opens. */
+const mono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-mono-ui",
+});
+
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
 export const viewport: Viewport = {
   width: "device-width",
@@ -144,7 +165,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
-      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (

@@ -272,11 +272,13 @@
     "adminCenter": "Admin Control Center",
     "backToPortal": "Back to portal",
     "myClass": "My class",
-    "version": "Version {site}",
-    "versionInApp": "App {app} · site {site}",
-    "about": "About the site",
-    "aboutTitle": "MTMU No. 7 portal",
+    "version": "{site}",
+    "versionInApp": "app {app} · site {site}",
+    "about": "About the app",
+    "aboutTitle": "Istaravshan School Portal",
     "aboutBody": "The school’s website and app for pupils, parents and teachers.",
-    "aboutClose": "OK"
+    "aboutClose": "OK",
+    "appVersion": "App version: {version}",
+    "makers": "Made by"
   }
 }

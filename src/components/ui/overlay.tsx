@@ -63,6 +63,7 @@ export function DrawerContent({
   side = "left",
   header,
   footer,
+  bare = false,
 }: {
   title: string;
   children: ReactNode;
@@ -72,6 +73,8 @@ export function DrawerContent({
   header?: ReactNode;
   /** Pinned to the bottom of the panel, under the part that scrolls. */
   footer?: ReactNode;
+  /** No top row at all: the title is for screen readers, and the panel closes from outside it. */
+  bare?: boolean;
 }) {
   return (
     <DialogPrimitive.Portal>
@@ -82,13 +85,17 @@ export function DrawerContent({
           side === "left" ? "left-0 border-r border-line" : "right-0 border-l border-line"
         )}
       >
-        <div className={cn("flex border-b border-line", header ? "items-start gap-1 py-3 pl-4 pr-2" : "items-center justify-between px-4 py-3")}>
-          <DialogPrimitive.Title className={header ? "sr-only" : "text-base font-semibold text-ink"}>{title}</DialogPrimitive.Title>
-          {header ? <div className="min-w-0 flex-1">{header}</div> : null}
-          <DialogPrimitive.Close className="rounded-md p-2 text-ink-muted hover:bg-surface-muted hover:text-ink" aria-label={closeLabel}>
-            <X className="size-5" aria-hidden />
-          </DialogPrimitive.Close>
-        </div>
+        {bare ? (
+          <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+        ) : (
+          <div className={cn("flex border-b border-line", header ? "items-start gap-1 py-3 pl-4 pr-2" : "items-center justify-between px-4 py-3")}>
+            <DialogPrimitive.Title className={header ? "sr-only" : "text-base font-semibold text-ink"}>{title}</DialogPrimitive.Title>
+            {header ? <div className="min-w-0 flex-1">{header}</div> : null}
+            <DialogPrimitive.Close className="rounded-md p-2 text-ink-muted hover:bg-surface-muted hover:text-ink" aria-label={closeLabel}>
+              <X className="size-5" aria-hidden />
+            </DialogPrimitive.Close>
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
         {footer ? <div className="shrink-0 border-t border-line">{footer}</div> : null}
       </DialogPrimitive.Content>
