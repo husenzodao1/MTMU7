@@ -1,48 +1,68 @@
-import { cva, type VariantProps } from "cva";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils/cn";
 
-const badgeVariants = cva({
-  base: "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-[var(--duration-fast)] tracking-tight select-none",
-  variants: {
-    variant: {
-      default: "bg-neutral-900 text-white shadow-2xs",
-      secondary: "bg-neutral-100 text-neutral-800 border border-neutral-200/60",
-      primary: "bg-primary-50 text-primary-700 border border-primary-200/60",
-      success: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
-      warning: "bg-amber-50 text-amber-800 border border-amber-200/60",
-      destructive: "bg-rose-50 text-rose-700 border border-rose-200/60",
-      outline: "border border-neutral-200/90 text-neutral-700 bg-white/80",
-      pill: "bg-[#EEF2F8] text-neutral-700 border border-neutral-200/40",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
+const tones = {
+  neutral: "bg-surface-muted text-ink-secondary border-line",
+  brand: "bg-brand-50 text-brand-text border-brand-200",
+  success: "bg-success-50 text-success-700 border-success-600/25",
+  warning: "bg-warning-50 text-warning-700 border-warning-600/25",
+  danger: "bg-danger-50 text-danger-700 border-danger-600/25",
+} as const;
 
-interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
-  dot?: boolean;
-}
+export type BadgeTone = keyof typeof tones;
 
-function Badge({ className, variant, dot = false, children, ...props }: BadgeProps) {
+export function Badge({ tone = "neutral", children, className, dot }: { tone?: BadgeTone; children: ReactNode; className?: string; dot?: boolean }) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props}>
-      {dot && (
-        <span
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            variant === "success" && "bg-emerald-500",
-            variant === "warning" && "bg-amber-500",
-            variant === "destructive" && "bg-rose-500",
-            variant === "primary" && "bg-primary-500",
-            (!variant || variant === "default") && "bg-white",
-            (variant === "secondary" || variant === "outline" || variant === "pill") && "bg-neutral-400"
-          )}
-        />
-      )}
-      {children}
-    </div>
+    <span className={cn("inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium", tones[tone], className)}>
+      {dot ? <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden /> : null}
+      <span className="truncate">{children}</span>
+    </span>
   );
 }
 
-export { Badge, badgeVariants };
+/** Status → tone mapping. The visible label always carries the meaning (never colour alone). */
+const STATUS_TONES: Record<string, BadgeTone> = {
+  active: "success",
+  published: "success",
+  approved: "success",
+  present: "success",
+  sent: "success",
+  completed: "neutral",
+  graduated: "brand",
+  reviewed: "success",
+  confirmed: "success",
+  action_taken: "success",
+  draft: "neutral",
+  planned: "neutral",
+  scheduled: "brand",
+  review: "warning",
+  submitted: "brand",
+  pending: "warning",
+  late: "warning",
+  on_leave: "warning",
+  returned: "warning",
+  open: "warning",
+  excused: "brand",
+  inactive: "neutral",
+  archived: "neutral",
+  transferred: "neutral",
+  withdrawn: "neutral",
+  closed: "neutral",
+  dismissed: "neutral",
+  cancelled: "neutral",
+  blocked: "danger",
+  rejected: "danger",
+  absent: "danger",
+  missing: "danger",
+  critical: "danger",
+  important: "warning",
+  normal: "neutral",
+};
+
+export function StatusBadge({ status, label, className }: { status: string; label: string; className?: string }) {
+  return (
+    <Badge tone={STATUS_TONES[status] ?? "neutral"} dot className={className}>
+      {label}
+    </Badge>
+  );
+}

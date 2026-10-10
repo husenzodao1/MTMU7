@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- МТМУ №7 · the icon's background alone: indigo turning to teal, and the
+       warm glow the sun rises in. -->
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#261b63"/>
+      <stop offset="0.55" stop-color="#15306e"/>
+      <stop offset="1" stop-color="#0a6b71"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffc15c" stop-opacity="0.55"/>
+      <stop offset="0.45" stop-color="#ff9a45" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ff9a45" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+</svg>

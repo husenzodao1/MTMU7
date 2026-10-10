@@ -1,0 +1,120 @@
+{
+  "site": {
+    "emblemAlt": "Emblem of the governing authority",
+    "footer": {
+      "platform": "Education portal",
+      "schools": "Schools",
+      "signIn": "Sign in",
+      "support": "Support",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "instagram": "Instagram",
+      "siteLinks": "Site links",
+      "x": "X",
+      "flag": "The national flag of the Republic of Tajikistan",
+      "brand": "Istaravshan school portal"
+    },
+    "public": {
+      "directoryTitle": "Schools",
+      "directoryDescription": "Choose an active school to view its public information.",
+      "emptyDirectory": "No public schools are available yet.",
+      "openSchool": "Open school site",
+      "schoolSite": "School website",
+      "officialPending": "Official identity details are awaiting approval.",
+      "ownerTextPending": "Awaiting official text from the school",
+      "ownerImagePending": "Awaiting official image",
+      "schoolDescription": "School information will appear here after it is supplied and approved.",
+      "backToSchools": "All schools",
+      "news": "News",
+      "events": "Events",
+      "documents": "Documents",
+      "publishedContent": "Published content",
+      "noPublishedContent": "There is no published content yet.",
+      "download": "Download",
+      "schoolNotFound": "This school website is not available.",
+      "allNews": "All news",
+      "allEvents": "All events",
+      "portalEntry": "Portal sign-in",
+      "sections": "Sections",
+      "developedBy": "Built by"
+    },
+    "devPreview": {
+      "notice": "Development preview only. No account, database data, or authorization is being bypassed.",
+      "portalNavigation": "Portal navigation",
+      "states": "Portal preview states"
+    },
+    "authority": "Ministry of Education and Science of the Republic of Tajikistan",
+    "home": {
+      "title": "<city>Istaravshan</city> School Portal",
+      "titlePlain": "Istaravshan School Portal",
+      "lead": "The shared online system of the schools of Istaravshan, built on the scientific and technical progress of education in Tajikistan",
+      "start": "Get started",
+      "download": "Download the app",
+      "featuresTitle": "What the system does",
+      "features": {
+        "school": {
+          "title": "The school, online",
+          "body": "Every day-to-day task of the school runs online, in one system: marks, notices, attendance, every pupil's statistics and oversight of the teachers giving lessons, the timetable, school and class news and announcements. All of it is kept in the system without technical limits and fully accountable."
+        },
+        "parents": {
+          "title": "Parents on Telegram",
+          "body": "Every parent and guardian receives regular messages on Telegram — one after another, tied to the lesson schedule, with everything current about their child at the set time."
+        },
+        "chat": {
+          "title": "Chats and groups",
+          "body": "Chats and group chats with all pupils, teachers and other accounts — with files, location, voice messages and text."
+        },
+        "support": {
+          "title": "Online support",
+          "body": "Full online support for everyone who uses it: an answer within 20 minutes, and any system problem put right."
+        },
+        "trust": {
+          "title": "Safe and fast",
+          "body": "The system gives you a full and worthy guarantee: to do your work safely, more easily, reliably and, above all, faster."
+        }
+      },
+      "motto": "The future of the nation's digital growth is in our hands"
+    },
+    "download": {
+      "button": "App",
+      "title": "Get the app",
+      "subtitle": "and use the portal more easily: notifications, quick launch, everything one tap away.",
+      "more": "All ways to install",
+      "platforms": {
+        "android": {
+          "name": "Android",
+          "hint": "APK · direct install"
+        },
+        "ios": {
+          "name": "iPhone and iPad",
+          "hint": "On the Home Screen · App Store"
+        },
+        "windows": {
+          "name": "Windows",
+          "hint": "For your computer · .exe"
+        }
+      }
+    },
+    "app": {
+      "title": "The МТМУ №7 app",
+      "lead": "The same portal on your phone and computer: notifications for new messages, quick launch, and one tap to lessons and marks.",
+      "get": "Download",
+      "android": {
+        "step1": "Tap Download and open MTMU7-android.apk.",
+        "step2": "If the phone asks, allow the browser to install unknown apps.",
+        "step3": "Tap Install and open the app from your home screen."
+      },
+      "ios": {
+        "step1": "Open the portal in Safari (on iPhone only Safari can install it).",
+        "step2": "Tap Share (the square with an arrow) and choose Add to Home Screen.",
+        "step3": "Tap Add: the МТМУ №7 icon appears on your Home Screen."
+      },
+      "windows": {
+        "step1": "Click Download and open MTMU7-windows-setup.exe.",
+        "step2": "If Windows warns you, click More info → Run anyway.",
+        "step3": "The app appears on your desktop and in the Start menu."
+      },
+      "note": "The app uses the same account: sign in with the same login and password."
+    }
+  }
+}

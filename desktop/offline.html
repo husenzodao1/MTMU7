@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>МТМУ №7</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      display: grid; place-items: center; text-align: center;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(60% 45% at 50% 34%, rgb(255 181 71 / 0.22), transparent 70%),
+        linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
+      color: #f4f6fb; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 320px; }
+    .mark { position: relative; width: 120px; height: 120px; margin: 0 auto 26px; }
+    .mark svg.logo { width: 120px; height: 120px; opacity: 0.55; filter: grayscale(0.4); }
+    .badge {
+      position: absolute; right: -6px; bottom: 2px; width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center; background: #ffffff; box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    .badge svg { width: 24px; height: 24px; stroke: #d64545; }
+    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+    p { margin: 0 0 4px; color: #c9d3e6; font-size: 14px; }
+    .muted { color: #93a3c2; font-size: 13px; }
+    button {
+      margin-top: 24px; border: 0; border-radius: 999px; padding: 13px 30px;
+      background: #ffffff; color: #17306d; font: inherit; font-weight: 650; cursor: pointer;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+    }
+    button:active { transform: scale(0.98); }
+    .waiting { margin-top: 14px; font-size: 12px; color: #93a3c2; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">
+      <svg class="logo" viewBox="0 0 512 512">
+        <circle cx="256" cy="190" r="46" fill="#ffb547"/>
+        <path d="M256 372 C 222 318, 164 296, 98 300" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round"/>
+        <path d="M256 372 C 290 318, 348 296, 414 300" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round"/>
+      </svg>
+      <span class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/>
+          <path d="M19 12.86a10 10 0 0 0-2-1.39"/><path d="M2 8.82a15 15 0 0 1 4.18-2.64"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/>
+          <path d="m2 2 20 20"/>
+        </svg>
+      </span>
+    </div>
+    <h1>Интернет нест</h1>
+    <p>Пайвастро санҷед — барнома худаш бармегардад.</p>
+    <p class="muted">Нет подключения к интернету · No connection</p>
+    <button type="button" id="retry">Аз нав кӯшиш кардан</button>
+    <p class="waiting" id="waiting">Интизори пайваст…</p>
+  </main>
+  <script>
+    var HOME = "https://mtmuraqami7.vercel.app/dashboard";
+    function go() { location.href = HOME; }
+    document.getElementById("retry").addEventListener("click", go);
+    // Back by itself the moment the phone is online again, and a gentle check
+    // every few seconds for the networks that never announce it.
+    window.addEventListener("online", go);
+    setInterval(function () {
+      if (!navigator.onLine) return;
+      fetch(HOME, { method: "HEAD", mode: "no-cors", cache: "no-store" }).then(go, function () {});
+    }, 6000);
+  </script>
+</body>
+</html>
