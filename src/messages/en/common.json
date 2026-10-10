@@ -240,7 +240,7 @@
     },
     "appUpdate": {
       "title": "A new version of the app",
-      "text": "A new icon; the keyboard and permissions work better.",
+      "text": "The page no longer breaks after the keyboard; a new icon.",
       "action": "Update",
       "later": "Later"
     }

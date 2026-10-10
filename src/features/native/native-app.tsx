@@ -12,10 +12,11 @@ import { pathForAppLink } from "@/lib/native/app";
 /**
  * The first Android build with everything the site now expects from the app:
  * the phone's own keyboard connection (captureInput off, build 9), the
- * permissions plugin (build 10) and the new icon and splash (build 11). An
- * older one is offered the update.
+ * permissions plugin (build 10), the new icon and splash (build 11) and the
+ * keyboard resizing the page instead of panning it (build 12). An older one
+ * is offered the update.
  */
-const MIN_APP_BUILD = 11;
+const MIN_APP_BUILD = 12;
 
 /** What Capacitor's bridge puts on window, as far as the diagnostics look. */
 interface CapacitorGlobal {
