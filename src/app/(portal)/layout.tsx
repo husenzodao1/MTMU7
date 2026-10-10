@@ -1,8 +1,9 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
 import { OfficialStrip, SiteFooter } from "@/components/site/official-header";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
+import { welcomeScript } from "@/features/intro/greetings";
 import { getPortalSession } from "@/lib/auth/guards";
 import { isWelcome } from "@/lib/auth/welcome";
 
@@ -41,7 +42,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <>
-      {welcome ? <WelcomeTransition firstName={access.firstName} /> : null}
+      {welcome ? <WelcomeTransition firstName={access.firstName} script={welcomeScript(await getLocale())} /> : null}
       <AppShell
         variant="portal"
         school={shell.school}

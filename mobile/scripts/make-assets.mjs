@@ -1,7 +1,7 @@
 /**
  * The app's icon and splash, drawn from the portal's own mark
- * (public/brand/*.svg): an open book in two strokes and a warm dot above it,
- * on indigo turning to teal.
+ * (public/brand/*.svg): the sun rising behind an open book, seven rays, on
+ * indigo turning to teal.
  *
  *   node scripts/make-assets.mjs     → resources/*.png, and the web's icons
  *   npx capacitor-assets generate    → every size both stores ask for

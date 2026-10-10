@@ -50,13 +50,16 @@ an update. Give the keystore before handing the APK out widely.
 
 - App id / bundle id: `tj.mtmu7.app` (cannot change once published)
 - Name on the home screen: `МТМУ №7`
-- Icon: `public/brand/app-icon.svg` — two strokes of an open book and a warm
-  dot above it (a head over the page, the sun over the school) on indigo
-  turning to teal. `mobile/scripts/make-assets.mjs` renders every size from it
-  for Android, iPhone, Windows and the web (`npm run assets` in `mobile/`).
-- Opening: the phone's splash is the mark standing still; the site then shows
-  the same mark animating (`src/features/native/app-launch.tsx`) until the page
-  is ready, so native and web hand over without a flash.
+- Icon: `public/brand/app-icon.svg` — the sun rising behind an open book,
+  with seven rays for the school's number, on indigo turning to teal.
+  `mobile/scripts/make-assets.mjs` renders every size from it for Android,
+  iPhone, Windows and the web (`npm run assets` in `mobile/`).
+- Opening: the phone's splash is the mark standing still; the moment it goes,
+  the site's opening plays (`src/features/intro/`, about 4.5 s, a tap ends it):
+  a book flies in, its pages turn, it rushes into a flash of light and
+  "Ассалому алайкум — Хуш омадед" writes itself by hand. Once per start of the
+  app; the site shows it once per visit. After signing in the same book ends
+  with "Хуш омадед" and the person's name.
 
 ## Building
 

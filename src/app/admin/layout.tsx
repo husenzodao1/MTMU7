@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
 import { adminShellNav, loadShellData } from "@/components/shell/shell-data";
 import { OfficialStrip } from "@/components/site/official-header";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
+import { welcomeScript } from "@/features/intro/greetings";
 import { requireAdminArea } from "@/lib/auth/guards";
 import { isWelcome } from "@/lib/auth/welcome";
 
@@ -18,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <>
-      {welcome ? <WelcomeTransition firstName={access.firstName} /> : null}
+      {welcome ? <WelcomeTransition firstName={access.firstName} script={welcomeScript(await getLocale())} /> : null}
       <AppShell
         variant="admin"
         school={shell.school}

@@ -1,28 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- МТМУ №7 · the mark alone, transparent, for placing on any background. Three strokes and nothing else: the two leaves of
-       an open book, and above them a warm dot — a head bent over the page, the
-       sun over the school. Deep indigo turning to teal behind, a warm glow
-       where the dot is. Square; each platform rounds the corners itself. -->
+  <!-- МТМУ №7 · the mark alone, transparent, for placing on any background. The sun of learning rising behind an open book, with
+       seven rays for the school's number: warm gold on the pages' white and
+       mint, over indigo turning to teal. Square; each platform rounds the
+       corners itself. -->
   <defs>
-    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
-      <stop offset="0" stop-color="#231a5c"/>
-      <stop offset="0.5" stop-color="#17306d"/>
-      <stop offset="1" stop-color="#0a6d72"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.36" r="0.45">
-      <stop offset="0" stop-color="#ffb547" stop-opacity="0.32"/>
-      <stop offset="1" stop-color="#ffb547" stop-opacity="0"/>
+    <radialGradient id="sun" cx="0.5" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#fff6d6"/>
+      <stop offset="0.45" stop-color="#ffc85f"/>
+      <stop offset="1" stop-color="#ff8733"/>
     </radialGradient>
-    <linearGradient id="dot" x1="0.2" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#ffd98a"/>
-      <stop offset="1" stop-color="#ff9a3c"/>
+    <radialGradient id="ray" gradientUnits="userSpaceOnUse" cx="256" cy="270" r="220">
+      <stop offset="0.38" stop-color="#ffd27a"/>
+      <stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d5f3ee"/>
+      <stop offset="0.72" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe9f3"/>
     </linearGradient>
-    <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#bff3ea"/>
+    <linearGradient id="right" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#d5f3ee"/>
+      <stop offset="0.72" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe9f3"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9be6da"/>
+      <stop offset="1" stop-color="#55c2b6"/>
     </linearGradient>
   </defs>
-  <circle cx="256" cy="190" r="46" fill="url(#dot)"/>
-  <path d="M256 372 C 222 318, 164 296, 98 300" fill="none" stroke="url(#leaf)" stroke-width="34" stroke-linecap="round"/>
-  <path d="M256 372 C 290 318, 348 296, 414 300" fill="none" stroke="url(#leaf)" stroke-width="34" stroke-linecap="round"/>
+  <!-- Seven rays, one for each of the school's number. -->
+  <g fill="url(#ray)">
+    <path d="M152.4 232.9 L76.9 190.3 L159.1 217.9 Z"/>
+    <path d="M173.5 197.3 L111.5 120.4 L186.2 185.0 Z"/>
+    <path d="M206.2 171.9 L173.6 66.0 L223.7 164.9 Z"/>
+    <path d="M246.0 160.5 L256.0 38.0 L266.0 160.5 Z"/>
+    <path d="M288.3 164.9 L338.4 66.0 L305.8 171.9 Z"/>
+    <path d="M325.8 185.0 L400.5 120.4 L338.5 197.3 Z"/>
+    <path d="M352.9 217.9 L435.1 190.3 L359.6 232.9 Z"/>
+  </g>
+  <circle cx="256" cy="270" r="88" fill="url(#sun)"/>
+  <!-- The book: its shadow, the cover's edge, the pages underneath, the two open pages. -->
+  <path d="M256 424 C 204 400, 136 392, 66 400 L 66 274 C 136 264, 204 274, 256 304 C 308 274, 376 264, 446 274 L 446 400 C 376 392, 308 400, 256 424 Z" fill="#051f3a" opacity="0.28"/>
+  <path d="M256 410 C 204 386, 136 378, 66 386 L 66 258 C 136 248, 204 258, 256 288 C 308 258, 376 248, 446 258 L 446 386 C 376 378, 308 386, 256 410 Z" fill="url(#edge)"/>
+  <path d="M256 400 C 206 376, 140 368, 74 374 L 74 250 C 140 240, 206 250, 256 282 Z" fill="#c8efe8"/>
+  <path d="M256 400 C 306 376, 372 368, 438 374 L 438 250 C 372 240, 306 250, 256 282 Z" fill="#c8efe8"/>
+  <path d="M256 394 C 208 368, 144 358, 82 364 L 84 240 C 146 228, 208 240, 256 276 Z" fill="url(#left)"/>
+  <path d="M256 394 C 304 368, 368 358, 430 364 L 428 240 C 366 228, 304 240, 256 276 Z" fill="url(#right)"/>
 </svg>

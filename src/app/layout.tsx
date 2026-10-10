@@ -2,10 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Cormorant_Unicase, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
+import { Bad_Script, Cormorant_Unicase, Great_Vibes, Noto_Sans, Noto_Serif, Pacifico } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
-import { AppLaunch } from "@/features/native/app-launch";
-import { LAUNCH_SCRIPT } from "@/features/native/launch-script";
+import { openingScript } from "@/features/intro/greetings";
+import { Intro } from "@/features/intro/intro";
+import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
@@ -62,6 +63,28 @@ const unicase = Cormorant_Unicase({
   variable: "--font-crest",
 });
 
+/**
+ * The hand that writes a name under "Welcome" after signing in
+ * (src/features/intro/book-scene.tsx). The greeting's own lines are drawn from
+ * Great Vibes' outlines and need no font; a name is typed, so it is written
+ * in Great Vibes itself — or, when it has one of ғ ҷ қ ӣ ӯ ҳ, which Great Vibes
+ * lacks, in Bad Script, which has them all. Loaded only when a welcome shows.
+ */
+const script = Great_Vibes({
+  subsets: ["latin", "cyrillic"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-script",
+});
+const hand = Bad_Script({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-hand",
+});
+
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
 export const viewport: Viewport = {
   width: "device-width",
@@ -105,11 +128,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // Inside the phone or desktop app a page opens behind the app's own
-  // launch animation (src/features/native/app-launch.tsx).
-  // …except the first page after signing in, which opens with the welcome.
+  // The first page of a visit opens with the book and the greeting
+  // (src/features/intro/): in the app on each start, on the site once per visit
+  // (a session cookie) and never for robots — and not on the first page after
+  // signing in, which has a welcome of its own.
   const requestHeaders = await headers();
-  const inApp = isAppUserAgent(requestHeaders.get("user-agent")) && !(await isWelcome());
+  const userAgent = requestHeaders.get("user-agent");
+  const opening =
+    !(await isWelcome()) &&
+    (isAppUserAgent(userAgent) || ((await cookies()).get(INTRO_COOKIE)?.value !== "1" && !isRobot(userAgent)));
 
   return (
     <html
@@ -117,14 +144,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
-      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable}`}
     >
       <body className="min-h-dvh">
-        {inApp ? (
+        {opening ? (
           <>
-            <AppLaunch />
+            <Intro lines={openingScript(locale)} />
             {/* The per-request nonce the CSP allows (src/proxy.ts). */}
-            <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: LAUNCH_SCRIPT }} />
+            <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
           </>
         ) : null}
         <a href="#main" className="skip-link">
