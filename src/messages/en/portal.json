@@ -764,6 +764,37 @@
       },
       "search": "Search",
       "empty": "Nothing found"
+    },
+    "guardians": {
+      "title": "Parents or guardian",
+      "hint": "Enter your father, mother or guardian with their year of birth, phone and workplace.",
+      "missing": "You have not entered your parents yet.",
+      "add": "Add",
+      "edit": "Edit",
+      "remove": "Remove",
+      "removeConfirm": "Take this person off your parents?",
+      "save": "Save",
+      "cancel": "Cancel",
+      "relationship": "Who",
+      "rel": {
+        "father": "Father",
+        "mother": "Mother",
+        "guardian": "Guardian"
+      },
+      "lastName": "Last name",
+      "firstName": "First name",
+      "middleName": "Middle name",
+      "birthYear": "Year of birth",
+      "phone": "Phone",
+      "workplace": "Workplace",
+      "saved": "Saved",
+      "removed": "Removed",
+      "shared": "Shared with {count} other pupils",
+      "siblingTitle": "This number is already here",
+      "siblingBody": "This number belongs to the parent of the pupil below. Is this your brother or sister?",
+      "siblingYes": "Yes, my brother or sister",
+      "siblingNo": "No",
+      "siblingNoHint": "Use another number: one number, one parent."
     }
   }
 }

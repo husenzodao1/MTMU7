@@ -1711,6 +1711,8 @@ export type Database = {
           status: string;
           created_at: string;
           updated_at: string;
+          birth_year: number | null;
+          workplace: string | null;
         };
         Insert: {
           id?: string;
@@ -1725,6 +1727,8 @@ export type Database = {
           status?: string;
           created_at?: string;
           updated_at?: string;
+          birth_year?: number | null;
+          workplace?: string | null;
         };
         Update: {
           id?: string;
@@ -1739,6 +1743,8 @@ export type Database = {
           status?: string;
           created_at?: string;
           updated_at?: string;
+          birth_year?: number | null;
+          workplace?: string | null;
         };
         Relationships: [
           {
@@ -5641,6 +5647,7 @@ export type Database = {
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };
+      my_guardians: { Args: Record<PropertyKey, never>; Returns: { guardian_id: string | null; relationship: string | null; last_name: string | null; first_name: string | null; middle_name: string | null; birth_year: number | null; phone: string | null; workplace: string | null; shared_with: number | null }[] };
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
       open_support_conversation: { Args: Record<PropertyKey, never>; Returns: string };
@@ -5650,6 +5657,7 @@ export type Database = {
       record_library_view: { Args: { p_item_id: string }; Returns: undefined };
       record_news_view: { Args: { p_article_id: string }; Returns: undefined };
       remove_conversation_member: { Args: { p_conversation_id: string; p_user_id: string }; Returns: undefined };
+      remove_my_guardian: { Args: { p_guardian_id: string }; Returns: undefined };
       report_attendance: { Args: { p_from: string; p_to: string; p_class_id?: string; p_school_id?: string }; Returns: { student_id: string | null; student_name: string | null; class_name: string | null; present: number | null; late: number | null; absent: number | null; excused: number | null; total: number | null; attendance_rate: number | null }[] };
       report_content_activity: { Args: { p_from: string; p_to: string; p_school_id?: string }; Returns: { month: string | null; news_published: number | null; announcements_published: number | null; events_held: number | null; documents_published: number | null; books_published: number | null; registrations: number | null }[] };
       report_enrollment: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { class_id: string | null; class_name: string | null; grade_level: number | null; homeroom_teacher: string | null; capacity: number | null; active_count: number | null; male_count: number | null; female_count: number | null; transferred_count: number | null; completed_count: number | null }[] };
@@ -5667,6 +5675,7 @@ export type Database = {
       save_account: { Args: { p_user_id: string; p_data: Json }; Returns: Json };
       save_device_token: { Args: { p_token: string; p_platform: string; p_locale?: string }; Returns: undefined };
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
+      save_my_guardian: { Args: { p_relationship: string; p_last_name: string; p_first_name: string; p_middle_name?: string; p_birth_year?: number; p_phone?: string; p_workplace?: string; p_guardian_id?: string; p_sibling_of?: string }; Returns: Json };
       save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };
       school_faces: { Args: { p_limit?: number }; Returns: Json };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };

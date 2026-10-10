@@ -93,6 +93,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const childOverview = isParent && firstChild ? await getStudentOverview(firstChild.id, today) : null;
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
   const tc = await getTranslations("common");
+  const tg = await getTranslations("portal.guardians");
+  const { data: myGuardians } = student ? await (await createClient()).rpc("my_guardians") : { data: null };
+  const guardiansMissing = Boolean(student) && (myGuardians ?? []).length === 0;
 
   // The notice board's cards: the picture an announcement leads with (or the
   // first one in it), a news story's cover, the first words of each.
@@ -153,6 +156,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       />
 
       {welcome ? <Alert tone="success" className="mb-5">{t("welcome")}</Alert> : null}
+
+      {/* A pupil who has not named their parents yet is asked to (00081). */}
+      {student && guardiansMissing ? (
+        <Alert tone="warning" className="mb-4" actions={<Link href="/profile#guardians" className={buttonClasses("secondary", "sm")}>{tg("add")}</Link>}>
+          {tg("missing")}
+        </Alert>
+      ) : null}
 
       {announcementCards.length > 0 || newsCards.length > 0 || eventCards.length > 0 ? (
         <Showcase announcements={announcementCards} news={newsCards} events={eventCards} />

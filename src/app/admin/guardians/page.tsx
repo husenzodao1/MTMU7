@@ -54,7 +54,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
   const supabase = await createClient();
   let query = supabase
     .from("guardians")
-    .select("id, first_name, last_name, middle_name, phone, email, address, status, user_id, student_guardians(relationship, students(id, first_name, last_name))", { count: "exact" })
+    .select("id, first_name, last_name, middle_name, phone, email, address, status, user_id, birth_year, workplace, student_guardians(relationship, students(id, first_name, last_name))", { count: "exact" })
     .eq("school_id", access.school!.id)
     .eq("status", list.filters.status ?? "active")
     .order("last_name")
@@ -100,7 +100,12 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
           empty={<EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />}
           columns={[
             { key: "name", header: tp("name"), primary: true, cell: (r) => <span className="font-medium">{fullName(r)}</span> },
-            { key: "contact", header: tp("contact"), cell: (r) => <span className="text-sm">{[r.phone, r.email].filter(Boolean).join(" · ") || "—"}</span> },
+            {
+              key: "contact",
+              header: tp("contact"),
+              // What the pupil entered (00081): the year of birth and the workplace with the number.
+              cell: (r) => <span className="text-sm">{[r.phone, r.email, r.birth_year, r.workplace].filter(Boolean).join(" · ") || "—"}</span>,
+            },
             {
               key: "children",
               header: t("children"),

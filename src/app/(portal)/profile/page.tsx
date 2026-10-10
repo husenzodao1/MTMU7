@@ -11,6 +11,8 @@ import { TextField } from "@/components/ui/fields";
 import { Checkbox } from "@/components/ui/form-controls";
 import { Avatar } from "@/components/ui/misc";
 import { Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/surface";
+import { GuardiansEditor, type MyGuardian } from "@/features/profile/guardians-editor";
+import { hasRole } from "@/lib/auth/access";
 import { requireAccess } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
@@ -45,6 +47,21 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_my_profile");
   const profile = profileSchema.parse(data);
+  const t2 = await getTranslations("portal.guardians");
+  // A pupil enters their own parents here (00081).
+  const isPupil = hasRole(access, "student");
+  const { data: guardianRows } = isPupil ? await supabase.rpc("my_guardians") : { data: null };
+  const guardians: MyGuardian[] = (guardianRows ?? []).flatMap((row) => row.guardian_id ? [{
+    id: row.guardian_id,
+    relationship: (["father", "mother", "guardian"].includes(row.relationship ?? "") ? row.relationship : "guardian") as MyGuardian["relationship"],
+    lastName: row.last_name ?? "",
+    firstName: row.first_name ?? "",
+    middleName: row.middle_name,
+    birthYear: row.birth_year,
+    phone: row.phone,
+    workplace: row.workplace,
+    sharedWith: row.shared_with ?? 0,
+  }] : []);
   const fullName = [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(" ");
 
   return (
@@ -76,6 +93,16 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </Card>
 
         <div className="space-y-5">
+          {isPupil ? (
+            <div id="guardians" className="scroll-mt-24">
+              <Card>
+                <CardHeader title={t2("title")} />
+                <CardBody>
+                  <GuardiansEditor guardians={guardians} />
+                </CardBody>
+              </Card>
+            </div>
+          ) : null}
           <Card>
             <CardHeader title={t("contact")} description={t("contactHint")} />
             <CardBody>
