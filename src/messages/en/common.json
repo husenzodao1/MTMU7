@@ -238,7 +238,7 @@
     },
     "appUpdate": {
       "title": "A new version of the app",
-      "text": "The keyboard and permissions work better.",
+      "text": "A new icon; the keyboard and permissions work better.",
       "action": "Update",
       "later": "Later"
     }
