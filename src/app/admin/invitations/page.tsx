@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
@@ -73,48 +73,50 @@ export default async function InvitationsPage({ searchParams }: { searchParams: 
         {ta("closedBody")}
       </Alert>
       <FilterBar filters={[{ name: "state", label: t("show"), emptyLabel: t("activeOnly"), options: [{ value: "all", label: t("allCodes") }] }]} />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<KeyRound />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          { key: "code", header: t("code"), primary: true, cell: (r) => <span className="font-mono text-base font-semibold tracking-widest">{r.code}</span> },
-          {
-            key: "role",
-            header: t("role"),
-            cell: (r) => (
-              <span>
-                {roleById.get(r.role_id) ? pickName(roleById.get(r.role_id)!, locale) : "—"}
-                {r.person_type ? <span className="block text-xs text-ink-muted">{t(`personal.${r.person_type as "student"}`)}</span> : null}
-                {(r.classes as { name: string } | null)?.name ? <span className="block text-xs text-ink-muted">{(r.classes as { name: string }).name}</span> : null}
-              </span>
-            ),
-          },
-          { key: "uses", header: t("uses"), cell: (r) => <span className="tabular">{r.used_count} / {r.max_uses}</span> },
-          { key: "expires", header: t("expires"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{r.expires_at ? formatDateTime(r.expires_at, locale, timeZone) : "—"}</span> },
-          {
-            key: "state",
-            header: t("state"),
-            cell: (r) => {
-              const s = state(r);
-              return <Badge tone={s === "usable" ? "success" : s === "expired" || s === "used" ? "warning" : "neutral"}>{t(`states.${s}`)}</Badge>;
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          empty={<EmptyState icon={<KeyRound />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            { key: "code", header: t("code"), primary: true, cell: (r) => <span className="font-mono text-base font-semibold tracking-widest">{r.code}</span> },
+            {
+              key: "role",
+              header: t("role"),
+              cell: (r) => (
+                <span>
+                  {roleById.get(r.role_id) ? pickName(roleById.get(r.role_id)!, locale) : "—"}
+                  {r.person_type ? <span className="block text-xs text-ink-muted">{t(`personal.${r.person_type as "student"}`)}</span> : null}
+                  {(r.classes as { name: string } | null)?.name ? <span className="block text-xs text-ink-muted">{(r.classes as { name: string }).name}</span> : null}
+                </span>
+              ),
             },
-          },
-          { key: "note", header: t("note"), hideOnMobile: true, cell: (r) => <span className="text-sm text-ink-secondary">{r.note ?? ""}</span> },
-        ]}
-        actions={(r) => r.is_active ? (
-          <ConfirmAction
-            action={deactivateInvitationAction}
-            fields={{ id: r.id }}
-            title={t("deactivateTitle")}
-            description={t("deactivateDescription", { code: r.code })}
-            confirmLabel={t("deactivate")}
-            trigger={<Button variant="ghost" size="sm">{t("deactivate")}</Button>}
-          />
-        ) : null}
-      />
-      <Pagination pathname="/admin/invitations" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+            { key: "uses", header: t("uses"), cell: (r) => <span className="tabular">{r.used_count} / {r.max_uses}</span> },
+            { key: "expires", header: t("expires"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{r.expires_at ? formatDateTime(r.expires_at, locale, timeZone) : "—"}</span> },
+            {
+              key: "state",
+              header: t("state"),
+              cell: (r) => {
+                const s = state(r);
+                return <Badge tone={s === "usable" ? "success" : s === "expired" || s === "used" ? "warning" : "neutral"}>{t(`states.${s}`)}</Badge>;
+              },
+            },
+            { key: "note", header: t("note"), hideOnMobile: true, cell: (r) => <span className="text-sm text-ink-secondary">{r.note ?? ""}</span> },
+          ]}
+          actions={(r) => r.is_active ? (
+            <ConfirmAction
+              action={deactivateInvitationAction}
+              fields={{ id: r.id }}
+              title={t("deactivateTitle")}
+              description={t("deactivateDescription", { code: r.code })}
+              confirmLabel={t("deactivate")}
+              trigger={<Button variant="ghost" size="sm">{t("deactivate")}</Button>}
+            />
+          ) : null}
+        />
+        <Pagination pathname="/admin/invitations" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

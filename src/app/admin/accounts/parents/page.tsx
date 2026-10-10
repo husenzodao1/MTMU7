@@ -10,7 +10,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { TabNav } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -89,55 +89,57 @@ export default async function ParentsTelegramPage({ searchParams }: { searchPara
             filters={[{ name: "class", label: t("fields.class_id"), emptyLabel: t("allClasses"), options: classes.map((c) => ({ value: c.value, label: c.label })) }]}
           />
           <p className="text-sm text-ink-muted">{t("parents.summary", { parents: (links ?? []).length, linked: onTelegram })}</p>
-          {pupils.length === 0 ? (
-            <EmptyState icon={<UsersRound />} title={t("parents.empty")} description={t("parents.emptyHint")} />
-          ) : (
-            <ul className="grid gap-2">
-              {pupils.map((pupil) => {
-                const studentId = studentOf.get(pupil.id);
-                const parents = studentId ? (parentsOf.get(studentId) ?? []) : [];
-                const telegram = pupil.telegram ?? 0;
-                return (
-                  <li key={pupil.id} className="rounded-2xl border border-line bg-surface p-3 shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="min-w-0 flex-1">
-                        <Link href={`/admin/accounts/${pupil.id}`} className="font-semibold text-ink hover:text-brand-text hover:underline">
-                          {pupil.last_name} {pupil.first_name}
-                        </Link>
-                        <p className="text-xs text-ink-muted">{pupil.class_name ?? "—"} · <span className="font-mono">{pupil.public_id}</span></p>
+          <ListBox>
+            {pupils.length === 0 ? (
+              <EmptyState icon={<UsersRound />} title={t("parents.empty")} description={t("parents.emptyHint")} />
+            ) : (
+              <ul className="grid gap-2">
+                {pupils.map((pupil) => {
+                  const studentId = studentOf.get(pupil.id);
+                  const parents = studentId ? (parentsOf.get(studentId) ?? []) : [];
+                  const telegram = pupil.telegram ?? 0;
+                  return (
+                    <li key={pupil.id} className="rounded-2xl border border-line bg-surface p-3 shadow-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <Link href={`/admin/accounts/${pupil.id}`} className="font-semibold text-ink hover:text-brand-text hover:underline">
+                            {pupil.last_name} {pupil.first_name}
+                          </Link>
+                          <p className="text-xs text-ink-muted">{pupil.class_name ?? "—"} · <span className="font-mono">{pupil.public_id}</span></p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                            telegram ? "bg-[#229ed9]/12 text-[#1b85b8]" : "bg-surface-muted text-ink-muted"
+                          )}
+                        >
+                          <Send className="size-3.5" aria-hidden />
+                          {telegram ? `${t("parents.linked")} · ${telegram}` : t("parents.notLinked")}
+                        </span>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-                          telegram ? "bg-[#229ed9]/12 text-[#1b85b8]" : "bg-surface-muted text-ink-muted"
-                        )}
-                      >
-                        <Send className="size-3.5" aria-hidden />
-                        {telegram ? `${t("parents.linked")} · ${telegram}` : t("parents.notLinked")}
-                      </span>
-                    </div>
-                    {parents.length > 0 ? (
-                      <ul className="mt-2 flex flex-wrap gap-2">
-                        {parents.map((link) => (
-                          <li key={link.guardians?.id ?? link.relationship} className="rounded-xl bg-surface-muted/60 px-3 py-1.5 text-sm">
-                            <span className="font-medium text-ink">{link.guardians?.last_name} {link.guardians?.first_name}</span>
-                            <span className="text-ink-muted"> · {t(`relationships.${link.relationship}` as "relationships.mother")}</span>
-                            {link.guardians?.phone ? <span className="text-ink-muted"> · {link.guardians.phone}</span> : null}
-                            <span className={cn("ms-1.5 text-xs", link.guardians?.user_id ? "text-success-700" : "text-ink-muted")}>
-                              ({link.guardians?.user_id ? t("parents.withAccount") : t("parents.noAccount")})
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-2 text-sm text-warning-700">{t("row.noParents")}</p>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          <Pagination pathname="/admin/accounts/parents" searchParams={params} page={list.page} pageSize={PAGE_SIZE} total={directory?.total ?? 0} />
+                      {parents.length > 0 ? (
+                        <ul className="mt-2 flex flex-wrap gap-2">
+                          {parents.map((link) => (
+                            <li key={link.guardians?.id ?? link.relationship} className="rounded-xl bg-surface-muted/60 px-3 py-1.5 text-sm">
+                              <span className="font-medium text-ink">{link.guardians?.last_name} {link.guardians?.first_name}</span>
+                              <span className="text-ink-muted"> · {t(`relationships.${link.relationship}` as "relationships.mother")}</span>
+                              {link.guardians?.phone ? <span className="text-ink-muted"> · {link.guardians.phone}</span> : null}
+                              <span className={cn("ms-1.5 text-xs", link.guardians?.user_id ? "text-success-700" : "text-ink-muted")}>
+                                ({link.guardians?.user_id ? t("parents.withAccount") : t("parents.noAccount")})
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-2 text-sm text-warning-700">{t("row.noParents")}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <Pagination pathname="/admin/accounts/parents" searchParams={params} page={list.page} pageSize={PAGE_SIZE} total={directory?.total ?? 0} />
+          </ListBox>
         </div>
 
         <aside className="space-y-4">

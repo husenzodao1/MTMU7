@@ -9,7 +9,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -73,31 +73,33 @@ export default async function AdminStaffPage({ searchParams }: { searchParams: P
           { name: "status", label: tp("status"), emptyLabel: t("notArchived"), options: STAFF_STATUSES.map((s) => ({ value: s, label: ts(s) })) },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/staff/${r.id}`}
-        empty={<EmptyState icon={<Users />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "name",
-            header: tp("name"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/admin/staff/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
-                {r.employee_number ? <p className="text-xs text-ink-muted">{r.employee_number}</p> : null}
-              </div>
-            ),
-          },
-          { key: "type", header: tp("staffType"), cell: (r) => <span>{t(`types.${r.staff_type as (typeof STAFF_TYPES)[number]}`)}{r.position ? <span className="block text-xs text-ink-muted">{r.position}</span> : null}</span> },
-          { key: "phone", header: tp("phone"), hideOnMobile: true, cell: (r) => r.phone ?? "—" },
-          { key: "status", header: tp("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
-          { key: "account", header: t("account"), hideOnMobile: true, cell: (r) => (r.user_id ? <Badge tone="success">{t("accountLinked")}</Badge> : <Badge>{t("accountNone")}</Badge>) },
-        ]}
-      />
-      <Pagination pathname="/admin/staff" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/staff/${r.id}`}
+          empty={<EmptyState icon={<Users />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "name",
+              header: tp("name"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/admin/staff/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
+                  {r.employee_number ? <p className="text-xs text-ink-muted">{r.employee_number}</p> : null}
+                </div>
+              ),
+            },
+            { key: "type", header: tp("staffType"), cell: (r) => <span>{t(`types.${r.staff_type as (typeof STAFF_TYPES)[number]}`)}{r.position ? <span className="block text-xs text-ink-muted">{r.position}</span> : null}</span> },
+            { key: "phone", header: tp("phone"), hideOnMobile: true, cell: (r) => r.phone ?? "—" },
+            { key: "status", header: tp("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
+            { key: "account", header: t("account"), hideOnMobile: true, cell: (r) => (r.user_id ? <Badge tone="success">{t("accountLinked")}</Badge> : <Badge>{t("accountNone")}</Badge>) },
+          ]}
+        />
+        <Pagination pathname="/admin/staff" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

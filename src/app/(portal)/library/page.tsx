@@ -7,7 +7,7 @@ import { BookGrid, type BookCardItem } from "@/features/library/components";
 import { buttonClasses } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filters";
 import { TabNav } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can, canAny } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
@@ -109,14 +109,16 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
           ]}
         />
       ) : null}
-      {items.length === 0 ? (
-        <Card as="div">
-          <EmptyState icon={<Library />} title={t(`empty.${view}`)} />
-        </Card>
-      ) : (
-        <BookGrid items={items} />
-      )}
-      <Pagination pathname="/library" searchParams={params} page={list.page} pageSize={list.pageSize} total={total} />
+      <ListBox>
+        {items.length === 0 ? (
+          <Card as="div">
+            <EmptyState icon={<Library />} title={t(`empty.${view}`)} />
+          </Card>
+        ) : (
+          <BookGrid items={items} />
+        )}
+        <Pagination pathname="/library" searchParams={params} page={list.page} pageSize={list.perPage} total={total} />
+      </ListBox>
     </>
   );
 }

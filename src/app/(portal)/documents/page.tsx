@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
@@ -49,44 +49,46 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
         searchLabel={t("search")}
         filters={[{ name: "category", label: t("category"), options: DOCUMENT_CATEGORIES.map((c) => ({ value: c, label: t(`categories.${c}`) })) }]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(d) => d.id}
-        empty={<EmptyState icon={<FolderOpen />} title={t("empty")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("document"),
-            primary: true,
-            cell: (d) => (
-              <div className="flex items-start gap-2">
-                <FileText className="mt-0.5 size-4 shrink-0 text-ink-muted" aria-hidden />
-                <div className="min-w-0">
-                  <a href={`/files/documents/${d.id}`} className="font-medium text-ink hover:text-brand-text hover:underline" target="_blank" rel="noopener">
-                    {d.title}
-                  </a>
-                  {d.description ? <p className="line-clamp-2 text-sm text-ink-muted">{d.description}</p> : null}
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(d) => d.id}
+          empty={<EmptyState icon={<FolderOpen />} title={t("empty")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("document"),
+              primary: true,
+              cell: (d) => (
+                <div className="flex items-start gap-2">
+                  <FileText className="mt-0.5 size-4 shrink-0 text-ink-muted" aria-hidden />
+                  <div className="min-w-0">
+                    <a href={`/files/documents/${d.id}`} className="font-medium text-ink hover:text-brand-text hover:underline" target="_blank" rel="noopener">
+                      {d.title}
+                    </a>
+                    {d.description ? <p className="line-clamp-2 text-sm text-ink-muted">{d.description}</p> : null}
+                  </div>
                 </div>
-              </div>
-            ),
-          },
-          { key: "category", header: t("category"), cell: (d) => <Badge>{t(`categories.${d.category}`)}</Badge> },
-          { key: "folder", header: t("folder"), hideOnMobile: true, cell: (d) => (d.document_folders as { name: string } | null)?.name ?? "—" },
-          { key: "date", header: t("published"), cell: (d) => <span className="tabular">{formatDate(d.published_at, locale)}</span> },
-          {
-            key: "download",
-            header: t("file"),
-            align: "end",
-            cell: (d) => (
-              <a href={`/files/documents/${d.id}?download=1`} className="text-sm font-medium text-brand-text hover:underline">
-                {t("download", { size: formatBytes(d.size_bytes) })}
-              </a>
-            ),
-          },
-        ]}
-      />
-      <Pagination pathname="/documents" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+              ),
+            },
+            { key: "category", header: t("category"), cell: (d) => <Badge>{t(`categories.${d.category}`)}</Badge> },
+            { key: "folder", header: t("folder"), hideOnMobile: true, cell: (d) => (d.document_folders as { name: string } | null)?.name ?? "—" },
+            { key: "date", header: t("published"), cell: (d) => <span className="tabular">{formatDate(d.published_at, locale)}</span> },
+            {
+              key: "download",
+              header: t("file"),
+              align: "end",
+              cell: (d) => (
+                <a href={`/files/documents/${d.id}?download=1`} className="text-sm font-medium text-brand-text hover:underline">
+                  {t("download", { size: formatBytes(d.size_bytes) })}
+                </a>
+              ),
+            },
+          ]}
+        />
+        <Pagination pathname="/documents" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

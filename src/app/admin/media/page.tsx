@@ -8,7 +8,7 @@ import { ConfirmAction, FormDialog } from "@/components/ui/action-form";
 import { Button } from "@/components/ui/button";
 import { DirectUpload } from "@/components/ui/direct-upload";
 import { TextField } from "@/components/ui/fields";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -52,33 +52,35 @@ export default async function AdminMediaPage({ searchParams }: { searchParams: P
           </FormDialog>
         }
       />
-      {!data || data.length === 0 ? (
-        <Card as="div"><EmptyState icon={<Images />} title={t("empty")} description={t("emptyHint")} /></Card>
-      ) : (
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {data.map((asset) => {
-            const url = publicMediaUrl(asset.storage_path) ?? "";
-            return (
-              <li key={asset.id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
-                {/* eslint-disable-next-line @next/next/no-img-element -- public school media */}
-                <img src={url} alt={asset.alt_text ?? ""} className="aspect-square w-full object-cover" loading="lazy" />
-                <div className="flex flex-1 flex-col gap-1 p-2.5 text-xs">
-                  <p className="line-clamp-2 text-ink">{asset.alt_text}</p>
-                  <p className="text-ink-muted">{formatBytes(asset.size_bytes)} · {formatDate(asset.created_at, locale)}</p>
-                  <label className="mt-1 block">
-                    <span className="sr-only">{t("url")}</span>
-                    <input readOnly value={url} className="w-full rounded border border-line bg-surface-muted px-1.5 py-1 font-mono text-[0.6875rem]" />
-                  </label>
-                  {can(access, "media.manage") ? (
-                    <ConfirmAction action={deleteMediaAction} fields={{ id: asset.id }} title={t("deleteTitle")} description={t("deleteDescription")} confirmLabel={tc("delete")} trigger={<Button variant="ghost" size="sm" className="mt-1 self-start"><Trash2 aria-hidden />{tc("delete")}</Button>} />
-                  ) : null}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <Pagination pathname="/admin/media" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        {!data || data.length === 0 ? (
+          <Card as="div"><EmptyState icon={<Images />} title={t("empty")} description={t("emptyHint")} /></Card>
+        ) : (
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {data.map((asset) => {
+              const url = publicMediaUrl(asset.storage_path) ?? "";
+              return (
+                <li key={asset.id} className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- public school media */}
+                  <img src={url} alt={asset.alt_text ?? ""} className="aspect-square w-full object-cover" loading="lazy" />
+                  <div className="flex flex-1 flex-col gap-1 p-2.5 text-xs">
+                    <p className="line-clamp-2 text-ink">{asset.alt_text}</p>
+                    <p className="text-ink-muted">{formatBytes(asset.size_bytes)} · {formatDate(asset.created_at, locale)}</p>
+                    <label className="mt-1 block">
+                      <span className="sr-only">{t("url")}</span>
+                      <input readOnly value={url} className="w-full rounded border border-line bg-surface-muted px-1.5 py-1 font-mono text-[0.6875rem]" />
+                    </label>
+                    {can(access, "media.manage") ? (
+                      <ConfirmAction action={deleteMediaAction} fields={{ id: asset.id }} title={t("deleteTitle")} description={t("deleteDescription")} confirmLabel={tc("delete")} trigger={<Button variant="ghost" size="sm" className="mt-1 self-start"><Trash2 aria-hidden />{tc("delete")}</Button>} />
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <Pagination pathname="/admin/media" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

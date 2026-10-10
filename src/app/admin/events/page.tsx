@@ -13,7 +13,7 @@ import { SelectField, TextAreaField, TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Checkbox } from "@/components/ui/form-controls";
 import { TabNav } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
@@ -93,30 +93,32 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
           { name: "category", label: t("category"), options: EVENT_CATEGORIES.map((c) => ({ value: c, label: tpe(c) })) },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<CalendarDays />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          { key: "title", header: t("titleField"), primary: true, cell: (r) => <div><p className="font-medium">{r.title}</p><p className="text-xs text-ink-muted">{tpe(r.category as "school")} · {t(`audiences.${r.audience as "school"}`)}</p></div> },
-          { key: "when", header: t("startsAt"), cell: (r) => <span className="text-sm tabular">{formatDateTime(r.starts_at, locale, timeZone)}</span> },
-          { key: "location", header: t("location"), hideOnMobile: true, cell: (r) => r.location ?? "—" },
-          { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status as "draft")} /> },
-        ]}
-        actions={(r) => (
-          <span className="flex justify-end gap-1">
-            <FormDialog action={saveEventAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: r.title })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tc("save")} size="lg">{fields(r)}</FormDialog>
-            {r.status === "published" ? (
-              <ConfirmAction action={setEventStatusAction} fields={{ id: r.id, status: "cancelled" }} title={t("cancelTitle")} description={t("cancelDescription")} confirmLabel={t("cancel")} trigger={<Button variant="ghost" size="sm">{t("cancel")}</Button>} />
-            ) : null}
-            {r.status !== "archived" ? (
-              <ConfirmAction action={setEventStatusAction} fields={{ id: r.id, status: "archived" }} title={t("archiveTitle")} confirmLabel={tc("archive")} trigger={<Button variant="ghost" size="sm">{tc("archive")}</Button>} />
-            ) : null}
-          </span>
-        )}
-      />
-      <Pagination pathname="/admin/events" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          empty={<EmptyState icon={<CalendarDays />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            { key: "title", header: t("titleField"), primary: true, cell: (r) => <div><p className="font-medium">{r.title}</p><p className="text-xs text-ink-muted">{tpe(r.category as "school")} · {t(`audiences.${r.audience as "school"}`)}</p></div> },
+            { key: "when", header: t("startsAt"), cell: (r) => <span className="text-sm tabular">{formatDateTime(r.starts_at, locale, timeZone)}</span> },
+            { key: "location", header: t("location"), hideOnMobile: true, cell: (r) => r.location ?? "—" },
+            { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status as "draft")} /> },
+          ]}
+          actions={(r) => (
+            <span className="flex justify-end gap-1">
+              <FormDialog action={saveEventAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: r.title })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tc("save")} size="lg">{fields(r)}</FormDialog>
+              {r.status === "published" ? (
+                <ConfirmAction action={setEventStatusAction} fields={{ id: r.id, status: "cancelled" }} title={t("cancelTitle")} description={t("cancelDescription")} confirmLabel={t("cancel")} trigger={<Button variant="ghost" size="sm">{t("cancel")}</Button>} />
+              ) : null}
+              {r.status !== "archived" ? (
+                <ConfirmAction action={setEventStatusAction} fields={{ id: r.id, status: "archived" }} title={t("archiveTitle")} confirmLabel={tc("archive")} trigger={<Button variant="ghost" size="sm">{tc("archive")}</Button>} />
+              ) : null}
+            </span>
+          )}
+        />
+        <Pagination pathname="/admin/events" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

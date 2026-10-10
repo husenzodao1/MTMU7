@@ -8,7 +8,7 @@ import { getNewsCategories } from "@/features/news/queries";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
@@ -81,56 +81,58 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
           { name: "language", label: t("language"), options: ["tg", "ru", "en"].map((l) => ({ value: l, label: tl(l) })) },
         ]}
       />
-      {!data || data.length === 0 ? (
-        <Card as="div"><EmptyState icon={<Newspaper />} title={t("empty")} /></Card>
-      ) : (
-        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {data.map((article) => (
-            <li key={article.id}>
-              <article className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
-                {article.cover_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- editorial image from public storage
-                  <img src={article.cover_image_url} alt="" className="aspect-[16/9] w-full object-cover" loading="lazy" />
-                ) : null}
-                <div className="flex flex-1 flex-col p-4">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    {article.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}
-                    {article.category_id && categoryName.get(article.category_id) ? <Badge>{categoryName.get(article.category_id)}</Badge> : null}
-                  </div>
-                  <h2 className="text-lg font-semibold leading-snug">
-                    <Link href={`/news/${article.slug}`} className="hover:text-brand-text hover:underline">
-                      {article.title}
-                    </Link>
-                  </h2>
-                  <p className="mt-1 line-clamp-3 text-sm text-ink-secondary">{article.summary || markdownToPlainText(article.content, 220)}</p>
-                  <div className="mt-auto flex items-start justify-between gap-3 pt-3">
-                    <p className="text-xs text-ink-muted tabular">{formatDate(article.publish_at, locale)}</p>
-                    {engagement.get(article.id)?.author_name ? (
-                      <Byline
-                        name={engagement.get(article.id)!.author_name ?? ""}
-                        role={engagement.get(article.id)!.author_role as RoleName | null}
+      <ListBox>
+        {!data || data.length === 0 ? (
+          <Card as="div"><EmptyState icon={<Newspaper />} title={t("empty")} /></Card>
+        ) : (
+          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {data.map((article) => (
+              <li key={article.id}>
+                <article className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
+                  {article.cover_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- editorial image from public storage
+                    <img src={article.cover_image_url} alt="" className="aspect-[16/9] w-full object-cover" loading="lazy" />
+                  ) : null}
+                  <div className="flex flex-1 flex-col p-4">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      {article.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}
+                      {article.category_id && categoryName.get(article.category_id) ? <Badge>{categoryName.get(article.category_id)}</Badge> : null}
+                    </div>
+                    <h2 className="text-lg font-semibold leading-snug">
+                      <Link href={`/news/${article.slug}`} className="hover:text-brand-text hover:underline">
+                        {article.title}
+                      </Link>
+                    </h2>
+                    <p className="mt-1 line-clamp-3 text-sm text-ink-secondary">{article.summary || markdownToPlainText(article.content, 220)}</p>
+                    <div className="mt-auto flex items-start justify-between gap-3 pt-3">
+                      <p className="text-xs text-ink-muted tabular">{formatDate(article.publish_at, locale)}</p>
+                      {engagement.get(article.id)?.author_name ? (
+                        <Byline
+                          name={engagement.get(article.id)!.author_name ?? ""}
+                          role={engagement.get(article.id)!.author_role as RoleName | null}
+                        />
+                      ) : null}
+                    </div>
+                    {engagement.has(article.id) ? (
+                      <ReactionBar
+                        className="mt-2 border-t border-line pt-2"
+                        articleId={article.id}
+                        engagement={{
+                          views: engagement.get(article.id)!.views ?? 0,
+                          likes: engagement.get(article.id)!.likes ?? 0,
+                          comments: engagement.get(article.id)!.comments ?? 0,
+                          liked: engagement.get(article.id)!.liked ?? false,
+                        }}
                       />
                     ) : null}
                   </div>
-                  {engagement.has(article.id) ? (
-                    <ReactionBar
-                      className="mt-2 border-t border-line pt-2"
-                      articleId={article.id}
-                      engagement={{
-                        views: engagement.get(article.id)!.views ?? 0,
-                        likes: engagement.get(article.id)!.likes ?? 0,
-                        comments: engagement.get(article.id)!.comments ?? 0,
-                        liked: engagement.get(article.id)!.liked ?? false,
-                      }}
-                    />
-                  ) : null}
-                </div>
-              </article>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Pagination pathname="/news" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+                </article>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Pagination pathname="/news" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, EmptyState } from "@/components/ui/surface";
 import { ProfileAvatar } from "@/features/accounts/list-parts";
 import { ACCOUNT_CATEGORIES, CATEGORY_OF_ROW, type AccountCategory, type AccountDirectory, type AccountRow } from "@/features/accounts/types";
@@ -98,17 +98,19 @@ export async function AccountsView({
         }
       />
 
-      {directory.rows.length === 0 ? (
-        <EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />
-      ) : (
-        <ul className="grid gap-2">
-          {directory.rows.map((row) => (
-            <AccountRowItem key={row.id} row={row} basePath={basePath} locale={locale} canMessage={canMessage} t={t} />
-          ))}
-        </ul>
-      )}
+      <ListBox>
+        {directory.rows.length === 0 ? (
+          <EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />
+        ) : (
+          <ul className="grid gap-2">
+            {directory.rows.map((row) => (
+              <AccountRowItem key={row.id} row={row} basePath={basePath} locale={locale} canMessage={canMessage} t={t} />
+            ))}
+          </ul>
+        )}
 
-      <Pagination pathname={basePath} searchParams={searchParams} page={page} pageSize={pageSize} total={directory.total} />
+        <Pagination pathname={basePath} searchParams={searchParams} page={page} pageSize={pageSize} total={directory.total} />
+      </ListBox>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
+import { ViewportGuard } from "@/components/ui/viewport-guard";
 import { publicEnv } from "@/lib/env";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
 import "@/styles/globals.css";
@@ -183,6 +184,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
             <SupportFab />
             <NativeApp />
+            <ViewportGuard />
           </ToastProvider>
         </NextIntlClientProvider>
       </body>

@@ -9,7 +9,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -102,30 +102,32 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
         ]}
       />
       {error ? <p className="mb-3 text-sm text-danger-700" role="alert">{t("loadError")}</p> : null}
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/students/${r.id}`}
-        empty={<EmptyState icon={<GraduationCap />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "name",
-            header: tp("name"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/admin/students/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
-                {r.student_number ? <p className="text-xs text-ink-muted">{r.student_number}</p> : null}
-              </div>
-            ),
-          },
-          { key: "class", header: tp("class"), cell: (r) => className(r) ?? <span className="text-ink-muted">{t("withoutClass")}</span> },
-          { key: "status", header: tp("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
-          { key: "account", header: t("account"), hideOnMobile: true, cell: (r) => (r.user_id ? <Badge tone="success">{t("accountLinked")}</Badge> : <Badge>{t("accountNone")}</Badge>) },
-        ]}
-      />
-      <Pagination pathname="/admin/students" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/students/${r.id}`}
+          empty={<EmptyState icon={<GraduationCap />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "name",
+              header: tp("name"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/admin/students/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{fullName(r)}</Link>
+                  {r.student_number ? <p className="text-xs text-ink-muted">{r.student_number}</p> : null}
+                </div>
+              ),
+            },
+            { key: "class", header: tp("class"), cell: (r) => className(r) ?? <span className="text-ink-muted">{t("withoutClass")}</span> },
+            { key: "status", header: tp("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
+            { key: "account", header: t("account"), hideOnMobile: true, cell: (r) => (r.user_id ? <Badge tone="success">{t("accountLinked")}</Badge> : <Badge>{t("accountNone")}</Badge>) },
+          ]}
+        />
+        <Pagination pathname="/admin/students" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

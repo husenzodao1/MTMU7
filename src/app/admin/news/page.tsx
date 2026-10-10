@@ -12,7 +12,7 @@ import { TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Checkbox } from "@/components/ui/form-controls";
 import { TabNav } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -109,43 +109,45 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
       {saved ? <Alert tone="success" className="mb-4">{t.has(`saved.${saved}`) ? t(`saved.${saved}`) : tc("saved")}</Alert> : null}
       {tabs}
       <FilterBar searchLabel={t("search")} filters={[{ name: "category", label: t("category"), options: (categories ?? []).map((c) => ({ value: c.id, label: pickName(c, locale) })) }]} />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/news/${r.id}`}
-        empty={<EmptyState icon={<Newspaper />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("articleTitle"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/admin/news/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
-                <p className="text-xs text-ink-muted">
-                  {(r.author as unknown as { first_name: string; last_name: string } | null) ? `${(r.author as unknown as { last_name: string }).last_name} ${(r.author as unknown as { first_name: string }).first_name}` : ""}
-                  {r.category_id && categoryName.get(r.category_id) ? ` · ${categoryName.get(r.category_id)}` : ""}
-                </p>
-              </div>
-            ),
-          },
-          {
-            key: "status",
-            header: t("status"),
-            cell: (r) => (
-              <span className="flex flex-wrap gap-1">
-                <StatusBadge status={r.status === "published" && r.publish_at && r.publish_at > now ? "scheduled" : r.status} label={r.status === "published" && r.publish_at && r.publish_at > now ? ts("scheduled") : ts(r.status as "draft")} />
-                {r.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}
-              </span>
-            ),
-          },
-          { key: "publish", header: t("publishAt"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{r.publish_at ? formatDateTime(r.publish_at, locale, timeZone) : "—"}</span> },
-          { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
-        ]}
-        actions={(r) => (r.status === "published" && can(access, "news.view") ? <Link href={`/news/${r.slug}`} className={buttonClasses("ghost", "sm")}>{t("openArticle")}</Link> : null)}
-      />
-      <Pagination pathname="/admin/news" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/news/${r.id}`}
+          empty={<EmptyState icon={<Newspaper />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("articleTitle"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/admin/news/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
+                  <p className="text-xs text-ink-muted">
+                    {(r.author as unknown as { first_name: string; last_name: string } | null) ? `${(r.author as unknown as { last_name: string }).last_name} ${(r.author as unknown as { first_name: string }).first_name}` : ""}
+                    {r.category_id && categoryName.get(r.category_id) ? ` · ${categoryName.get(r.category_id)}` : ""}
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: "status",
+              header: t("status"),
+              cell: (r) => (
+                <span className="flex flex-wrap gap-1">
+                  <StatusBadge status={r.status === "published" && r.publish_at && r.publish_at > now ? "scheduled" : r.status} label={r.status === "published" && r.publish_at && r.publish_at > now ? ts("scheduled") : ts(r.status as "draft")} />
+                  {r.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}
+                </span>
+              ),
+            },
+            { key: "publish", header: t("publishAt"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{r.publish_at ? formatDateTime(r.publish_at, locale, timeZone) : "—"}</span> },
+            { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
+          ]}
+          actions={(r) => (r.status === "published" && can(access, "news.view") ? <Link href={`/news/${r.slug}`} className={buttonClasses("ghost", "sm")}>{t("openArticle")}</Link> : null)}
+        />
+        <Pagination pathname="/admin/news" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

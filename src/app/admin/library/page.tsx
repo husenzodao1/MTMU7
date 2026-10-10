@@ -12,7 +12,7 @@ import { TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Checkbox } from "@/components/ui/form-controls";
 import { TabNav } from "@/components/ui/misc";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can, canAny } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -111,32 +111,34 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
           { name: "category", label: t("category"), options: (categories ?? []).map((c) => ({ value: c.id, label: pickName(c, locale) })) },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/library/${r.id}`}
-        empty={<EmptyState icon={<BookOpen />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("titleField"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/admin/library/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
-                <p className="text-xs text-ink-muted">{[r.author, r.category_id ? categoryName.get(r.category_id) : null].filter(Boolean).join(" · ")}</p>
-              </div>
-            ),
-          },
-          { key: "format", header: t("format"), cell: (r) => (r.file_type ? <Badge tone="brand">{r.file_type.toUpperCase()}</Badge> : <Badge>{t("printOnly")}</Badge>) },
-          { key: "copies", header: t("copies"), hideOnMobile: true, cell: (r) => <span className="tabular">{r.quantity > 0 ? `${r.available_quantity} / ${r.quantity}` : "—"}</span> },
-          { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
-          { key: "status", header: t("status"), cell: (r) => <span className="flex flex-wrap gap-1"><StatusBadge status={r.status} label={ts(r.status as "draft")} />{r.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}</span> },
-        ]}
-        actions={(r) => (canAny(access, ["library.update", "library.publish"]) ? <Link href={`/admin/library/${r.id}`} className={buttonClasses("ghost", "sm")}>{tc("edit")}</Link> : null)}
-      />
-      <Pagination pathname="/admin/library" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/library/${r.id}`}
+          empty={<EmptyState icon={<BookOpen />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("titleField"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/admin/library/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
+                  <p className="text-xs text-ink-muted">{[r.author, r.category_id ? categoryName.get(r.category_id) : null].filter(Boolean).join(" · ")}</p>
+                </div>
+              ),
+            },
+            { key: "format", header: t("format"), cell: (r) => (r.file_type ? <Badge tone="brand">{r.file_type.toUpperCase()}</Badge> : <Badge>{t("printOnly")}</Badge>) },
+            { key: "copies", header: t("copies"), hideOnMobile: true, cell: (r) => <span className="tabular">{r.quantity > 0 ? `${r.available_quantity} / ${r.quantity}` : "—"}</span> },
+            { key: "views", header: t("viewCount"), hideOnMobile: true, cell: (r) => <span className="tabular">{formatNumber(r.view_count, locale)}</span> },
+            { key: "status", header: t("status"), cell: (r) => <span className="flex flex-wrap gap-1"><StatusBadge status={r.status} label={ts(r.status as "draft")} />{r.is_featured ? <Badge tone="brand">{t("featured")}</Badge> : null}</span> },
+          ]}
+          actions={(r) => (canAny(access, ["library.update", "library.publish"]) ? <Link href={`/admin/library/${r.id}`} className={buttonClasses("ghost", "sm")}>{tc("edit")}</Link> : null)}
+        />
+        <Pagination pathname="/admin/library" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

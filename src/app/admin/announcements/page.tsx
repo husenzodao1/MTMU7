@@ -7,7 +7,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -66,46 +66,48 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
           { name: "priority", label: t("priority"), options: (["normal", "important", "critical"] as const).map((p) => ({ value: p, label: tp(p) })) },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/announcements/${r.id}`}
-        empty={<EmptyState icon={<Megaphone />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("titleField"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/admin/announcements/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
-                <p className="flex items-center gap-1 text-xs text-ink-muted">
-                  {t(`audiences.${r.audience_type as "school"}`)}
-                  {r.attachment_name ? <><Paperclip className="size-3" aria-hidden /><span className="sr-only">{t("hasAttachment")}</span></> : null}
-                </p>
-              </div>
-            ),
-          },
-          {
-            key: "status",
-            header: t("status"),
-            cell: (r) => {
-              const scheduled = r.status === "published" && r.publish_at > now;
-              const expired = r.status === "published" && r.expires_at && r.expires_at <= now;
-              return (
-                <span className="flex flex-wrap gap-1">
-                  <StatusBadge status={scheduled ? "scheduled" : expired ? "expired" : r.status} label={scheduled ? ts("scheduled") : expired ? ts("expired") : ts(r.status as "draft")} />
-                  {r.priority !== "normal" ? <Badge tone={r.priority === "critical" ? "danger" : "warning"}>{tp(r.priority as "important")}</Badge> : null}
-                </span>
-              );
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          rowHref={(r) => `/admin/announcements/${r.id}`}
+          empty={<EmptyState icon={<Megaphone />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("titleField"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/admin/announcements/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
+                  <p className="flex items-center gap-1 text-xs text-ink-muted">
+                    {t(`audiences.${r.audience_type as "school"}`)}
+                    {r.attachment_name ? <><Paperclip className="size-3" aria-hidden /><span className="sr-only">{t("hasAttachment")}</span></> : null}
+                  </p>
+                </div>
+              ),
             },
-          },
-          { key: "publish", header: t("publishAt"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{formatDateTime(r.publish_at, locale, timeZone)}</span> },
-          { key: "notified", header: t("notified"), hideOnMobile: true, cell: (r) => (r.notified_at ? <Badge tone="success">{t("sent")}</Badge> : <span className="text-ink-muted">—</span>) },
-        ]}
-      />
-      <Pagination pathname="/admin/announcements" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+            {
+              key: "status",
+              header: t("status"),
+              cell: (r) => {
+                const scheduled = r.status === "published" && r.publish_at > now;
+                const expired = r.status === "published" && r.expires_at && r.expires_at <= now;
+                return (
+                  <span className="flex flex-wrap gap-1">
+                    <StatusBadge status={scheduled ? "scheduled" : expired ? "expired" : r.status} label={scheduled ? ts("scheduled") : expired ? ts("expired") : ts(r.status as "draft")} />
+                    {r.priority !== "normal" ? <Badge tone={r.priority === "critical" ? "danger" : "warning"}>{tp(r.priority as "important")}</Badge> : null}
+                  </span>
+                );
+              },
+            },
+            { key: "publish", header: t("publishAt"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{formatDateTime(r.publish_at, locale, timeZone)}</span> },
+            { key: "notified", header: t("notified"), hideOnMobile: true, cell: (r) => (r.notified_at ? <Badge tone="success">{t("sent")}</Badge> : <span className="text-ink-muted">—</span>) },
+          ]}
+        />
+        <Pagination pathname="/admin/announcements" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

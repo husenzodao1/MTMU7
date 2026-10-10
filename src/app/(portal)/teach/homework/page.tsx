@@ -7,7 +7,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Breadcrumb, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
@@ -84,38 +84,40 @@ export default async function TeachHomeworkPage({ searchParams }: { searchParams
           { name: "status", label: t("status"), emptyLabel: t("activeOnly"), options: ["draft", "published", "archived"].map((s) => ({ value: s, label: ts(s) })) },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={rows}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<NotebookPen />} title={classSubjects.length === 0 ? tt("noClasses") : t("empty")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("assignmentTitle"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <Link href={`/teach/homework/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
-                <p className="text-sm text-ink-muted">{labelById.get(r.class_subject_id)}</p>
-              </div>
-            ),
-          },
-          { key: "due", header: t("dueAt"), cell: (r) => <span className="tabular">{r.due_at ? formatDateTime(r.due_at, locale, access.school!.timezone) : "—"}</span> },
-          { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
-          {
-            key: "submissions",
-            header: t("submissions"),
-            cell: (r) => (
-              <span className="flex flex-wrap items-center gap-2 tabular">
-                {r.submitted}
-                {r.toReview > 0 ? <Badge tone="warning">{t("toReview", { count: r.toReview })}</Badge> : null}
-              </span>
-            ),
-          },
-        ]}
-      />
-      <Pagination pathname="/teach/homework" searchParams={params} page={list.page} pageSize={list.pageSize} total={total} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={rows}
+          rowKey={(r) => r.id}
+          empty={<EmptyState icon={<NotebookPen />} title={classSubjects.length === 0 ? tt("noClasses") : t("empty")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("assignmentTitle"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <Link href={`/teach/homework/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</Link>
+                  <p className="text-sm text-ink-muted">{labelById.get(r.class_subject_id)}</p>
+                </div>
+              ),
+            },
+            { key: "due", header: t("dueAt"), cell: (r) => <span className="tabular">{r.due_at ? formatDateTime(r.due_at, locale, access.school!.timezone) : "—"}</span> },
+            { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
+            {
+              key: "submissions",
+              header: t("submissions"),
+              cell: (r) => (
+                <span className="flex flex-wrap items-center gap-2 tabular">
+                  {r.submitted}
+                  {r.toReview > 0 ? <Badge tone="warning">{t("toReview", { count: r.toReview })}</Badge> : null}
+                </span>
+              ),
+            },
+          ]}
+        />
+        <Pagination pathname="/teach/homework" searchParams={params} page={list.page} pageSize={list.perPage} total={total} />
+      </ListBox>
     </>
   );
 }

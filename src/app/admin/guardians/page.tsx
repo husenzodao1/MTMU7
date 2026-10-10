@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -92,70 +92,72 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
           { name: "account", label: tStudents("account"), options: [{ value: "linked", label: tStudents("accountLinked") }, { value: "none", label: tStudents("accountNone") }] },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          { key: "name", header: tp("name"), primary: true, cell: (r) => <span className="font-medium">{fullName(r)}</span> },
-          { key: "contact", header: tp("contact"), cell: (r) => <span className="text-sm">{[r.phone, r.email].filter(Boolean).join(" · ") || "—"}</span> },
-          {
-            key: "children",
-            header: t("children"),
-            cell: (r) => {
-              const links = (r.student_guardians ?? []) as unknown as Array<{ students: { id: string; first_name: string; last_name: string } | null }>;
-              return links.length === 0 ? (
-                <span className="text-ink-muted">—</span>
-              ) : (
-                <span className="flex flex-wrap gap-1">
-                  {links.map((l) => l.students ? (
-                    <Link key={l.students.id} href={`/admin/students/${l.students.id}`} className="text-sm text-brand-text hover:underline">{l.students.last_name} {l.students.first_name}</Link>
-                  ) : null)}
-                </span>
-              );
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          empty={<EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            { key: "name", header: tp("name"), primary: true, cell: (r) => <span className="font-medium">{fullName(r)}</span> },
+            { key: "contact", header: tp("contact"), cell: (r) => <span className="text-sm">{[r.phone, r.email].filter(Boolean).join(" · ") || "—"}</span> },
+            {
+              key: "children",
+              header: t("children"),
+              cell: (r) => {
+                const links = (r.student_guardians ?? []) as unknown as Array<{ students: { id: string; first_name: string; last_name: string } | null }>;
+                return links.length === 0 ? (
+                  <span className="text-ink-muted">—</span>
+                ) : (
+                  <span className="flex flex-wrap gap-1">
+                    {links.map((l) => l.students ? (
+                      <Link key={l.students.id} href={`/admin/students/${l.students.id}`} className="text-sm text-brand-text hover:underline">{l.students.last_name} {l.students.first_name}</Link>
+                    ) : null)}
+                  </span>
+                );
+              },
             },
-          },
-          {
-            key: "account",
-            header: tStudents("account"),
-            hideOnMobile: true,
-            cell: (r) => r.user_id ? <Badge tone="success">{tStudents("accountLinked")}</Badge> : codeFor.get(r.id) ? <span className="font-mono text-sm tracking-wider">{codeFor.get(r.id)}</span> : <Badge>{tStudents("accountNone")}</Badge>,
-          },
-          { key: "status", header: tp("status"), hideOnMobile: true, cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
-        ]}
-        actions={(r) => (
-          <span className="flex flex-wrap justify-end gap-1">
-            {manage ? (
-              <FormDialog action={saveGuardianAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: fullName(r) })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tp("save")} size="md">
-                <input type="hidden" name="id" value={r.id} />
-                <GuardianFields label={tp} values={r} />
-              </FormDialog>
-            ) : null}
-            {can(access, "invitations.manage") && !r.user_id && !codeFor.get(r.id) && r.status === "active" ? (
-              <ActionForm action={createPersonInvitationAction}>
-                <input type="hidden" name="personType" value="guardian" />
-                <input type="hidden" name="personId" value={r.id} />
-                <input type="hidden" name="roleSlug" value="parent" />
-                <input type="hidden" name="returnTo" value="/admin/guardians" />
-                <SubmitButton variant="ghost" size="icon-sm" aria-label={t("inviteNamed", { name: fullName(r) })}><KeyRound aria-hidden /></SubmitButton>
-              </ActionForm>
-            ) : null}
-            {manage ? (
-              <ConfirmAction
-                action={setGuardianStatusAction}
-                fields={{ id: r.id, status: r.status === "active" ? "archived" : "active" }}
-                title={r.status === "active" ? t("archiveTitle") : t("restoreTitle")}
-                description={r.status === "active" ? t("archiveDescription") : undefined}
-                confirmLabel={r.status === "active" ? tp("archive") : tp("restore")}
-                tone={r.status === "active" ? "danger" : "primary"}
-                trigger={<Button variant="ghost" size="sm">{r.status === "active" ? tp("archive") : tp("restore")}</Button>}
-              />
-            ) : null}
-          </span>
-        )}
-      />
-      <Pagination pathname="/admin/guardians" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+            {
+              key: "account",
+              header: tStudents("account"),
+              hideOnMobile: true,
+              cell: (r) => r.user_id ? <Badge tone="success">{tStudents("accountLinked")}</Badge> : codeFor.get(r.id) ? <span className="font-mono text-sm tracking-wider">{codeFor.get(r.id)}</span> : <Badge>{tStudents("accountNone")}</Badge>,
+            },
+            { key: "status", header: tp("status"), hideOnMobile: true, cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
+          ]}
+          actions={(r) => (
+            <span className="flex flex-wrap justify-end gap-1">
+              {manage ? (
+                <FormDialog action={saveGuardianAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: fullName(r) })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tp("save")} size="md">
+                  <input type="hidden" name="id" value={r.id} />
+                  <GuardianFields label={tp} values={r} />
+                </FormDialog>
+              ) : null}
+              {can(access, "invitations.manage") && !r.user_id && !codeFor.get(r.id) && r.status === "active" ? (
+                <ActionForm action={createPersonInvitationAction}>
+                  <input type="hidden" name="personType" value="guardian" />
+                  <input type="hidden" name="personId" value={r.id} />
+                  <input type="hidden" name="roleSlug" value="parent" />
+                  <input type="hidden" name="returnTo" value="/admin/guardians" />
+                  <SubmitButton variant="ghost" size="icon-sm" aria-label={t("inviteNamed", { name: fullName(r) })}><KeyRound aria-hidden /></SubmitButton>
+                </ActionForm>
+              ) : null}
+              {manage ? (
+                <ConfirmAction
+                  action={setGuardianStatusAction}
+                  fields={{ id: r.id, status: r.status === "active" ? "archived" : "active" }}
+                  title={r.status === "active" ? t("archiveTitle") : t("restoreTitle")}
+                  description={r.status === "active" ? t("archiveDescription") : undefined}
+                  confirmLabel={r.status === "active" ? tp("archive") : tp("restore")}
+                  tone={r.status === "active" ? "danger" : "primary"}
+                  trigger={<Button variant="ghost" size="sm">{r.status === "active" ? tp("archive") : tp("restore")}</Button>}
+                />
+              ) : null}
+            </span>
+          )}
+        />
+        <Pagination pathname="/admin/guardians" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

@@ -3005,3 +3005,16 @@ a.updates-card:hover {
   color: var(--color-ink-secondary);
   overflow-wrap: anywhere;
 }
+
+/* A list's own box (ui/pagination.tsx, ListBox): it scrolls inside itself and
+   grows as it is scrolled, so the page around it — and the footer — stay put. */
+.list-box {
+  max-height: min(78dvh, 56rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 0.75rem;
+  scrollbar-width: thin;
+}
+.list-end {
+  margin-top: 0.25rem;
+}

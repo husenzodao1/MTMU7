@@ -116,7 +116,9 @@
       "range": "{from}–{to} из {total}",
       "page": "Страница {page} из {pages}",
       "previous": "Назад",
-      "next": "Вперёд"
+      "next": "Вперёд",
+      "more": "Показать ещё",
+      "shown": "{shown} из {total}"
     },
     "breadcrumb": "Навигационная цепочка",
     "genders": {

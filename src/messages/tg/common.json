@@ -116,7 +116,9 @@
       "range": "{from}–{to} аз {total}",
       "page": "Саҳифаи {page} аз {pages}",
       "previous": "Қаблӣ",
-      "next": "Минбаъда"
+      "next": "Минбаъда",
+      "more": "Боз нишон додан",
+      "shown": "{shown} аз {total}"
     },
     "breadcrumb": "Роҳнамои саҳифа",
     "genders": {

@@ -5,7 +5,7 @@ import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { getSchoolRoles } from "@/features/admin/queries";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/fields";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
@@ -67,35 +67,37 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
         <TextField name="to" type="date" label={t("to")} defaultValue={list.filters.to ?? ""} />
         <Button type="submit" variant="secondary">{t("filter")}</Button>
       </form>
-      {!data || data.length === 0 ? (
-        <Card as="div"><EmptyState icon={<ScrollText />} title={t("empty")} description={t("emptyHint")} /></Card>
-      ) : (
-        <Card as="div">
-          <CardBody className="p-0">
-            <ol className="divide-y divide-line">
-              {data.map((entry) => {
-                const actor = entry.users as unknown as { first_name: string; last_name: string } | null;
-                const details = [summarize(entry.new_values), summarize(entry.metadata)].filter(Boolean).join(" · ");
-                return (
-                  <li key={entry.id} className="grid gap-1 px-5 py-3 sm:grid-cols-[11rem_1fr]">
-                    <time dateTime={entry.created_at} className="text-sm text-ink-muted tabular">{formatDateTime(entry.created_at, locale, timeZone)}</time>
-                    <div className="min-w-0">
-                      <p className="text-sm">
-                        <span className="font-medium">{actor ? `${actor.last_name} ${actor.first_name}` : t("system")}</span>
-                        {entry.actor_role ? <span className="text-ink-muted"> ({roleNames.get(entry.actor_role) || entry.actor_role})</span> : null}{" "}
-                        <span>{ta.has(entry.action) ? ta(entry.action) : entry.action}</span>{" "}
-                        <span className="font-mono text-ink-secondary">{entry.entity_type}</span>
-                      </p>
-                      {details ? <p className="truncate font-mono text-xs text-ink-muted" title={details}>{details}</p> : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </CardBody>
-        </Card>
-      )}
-      <Pagination pathname="/admin/audit" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        {!data || data.length === 0 ? (
+          <Card as="div"><EmptyState icon={<ScrollText />} title={t("empty")} description={t("emptyHint")} /></Card>
+        ) : (
+          <Card as="div">
+            <CardBody className="p-0">
+              <ol className="divide-y divide-line">
+                {data.map((entry) => {
+                  const actor = entry.users as unknown as { first_name: string; last_name: string } | null;
+                  const details = [summarize(entry.new_values), summarize(entry.metadata)].filter(Boolean).join(" · ");
+                  return (
+                    <li key={entry.id} className="grid gap-1 px-5 py-3 sm:grid-cols-[11rem_1fr]">
+                      <time dateTime={entry.created_at} className="text-sm text-ink-muted tabular">{formatDateTime(entry.created_at, locale, timeZone)}</time>
+                      <div className="min-w-0">
+                        <p className="text-sm">
+                          <span className="font-medium">{actor ? `${actor.last_name} ${actor.first_name}` : t("system")}</span>
+                          {entry.actor_role ? <span className="text-ink-muted"> ({roleNames.get(entry.actor_role) || entry.actor_role})</span> : null}{" "}
+                          <span>{ta.has(entry.action) ? ta(entry.action) : entry.action}</span>{" "}
+                          <span className="font-mono text-ink-secondary">{entry.entity_type}</span>
+                        </p>
+                        {details ? <p className="truncate font-mono text-xs text-ink-muted" title={details}>{details}</p> : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </CardBody>
+          </Card>
+        )}
+        <Pagination pathname="/admin/audit" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

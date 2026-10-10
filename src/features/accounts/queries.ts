@@ -21,8 +21,9 @@ export async function loadDirectory(options: {
     p_category: options.category,
     p_query: options.query || undefined,
     p_class_id: options.classId ?? undefined,
-    p_limit: size,
-    p_offset: (options.page - 1) * size,
+    // Every page so far: the directory grows as it is scrolled (ui/pagination.tsx).
+    p_limit: Math.min(500, size * Math.max(1, options.page)),
+    p_offset: 0,
   });
   if (error || !data) return null;
   return data as unknown as AccountDirectory;

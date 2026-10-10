@@ -1,8 +1,16 @@
 export type SearchParams = Record<string, string | string[] | undefined>;
 
+/** How many pages a list grows to by scrolling, at most. */
+export const MAX_PAGES = 20;
+
 export interface ListParams<S extends string> {
+  /** How many pages are shown: lists grow as they are scrolled (ui/pagination.tsx). */
   page: number;
+  /** Rows to fetch: every page so far. */
   pageSize: number;
+  /** Rows per page. */
+  perPage: number;
+  /** Always 0: the list starts at the top and grows. */
   offset: number;
   query: string;
   sort: S;
@@ -26,9 +34,9 @@ export function parseListParams<S extends string>(
     pageSize?: number;
   }
 ): ListParams<S> {
-  const pageSize = Math.min(Math.max(options.pageSize ?? 25, 5), 100);
+  const perPage = Math.min(Math.max(options.pageSize ?? 25, 5), 100);
   const pageRaw = Number.parseInt(firstValue(params.page) ?? "1", 10);
-  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.min(pageRaw, 10_000) : 1;
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.min(pageRaw, MAX_PAGES) : 1;
   const query = (firstValue(params.q) ?? "").trim().slice(0, 100);
   const sortRaw = firstValue(params.sort);
   const sort = options.sorts.includes(sortRaw as S) ? (sortRaw as S) : options.defaultSort;
@@ -43,7 +51,7 @@ export function parseListParams<S extends string>(
     else if (Array.isArray(rule) && rule.includes(value)) filters[name] = value;
   }
 
-  return { page, pageSize, offset: (page - 1) * pageSize, query, sort, filters };
+  return { page, pageSize: page * perPage, perPage, offset: 0, query, sort, filters };
 }
 
 /** Escapes a user search term for PostgREST ilike filters. */

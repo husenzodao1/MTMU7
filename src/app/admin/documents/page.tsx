@@ -14,7 +14,7 @@ import { SelectField, TextAreaField, TextField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
 import { Checkbox } from "@/components/ui/form-controls";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/overlay";
-import { Pagination } from "@/components/ui/pagination";
+import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
@@ -109,61 +109,63 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
           { name: "folder", label: t("folder"), options: folderOptions },
         ]}
       />
-      <DataTable
-        caption={t("title")}
-        rows={data ?? []}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<FileText />} title={t("empty")} description={t("emptyHint")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("titleField"),
-            primary: true,
-            cell: (r) => (
-              <div>
-                <a href={`/files/documents/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</a>
-                <p className="text-xs text-ink-muted">{[tpd(r.category as "other"), r.folder_id ? folderName.get(r.folder_id) : null, `${r.file_name} · ${formatBytes(r.size_bytes)}`].filter(Boolean).join(" · ")}</p>
-              </div>
-            ),
-          },
-          { key: "access", header: t("access"), hideOnMobile: true, cell: (r) => <Badge>{t(`accessOptions.${r.access as "school"}`)}</Badge> },
-          { key: "version", header: t("version"), hideOnMobile: true, cell: (r) => <span className="tabular">v{r.current_version}</span> },
-          { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status as "draft")} /> },
-          { key: "updated", header: t("updated"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{formatDateTime(r.updated_at, locale, timeZone)}</span> },
-        ]}
-        actions={(r) => {
-          const versions = [...((r.document_versions ?? []) as Array<{ id: string; version: number; file_name: string; size_bytes: number; created_at: string }>)].sort((a, b) => b.version - a.version);
-          return (
-            <span className="flex justify-end gap-1">
-              <FormDialog action={saveDocumentAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: r.title })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tc("save")} size="lg">{fields(r)}</FormDialog>
-              {versions.length > 1 ? (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" aria-label={t("versionsNamed", { name: r.title })}><History aria-hidden /></Button>
-                  </DialogTrigger>
-                  <DialogContent title={t("versions")} description={r.title} closeLabel={tc("close")} size="sm">
-                    <ul className="divide-y divide-line text-sm">
-                      {versions.map((v) => (
-                        <li key={v.id} className="flex justify-between gap-2 py-2">
-                          <a href={`/files/document-versions/${v.id}?download=1`} className="text-brand-text hover:underline">v{v.version} · {v.file_name}</a>
-                          <span className="text-ink-muted tabular">{formatDateTime(v.created_at, locale, timeZone)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </DialogContent>
-                </Dialog>
-              ) : null}
-              {r.status !== "archived" && can(access, "documents.archive") ? (
-                <ConfirmAction action={setDocumentStatusAction} fields={{ id: r.id, status: "archived" }} title={t("archiveTitle")} description={t("archiveDescription")} confirmLabel={tc("archive")} trigger={<Button variant="ghost" size="sm">{tc("archive")}</Button>} />
-              ) : null}
-              {r.status === "archived" && can(access, "documents.archive") ? (
-                <ConfirmAction action={setDocumentStatusAction} fields={{ id: r.id, status: "draft" }} title={t("restoreTitle")} confirmLabel={tc("restore")} tone="primary" trigger={<Button variant="ghost" size="sm">{tc("restore")}</Button>} />
-              ) : null}
-            </span>
-          );
-        }}
-      />
-      <Pagination pathname="/admin/documents" searchParams={params} page={list.page} pageSize={list.pageSize} total={count ?? 0} />
+      <ListBox>
+        <DataTable
+          caption={t("title")}
+          rows={data ?? []}
+          rowKey={(r) => r.id}
+          empty={<EmptyState icon={<FileText />} title={t("empty")} description={t("emptyHint")} />}
+          columns={[
+            {
+              key: "title",
+              header: t("titleField"),
+              primary: true,
+              cell: (r) => (
+                <div>
+                  <a href={`/files/documents/${r.id}`} className="font-medium hover:text-brand-text hover:underline">{r.title}</a>
+                  <p className="text-xs text-ink-muted">{[tpd(r.category as "other"), r.folder_id ? folderName.get(r.folder_id) : null, `${r.file_name} · ${formatBytes(r.size_bytes)}`].filter(Boolean).join(" · ")}</p>
+                </div>
+              ),
+            },
+            { key: "access", header: t("access"), hideOnMobile: true, cell: (r) => <Badge>{t(`accessOptions.${r.access as "school"}`)}</Badge> },
+            { key: "version", header: t("version"), hideOnMobile: true, cell: (r) => <span className="tabular">v{r.current_version}</span> },
+            { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status as "draft")} /> },
+            { key: "updated", header: t("updated"), hideOnMobile: true, cell: (r) => <span className="text-sm tabular">{formatDateTime(r.updated_at, locale, timeZone)}</span> },
+          ]}
+          actions={(r) => {
+            const versions = [...((r.document_versions ?? []) as Array<{ id: string; version: number; file_name: string; size_bytes: number; created_at: string }>)].sort((a, b) => b.version - a.version);
+            return (
+              <span className="flex justify-end gap-1">
+                <FormDialog action={saveDocumentAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editNamed", { name: r.title })}><Pencil aria-hidden /></Button>} title={t("edit")} submitLabel={tc("save")} size="lg">{fields(r)}</FormDialog>
+                {versions.length > 1 ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon-sm" aria-label={t("versionsNamed", { name: r.title })}><History aria-hidden /></Button>
+                    </DialogTrigger>
+                    <DialogContent title={t("versions")} description={r.title} closeLabel={tc("close")} size="sm">
+                      <ul className="divide-y divide-line text-sm">
+                        {versions.map((v) => (
+                          <li key={v.id} className="flex justify-between gap-2 py-2">
+                            <a href={`/files/document-versions/${v.id}?download=1`} className="text-brand-text hover:underline">v{v.version} · {v.file_name}</a>
+                            <span className="text-ink-muted tabular">{formatDateTime(v.created_at, locale, timeZone)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </DialogContent>
+                  </Dialog>
+                ) : null}
+                {r.status !== "archived" && can(access, "documents.archive") ? (
+                  <ConfirmAction action={setDocumentStatusAction} fields={{ id: r.id, status: "archived" }} title={t("archiveTitle")} description={t("archiveDescription")} confirmLabel={tc("archive")} trigger={<Button variant="ghost" size="sm">{tc("archive")}</Button>} />
+                ) : null}
+                {r.status === "archived" && can(access, "documents.archive") ? (
+                  <ConfirmAction action={setDocumentStatusAction} fields={{ id: r.id, status: "draft" }} title={t("restoreTitle")} confirmLabel={tc("restore")} tone="primary" trigger={<Button variant="ghost" size="sm">{tc("restore")}</Button>} />
+                ) : null}
+              </span>
+            );
+          }}
+        />
+        <Pagination pathname="/admin/documents" searchParams={params} page={list.page} pageSize={list.perPage} total={count ?? 0} />
+      </ListBox>
     </>
   );
 }

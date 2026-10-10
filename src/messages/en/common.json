@@ -116,7 +116,9 @@
       "range": "{from}–{to} of {total}",
       "page": "Page {page} of {pages}",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "more": "Show more",
+      "shown": "{shown} of {total}"
     },
     "breadcrumb": "Breadcrumb",
     "genders": {
