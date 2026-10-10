@@ -2,17 +2,16 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asUser, createDatabase, errorOf, one, rows, type Db } from "./harness.mts";
 import { seedTenants, type Tenants } from "./fixtures.mts";
-import { seedAcademic, type Academic } from "./academic-fixtures.mts";
+import { seedAcademic } from "./academic-fixtures.mts";
 
 let db: Db;
 let t: Tenants;
-let a: Academic;
 let malika: string;
 
 before(async () => {
   db = await createDatabase();
   t = await seedTenants(db);
-  a = await seedAcademic(db, t);
+  await seedAcademic(db, t);
 });
 after(async () => {
   await db.close();
