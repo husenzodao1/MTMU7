@@ -94,8 +94,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
   const tc = await getTranslations("common");
   const tg = await getTranslations("portal.guardians");
-  const { data: myGuardians } = student ? await (await createClient()).rpc("my_guardians") : { data: null };
-  const guardiansMissing = Boolean(student) && (myGuardians ?? []).length === 0;
+  const { data: myGuardians, error: guardiansError } = student ? await (await createClient()).rpc("my_guardians") : { data: null, error: null };
+  const guardiansMissing = Boolean(student) && !guardiansError && (myGuardians ?? []).length === 0;
 
   // The notice board's cards: the picture an announcement leads with (or the
   // first one in it), a news story's cover, the first words of each.

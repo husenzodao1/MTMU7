@@ -50,7 +50,9 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const t2 = await getTranslations("portal.guardians");
   // A pupil enters their own parents here (00081).
   const isPupil = hasRole(access, "student");
-  const { data: guardianRows } = isPupil ? await supabase.rpc("my_guardians") : { data: null };
+  const { data: guardianRows, error: guardianError } = isPupil ? await supabase.rpc("my_guardians") : { data: null, error: null };
+  // Until the database has the pupil's parents (00081), the card is not shown.
+  const showGuardians = isPupil && !guardianError;
   const guardians: MyGuardian[] = (guardianRows ?? []).flatMap((row) => row.guardian_id ? [{
     id: row.guardian_id,
     relationship: (["father", "mother", "guardian"].includes(row.relationship ?? "") ? row.relationship : "guardian") as MyGuardian["relationship"],
@@ -93,7 +95,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         </Card>
 
         <div className="space-y-5">
-          {isPupil ? (
+          {showGuardians ? (
             <div id="guardians" className="scroll-mt-24">
               <Card>
                 <CardHeader title={t2("title")} />
