@@ -394,7 +394,10 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
           <div className="min-h-0 flex-1 overflow-y-auto">{sidebar()}</div>
         </aside>
 
-        <div className="flex min-w-0 flex-col">
+        {/* As tall as the screen at least, so the footer sits at the foot of a
+            short page; on a phone it ends where the bottom bar begins, so the
+            bar never covers it. */}
+        <div className={cn("flex min-h-dvh min-w-0 flex-col", mobileBar && mobileBar.length > 0 && "shell-over-bar")}>
           {/* The phone's status bar is above it (--strip-h), so it pads itself below. */}
           <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
             <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -490,7 +493,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             </Overlay.DropdownMenu>
           </header>
 
-          <main id="main" tabIndex={-1} className={cn("mx-auto w-full max-w-[84rem] flex-1 px-4 py-5 focus:outline-none sm:px-6 sm:py-7", mobileBar && "pb-24 lg:pb-7")}>
+          <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7">
             {children}
           </main>
           {footer}

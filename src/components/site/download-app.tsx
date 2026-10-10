@@ -54,8 +54,8 @@ export interface DownloadLabels {
 const TRIGGER = {
   // The front page's second button, the twin of "Get started".
   hero: "home-button home-button-quiet",
-  // A link among the footer's links.
-  footer: "inline-flex items-center gap-1 rounded-sm text-[11px] text-ink-muted transition-colors hover:text-ink",
+  // A link among the footer's links, styled as they are.
+  footer: "footer-link inline-flex items-center gap-1",
 } as const;
 
 /**
@@ -84,7 +84,7 @@ export function DownloadApp({
     <DropdownPrimitive.Root modal={false}>
       <DropdownPrimitive.Trigger asChild>
         <button type="button" className={TRIGGER[variant]} aria-label={labels.title}>
-          <Download className={variant === "footer" ? "size-3" : "size-3.5"} aria-hidden />
+          <Download className={variant === "footer" ? "size-[0.7rem]" : "size-3.5"} aria-hidden />
           <span>{text ?? labels.button}</span>
         </button>
       </DropdownPrimitive.Trigger>

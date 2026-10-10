@@ -1415,6 +1415,11 @@
 .official-strip {
   height: calc(3rem + env(safe-area-inset-top, 0px));
 }
+/* The photograph comes darkened; a touch of light and colour brings the flag
+   forward, softly, behind the lighter scrim. */
+.official-flag {
+  filter: brightness(1.18) saturate(1.1);
+}
 @media print {
   :root {
     --strip-h: 0px;
@@ -2352,70 +2357,224 @@ html.chat-lock body {
 
 /* --------------------------------------------------------------- the footer */
 /*
- * Small and light, like the boxes above it: the surface a little see-through
- * over the page, a hairline on top, rows that read across with soft bars
- * between their items (official-header.tsx, SiteFooter).
+ * One quiet band at the foot of every page (official-header.tsx, SiteFooter):
+ * the surface a little see-through, a hairline on top, and behind it the
+ * national flag as a soft wash — its red, white and green in 2:3:2, blended
+ * at the seams and fading out towards both sides, there to be felt more than
+ * seen. Small type, hairline bars between the links, nothing loud.
  */
 .site-footer {
+  --flag-red: rgb(204 0 0 / 0.09);
+  --flag-white: rgb(255 255 255 / 0.5);
+  --flag-green: rgb(0 102 0 / 0.09);
   position: relative;
   z-index: 10;
-  border-top: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
-  background: color-mix(in oklab, var(--color-surface) 82%, transparent);
+  isolation: isolate;
+  overflow: hidden;
+  margin-top: auto;
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 75%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 80%, transparent);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @supports (backdrop-filter: blur(1px)) {
   .site-footer {
-    background: color-mix(in oklab, var(--color-surface) 66%, transparent);
-    backdrop-filter: blur(16px) saturate(130%);
+    background: color-mix(in oklab, var(--color-surface) 62%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
   }
+}
+.site-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--flag-red) 0%,
+    var(--flag-red) 20%,
+    var(--flag-white) 36%,
+    var(--flag-white) 64%,
+    var(--flag-green) 80%,
+    var(--flag-green) 100%
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+:root[data-theme="night"] .site-footer,
+:root[data-theme="midnight"] .site-footer {
+  --flag-red: rgb(230 40 40 / 0.11);
+  --flag-white: rgb(255 255 255 / 0.035);
+  --flag-green: rgb(30 150 70 / 0.11);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .site-footer,
+  :root[data-theme="ocean"] .site-footer,
+  :root[data-theme="graphite"] .site-footer,
+  :root[data-theme="lavender"] .site-footer {
+    --flag-red: rgb(230 40 40 / 0.11);
+    --flag-white: rgb(255 255 255 / 0.035);
+    --flag-green: rgb(30 150 70 / 0.11);
+  }
+}
+.footer-inner {
+  margin-inline: auto;
+  max-width: 64rem;
+  padding: 0.75rem 1rem 0.625rem;
+}
+.footer-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+@media (min-width: 768px) {
+  .footer-main {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+  /* A faint dot between the three groups on one line. */
+  .footer-main > * + *::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-inline-end: 1.25rem;
+    border-radius: 999px;
+    vertical-align: middle;
+    background: color-mix(in oklab, var(--color-ink-muted) 40%, transparent);
+  }
+  .footer-main > * + * {
+    display: flex;
+    align-items: center;
+  }
+}
+.footer-brand {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-secondary);
 }
 .footer-flag {
   flex-shrink: 0;
-  width: 1.5rem;
-  height: 0.75rem;
-  border-radius: 2px;
+  width: 1.125rem;
+  height: 0.5625rem;
+  border-radius: 1.5px;
   box-shadow:
-    0 0 0 0.5px rgb(15 23 42 / 0.25),
-    0 1px 3px rgb(15 23 42 / 0.15);
+    0 0 0 0.5px rgb(15 23 42 / 0.2),
+    0 1px 2px rgb(15 23 42 / 0.12);
 }
-.footer-row {
+.footer-links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem 0.5rem;
+  row-gap: 0.2rem;
   font-size: 0.6875rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
-.footer-bar {
-  font-size: 0.625rem;
-  color: color-mix(in oklab, var(--color-ink-muted) 45%, transparent);
-  user-select: none;
+.footer-links > li {
+  display: inline-flex;
+  align-items: center;
+}
+/* The hairline bar before every link but the first: "|", drawn. */
+.footer-links > li + li::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.6rem;
+  margin-inline: 0.65rem;
+  background: color-mix(in oklab, var(--color-ink-muted) 35%, transparent);
 }
 .footer-link {
+  position: relative;
   border-radius: 2px;
   color: var(--color-ink-muted);
   transition: color 0.2s ease;
 }
+/* The underline draws out from the middle. */
+.footer-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
 .footer-link:hover {
   color: var(--color-ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+}
+.footer-link:hover::after {
+  transform: scaleX(1);
+}
+.footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
 }
 .footer-social {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.375rem;
+  height: 1.375rem;
   border-radius: 999px;
-  color: var(--color-ink-muted);
+  color: color-mix(in oklab, var(--color-ink-muted) 85%, transparent);
   transition:
     color 0.2s ease,
-    background-color 0.2s ease;
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 .footer-social:hover {
   color: var(--color-ink);
-  background: var(--color-surface-muted);
+  background: color-mix(in oklab, var(--color-surface-muted) 80%, transparent);
+  transform: translateY(-1px);
+}
+.footer-fine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-ink-muted) 80%, transparent);
+}
+.footer-dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer-link::after,
+  .footer-social {
+    transition: none;
+  }
+}
+
+/* In the portal on a phone the bottom bar is fixed over the foot of the
+   screen: the column ends where the bar begins, so the footer sits above it,
+   and the bar already keeps clear of the home indicator. */
+@media (max-width: 1023.98px) {
+  .shell-over-bar {
+    padding-bottom: calc(3.5rem + 1px + env(safe-area-inset-bottom, 0px));
+  }
+  .shell-over-bar > .site-footer {
+    padding-bottom: 0;
+  }
 }
 
 /* ------------------------------------------------------- the portal header */

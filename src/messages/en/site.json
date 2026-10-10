@@ -3,19 +3,16 @@
     "emblemAlt": "Emblem of the governing authority",
     "footer": {
       "platform": "Education portal",
-      "links": "Site links",
       "schools": "Schools",
       "signIn": "Sign in",
-      "support": "Support desk",
-      "tagline": "Online portal for the schools of Istaravshan",
-      "about": "About us",
+      "support": "Support",
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "instagram": "Instagram",
       "siteLinks": "Site links",
-      "quickLinks": "Quick access",
       "x": "X",
-      "flag": "The national flag of the Republic of Tajikistan"
+      "flag": "The national flag of the Republic of Tajikistan",
+      "brand": "Istaravshan school portal"
     },
     "public": {
       "directoryTitle": "Schools",
