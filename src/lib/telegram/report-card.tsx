@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { cardHeight, reportCardModel, type CardModel, type CardRow, type Tone } from "@/lib/telegram/report-card-model";
-import type { Loc, Report } from "@/lib/telegram/messages";
+import type { Loc, Report, ReportKind } from "@/lib/telegram/messages";
 
 /**
  * The parents' report as a picture: the school's night blue across the top
@@ -124,8 +124,8 @@ function Card({ model }: { model: CardModel }) {
         ) : null}
         {model.sections.map((section, index) => (
           <div key={section.title} style={{ display: "flex", flexDirection: "column", marginTop: index === 0 ? 0 : 22 }}>
-            {/* The timetable is the whole card; its name is already in the header. */}
-            {section.kind === "timetable" ? null : (
+            {/* The timetable and the results are the whole card; their name is already in the header. */}
+            {section.kind === "timetable" || section.kind === "results" ? null : (
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 0 10px", fontSize: 24, fontWeight: 700, color: MUTED, letterSpacing: 2, textTransform: "uppercase" }}>
                 <div style={{ display: "flex", width: 12, height: 12, borderRadius: 999, background: section.kind === "attendance" ? "#dc2626" : "#16a34a" }} />
                 {section.title}
@@ -180,7 +180,7 @@ function Card({ model }: { model: CardModel }) {
 export async function renderReportCard(
   locale: Loc,
   report: Report,
-  kind: "day" | "week" | "timetable",
+  kind: ReportKind,
   school?: { name?: string | null } | null
 ): Promise<Uint8Array | null> {
   try {

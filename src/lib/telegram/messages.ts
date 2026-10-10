@@ -128,6 +128,9 @@ const WORDS = {
     colDate: "Сана",
     colStatus: "Ҳолат",
     colRoom: "Ҳуҷра",
+    results: "Натиҷаҳо",
+    resultsTitle: "Натиҷаҳои чорак",
+    noResults: "Дар ин чорак ҳанӯз баҳо нест.",
     absentShort: "ғоиб",
     lateShort: "дер",
     excusedShort: "узрнок",
@@ -198,6 +201,9 @@ const WORDS = {
     colDate: "Дата",
     colStatus: "Статус",
     colRoom: "Каб.",
+    results: "Итоги",
+    resultsTitle: "Итоги четверти",
+    noResults: "В этой четверти оценок пока нет.",
     absentShort: "нет",
     lateShort: "опозд.",
     excusedShort: "уваж.",
@@ -268,6 +274,9 @@ const WORDS = {
     colDate: "Date",
     colStatus: "Status",
     colRoom: "Room",
+    results: "Results",
+    resultsTitle: "Term results",
+    noResults: "No marks this term yet.",
     absentShort: "absent",
     lateShort: "late",
     excusedShort: "excused",
@@ -538,6 +547,7 @@ export function childMenu(locale: Loc, child: Child, id: string): { text: string
     keyboard: [
       [{ text: `📊 ${w.today}`, callback_data: `r:${id}:day`, style: "primary" }],
       [{ text: `📅 ${w.week}`, callback_data: `r:${id}:week`, style: "primary" }],
+      [{ text: `📈 ${w.results}`, callback_data: `r:${id}:results`, style: "primary" }],
       [{ text: `🕘 ${w.schedule}`, callback_data: `r:${id}:timetable`, style: "success" }],
       [{ text: `↩️ ${w.back}`, callback_data: "menu" }],
     ],
@@ -625,7 +635,12 @@ export interface Report {
   grades: Array<{ date: string; score: number; max: number; subject: Named; work: Named; final?: boolean }>;
   attendance: Array<{ date: string; status: string; period?: number | null; subject?: Named | null }>;
   timetable?: Array<{ period: number; subject: Named; room?: string | null; teacher?: string | null }>;
+  /** The term so far, subject by subject (kind 'results', 00082). */
+  results?: Array<{ subject: Named; marks: Array<{ score: number; max: number }>; average: number | null; absences: number; late: number }>;
+  term?: { name: string | null; from: string; to: string };
 }
+
+export type ReportKind = "day" | "week" | "timetable" | "results";
 
 /**
  * Telegram refuses a message over 4096 characters outright, so a week with an
@@ -647,18 +662,41 @@ function fit(text: string): string {
 export function reportMessage(
   locale: Loc,
   report: Report,
-  kind: "day" | "week" | "timetable",
+  kind: ReportKind,
   school?: { name?: string | null } | null
 ): string {
   const w = words(locale);
   const heading =
     kind === "timetable"
       ? `🕘 <b>${w.timetable}</b>`
-      : kind === "week"
-        ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
-        : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
+      : kind === "results"
+        ? `📈 <b>${w.resultsTitle}</b>${report.term?.name ? ` · ${escapeHtml(report.term.name)}` : ""} · ${day(report.from)} – ${day(report.to)}`
+        : kind === "week"
+          ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
+          : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
 
   const lines: string[] = [heading, "", childLine(report.child)];
+
+  if (kind === "results") {
+    const rows = report.results ?? [];
+    lines.push("");
+    if (rows.every((row) => row.marks.length === 0)) {
+      lines.push(`— ${w.noResults}`);
+    } else {
+      lines.push(
+        table(
+          [w.colSubject, w.colMark, w.average],
+          rows.map((row) => [
+            pickRaw(row.subject, locale),
+            row.marks.map((m) => markText(m.score, m.max)).join(" ") || "—",
+            row.average === null ? "—" : Number(row.average).toFixed(1),
+          ]),
+          [{ align: "left" }, { align: "left" }, { align: "center", max: 4 }]
+        )
+      );
+    }
+    return fit(lines.join("\n") + footer(school));
+  }
 
   if (kind === "timetable") {
     const rows = report.timetable ?? [];
@@ -752,16 +790,18 @@ export function reportMessage(
 export function reportCaption(
   locale: Loc,
   report: Report,
-  kind: "day" | "week" | "timetable",
+  kind: ReportKind,
   school?: { name?: string | null } | null
 ): string {
   const w = words(locale);
   const heading =
     kind === "timetable"
       ? `🕘 <b>${w.timetable}</b>`
-      : kind === "week"
-        ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
-        : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
+      : kind === "results"
+        ? `📈 <b>${w.resultsTitle}</b>${report.term?.name ? ` · ${escapeHtml(report.term.name)}` : ""} · ${day(report.from)} – ${day(report.to)}`
+        : kind === "week"
+          ? `📅 <b>${w.week}</b> · ${day(report.from)} – ${day(report.to)}`
+          : `🌆 <b>${w.dayReport}</b> · ${day(report.to)}`;
   return `${heading}\n${childLine(report.child)}${footer(school)}`;
 }
 

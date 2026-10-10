@@ -304,7 +304,7 @@ async function handleCallback(
     }
     try {
       const body = await db.report(chat, childId, kind);
-      const shape = kind === "week" ? "week" : kind === "timetable" ? "timetable" : "day";
+      const shape = kind === "week" ? "week" : kind === "timetable" ? "timetable" : kind === "results" ? "results" : "day";
       // A picture, which reads on a phone as the table never did; the menu
       // it came from gives way to it. The words, if it cannot be drawn.
       const picture = await renderReportCard(locale, body, shape);

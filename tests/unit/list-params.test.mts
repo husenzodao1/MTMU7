@@ -22,7 +22,8 @@ describe("parseListParams", () => {
       pageSize: 10,
       filters: { status: ["active"], category: "uuid" },
     });
-    assert.equal(list.offset, 20);
+    // Lists grow as they are scrolled: page 3 is the first three pages.
+    assert.deepEqual([list.offset, list.pageSize, list.perPage], [0, 30, 10]);
     assert.deepEqual(list.filters, { status: "active", category: id });
   });
 });

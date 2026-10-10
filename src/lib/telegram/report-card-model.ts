@@ -8,7 +8,7 @@
  * badge. This file decides the lines, their words and their colours; it is
  * free of the renderer and of the server, so the tests can read it.
  */
-import { dayMonth, markText, pickRaw, statusWord, words, type Loc, type Report } from "./messages.ts";
+import { dayMonth, markText, pickRaw, statusWord, words, type Loc, type Report, type ReportKind } from "./messages.ts";
 
 export type Tone = "great" | "good" | "fair" | "poor" | "late" | "excused" | "absent" | "plain";
 
@@ -23,7 +23,7 @@ export interface CardRow {
 
 export interface CardSection {
   title: string;
-  kind: "grades" | "attendance" | "timetable";
+  kind: "grades" | "attendance" | "timetable" | "results";
   rows: CardRow[];
   /** How many were left out to keep the picture a sensible length. */
   more: number;
@@ -62,14 +62,55 @@ function capitalise(value: string): string {
 export function reportCardModel(
   locale: Loc,
   report: Report,
-  kind: "day" | "week" | "timetable",
+  kind: ReportKind,
   school?: { name?: string | null } | null
 ): CardModel {
   const w = words(locale);
-  const title = kind === "timetable" ? w.timetable : kind === "week" ? w.week : w.dayReport;
+  const title = kind === "timetable" ? w.timetable : kind === "results" ? w.resultsTitle : kind === "week" ? w.week : w.dayReport;
   const date = (iso?: string) => (iso ? iso.slice(0, 10).split("-").reverse().join(".") : "");
-  const dateLine = kind === "week" ? `${date(report.from)} – ${date(report.to)}` : date(report.to);
+  const dateLine =
+    kind === "results"
+      ? [report.term?.name, `${date(report.from)} – ${date(report.to)}`].filter(Boolean).join(" · ")
+      : kind === "week"
+        ? `${date(report.from)} – ${date(report.to)}`
+        : date(report.to);
   const base = { title, dateLine, child: report.child.name, className: report.child.class ?? null, school: school?.name ?? null };
+
+  // The term so far: one line a subject — its marks in words, their average
+  // as the badge — and the average of the averages at the foot.
+  if (kind === "results") {
+    const rows = report.results ?? [];
+    const marked = rows.filter((row) => row.average !== null);
+    const mean = marked.length ? marked.reduce((sum, row) => sum + Number(row.average), 0) / marked.length : null;
+    return {
+      ...base,
+      sections: rows.length
+        ? [
+            {
+              title: w.resultsTitle,
+              kind: "results",
+              rows: rows.slice(0, MOST_ROWS * 2).map((row) => ({
+                title: pickRaw(row.subject, locale),
+                detail:
+                  [
+                    row.marks.length ? row.marks.map((m) => markText(m.score, m.max)).join("  ") : null,
+                    row.absences ? `${w.absentShort} ${row.absences}` : null,
+                    row.late ? `${w.lateShort} ${row.late}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "—",
+                value: row.average === null ? "—" : Number(row.average).toFixed(1),
+                tone: row.average === null ? "plain" : markTone(Number(row.average), 5),
+                shape: "mark",
+              })),
+              more: Math.max(0, rows.length - MOST_ROWS * 2),
+            },
+          ]
+        : [],
+      empty: marked.length ? null : w.noResults,
+      average: mean === null ? null : { label: w.average, value: mean.toFixed(1), tone: markTone(mean, 5) },
+    };
+  }
 
   if (kind === "timetable") {
     const rows = report.timetable ?? [];
@@ -149,7 +190,7 @@ export function reportCardModel(
 
 /** The picture's height for a model: header, each section, each line, the average, the footer. */
 export function cardHeight(model: CardModel): number {
-  const titled = model.sections.filter((section) => section.kind !== "timetable").length;
+  const titled = model.sections.filter((section) => section.kind !== "timetable" && section.kind !== "results").length;
   const rows = model.sections.reduce((sum, section) => sum + section.rows.length, 0);
   const more = model.sections.filter((section) => section.more > 0).length;
   return Math.max(640, 500 + titled * 70 + rows * 112 + more * 50 + (model.empty ? 120 : 0) + (model.average ? 140 : 0));

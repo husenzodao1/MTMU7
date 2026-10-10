@@ -50,4 +50,27 @@ describe("the report picture's contents", () => {
     assert.ok(cardHeight(full) > cardHeight(empty));
     assert.match(full.dateLine, /21\.09\.2026 – 27\.09\.2026/);
   });
+
+  it("draws the term's results as one line a subject, with the average as its badge", () => {
+    const results: Report = {
+      child: { name: "Алӣ Каримов", class: "5А" },
+      from: "2026-09-01",
+      to: "2026-10-10",
+      term: { name: "Чоряки 1", from: "2026-09-01", to: "2026-10-31" },
+      grades: [],
+      attendance: [],
+      results: [
+        { subject: named("Математика"), marks: [{ score: 5, max: 5 }, { score: 4, max: 5 }], average: 4.5, absences: 1, late: 0 },
+        { subject: named("Физика"), marks: [], average: null, absences: 0, late: 0 },
+      ],
+    };
+    const model = reportCardModel("tg", results, "results");
+    assert.equal(model.dateLine, "Чоряки 1 · 01.09.2026 – 10.10.2026");
+    assert.deepEqual(model.sections[0]!.rows.map((r) => [r.title, r.value, r.tone, r.detail]), [
+      ["Математика", "4.5", "great", "5  4 · ғоиб 1"],
+      ["Физика", "—", "plain", "—"],
+    ]);
+    assert.equal(model.average?.value, "4.5");
+    assert.equal(model.empty, null);
+  });
 });
