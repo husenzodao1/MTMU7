@@ -94,7 +94,15 @@
       "emptyHint": "Ҷадвал пас аз нашри он аз ҷониби мактаб дар ин ҷо пайдо мешавад.",
       "today": "Имрӯз",
       "noLessons": "Дарс нест",
-      "room": "Утоқи {room}"
+      "room": "Утоқи {room}",
+      "teachersTitle": "Омӯзгорони синф",
+      "teacher": "Омӯзгор",
+      "subjects": "Фан",
+      "phone": "Телефон",
+      "bellsTitle": "Ҷадвали зангҳо",
+      "shift": "Басти {shift}",
+      "lesson": "Дарс",
+      "time": "Вақт"
     },
     "grades": {
       "title": "Баҳоҳо",

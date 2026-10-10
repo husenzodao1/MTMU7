@@ -39,10 +39,19 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   let slots: Slot[] = [];
   let subtitle: string | undefined;
+  let teachers: Array<{ name: string; subjects: string; phone: string | null }> = [];
   const context = await resolveStudentContext(access, params);
 
   if (context?.classId) {
-    const { data } = await supabase.rpc("class_timetable", { p_class_id: context.classId });
+    const [{ data }, { data: staff }] = await Promise.all([
+      supabase.rpc("class_timetable", { p_class_id: context.classId }),
+      supabase.rpc("class_teachers", { p_class_id: context.classId }),
+    ]);
+    teachers = (staff ?? []).map((row) => ({
+      name: row.teacher_name ?? "",
+      subjects: pickText({ tg: row.subjects_tg, ru: row.subjects_ru, en: row.subjects_en }, locale),
+      phone: row.phone,
+    }));
     subtitle = [context.viewer === "guardian" ? `${context.firstName} ${context.lastName}` : null, context.className].filter(Boolean).join(" · ");
     slots = (data ?? []).map((e) => ({
       key: e.timetable_entry_id ?? `${e.day_of_week}-${e.period_number}`,
@@ -68,6 +77,19 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       detail: e.room_name ? t("room", { room: e.room_name }) : "",
     }));
   }
+
+  // The bells of the shifts these lessons are in.
+  const shifts = [...new Set(slots.map((slot) => slot.shift))].sort();
+  const { data: bellRows } = shifts.length
+    ? await supabase
+        .from("bell_periods")
+        .select("shift, period_number, start_time, end_time")
+        .eq("school_id", access.school!.id)
+        .in("shift", shifts)
+        .order("shift")
+        .order("period_number")
+    : { data: [] };
+  const bells = bellRows ?? [];
 
   const today = new Date(`${todayIso(access.school?.timezone)}T12:00:00Z`).getUTCDay() || 7;
   const days = [1, 2, 3, 4, 5, 6].filter((d) => d <= 5 || slots.some((s) => s.day === d));
@@ -115,6 +137,70 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           })}
         </div>
       )}
+
+      {/* Under the timetable: who teaches the class, numbered, then the bells. */}
+      {teachers.length > 0 ? (
+        <section aria-labelledby="class-teachers" className="mt-5">
+          <h2 id="class-teachers" className="mini-heading">{t("teachersTitle")}</h2>
+          <div className="mini-table-wrap">
+            <table className="mini-table">
+              <thead>
+                <tr>
+                  <th scope="col" className="w-8">№</th>
+                  <th scope="col">{t("teacher")}</th>
+                  <th scope="col">{t("subjects")}</th>
+                  <th scope="col">{t("phone")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teachers.map((teacher, index) => (
+                  <tr key={`${teacher.name}-${index}`}>
+                    <td className="tabular text-ink-muted">{index + 1}</td>
+                    <td className="font-medium text-ink">{teacher.name}</td>
+                    <td>{teacher.subjects}</td>
+                    <td className="tabular whitespace-nowrap">
+                      {teacher.phone ? <a href={`tel:${teacher.phone.replace(/[^\d+]/g, "")}`} className="text-brand-text hover:underline">{teacher.phone}</a> : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {bells.length > 0 ? (
+        <section aria-labelledby="bells" className="mt-5">
+          <h2 id="bells" className="mini-heading">{t("bellsTitle")}</h2>
+          <div className={cn("grid gap-3", shifts.length > 1 && "sm:grid-cols-2")}>
+            {shifts.map((shift) => (
+              <div key={shift} className="mini-table-wrap">
+                <table className="mini-table">
+                  {shifts.length > 1 ? <caption>{t("shift", { shift })}</caption> : null}
+                  <thead>
+                    <tr>
+                      <th scope="col" className="w-12">{t("lesson")}</th>
+                      <th scope="col">{t("time")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bells
+                      .filter((bell) => bell.shift === shift)
+                      .map((bell) => (
+                        <tr key={bell.period_number}>
+                          <td className="tabular font-semibold text-ink">{bell.period_number}</td>
+                          <td className="tabular">
+                            {formatTime(bell.start_time)} – {formatTime(bell.end_time)}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

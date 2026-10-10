@@ -5602,6 +5602,7 @@ export type Database = {
       advance_academic_year: { Args: { p_name: string; p_start: string; p_end: string }; Returns: Json };
       analytics_overview: { Args: { p_school_id?: string }; Returns: Json };
       change_student_status: { Args: { p_student_ids: string[]; p_status: string; p_effective_date?: string; p_reason?: string }; Returns: number };
+      class_teachers: { Args: { p_class_id: string }; Returns: { teacher_name: string | null; subjects_tg: string | null; subjects_ru: string | null; subjects_en: string | null; phone: string | null }[] };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
       confirm_account: { Args: { p_user_id: string }; Returns: undefined };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };

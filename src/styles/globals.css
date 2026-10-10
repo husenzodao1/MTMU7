@@ -3018,3 +3018,54 @@ a.updates-card:hover {
 .list-end {
   margin-top: 0.25rem;
 }
+
+/* Small tables under the timetable: the class's teachers, the bells. */
+.mini-heading {
+  margin-bottom: 0.4rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.mini-table-wrap {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--color-ink-secondary);
+}
+.mini-table caption {
+  padding: 0.4rem 0.6rem 0;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.mini-table th {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  border-bottom: 1px solid var(--color-line);
+}
+.mini-table td {
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 60%, transparent);
+}
+.mini-table tbody tr:first-child td {
+  border-top: none;
+}

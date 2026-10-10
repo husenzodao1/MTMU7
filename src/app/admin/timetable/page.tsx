@@ -79,7 +79,8 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
       <>
         {header}
         <div className="grid gap-5 lg:grid-cols-3">
-          {[1, 2, 3].map((shift) => {
+          {/* The school teaches in two shifts (00080). */}
+          {[1, 2].map((shift) => {
             const byPeriod = new Map((bells ?? []).filter((b) => b.shift === shift).map((b) => [b.period_number, b]));
             return (
               <Card key={shift}>

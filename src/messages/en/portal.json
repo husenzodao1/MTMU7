@@ -94,7 +94,15 @@
       "emptyHint": "The timetable appears here once the school publishes it.",
       "today": "Today",
       "noLessons": "No lessons",
-      "room": "Room {room}"
+      "room": "Room {room}",
+      "teachersTitle": "The class's teachers",
+      "teacher": "Teacher",
+      "subjects": "Subject",
+      "phone": "Phone",
+      "bellsTitle": "Bell times",
+      "shift": "Shift {shift}",
+      "lesson": "Lesson",
+      "time": "Time"
     },
     "grades": {
       "title": "Grades",

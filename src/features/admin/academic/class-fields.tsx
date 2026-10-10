@@ -31,7 +31,7 @@ export async function ClassFields({
       <div className="grid gap-3 sm:grid-cols-3">
         <TextField name="name" label={t("name")} hint={t("nameHint")} defaultValue={values?.name} required maxLength={20} />
         <SelectField name="gradeLevel" label={t("gradeLevel")} defaultValue={String(values?.grade_level ?? 1)} options={Array.from({ length: 11 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
-        <SelectField name="shift" label={t("shift")} defaultValue={String(values?.shift ?? 1)} options={[1, 2, 3].map((s) => ({ value: String(s), label: t("shiftValue", { shift: s }) }))} />
+        <SelectField name="shift" label={t("shift")} defaultValue={String(values?.shift ?? 1)} options={[1, 2].map((s) => ({ value: String(s), label: t("shiftValue", { shift: s }) }))} />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <SelectField name="homeroomStaffId" label={t("homeroom")} defaultValue={values?.homeroom_staff_id ?? ""} placeholder={t("notAssigned")} options={staff} />
