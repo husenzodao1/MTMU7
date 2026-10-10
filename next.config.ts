@@ -56,6 +56,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  // The public school site ("about us", its news, events and documents) is
+  // gone; links to it that are still out there land on the front page.
+  async redirects() {
+    return [
+      { source: "/s/:path*", destination: "/", permanent: false },
+      { source: "/admin/website", destination: "/admin", permanent: false },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
