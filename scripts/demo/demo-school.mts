@@ -294,10 +294,7 @@ export function buildDemoSchool(seed = 20260901, domain = "demo-mtmu7.test"): De
     subjects: t.subjects.join("; "),
     homeroom_class: t.homeroom ?? "",
     position: t.position,
-    // No addresses for people who sign in: an address the school writes down
-    // must be confirmed with a code on the first sign-in, and nobody reads the
-    // demo domain's mail.
-    email: "",
+    email: `${latin(t.first)}.${latin(t.last)}.${t.number}@${domain}`,
     phone: phone(),
   }));
   const administration = [
@@ -315,7 +312,7 @@ export function buildDemoSchool(seed = 20260901, domain = "demo-mtmu7.test"): De
       subjects: "",
       homeroom_class: "",
       position: a.position,
-      email: "",
+      email: `${latin(p.first)}.${latin(p.last)}.${a.number}@${domain}`,
       phone: phone(),
     });
   }
@@ -346,6 +343,7 @@ export function buildDemoSchool(seed = 20260901, domain = "demo-mtmu7.test"): De
   };
 
   const students: Row[] = [];
+  let n = 0;
   for (const klass of CLASSES) {
     const size = r.int(25, 30);
     const year = 2026 - 6 - klass.grade + 1;
@@ -359,6 +357,7 @@ export function buildDemoSchool(seed = 20260901, domain = "demo-mtmu7.test"): De
       const last = surname(family.stem, male);
       while (seen.has(`${last}|${first}`)) first = r.pick(male ? BOYS : GIRLS);
       seen.add(`${last}|${first}`);
+      n += 1;
       const birth = `${year}-${String(r.int(1, 12)).padStart(2, "0")}-${String(r.int(1, 28)).padStart(2, "0")}`;
       students.push({
         class_name: klass.name,
@@ -367,7 +366,7 @@ export function buildDemoSchool(seed = 20260901, domain = "demo-mtmu7.test"): De
         middle_name: patronymic(family.father.first!, male),
         date_of_birth: birth,
         gender: male ? "писар" : "духтар",
-        email: "",
+        email: klass.grade <= 5 ? "" : `${latin(first)}.${latin(last)}.${n}@${domain}`,
         phone: klass.grade >= 8 && r.next() < 0.4 ? phone() : "",
         father_name: family.father.name!,
         father_workplace: family.father.workplace!,
