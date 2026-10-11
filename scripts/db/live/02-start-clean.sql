@@ -1,17 +1,24 @@
--- Starting the live school clean: run once, by hand, in the Supabase SQL editor
--- (or through the Supabase connector), AFTER migrations 00086–00093 are in.
--- Replace KEEP_EMAIL below with the main administrator's address first.
+-- Starting the live school clean: run once, by hand, in the Supabase SQL editor,
+-- AFTER 01-update.sql. Replace KEEP_EMAIL below with the main administrator's
+-- address first; left as it is, the script stops before changing anything.
 -- Nothing here runs on its own and nothing in CI calls it.
 --
 -- Every account but the main administrator, and everything that belonged to
--- them, so the school starts from its own workbooks. All or nothing.
+-- them, so the school starts from its own workbooks. All or nothing: one
+-- transaction, so a failure anywhere leaves the database as it was.
+BEGIN;
+
 DO $$
 DECLARE
   v_keep uuid;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE name = '00093_policies_ask_once') THEN
+    RAISE EXCEPTION 'Run 01-update.sql first. Nothing was changed.';
+  END IF;
+
   SELECT id INTO v_keep FROM auth.users WHERE lower(email) = lower('KEEP_EMAIL');
   IF v_keep IS NULL THEN
-    RAISE EXCEPTION 'the main administrator was not found';
+    RAISE EXCEPTION 'The main administrator''s address was not found (replace KEEP_EMAIL). Nothing was changed.';
   END IF;
 
   -- The main administrator holds the platform scope the seed account held.
@@ -71,3 +78,5 @@ BEGIN
 END;
 $$;
 SELECT app.ensure_all_school_years();
+
+COMMIT;
