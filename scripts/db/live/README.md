@@ -19,7 +19,10 @@ Or the same work in steps:
    account and the test data, and cannot be undone.
 
 All of them were checked on a database built to the live state (00001–00085
-and 00090): each way of running the update leaves the same schema, and the
-clean-up leaves one account, 66 classes and the ten bells. In the files
+and 00090) and holding a copy of the live rows (tokens and codes masked):
+each way of running the update leaves the same schema, and the clean-up
+leaves the main administrator alone with their role and platform scope, the
+current year with 66 classes and the ten bells, and the news,
+announcements, library and site pages as they were. In the files
 without comments, the 00088 versions of import_people and save_account are
 left out, because 00092 replaces both.

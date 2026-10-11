@@ -78,7 +78,10 @@ BEGIN
   DELETE FROM public.registration_requests;
   DELETE FROM public.invitation_codes;
 
-  -- The accounts.
+  -- The accounts. Their roles go first: a role one departing account gave
+  -- another would otherwise be rewritten (assigned_by cleared) after its
+  -- holder was already gone, and the school check on user_roles refuses that.
+  DELETE FROM public.user_roles WHERE user_id <> v_keep;
   DELETE FROM public.users WHERE id <> v_keep;
   DELETE FROM auth.users WHERE id <> v_keep;
 END;

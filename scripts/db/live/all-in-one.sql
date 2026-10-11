@@ -2729,6 +2729,7 @@ DELETE FROM public.friend_requests;
 DELETE FROM public.support_requests;
 DELETE FROM public.registration_requests;
 DELETE FROM public.invitation_codes;
+DELETE FROM public.user_roles WHERE user_id <> v_keep;
 DELETE FROM public.users WHERE id <> v_keep;
 DELETE FROM auth.users WHERE id <> v_keep;
 END;
