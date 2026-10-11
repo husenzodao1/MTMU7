@@ -30,13 +30,11 @@ export function setupSteps(data: AdminDashboard, hasTimetable: boolean): Step[] 
 }
 
 export async function SetupGuide({ data, className }: { data: AdminDashboard; className?: string }) {
-  const { count } = data.academic_year
-    ? await (await createClient())
-        .from("timetable_entries")
-        .select("id", { count: "exact", head: true })
-        .eq("academic_year_id", data.academic_year.id)
-    : { count: 0 };
-  const steps = setupSteps(data, (count ?? 0) > 0);
+  // Whether there is a timetable, not how long it is: one row answers it.
+  const { data: anyLesson } = data.academic_year
+    ? await (await createClient()).from("timetable_entries").select("id").eq("academic_year_id", data.academic_year.id).limit(1)
+    : { data: [] };
+  const steps = setupSteps(data, (anyLesson?.length ?? 0) > 0);
   const pending = steps.filter((step) => !step.done);
   if (pending.length === 0) return null;
   const t = await getTranslations("admin.setup");
