@@ -8,6 +8,12 @@
 -- transaction, so a failure anywhere leaves the database as it was.
 BEGIN;
 
+-- A person's status history cannot be edited or deleted, and removing an
+-- account removes its history with it (and clears the "changed by" of the
+-- history it wrote). That guard is set aside for this transaction only and
+-- put back below; if anything fails, the rollback puts it back as well.
+ALTER TABLE public.user_status_history DISABLE TRIGGER trg_status_history_immutable;
+
 DO $$
 DECLARE
   v_keep uuid;
@@ -77,6 +83,7 @@ BEGIN
   DELETE FROM auth.users WHERE id <> v_keep;
 END;
 $$;
+ALTER TABLE public.user_status_history ENABLE TRIGGER trg_status_history_immutable;
 SELECT app.ensure_all_school_years();
 
 COMMIT;

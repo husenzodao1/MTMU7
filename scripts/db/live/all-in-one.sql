@@ -2677,6 +2677,7 @@ FROM public.enrollments e
 WHERE e.class_id = ANY ((SELECT app.my_class_ids())::uuid[]) AND e.status = 'active'
 $$;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('20261011180093', '00093_policies_ask_once') ON CONFLICT (version) DO NOTHING;
+ALTER TABLE public.user_status_history DISABLE TRIGGER trg_status_history_immutable;
 DO $$
 DECLARE
 v_keep uuid;
@@ -2732,6 +2733,7 @@ DELETE FROM public.users WHERE id <> v_keep;
 DELETE FROM auth.users WHERE id <> v_keep;
 END;
 $$;
+ALTER TABLE public.user_status_history ENABLE TRIGGER trg_status_history_immutable;
 SELECT app.ensure_all_school_years();
 COMMIT;
 SELECT 'Навсозӣ ва тоза кардан пурра иҷро шуд' AS natija;
