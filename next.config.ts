@@ -53,6 +53,11 @@ const nextConfig: NextConfig = {
     "/admin/reports/export": ["src/lib/telegram/fonts/*.ttf", "src/lib/pdf/assets/*.png"],
   },
   experimental: {
+    // The connection watched for us: offline is noticed (the browser's own
+    // event, or a page, prefetch or save that could not reach the server),
+    // what was asked for is kept and sent again when it is back, and the
+    // offline cover (features/native/offline-cover.tsx) reads it.
+    useOffline: true,
     // A page opened in the last half minute opens again at once, from the
     // phone's memory, instead of asking the server; anything saved in between
     // clears it (revalidatePath), so nobody sees their own change missing.

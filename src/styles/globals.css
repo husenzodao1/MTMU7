@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./motion.css";
 
 /*
  * Institutional design tokens.
@@ -933,492 +934,6 @@
     linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
 }
 
-/* ------------------------------------------------------------ the opening */
-/*
- * The book that opens the portal (src/features/intro/book-scene.tsx), about
- * four and a half seconds:
- *
- *   0.00  a closed book flies in from the left, turning as it comes
- *   0.70  its cover opens, and it slides to the middle as it does
- *   0.98  five pages turn, one after another
- *   1.85  it rushes at the reader, into a light that fills the screen
- *   2.40  a flash, and behind it the paper the light leaves
- *   2.55  the greeting writes itself, letter by letter (the name after it)
- *   4.55  the page underneath is uncovered (intro-script.ts, INTRO_MS)
- *
- * Only transforms and opacity move, so an old phone keeps up. Until data-play
- * is set everything waits at its first frame: inside the app that is until
- * the phone's own splash has gone.
- */
-.intro {
-  --ink: min(13vw, 4.25rem);
-  --w: min(34vw, 9.5rem);
-  --h: calc(var(--w) * 1.38);
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  overflow: hidden;
-  background:
-    radial-gradient(60% 45% at 50% 46%, rgb(255 181 71 / 0.22), transparent 70%),
-    linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    opacity 0.55s ease,
-    visibility 0.55s;
-  /* If no script ever ends it, the page is still revealed. */
-  animation: intro-fallback 0.4s ease 7s forwards;
-}
-.intro-welcome {
-  z-index: 110;
-}
-/* Played already since the app started. */
-.intro[data-skip] {
-  display: none;
-}
-.intro-leaving {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.intro:not([data-play]) *,
-.intro:not([data-play]) *::before,
-.intro:not([data-play]) *::after {
-  animation-play-state: paused !important;
-}
-
-/* The book. Everything down to the pages keeps its third dimension. */
-.intro-scene {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  perspective: 1000px;
-  animation: intro-scene-out 0.3s ease 2.4s both;
-}
-.intro-fly,
-.intro-rush,
-.intro-book,
-.intro-leaf {
-  transform-style: preserve-3d;
-}
-.intro-fly {
-  animation: intro-fly 0.85s cubic-bezier(0.22, 0.7, 0.3, 1.02) both;
-}
-.intro-rush {
-  animation: intro-rush 0.65s cubic-bezier(0.5, 0, 0.75, 0.45) 1.85s both;
-}
-.intro-book {
-  position: relative;
-  width: calc(var(--w) * 2);
-  height: var(--h);
-  animation: intro-open 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.68s both;
-}
-.intro-back,
-.intro-board,
-.intro-leaf {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: var(--w);
-  height: var(--h);
-}
-.intro-back,
-.intro-board,
-.intro-face {
-  border-radius: 3px 10px 10px 3px;
-  padding: calc(var(--h) * 0.13) calc(var(--w) * 0.15);
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--h) / 12 - 1px), rgb(23 48 109 / 0.08) 0 calc(var(--h) / 12)) content-box,
-    linear-gradient(90deg, #eadfc4 0%, #f8f2e4 12%, #fffdf8 100%);
-}
-/* The right-hand pages, and the stack of them under the ones that turn. */
-.intro-back {
-  box-shadow:
-    2px 2px 0 #eee5cf,
-    4px 4px 0 #e0d4b7,
-    6px 6px 0 #22397a,
-    0 24px 50px -10px rgb(0 0 0 / 0.55);
-}
-/* The left-hand stack, there once the cover has opened. */
-.intro-board {
-  left: 0;
-  border-radius: 10px 3px 3px 10px;
-  transform: translateZ(-1px);
-  box-shadow:
-    -2px 2px 0 #eee5cf,
-    -4px 4px 0 #e0d4b7,
-    -6px 6px 0 #22397a,
-    0 24px 50px -10px rgb(0 0 0 / 0.55);
-  opacity: 0;
-  animation: intro-appear 0.01s linear 0.95s both;
-}
-.intro-leaf {
-  transform-origin: left center;
-  transform: translateZ(calc(var(--z) * 1px));
-  animation: intro-turn 0.52s cubic-bezier(0.45, 0.05, 0.25, 1) calc(0.98s + var(--i) * 0.14s) both;
-}
-.intro-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-.intro-rear {
-  transform: rotateY(180deg);
-  border-radius: 10px 3px 3px 10px;
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--h) / 12 - 1px), rgb(23 48 109 / 0.08) 0 calc(var(--h) / 12)) content-box,
-    linear-gradient(270deg, #eadfc4 0%, #f8f2e4 12%, #fffdf8 100%);
-}
-/* A page darkens a little as it stands up to turn. */
-.intro-face::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, rgb(15 23 42 / 0.3), transparent 65%);
-  opacity: 0;
-  animation: intro-shade 0.52s ease calc(0.98s + var(--i) * 0.14s) both;
-}
-.intro-cover > .intro-front {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: calc(var(--h) * 0.05);
-  padding: 0;
-  background:
-    radial-gradient(80% 55% at 50% 38%, rgb(255 190 90 / 0.28), transparent 70%),
-    linear-gradient(155deg, #2e2477 0%, #1a3578 55%, #0c6670 100%);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.08),
-    inset 7px 0 10px -7px rgb(0 0 0 / 0.6);
-}
-.intro-cover > .intro-front::before {
-  content: "";
-  position: absolute;
-  inset: 7%;
-  border: 1.5px solid rgb(255 210 122 / 0.5);
-  border-radius: 4px;
-}
-.intro-cover > .intro-rear {
-  padding: 0;
-  background: linear-gradient(270deg, #d9ccab, #efe5cc);
-}
-.intro-emblem {
-  width: 62%;
-  height: auto;
-}
-.intro-cover-title {
-  font-family: var(--font-crest), var(--font-display);
-  font-size: calc(var(--w) * 0.13);
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: #ffd27a;
-}
-.intro-light {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 70vmax;
-  height: 70vmax;
-  margin: -35vmax 0 0 -35vmax;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, #ffffff 0%, #fff4d6 30%, rgb(255 206 120 / 0.7) 55%, rgb(255 180 80 / 0) 100%);
-  opacity: 0;
-  transform: scale(0.04);
-  animation: intro-light 0.55s cubic-bezier(0.5, 0, 0.7, 0.4) 2s both;
-}
-.intro-flash {
-  position: absolute;
-  inset: 0;
-  background: #fffaf0;
-  opacity: 0;
-  pointer-events: none;
-  animation: intro-flash 0.8s ease-out 2.25s both;
-}
-
-/* The paper, and the greeting on it. */
-.intro-paper {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 0 1rem;
-  /* The page the book was opened at, close up: its ruling, very faint. */
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 calc(var(--ink) * 0.9 - 1px), rgb(23 48 109 / 0.045) 0 calc(var(--ink) * 0.9)),
-    radial-gradient(75% 55% at 50% 46%, #fffaf0 0%, #fbf3e2 60%, #f1e2c2 100%);
-  opacity: 0;
-  animation: intro-appear 0.01s linear 2.42s both;
-}
-.intro-writing {
-  display: grid;
-  justify-items: center;
-  max-width: 100%;
-  transition: transform 0.55s ease;
-}
-.intro-leaving .intro-writing {
-  transform: translateY(-8px) scale(1.03);
-}
-.intro-script {
-  display: block;
-  width: calc(var(--ink) * var(--units));
-  max-width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.intro-script-small {
-  width: calc(var(--ink) * var(--units) * 0.62);
-  margin-top: calc(var(--ink) * 0.06);
-}
-/* Each letter is first traced by the pen, then filled with ink. */
-.intro-glyph {
-  fill-opacity: 0;
-  stroke-width: 1.1;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1 1;
-  stroke-dashoffset: 1;
-  animation:
-    intro-trace 0.6s cubic-bezier(0.5, 0, 0.3, 1) calc(var(--from) + var(--at) * var(--span)) both,
-    intro-ink 0.45s ease calc(var(--from) + var(--at) * var(--span) + 0.28s) both;
-}
-.intro-name {
-  max-width: 100%;
-  margin-top: calc(var(--ink) * 0.08);
-  padding: 0 0.35em;
-  font-family: var(--font-script), var(--font-hand), cursive;
-  font-size: calc(var(--ink) * 0.95);
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-  text-align: center;
-  color: #b7791f;
-  background: linear-gradient(90deg, #9a5b16, #d99a2b 55%, #b7791f);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  clip-path: inset(-25% 100% -25% 0);
-  animation: intro-write 1s cubic-bezier(0.45, 0, 0.3, 1) var(--from) both;
-}
-.intro-name-hand {
-  font-family: var(--font-hand), cursive;
-  font-size: calc(var(--ink) * 0.8);
-}
-.intro-hairline {
-  width: calc(var(--ink) * 2.4);
-  height: 1.5px;
-  margin-top: calc(var(--ink) * 0.18);
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, #d99a2b, transparent);
-  transform: scaleX(0);
-  animation: intro-hairline 0.8s cubic-bezier(0.6, 0, 0.2, 1) 3.8s both;
-}
-
-/* While a sign-in is checked: the book, shut, breathing in the middle. */
-.intro-veil {
-  cursor: progress;
-  animation: intro-fade 0.3s ease both;
-}
-.intro-veil .intro-scene,
-.intro-veil .intro-rush,
-.intro-veil .intro-book,
-.intro-veil .intro-board,
-.intro-veil .intro-leaf,
-.intro-veil .intro-light,
-.intro-veil .intro-face::after {
-  animation: none;
-}
-.intro-veil .intro-fly {
-  animation: intro-breathe 2.4s ease-in-out infinite alternate;
-}
-.intro-veil .intro-book {
-  transform: translateX(calc(var(--w) * -0.5)) rotateX(6deg);
-}
-.intro-veil-label {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(50% + var(--h) / 2 + 2.25rem);
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgb(255 255 255 / 0.74);
-}
-/* The welcome that follows the veil starts from the book already in the middle. */
-[data-signin-veil] .intro-welcome:not(.intro-veil) .intro-fly {
-  animation: none;
-}
-
-@keyframes intro-fly {
-  from {
-    transform: translate3d(-115vw, 14vh, 0) rotateZ(-32deg) rotateY(-40deg) scale(0.5);
-  }
-  62% {
-    transform: translate3d(2.5vw, -1vh, 0) rotateZ(2deg) rotateY(5deg) scale(1.02);
-  }
-  to {
-    transform: none;
-  }
-}
-@keyframes intro-open {
-  from {
-    transform: translateX(calc(var(--w) * -0.5)) rotateX(6deg);
-  }
-  to {
-    transform: rotateX(16deg);
-  }
-}
-@keyframes intro-turn {
-  from {
-    transform: rotateY(0deg) translateZ(calc(var(--z) * 1px));
-  }
-  to {
-    transform: rotateY(-180deg) translateZ(calc(var(--z) * 1px));
-  }
-}
-@keyframes intro-shade {
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes intro-rush {
-  to {
-    transform: translateZ(820px);
-  }
-}
-@keyframes intro-light {
-  40% {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-    transform: scale(3.2);
-  }
-}
-@keyframes intro-flash {
-  22% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-@keyframes intro-scene-out {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-@keyframes intro-appear {
-  to {
-    opacity: 1;
-  }
-}
-@keyframes intro-trace {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes intro-ink {
-  to {
-    fill-opacity: 1;
-  }
-}
-@keyframes intro-write {
-  to {
-    clip-path: inset(-25% -10% -25% 0);
-  }
-}
-@keyframes intro-hairline {
-  to {
-    transform: none;
-  }
-}
-@keyframes intro-breathe {
-  from {
-    transform: translateY(4px);
-  }
-  to {
-    transform: translateY(-4px);
-  }
-}
-@keyframes intro-fade {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes intro-fallback {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .intro *,
-  .intro *::before,
-  .intro *::after {
-    animation: none !important;
-  }
-  .intro-scene,
-  .intro-flash {
-    display: none;
-  }
-  .intro-veil .intro-scene {
-    display: grid;
-  }
-  .intro-paper {
-    opacity: 1;
-  }
-  .intro-glyph {
-    fill-opacity: 1;
-    stroke-dashoffset: 0;
-  }
-  .intro-name {
-    clip-path: none;
-  }
-  .intro-hairline {
-    transform: none;
-  }
-  .intro-leaving .intro-writing {
-    transform: none;
-  }
-}
-
-/*
- * The short greeting after a sign-in (WelcomeTransition): what reduced motion
- * shows, for everybody — the greeting already written, a moment, and gone —
- * so signing in costs a second, not five.
- */
-.intro-quick *,
-.intro-quick *::before,
-.intro-quick *::after {
-  animation: none !important;
-}
-.intro-quick .intro-scene,
-.intro-quick .intro-flash {
-  display: none;
-}
-.intro-quick .intro-paper {
-  opacity: 1;
-}
-.intro-quick .intro-glyph {
-  fill-opacity: 1;
-  stroke-dashoffset: 0;
-}
-.intro-quick .intro-name {
-  clip-path: none;
-}
-.intro-quick .intro-hairline {
-  transform: none;
-}
-.intro-quick.intro-leaving .intro-writing {
-  transform: none;
-}
-
 /* ------------------------------------------------------------ avatar rings */
 
 /*
@@ -1962,55 +1477,6 @@ html.chat-lock body {
   }
 }
 
-/* ---------------------------------------------------- the support button */
-
-/*
- * Small, in the corner, and alive: two rings leave the button one after the
- * other and fade, like a ripple from a stone. They are behind the button and
- * take no clicks, so nothing underneath is ever covered by more than the
- * button itself.
- */
-/* No position of its own: the button is `fixed`, the icon on the support page
-   `relative`, and a rule here outside any layer would beat both. */
-.support-fab {
-  isolation: isolate;
-}
-.support-fab::before,
-.support-fab::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 9999px;
-  background: var(--color-brand-solid);
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .support-fab::before,
-  .support-fab::after {
-    animation: support-wave 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-  .support-fab::after {
-    animation-delay: 1.3s;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .support-fab::before,
-  .support-fab::after {
-    display: none;
-  }
-}
-@keyframes support-wave {
-  from {
-    transform: scale(1);
-    opacity: 0.42;
-  }
-  to {
-    transform: scale(1.85);
-    opacity: 0;
-  }
-}
-
 /* ------------------------------------------------------------ the greeting */
 
 /*
@@ -2047,25 +1513,6 @@ html.chat-lock body {
     radial-gradient(90% 120% at 0% 100%, rgb(150 70 150 / 0.3) 0%, transparent 60%),
     linear-gradient(135deg, #1e1b33 0%, #3a2447 55%, #5a2d3c 100%);
 }
-.greeting-card::after {
-  /* A scatter of small stars, drawn rather than loaded. */
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  opacity: 0.5;
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 22%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 28% 68%, #fff 50%, transparent 51%),
-    radial-gradient(1.2px 1.2px at 46% 18%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 63% 74%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 78% 30%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 90% 62%, #fff 50%, transparent 51%);
-}
-.greeting-card[data-part="day"]::after {
-  opacity: 0;
-}
-
 .greeting-word {
   font-family: var(--font-greeting), var(--font-display);
   font-weight: 400;
@@ -2624,6 +2071,119 @@ html.chat-lock body {
   }
   .shell-over-bar > .site-footer {
     padding-bottom: 0;
+  }
+}
+
+/*
+ * The foot of a page inside the phone app (official-header.tsx): no footer —
+ * an app has none — only the school's four marks, small and centred, the last
+ * thing under the content. The site keeps its footer.
+ */
+.app-socials {
+  display: none;
+}
+html[data-app] .site-footer {
+  display: none;
+}
+html[data-app] .app-socials {
+  display: flex;
+  justify-content: center;
+  gap: 0.875rem;
+  padding: 0.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 1023.98px) {
+  html[data-app] .shell-over-bar > .app-socials {
+    padding-bottom: 1rem;
+  }
+}
+.app-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+  background: color-mix(in oklab, var(--color-surface) 72%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-line) 75%, transparent);
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+.app-social:active {
+  transform: scale(0.9);
+}
+
+/*
+ * The phone's menu (menu-drawer.tsx). --p is how far out it is, 0 to 1: the
+ * finger sets it directly while it drags (no transition), and letting go
+ * finishes the way at the finger's speed (--dur) on one easing. Shut, the
+ * panel is hidden as well as moved away, so nothing in it can be reached.
+ */
+.menu-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.menu-drawer-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 14 20 / 0.46);
+  opacity: var(--p);
+  transition: opacity var(--dur) var(--ease);
+}
+.menu-drawer-panel {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, calc(100vw - 3rem));
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-line);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.02), 18px 0 48px -12px rgb(0 0 0 / calc(0.32 * var(--p)));
+  transform: translate3d(calc((var(--p) - 1) * 100%), 0, 0);
+  transition: transform var(--dur) var(--ease);
+  will-change: transform;
+}
+.menu-drawer:not([data-state="closed"]) {
+  pointer-events: auto;
+}
+.menu-drawer[data-state="dragging"] .menu-drawer-scrim,
+.menu-drawer[data-state="dragging"] .menu-drawer-panel {
+  transition: none;
+}
+.menu-drawer[data-state="closed"] .menu-drawer-panel {
+  visibility: hidden;
+  transition:
+    transform var(--dur) var(--ease),
+    visibility 0s linear var(--dur);
+}
+/* The menu's rows slide in a moment after the panel, one after another. */
+@media (prefers-reduced-motion: no-preference) {
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li {
+    animation: drawer-row 0.42s var(--ease) both;
+  }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(1) { animation-delay: 0.04s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(2) { animation-delay: 0.07s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(3) { animation-delay: 0.1s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(4) { animation-delay: 0.13s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(5) { animation-delay: 0.16s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(6) { animation-delay: 0.19s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(7) { animation-delay: 0.22s; }
+  .menu-drawer[data-state="open"] .menu-drawer-panel nav li:nth-child(n + 8) { animation-delay: 0.25s; }
+}
+@keyframes drawer-row {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-drawer-scrim,
+  .menu-drawer-panel {
+    transition-duration: 0s !important;
   }
 }
 
@@ -3359,9 +2919,12 @@ html[data-leaving]::before {
  * or bounce at the ends of the page, and whatever was pressed dims at once,
  * before the network has said anything.
  */
-html[data-app] {
+html[data-app],
+html[data-app] body {
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: none;
+  /* Android's own stretch at the ends is switched off in the app itself
+     (MainActivity); this keeps the page from chaining a pull past its end. */
+  overscroll-behavior: none;
 }
 html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], label, nav, summary) {
   -webkit-user-select: none;

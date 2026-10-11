@@ -4,8 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { SearchIcon } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { searchAdmin } from "@/features/admin/search/query";
-import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/fields";
+import { SearchForm } from "@/components/ui/search-form";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requireAdminArea } from "@/lib/auth/guards";
 import { firstValue, type SearchParams } from "@/lib/list-params";
@@ -18,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AdminSearchPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const access = await requireAdminArea();
   const t = await getTranslations("admin.search");
+  const tc = await getTranslations("common");
   const params = await searchParams;
   const query = (firstValue(params.q) ?? "").slice(0, 100);
   const sections = query.trim().length >= 2 ? await searchAdmin(access, query) : [];
@@ -26,10 +26,7 @@ export default async function AdminSearchPage({ searchParams }: { searchParams: 
   return (
     <>
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
-      <form method="get" className="mb-6 flex flex-wrap items-end gap-3">
-        <TextField name="q" label={t("field")} defaultValue={query} maxLength={100} autoFocus placeholder={t("placeholder")} className="min-w-64 flex-1" />
-        <Button type="submit">{t("submit")}</Button>
-      </form>
+      <SearchForm label={t("field")} defaultValue={query} autoFocus placeholder={t("placeholder")} submitLabel={t("submit")} searchingLabel={tc("searching")} />
 
       {query.trim().length < 2 ? (
         <Card as="div"><EmptyState icon={<SearchIcon />} title={t("hint")} /></Card>

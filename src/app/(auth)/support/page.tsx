@@ -35,7 +35,7 @@ export default async function SupportPage() {
     <Card as="div">
       <CardBody className="space-y-5 p-6 sm:p-8">
         <div className="text-center">
-          <span className="support-fab relative mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid" aria-hidden>
+          <span className="relative mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-brand-solid text-brand-on-solid" aria-hidden>
             <Headset className="size-7" />
           </span>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>

@@ -1,0 +1,2274 @@
+/*
+ * The portal's movements: the sky over the greeting, the dashboard's drifting
+ * wall, the bottom bar, the welcome, the offline cover, lists, search and the
+ * warm homework cards. Kept apart from globals.css, which holds the system.
+ *
+ * Every movement here is a transform or an opacity, so the phone's compositor
+ * carries it, and every one of them stops for whoever asks for less motion
+ * (the last section).
+ */
+
+/* ------------------------------------------------------------------ the sky */
+
+/*
+ * sky-scene.tsx. The card (globals.css, .greeting-card) paints the sky's
+ * colours for the hour; this draws what is in it. The land is pinned to the
+ * card's right and bottom, the stars and the weather cover all of it.
+ */
+.greeting-card {
+  --sky-sun-glow: #ffd27a;
+  --sky-sun-mid: #ffc24a;
+  --sky-sun-edge: #ff8f3a;
+  --sky-hill-back: #20304f;
+  --sky-hill-front: #16223a;
+  --sky-grass: #2c4058;
+  --sky-cloud: rgb(255 255 255 / 0.2);
+}
+.greeting-card[data-part="morning"] {
+  --sky-sun-glow: #ffcf7d;
+  --sky-sun-mid: #ffb658;
+  --sky-sun-edge: #ff7a45;
+  --sky-hill-back: #33476f;
+  --sky-hill-front: #24395c;
+  --sky-grass: #6aa483;
+}
+.greeting-card[data-part="day"] {
+  --sky-sun-glow: #fff1b8;
+  --sky-sun-mid: #ffd75e;
+  --sky-sun-edge: #ffb53d;
+  --sky-hill-back: #23628a;
+  --sky-hill-front: #1a4d73;
+  --sky-grass: #63b08f;
+  --sky-cloud: rgb(255 255 255 / 0.32);
+}
+.greeting-card[data-part="evening"] {
+  --sky-sun-glow: #ff9a5c;
+  --sky-sun-mid: #ff8a4a;
+  --sky-sun-edge: #e2453a;
+  --sky-hill-back: #4a2b52;
+  --sky-hill-front: #331f3f;
+  --sky-grass: #8f5d80;
+}
+.greeting-card[data-part="night"] {
+  --sky-hill-back: #1b2943;
+  --sky-hill-front: #121d33;
+  --sky-grass: #3a5276;
+  --sky-cloud: rgb(200 210 235 / 0.14);
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  container-type: size;
+}
+/* The weather greys the sky before anything is drawn in it. */
+.sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(180deg, rgb(52 62 82 / 0.62), rgb(26 32 46 / 0.28));
+  transition: opacity 1.2s ease;
+}
+.sky:is([data-weather="cloudy"], [data-weather="fog"], [data-weather="drizzle"])::before {
+  opacity: 0.55;
+}
+.sky:is([data-weather="rain"], [data-weather="snow"])::before {
+  opacity: 0.8;
+}
+.sky[data-weather="storm"]::before {
+  opacity: 1;
+}
+
+.sky-stars,
+.sky-land {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The land stays to the right, under the text's empty side. */
+.sky-land {
+  left: auto;
+  width: min(100%, 34rem);
+}
+
+.sky-star {
+  fill: #fff;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.sky-star-1 {
+  animation: sky-twinkle 2.8s ease-in-out infinite;
+}
+.sky-star-2 {
+  animation: sky-twinkle 4.1s ease-in-out infinite;
+  opacity: 0.7;
+}
+.sky-star-3 {
+  animation: sky-twinkle 5.6s ease-in-out infinite;
+  opacity: 0.45;
+}
+[data-part="evening"] .sky-star {
+  fill: #ffe9d6;
+}
+[data-part="evening"] .sky-stars {
+  opacity: 0.45;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 55%);
+}
+@keyframes sky-twinkle {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.7);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+.sky-falling {
+  opacity: 0;
+  transform-box: fill-box;
+  animation: sky-fall 9s ease-in infinite 2.5s;
+}
+@keyframes sky-fall {
+  0%,
+  88% {
+    opacity: 0;
+    transform: translate(250px, 18px) rotate(-24deg);
+  }
+  90% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 0;
+    transform: translate(150px, 62px) rotate(-24deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(150px, 62px) rotate(-24deg);
+  }
+}
+
+/* The sun: a glow that breathes, rays that turn, a disc. */
+.sky-sun-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-breathe 5s ease-in-out infinite;
+}
+.sky-sun-rays {
+  /* The rays stand evenly round the disc, so their box is centred on it. */
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-turn 48s linear infinite;
+}
+@keyframes sky-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sky-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+/* In the morning it climbs out from behind the hills as the card appears. */
+[data-part="morning"] .sky-sun {
+  animation: sky-sunrise 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes sky-sunrise {
+  from {
+    transform: translateY(52px);
+  }
+}
+/* In the evening it is sinking, slowly. */
+[data-part="evening"] .sky-sun {
+  animation: sky-sunset 40s ease-in-out infinite alternate;
+}
+@keyframes sky-sunset {
+  to {
+    transform: translateY(10px);
+  }
+}
+[data-part="evening"] .sky-sun-rays {
+  opacity: 0.5;
+}
+/* Under clouds the sun is only a paler disc. */
+.sky:is([data-weather="cloudy"], [data-weather="rain"], [data-weather="storm"], [data-weather="snow"], [data-weather="fog"], [data-weather="drizzle"]) :is(.sky-sun, .sky-moon) {
+  opacity: 0.38;
+}
+.sky:is([data-weather="cloudy"], [data-weather="rain"], [data-weather="storm"], [data-weather="snow"], [data-weather="fog"], [data-weather="drizzle"]) .sky-sun-rays {
+  display: none;
+}
+
+.sky-moon-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-breathe 6s ease-in-out infinite;
+}
+
+.sky-hill-back {
+  fill: var(--sky-hill-back);
+  stroke: rgb(255 255 255 / 0.07);
+  stroke-width: 1;
+}
+.sky-hill-front {
+  fill: var(--sky-hill-front);
+  stroke: rgb(255 255 255 / 0.1);
+  stroke-width: 1;
+}
+.sky-blade {
+  stroke: var(--sky-grass);
+  stroke-width: 1.7;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sky-sway var(--sway, 2.6s) ease-in-out infinite alternate;
+}
+@keyframes sky-sway {
+  from {
+    transform: rotate(-5deg);
+  }
+  to {
+    transform: rotate(9deg);
+  }
+}
+.sky-tulip {
+  stroke: none;
+}
+.sky-tulip-stem {
+  fill: none;
+  stroke: var(--sky-grass);
+  stroke-width: 1.3;
+}
+.sky-tulip-red {
+  fill: #ef5b5b;
+}
+.sky-tulip-gold {
+  fill: #f5c542;
+}
+[data-part="evening"] :is(.sky-tulip-red, .sky-tulip-gold) {
+  fill-opacity: 0.6;
+}
+/* The morning breeze pushes the grass over in waves; a strong wind, harder. */
+[data-part="morning"] .sky-blade {
+  animation-name: sky-push;
+}
+.sky[data-windy] .sky-blade {
+  animation-name: sky-gale;
+  animation-duration: calc(var(--sway, 2.6s) * 0.55);
+}
+@keyframes sky-push {
+  0% {
+    transform: rotate(-3deg);
+  }
+  55% {
+    transform: rotate(16deg);
+  }
+  100% {
+    transform: rotate(2deg);
+  }
+}
+@keyframes sky-gale {
+  from {
+    transform: rotate(8deg);
+  }
+  to {
+    transform: rotate(26deg);
+  }
+}
+
+.sky-wind path {
+  stroke: rgb(255 255 255 / 0.55);
+  stroke-width: 1.3;
+  stroke-dasharray: 34 160;
+  stroke-dashoffset: 200;
+  opacity: 0;
+  animation: sky-gust 4.8s ease-in-out infinite;
+}
+.sky[data-windy] .sky-wind path {
+  animation-duration: 2.6s;
+}
+@keyframes sky-gust {
+  0% {
+    stroke-dashoffset: 200;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.6;
+  }
+  100% {
+    stroke-dashoffset: -60;
+    opacity: 0;
+  }
+}
+
+.sky-flock {
+  color: rgb(255 255 255 / 0.75);
+}
+[data-part="evening"] .sky-flock {
+  color: rgb(30 18 36 / 0.85);
+}
+.sky-birds {
+  animation: sky-flight 22s linear infinite;
+}
+@keyframes sky-flight {
+  from {
+    transform: translate(160px, 6px);
+  }
+  to {
+    transform: translate(-300px, -18px);
+  }
+}
+.sky-bird {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-flap 0.62s ease-in-out infinite alternate;
+}
+@keyframes sky-flap {
+  to {
+    transform: scaleY(-0.55);
+  }
+}
+
+/* Clouds drift right to left across the whole card, each at its own height and pace. */
+.sky-clouds {
+  position: absolute;
+  inset: 0;
+}
+.sky-cloud {
+  position: absolute;
+  top: var(--top);
+  left: 100%;
+  width: 7.5rem;
+  fill: var(--sky-cloud);
+  scale: var(--scale);
+  animation: sky-drift var(--dur) linear infinite;
+}
+.sky:is([data-weather="rain"], [data-weather="storm"], [data-weather="drizzle"]) .sky-cloud {
+  fill: rgb(150 162 182 / 0.5);
+}
+.sky[data-weather="cloudy"] .sky-cloud {
+  fill: rgb(214 222 236 / 0.34);
+}
+.sky[data-windy] .sky-cloud {
+  animation-duration: calc(var(--dur) * 0.4);
+}
+@keyframes sky-drift {
+  to {
+    transform: translateX(calc(-100cqw - 9rem));
+  }
+}
+
+/* Rain in two depths: near drops longer and quicker than far ones. */
+.sky-rain,
+.sky-snow,
+.sky-fog,
+.sky-storm {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.sky-rain i,
+.sky-snow i {
+  position: absolute;
+  inset: -120px -40px 0 -40px;
+  background-repeat: repeat;
+}
+.sky-rain i:nth-child(1) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='60'%3E%3Cg stroke='%23dbe7ff' stroke-opacity='0.55' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M10 4 l-4 14'/%3E%3Cpath d='M34 30 l-4 14'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 60px;
+  animation: sky-rain-near 0.55s linear infinite;
+}
+.sky-rain i:nth-child(2) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='50'%3E%3Cg stroke='%23c9d8f5' stroke-opacity='0.35' stroke-width='1' stroke-linecap='round'%3E%3Cpath d='M22 6 l-2.5 9'/%3E%3Cpath d='M6 30 l-2.5 9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 40px 50px;
+  animation: sky-rain-far 0.85s linear infinite;
+}
+.sky-rain[data-light] i:nth-child(1) {
+  opacity: 0.5;
+  animation-duration: 0.9s;
+}
+@keyframes sky-rain-near {
+  to {
+    transform: translate3d(-16px, 60px, 0);
+  }
+}
+@keyframes sky-rain-far {
+  to {
+    transform: translate3d(-10px, 50px, 0);
+  }
+}
+
+.sky-snow i:nth-child(1) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='12' cy='10' r='2.2' fill-opacity='0.9'/%3E%3Ccircle cx='48' cy='34' r='1.7' fill-opacity='0.8'/%3E%3Ccircle cx='26' cy='58' r='2.4' fill-opacity='0.85'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 70px 70px;
+  animation: sky-snow-near 7s linear infinite;
+}
+.sky-snow i:nth-child(2) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Cg fill='%23ffffff' fill-opacity='0.5'%3E%3Ccircle cx='8' cy='14' r='1.1'/%3E%3Ccircle cx='36' cy='40' r='1'/%3E%3Ccircle cx='30' cy='8' r='0.9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 50px 50px;
+  animation: sky-snow-far 11s linear infinite;
+}
+@keyframes sky-snow-near {
+  50% {
+    transform: translate3d(10px, 35px, 0);
+  }
+  to {
+    transform: translate3d(0, 70px, 0);
+  }
+}
+@keyframes sky-snow-far {
+  50% {
+    transform: translate3d(-8px, 25px, 0);
+  }
+  to {
+    transform: translate3d(0, 50px, 0);
+  }
+}
+
+.sky-fog i {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 46%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(235 240 250 / 0.3), transparent);
+  filter: blur(4px);
+  animation: sky-fog 26s ease-in-out infinite alternate;
+}
+.sky-fog i:nth-child(1) {
+  top: 8%;
+}
+.sky-fog i:nth-child(2) {
+  top: 40%;
+  animation-duration: 34s;
+  animation-direction: alternate-reverse;
+}
+.sky-fog i:nth-child(3) {
+  top: 66%;
+  animation-duration: 22s;
+}
+@keyframes sky-fog {
+  from {
+    transform: translateX(-12%);
+  }
+  to {
+    transform: translateX(12%);
+  }
+}
+
+/* A storm: the card lights up now and then, and a bolt shows for a blink. */
+.sky-storm {
+  animation: sky-flash 7s linear infinite;
+}
+@keyframes sky-flash {
+  0%,
+  86%,
+  89%,
+  92%,
+  100% {
+    background: transparent;
+  }
+  87%,
+  90.5% {
+    background: rgb(220 232 255 / 0.32);
+  }
+}
+.sky-bolt {
+  position: absolute;
+  top: 6%;
+  right: 22%;
+  width: 1.6rem;
+  fill: #fff4c2;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgb(255 240 180 / 0.9));
+  animation: sky-bolt 7s linear infinite;
+}
+@keyframes sky-bolt {
+  0%,
+  86.5%,
+  89.5%,
+  100% {
+    opacity: 0;
+  }
+  87%,
+  89% {
+    opacity: 1;
+  }
+}
+
+/* Nothing moves while the card is out of sight. */
+.greeting-card:not([data-on-screen]) .sky *,
+.greeting-card:not([data-on-screen]) .sky::before {
+  animation-play-state: paused;
+}
+
+/* The weather, in a corner: the sign, the degrees, the town. */
+.sky-chip {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgb(255 255 255 / 0.12);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+  backdrop-filter: blur(6px);
+  animation: sky-chip-in 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.sky-chip-town {
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.75);
+}
+@media (max-width: 380px) {
+  .sky-chip-town {
+    display: none;
+  }
+}
+@keyframes sky-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.92);
+  }
+}
+
+/* The greeting itself: one line, whatever the name (greeting-card.tsx sizes it). */
+.greeting-line {
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 30px;
+  line-height: 1.3;
+}
+@media (min-width: 640px) {
+  .greeting-line {
+    font-size: 44px;
+    line-height: 1.25;
+  }
+}
+.greeting-line > * {
+  flex-shrink: 0;
+}
+.greeting-line > .greeting-name {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.1em;
+}
+.greeting-line[data-measuring] > .greeting-name {
+  flex-shrink: 0;
+}
+.greeting-gap {
+  white-space: pre;
+}
+.greeting-date {
+  padding-right: 6rem;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+}
+
+/* ---------------------------------------------------------- the school wall */
+
+/*
+ * Behind the dashboard, for everybody (school-wall.tsx): a deep evening blue,
+ * and on it a school's things drawn in white hairlines — a book, a pencil, a
+ * cap, an atom, a star, a bell, a ruler, a paper plane, a note, a letter —
+ * few and far apart, in two layers. The layers drift in different directions
+ * at different speeds and the nearer one slowly swells and sways, so the wall
+ * moves the way the bottom of a pool does: always, and never enough to watch.
+ * A soft warm and a soft cool light wander over it.
+ *
+ * Each layer is larger than the screen by exactly one tile, and travels one
+ * tile per loop, so the movement never jumps.
+ */
+.school-wall {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 42% at 88% 6%, rgb(227 161 48 / 0.17), transparent 70%),
+    radial-gradient(55% 50% at 6% 94%, rgb(52 150 170 / 0.16), transparent 70%),
+    linear-gradient(172deg, #1b2742 0%, #141d33 48%, #0f1627 100%);
+}
+.school-wall i {
+  position: absolute;
+  display: block;
+}
+.school-wall i:nth-child(1) {
+  inset: -320px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate%2852 58%29 rotate%28-8%29 scale%281.15%29'%3E%3Cpath d='M-14 -9h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H-14z M14 -9H4a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3C/g%3E%3Cg transform='translate%28236 84%29 rotate%2812%29 scale%281%29'%3E%3Ccircle r='2.5'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2830%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%28-30%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2890%29'/%3E%3C/g%3E%3Cg transform='translate%2872 232%29 rotate%286%29 scale%281.15%29'%3E%3Cpath d='M-17 -4l17-7 17 7-17 7z M-9 0v8c6 4 12 4 18 0v-8 M17 -4v9'/%3E%3C/g%3E%3Cg transform='translate%28214 236%29 rotate%280%29 scale%281.1%29'%3E%3Cpath d='M-13 13l3-9 17-17 6 6-17 17z M3 -9l6 6'/%3E%3C/g%3E%3Cg transform='translate%28150 158%29 rotate%2810%29 scale%280.9%29'%3E%3Cpath d='M0 -10l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 320px 320px;
+  opacity: 0.1;
+  animation:
+    wall-flow-near 150s linear infinite,
+    wall-swell 19s ease-in-out infinite alternate;
+}
+.school-wall i:nth-child(2) {
+  inset: -460px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='460' height='460' viewBox='0 0 460 460'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate%2898 120%29 rotate%28-10%29 scale%281.1%29'%3E%3Cpath d='M-9 8h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z M-2 12a2 2 0 0 0 4 0'/%3E%3C/g%3E%3Cg transform='translate%28330 92%29 rotate%280%29 scale%281.1%29'%3E%3Cpath d='M-11 -14l22 22-6 6-22-22z M-7 -6l3-3 M-2 -1l3-3 M3 4l3-3'/%3E%3C/g%3E%3Cg transform='translate%28380 300%29 rotate%28-6%29 scale%281.1%29'%3E%3Cpath d='M-16 6l32-12-10 30-7-11z M-1 13l17-19'/%3E%3C/g%3E%3Cg transform='translate%28120 360%29 rotate%284%29 scale%281.05%29'%3E%3Cpath d='M-15 -11h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3C/g%3E%3Cg transform='translate%28240 220%29 rotate%280%29 scale%281.3%29'%3E%3Cpath d='M-6 8l6-16 6 16 M-4 3h8'/%3E%3C/g%3E%3Cg transform='translate%2860 260%29 rotate%288%29 scale%281.1%29'%3E%3Cpath d='M-6 9v-18l12-3v18 M-6 9a3 3 0 1 1-3-3 3 3 0 0 1 3 3z M6 6a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3C/g%3E%3Cg transform='translate%28280 400%29 rotate%28-8%29 scale%280.9%29'%3E%3Cpath d='M0 10s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3C/g%3E%3Cg transform='translate%28410 190%29 rotate%280%29 scale%281.2%29'%3E%3Cpath d='M-7 0l5 5 10-11'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 460px 460px;
+  opacity: 0.065;
+  animation:
+    wall-flow-far 230s linear infinite,
+    wall-swell 27s ease-in-out infinite alternate-reverse;
+}
+.school-wall i:nth-child(3) {
+  inset: -25%;
+  background:
+    radial-gradient(28% 22% at 30% 35%, rgb(255 214 140 / 0.07), transparent 70%),
+    radial-gradient(30% 26% at 70% 65%, rgb(120 210 230 / 0.07), transparent 70%);
+  animation: wall-light 31s ease-in-out infinite alternate;
+}
+@keyframes wall-flow-near {
+  to {
+    translate: -320px -320px;
+  }
+}
+@keyframes wall-flow-far {
+  to {
+    translate: 460px -460px;
+  }
+}
+@keyframes wall-swell {
+  from {
+    scale: 1;
+    rotate: -0.5deg;
+  }
+  to {
+    scale: 1.04;
+    rotate: 0.5deg;
+  }
+}
+@keyframes wall-light {
+  from {
+    translate: -6% 4%;
+    scale: 1;
+  }
+  to {
+    translate: 6% -5%;
+    scale: 1.12;
+  }
+}
+/* On the wall, what is not on a card of its own reads in light ink. */
+body:has(.school-wall) :is(.faces-title, .showcase-title) {
+  color: rgb(255 255 255 / 0.82);
+}
+body:has(.school-wall) .app-social {
+  color: rgb(255 255 255 / 0.78);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+/* ------------------------------------------------------------ the bottom bar */
+
+/*
+ * app-shell.tsx (BottomBar) and bar-icons.tsx. The light under the chosen icon
+ * is placed by --i of --n slots across the bar's own width (a container), so
+ * it glides on the compositor; --move restarts the squash on every choice.
+ */
+.bar {
+  container-type: inline-size;
+}
+.bar-pill {
+  position: absolute;
+  top: calc(0.375rem + 1px);
+  left: 0;
+  width: 3.75rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand-solid) 15%, var(--color-surface));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--color-brand-solid) 20%, transparent),
+    0 4px 14px -6px color-mix(in oklab, var(--color-brand-solid) 55%, transparent);
+  translate: calc(100cqw / var(--n) * var(--i) + (100cqw / var(--n) - 3.75rem) / 2) 0;
+  transition:
+    translate 0.48s cubic-bezier(0.34, 1.32, 0.5, 1),
+    opacity 0.25s ease,
+    scale 0.25s ease;
+}
+.bar-pill[data-hidden] {
+  opacity: 0;
+  scale: 0.6;
+}
+.bar[data-ready] .bar-pill[data-move="a"] {
+  animation: bar-squash-a 0.48s ease;
+}
+.bar[data-ready] .bar-pill[data-move="b"] {
+  animation: bar-squash-b 0.48s ease;
+}
+@keyframes bar-squash-a {
+  35% {
+    scale: 1.3 0.84;
+  }
+  70% {
+    scale: 0.95 1.05;
+  }
+}
+@keyframes bar-squash-b {
+  35% {
+    scale: 1.3 0.84;
+  }
+  70% {
+    scale: 0.95 1.05;
+  }
+}
+.bar-item {
+  transition: color 0.25s ease;
+}
+.bar-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+  overflow: visible;
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.bar-item[aria-current="page"] .bar-icon {
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* The dashboard: four blocks, flipping over two by two. */
+.bar-block {
+  fill: currentColor;
+  fill-opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill-opacity 0.35s ease;
+}
+[aria-current="page"] .bar-block-a {
+  fill-opacity: 0.22;
+}
+.bar[data-ready] [aria-current="page"] .bar-block-a {
+  animation: bar-flip 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+.bar[data-ready] [aria-current="page"] .bar-block-b {
+  animation: bar-flip-back 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) 0.14s both;
+}
+@keyframes bar-flip {
+  0% {
+    transform: scaleY(1);
+  }
+  45% {
+    transform: scaleY(0.05);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes bar-flip-back {
+  0% {
+    transform: scaleX(1);
+  }
+  45% {
+    transform: scaleX(0.05);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* The library: the shut book opens from its spine, a page turns; it shuts again when left. */
+.bar-book-shut,
+.bar-book-open,
+.bar-book-leaf {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+.bar-book-shut {
+  transition:
+    transform 0.4s cubic-bezier(0.3, 0.8, 0.3, 1),
+    opacity 0.3s ease;
+}
+.bar-book-open {
+  opacity: 0;
+  transform: scaleX(0.15);
+  transition:
+    transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) 0.08s,
+    opacity 0.25s ease 0.08s;
+}
+[aria-current="page"] .bar-book-shut {
+  opacity: 0;
+  transform: scaleX(0.15);
+}
+[aria-current="page"] .bar-book-open {
+  opacity: 1;
+  transform: scaleX(1);
+}
+.bar-book-leaf {
+  opacity: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-book-leaf {
+  animation: bar-leaf 0.62s ease-in-out 0.28s both;
+}
+@keyframes bar-leaf {
+  0% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  96% {
+    opacity: 1;
+    transform: scaleX(-1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(-1);
+  }
+}
+
+/* Teaching: the board's chart draws itself. */
+.bar-chart,
+.bar-tick,
+.bar-scribble {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-chart {
+  animation: bar-draw 0.6s ease-out 0.1s both;
+}
+@keyframes bar-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* The timetable: a leaf turns, the day is ticked. */
+.bar-leaf {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: none;
+  transform-box: view-box;
+  transform-origin: 12px 10px;
+}
+.bar-tick {
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s ease;
+}
+[aria-current="page"] .bar-tick {
+  stroke-dashoffset: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-leaf {
+  animation: bar-turn 0.55s ease-in-out both;
+}
+.bar[data-ready] [aria-current="page"] .bar-tick {
+  animation: bar-draw 0.35s ease-out 0.4s both;
+}
+@keyframes bar-turn {
+  0% {
+    transform: scaleY(1);
+    fill-opacity: 0.3;
+  }
+  50% {
+    transform: scaleY(0);
+    fill-opacity: 0.3;
+  }
+  100% {
+    transform: scaleY(1);
+    fill-opacity: 0;
+  }
+}
+
+/* Homework: the pen writes a line. */
+.bar-scribble {
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s ease;
+}
+[aria-current="page"] .bar-scribble {
+  stroke-dashoffset: 0;
+}
+.bar-pen {
+  transform-box: view-box;
+  transform-origin: 13px 11px;
+}
+.bar[data-ready] [aria-current="page"] .bar-scribble {
+  animation: bar-draw 0.5s ease-out 0.12s both;
+}
+.bar[data-ready] [aria-current="page"] .bar-pen {
+  animation: bar-write 0.62s ease-in-out both;
+}
+@keyframes bar-write {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translate(-4px, 5px) rotate(-10deg);
+  }
+  50% {
+    transform: translate(-1.5px, 4px) rotate(-4deg);
+  }
+  75% {
+    transform: translate(1px, 5px) rotate(-9deg);
+  }
+}
+
+/* Messages: the bubble pops and starts typing. */
+.bar-bubble,
+.bar-typing circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.bar-typing circle {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+[aria-current="page"] .bar-typing circle {
+  opacity: 1;
+}
+.bar[data-ready] [aria-current="page"] .bar-bubble {
+  animation: bar-pop 0.45s cubic-bezier(0.34, 1.6, 0.5, 1) both;
+}
+.bar[data-ready] [aria-current="page"] .bar-typing circle {
+  animation: bar-dot 0.5s ease-in-out 2 both;
+}
+.bar[data-ready] [aria-current="page"] .bar-typing circle:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.bar[data-ready] [aria-current="page"] .bar-typing circle:nth-child(3) {
+  animation-delay: 0.24s;
+}
+@keyframes bar-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bar-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-2px);
+    opacity: 0.6;
+  }
+}
+
+/* News: the headline drops in, the lines run in after it. */
+.bar-headline,
+.bar-line {
+  transform-box: fill-box;
+}
+.bar-headline {
+  transform-origin: center;
+  fill: currentColor;
+  fill-opacity: 0;
+  transition: fill-opacity 0.3s ease;
+}
+[aria-current="page"] .bar-headline {
+  fill-opacity: 0.25;
+}
+.bar-line {
+  transform-origin: left center;
+}
+.bar[data-ready] [aria-current="page"] .bar-headline {
+  animation: bar-pop 0.45s cubic-bezier(0.34, 1.6, 0.5, 1) both;
+}
+.bar[data-ready] [aria-current="page"] .bar-line-1 {
+  animation: bar-run 0.4s ease-out 0.15s both;
+}
+.bar[data-ready] [aria-current="page"] .bar-line-2 {
+  animation: bar-run 0.4s ease-out 0.27s both;
+}
+@keyframes bar-run {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* -------------------------------------------------------------- the welcome */
+
+/*
+ * The opening of the site and the welcome after every sign-in
+ * (mascot-scene.tsx, intro.tsx, welcome-transition.tsx), about two and a half
+ * seconds; the timeline is written out at the top of mascot-scene.tsx.
+ *
+ * The overlay is drawn by the server with the page, so it covers it from the
+ * first frame; until data-play is set (intro-script.ts, or React for the
+ * welcome) every movement waits at its first frame. A tap ends it. If no
+ * script ever runs, it lifts by itself after five seconds.
+ */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background:
+    radial-gradient(55% 40% at 50% 58%, rgb(255 190 80 / 0.2), transparent 70%),
+    linear-gradient(162deg, #22195a 0%, #17306d 52%, #0a6d72 100%);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 0.45s ease,
+    visibility 0.45s;
+  animation: intro-fallback 0.4s ease 5s forwards;
+}
+.intro-welcome {
+  z-index: 110;
+}
+.intro[data-skip] {
+  display: none;
+}
+.intro-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.intro:not([data-play]) *,
+.intro:not([data-play]) *::before,
+.intro:not([data-play]) *::after {
+  animation-play-state: paused !important;
+}
+@keyframes intro-fallback {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.intro-veil {
+  cursor: progress;
+  animation: intro-fade 0.3s ease both;
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+.intro-veil-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(18%, 7rem);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.74);
+}
+
+.mascot-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+.mascot-wall {
+  position: absolute;
+  inset: -320px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate%2852 58%29 rotate%28-8%29 scale%281.15%29'%3E%3Cpath d='M-14 -9h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H-14z M14 -9H4a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3C/g%3E%3Cg transform='translate%28236 84%29 rotate%2812%29 scale%281%29'%3E%3Ccircle r='2.5'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2830%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%28-30%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2890%29'/%3E%3C/g%3E%3Cg transform='translate%2872 232%29 rotate%286%29 scale%281.15%29'%3E%3Cpath d='M-17 -4l17-7 17 7-17 7z M-9 0v8c6 4 12 4 18 0v-8 M17 -4v9'/%3E%3C/g%3E%3Cg transform='translate%28214 236%29 rotate%280%29 scale%281.1%29'%3E%3Cpath d='M-13 13l3-9 17-17 6 6-17 17z M3 -9l6 6'/%3E%3C/g%3E%3Cg transform='translate%28150 158%29 rotate%2810%29 scale%280.9%29'%3E%3Cpath d='M0 -10l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 320px 320px;
+  opacity: 0.07;
+  animation: wall-flow-near 150s linear infinite;
+}
+.mascot-figure {
+  position: relative;
+  width: min(74vw, 17.5rem);
+  aspect-ratio: 240 / 290;
+  animation:
+    mascot-enter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    mascot-hop 0.32s ease-out 0.9s,
+    mascot-approach 0.5s cubic-bezier(0.34, 1.3, 0.64, 1) 1.62s forwards;
+}
+.mascot {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+@keyframes mascot-enter {
+  from {
+    opacity: 0;
+    translate: 0 40px;
+    scale: 0.7;
+  }
+  60% {
+    opacity: 1;
+    translate: 0 -6px;
+    scale: 1.04;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes mascot-hop {
+  40% {
+    translate: 0 -12px;
+  }
+}
+@keyframes mascot-approach {
+  to {
+    scale: 1.1;
+  }
+}
+/* Coming straight from the wait while the password was checked: they are already here. */
+[data-signin-veil] .intro-welcome:not(.intro-veil) .mascot-figure {
+  animation:
+    mascot-hop 0.32s ease-out 0.9s,
+    mascot-approach 0.5s cubic-bezier(0.34, 1.3, 0.64, 1) 1.62s forwards;
+}
+
+.mascot-shadow {
+  fill: rgb(0 0 0 / 0.22);
+}
+
+/* Looking about, then at you. */
+.mascot-head {
+  transform-box: view-box;
+  transform-origin: 120px 150px;
+  animation: mascot-look 0.62s ease-in-out 0.3s both;
+}
+.mascot-pupils {
+  animation: mascot-glance 0.62s ease-in-out 0.3s both;
+}
+@keyframes mascot-look {
+  0%,
+  12% {
+    transform: rotate(0);
+  }
+  22%,
+  38% {
+    transform: rotate(-10deg);
+  }
+  52%,
+  68% {
+    transform: rotate(10deg);
+  }
+  80%,
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes mascot-glance {
+  0%,
+  12% {
+    translate: 0 0;
+  }
+  22%,
+  38% {
+    translate: -5px 1px;
+  }
+  52%,
+  68% {
+    translate: 5px 1px;
+  }
+  80%,
+  100% {
+    translate: 0 0;
+  }
+}
+.mascot-eyes ellipse,
+.mascot-pupils circle {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mascot-eyes ellipse {
+  animation: mascot-wide 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 0.92s forwards;
+}
+.mascot-pupils circle {
+  animation: mascot-wide-pupil 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 0.92s forwards;
+}
+@keyframes mascot-wide {
+  to {
+    scale: 1.14;
+  }
+}
+@keyframes mascot-wide-pupil {
+  to {
+    scale: 1.2;
+  }
+}
+.mascot-brows {
+  animation: mascot-brows 0.9s ease-out 0.92s forwards;
+}
+@keyframes mascot-brows {
+  20%,
+  65% {
+    translate: 0 -6px;
+  }
+  100% {
+    translate: 0 -2px;
+  }
+}
+.mascot-lid {
+  transform-box: fill-box;
+  transform-origin: center top;
+  transform: scaleY(0);
+  animation: mascot-blink 0.22s ease-in-out 2.28s;
+}
+@keyframes mascot-blink {
+  50% {
+    transform: scaleY(1);
+  }
+}
+.mascot-spark {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: mascot-spark 0.62s ease-out 0.93s forwards;
+}
+@keyframes mascot-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-20deg);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.25) rotate(8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.9);
+  }
+}
+.mascot-tassel {
+  transform-box: view-box;
+  transform-origin: 166px 53px;
+  animation: mascot-tassel 1.3s ease-in-out infinite alternate;
+}
+@keyframes mascot-tassel {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(9deg);
+  }
+}
+.mascot-laugh {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: mascot-laugh 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 1.66s forwards;
+}
+.mascot-smile {
+  animation: mascot-unsmile 0.1s linear 1.66s forwards;
+}
+@keyframes mascot-laugh {
+  from {
+    opacity: 1;
+    transform: scaleY(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+@keyframes mascot-unsmile {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The book: lifted towards you and opened, a sun out of it, two pages turned. */
+.mascot-book {
+  transform: translate(88px, 200px);
+  animation: mascot-lift 0.38s cubic-bezier(0.3, 0.8, 0.3, 1) 1.02s forwards;
+}
+@keyframes mascot-lift {
+  to {
+    transform: translate(120px, 205px) scale(1.25);
+  }
+}
+.mascot-cover {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: mascot-shut-away 0.16s ease-in 1.08s forwards;
+}
+@keyframes mascot-shut-away {
+  to {
+    transform: scaleX(0);
+  }
+}
+.mascot-inside {
+  transform-box: fill-box;
+  transform-origin: right center;
+  transform: scaleX(0);
+  animation: mascot-unfold 0.18s ease-out 1.22s forwards;
+}
+@keyframes mascot-unfold {
+  to {
+    transform: scaleX(1);
+  }
+}
+.mascot-hand:not(.mascot-hand-right) {
+  animation: mascot-hand-out 0.3s cubic-bezier(0.3, 0.8, 0.3, 1) 1.1s forwards;
+}
+@keyframes mascot-hand-out {
+  to {
+    translate: -64px 0;
+  }
+}
+.mascot-leaf {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+.mascot-leaf-1 {
+  animation: mascot-turn 0.34s ease-in-out 1.46s forwards;
+}
+.mascot-leaf-2 {
+  animation: mascot-turn 0.34s ease-in-out 1.64s forwards;
+}
+@keyframes mascot-turn {
+  0% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  95% {
+    opacity: 1;
+    transform: scaleX(-1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(-1);
+  }
+}
+.mascot-sunrise {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateY(118px) scale(0.12);
+  animation: mascot-sunrise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) 1.28s forwards;
+}
+@keyframes mascot-sunrise {
+  30% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mascot-sun-rays {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-turn 16s linear infinite;
+}
+.mascot-sun-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sky-breathe 1.6s ease-in-out infinite;
+}
+.mascot-sparkle {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-sparkle 0.75s ease-out 1.42s forwards;
+}
+@keyframes mascot-sparkle {
+  0% {
+    opacity: 0;
+    transform: translate(0, -20px) scale(0.2);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--x), calc(var(--y) - 20px)) rotate(var(--r)) scale(1.1);
+  }
+}
+
+/* "Салом, Фарангис!" — letter by letter, each with a small hop. */
+.mascot-hello {
+  position: relative;
+  max-width: 92vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0.2em 0.3em 0.35em;
+  font-family: var(--font-greeting), var(--font-display);
+  font-size: clamp(2rem, 9.5vw, 3.25rem);
+  line-height: 1.25;
+  color: #ffffff;
+  text-shadow: 0 3px 22px rgb(0 0 0 / 0.35);
+}
+.mascot-name {
+  color: #f5c542;
+  -webkit-text-stroke: 0.6px #f5c542;
+  paint-order: stroke fill;
+}
+.mascot-letter {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  animation: mascot-letter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) var(--at) forwards;
+}
+@keyframes mascot-letter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.5) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Waiting for the password to be checked: the book stays shut, they look about. */
+.mascot-stage[data-waiting] .mascot-figure {
+  animation: mascot-enter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.mascot-stage[data-waiting] .mascot-head {
+  animation: mascot-look 2.6s ease-in-out infinite;
+}
+.mascot-stage[data-waiting] .mascot-pupils {
+  animation: mascot-glance 2.6s ease-in-out infinite;
+}
+.mascot-stage[data-waiting] .mascot-lid {
+  animation: mascot-blink-often 3.4s ease-in-out 1.3s infinite;
+}
+@keyframes mascot-blink-often {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(0);
+  }
+  96% {
+    transform: scaleY(1);
+  }
+}
+.mascot-stage[data-waiting] :is(.mascot-eyes ellipse, .mascot-pupils circle, .mascot-brows, .mascot-spark, .mascot-laugh, .mascot-smile, .mascot-book, .mascot-cover, .mascot-inside, .mascot-hand, .mascot-leaf, .mascot-sunrise, .mascot-sparkle) {
+  animation: none;
+}
+
+/* ------------------------------------------------------------- less motion */
+
+/*
+ * For whoever asks for less motion: nothing drifts, sways, flips or flies;
+ * each picture is drawn in its finished state — the sky still, the wall
+ * still, the bar's light simply in its place, and the welcome already
+ * saying hello over the open book.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .sky *,
+  .sky::before,
+  .school-wall i,
+  .bar *,
+  .intro *,
+  .intro *::before,
+  .intro *::after {
+    animation: none !important;
+  }
+  .bar *,
+  .bar-pill {
+    transition-duration: 0s !important;
+  }
+  .mascot-stage:not([data-waiting]) {
+    .mascot-cover {
+      transform: scaleX(0);
+    }
+    .mascot-inside {
+      transform: none;
+    }
+    .mascot-book {
+      transform: translate(120px, 205px) scale(1.25);
+    }
+    .mascot-sunrise {
+      opacity: 1;
+      transform: none;
+    }
+    .mascot-laugh {
+      opacity: 1;
+    }
+    .mascot-smile {
+      opacity: 0;
+    }
+    .mascot-letter {
+      opacity: 1;
+    }
+    .mascot-hand:not(.mascot-hand-right) {
+      translate: -64px 0;
+    }
+  }
+}
+
+/* ----------------------------------------------------------- no connection */
+
+/*
+ * offline-cover.tsx and offline-picture.tsx (mobile/www/offline.html copies
+ * this). One five-second round, over and over while there is no connection:
+ * the waves light up one by one, the cap falls on them, they break, the cap
+ * lifts and they come together again to try once more.
+ */
+.offline-cover {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(55% 40% at 50% 40%, rgb(255 190 80 / 0.14), transparent 70%),
+    linear-gradient(162deg, rgb(34 25 90 / 0.97) 0%, rgb(23 48 109 / 0.97) 52%, rgb(10 109 114 / 0.97) 100%);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  text-align: center;
+  animation: intro-fade 0.3s ease both;
+}
+.offline-cover[data-mode="slow"] {
+  background: linear-gradient(162deg, rgb(34 25 90 / 0.9), rgb(23 48 109 / 0.9) 52%, rgb(10 109 114 / 0.9));
+}
+.offline-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 21rem;
+}
+.offline-picture {
+  width: min(52vw, 12rem);
+  overflow: visible;
+}
+.offline-title {
+  margin-top: 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  animation: offline-say 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.offline-text {
+  margin-top: 0.4rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.75);
+}
+.offline-button {
+  margin-top: 1.25rem;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  background: #fff;
+  color: #17306d;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  transition: transform 0.15s ease;
+}
+.offline-button:active {
+  transform: scale(0.96);
+}
+.offline-button-quiet {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+}
+@keyframes offline-say {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+}
+
+.offline-dim {
+  stroke: rgb(255 255 255 / 0.16);
+}
+.offline-lit {
+  stroke: #ffd25a;
+  opacity: 0;
+}
+.offline-dot {
+  fill: #fff;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: offline-dot 5.2s ease-in-out infinite;
+}
+.offline-arc-1 .offline-lit {
+  animation: offline-lit-1 5.2s ease infinite;
+}
+.offline-arc-2 .offline-lit {
+  animation: offline-lit-2 5.2s ease infinite;
+}
+.offline-arc-3 .offline-lit {
+  animation: offline-lit-3 5.2s ease infinite;
+}
+@keyframes offline-lit-1 {
+  0%,
+  4% {
+    opacity: 0;
+    stroke: #ffd25a;
+  }
+  8%,
+  29% {
+    opacity: 1;
+    stroke: #ffd25a;
+  }
+  33% {
+    opacity: 1;
+    stroke: #ff6b6b;
+  }
+  42%,
+  100% {
+    opacity: 0;
+    stroke: #ff6b6b;
+  }
+}
+@keyframes offline-lit-2 {
+  0%,
+  10% {
+    opacity: 0;
+    stroke: #ffd25a;
+  }
+  14%,
+  29% {
+    opacity: 1;
+    stroke: #ffd25a;
+  }
+  33% {
+    opacity: 1;
+    stroke: #ff6b6b;
+  }
+  42%,
+  100% {
+    opacity: 0;
+    stroke: #ff6b6b;
+  }
+}
+@keyframes offline-lit-3 {
+  0%,
+  16% {
+    opacity: 0;
+    stroke: #ffd25a;
+  }
+  20%,
+  29% {
+    opacity: 1;
+    stroke: #ffd25a;
+  }
+  33% {
+    opacity: 1;
+    stroke: #ff6b6b;
+  }
+  42%,
+  100% {
+    opacity: 0;
+    stroke: #ff6b6b;
+  }
+}
+/* The halves break apart where the cap struck, then come together again. */
+.offline-half {
+  transform-box: view-box;
+  transform-origin: 100px 150px;
+}
+.offline-half-left {
+  animation: offline-break-left 5.2s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
+}
+.offline-half-right {
+  animation: offline-break-right 5.2s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
+}
+.offline-arc-2 .offline-half {
+  animation-delay: 0.04s;
+}
+.offline-arc-1 .offline-half {
+  animation-delay: 0.08s;
+}
+@keyframes offline-break-left {
+  0%,
+  30%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+  40%,
+  84% {
+    transform: translate(-6px, 14px) rotate(-16deg);
+    opacity: 0.55;
+  }
+  94% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes offline-break-right {
+  0%,
+  30%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+  40%,
+  84% {
+    transform: translate(6px, 18px) rotate(19deg);
+    opacity: 0.55;
+  }
+  94% {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes offline-dot {
+  0%,
+  24%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.25);
+  }
+  31% {
+    transform: translateY(3px) scale(1.2, 0.8);
+  }
+  36% {
+    transform: none;
+  }
+}
+.offline-cap {
+  transform-box: view-box;
+  transform-origin: 100px 64px;
+  animation: offline-cap 5.2s infinite;
+}
+@keyframes offline-cap {
+  0%,
+  23% {
+    opacity: 0;
+    transform: translateY(-150px) rotate(-24deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  24% {
+    opacity: 1;
+    transform: translateY(-150px) rotate(-24deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(6px) rotate(4deg) scale(1.08, 0.86);
+  }
+  34% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+  38%,
+  80% {
+    opacity: 1;
+    transform: translateY(0) rotate(-2deg);
+  }
+  84% {
+    opacity: 1;
+    transform: translateY(-14px) rotate(-8deg);
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) rotate(-14deg);
+  }
+}
+.offline-crack {
+  stroke: #ff8a8a;
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  animation: offline-crack 5.2s ease-out infinite;
+}
+@keyframes offline-crack {
+  0%,
+  30% {
+    stroke-dashoffset: 80;
+    opacity: 1;
+  }
+  36%,
+  78% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  88%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+.offline-dust circle {
+  fill: rgb(255 255 255 / 0.8);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: offline-dust 5.2s ease-out infinite;
+}
+.offline-dust circle:nth-child(odd) {
+  --dx: -14px;
+}
+.offline-dust circle:nth-child(even) {
+  --dx: 14px;
+}
+@keyframes offline-dust {
+  0%,
+  29% {
+    opacity: 0;
+    transform: none;
+  }
+  31% {
+    opacity: 1;
+  }
+  44%,
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), -12px) scale(0.4);
+  }
+}
+
+/* Connected again: the waves light up green, the cap is gone. */
+.offline-picture[data-back] :is(.offline-half, .offline-cap, .offline-crack, .offline-dust circle, .offline-dot) {
+  animation: none;
+}
+.offline-picture[data-back] :is(.offline-cap, .offline-crack, .offline-dust) {
+  opacity: 0;
+}
+.offline-picture[data-back] .offline-lit {
+  stroke: #4ade80;
+  animation: offline-back 0.6s ease both;
+}
+.offline-picture[data-back] .offline-arc-2 .offline-lit {
+  animation-delay: 0.12s;
+}
+.offline-picture[data-back] .offline-arc-3 .offline-lit {
+  animation-delay: 0.24s;
+}
+@keyframes offline-back {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .offline-picture *,
+  .offline-title {
+    animation: none !important;
+  }
+  .offline-picture:not([data-back]) .offline-cap {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------- searching */
+
+/*
+ * searching.tsx: a magnifying glass sweeping over faint pages on a path of
+ * half-circles (offset-path), tilting as it turns; each page it passes lights
+ * up for a moment. Whatever the search box belongs to dims what comes after
+ * it until the glass is done.
+ */
+.searching {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0 0.25rem;
+  animation: offline-say 0.35s ease both;
+}
+.searching-field {
+  position: relative;
+  width: 11rem;
+  height: 6rem;
+}
+.searching-pages {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.searching-page rect {
+  fill: var(--color-surface);
+  stroke: var(--color-line-strong);
+  stroke-width: 1.4;
+}
+.searching-page path {
+  fill: none;
+  stroke: var(--color-line-strong);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.searching-page {
+  animation: searching-found 1.4s ease-in-out infinite;
+}
+@keyframes searching-found {
+  0%,
+  70%,
+  100% {
+    opacity: 0.55;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+.searching-lens {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3rem;
+  height: 3rem;
+  margin: -1.2rem 0 0 -1.2rem;
+  offset-rotate: 0deg;
+  offset-anchor: 40% 40%;
+  animation:
+    searching-sweep 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite,
+    searching-tilt 0.65s ease-in-out infinite alternate;
+}
+.searching-lens svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.18));
+}
+.searching-glass {
+  fill: color-mix(in oklab, var(--color-brand-solid) 12%, rgb(255 255 255 / 0.55));
+  stroke: var(--color-brand-solid);
+  stroke-width: 3.4;
+}
+.searching-shine {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+.searching-handle {
+  stroke: var(--color-brand-solid);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+@keyframes searching-sweep {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@keyframes searching-tilt {
+  from {
+    rotate: -12deg;
+  }
+  to {
+    rotate: 14deg;
+  }
+}
+.filter-bar[data-searching] ~ * {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* ------------------------------------------------------------ lists rising */
+
+/* A list arrives one row after another, each rising a little into place. */
+.stagger-in > * {
+  animation: stagger-rise 0.46s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.stagger-in > :nth-child(2) { animation-delay: 0.04s; }
+.stagger-in > :nth-child(3) { animation-delay: 0.08s; }
+.stagger-in > :nth-child(4) { animation-delay: 0.12s; }
+.stagger-in > :nth-child(5) { animation-delay: 0.16s; }
+.stagger-in > :nth-child(6) { animation-delay: 0.2s; }
+.stagger-in > :nth-child(7) { animation-delay: 0.24s; }
+.stagger-in > :nth-child(8) { animation-delay: 0.28s; }
+.stagger-in > :nth-child(9) { animation-delay: 0.32s; }
+.stagger-in > :nth-child(10) { animation-delay: 0.36s; }
+.stagger-in > :nth-child(n + 11) { animation-delay: 0.4s; }
+@keyframes stagger-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+
+/* --------------------------------------------------------- opening a book */
+
+/*
+ * book-link.tsx. A book card's cover is a cover: when chosen, two leaves
+ * riffle at its edge, then it swings open on its spine, showing lined pages,
+ * and the book's own page follows.
+ */
+.book-3d {
+  position: relative;
+  perspective: 800px;
+}
+.book-pages,
+.book-leaf,
+.book-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.375rem;
+}
+.book-pages {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12%;
+  padding: 18% 14%;
+  background: #fffaf0;
+  box-shadow: inset 6px 0 10px -6px rgb(0 0 0 / 0.25);
+}
+.book-pages span {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: #e0d6c2;
+}
+.book-pages span:last-child {
+  width: 60%;
+}
+.book-leaf {
+  background: #fff6e4;
+  transform-origin: left center;
+  opacity: 0;
+}
+.book-cover {
+  transform-origin: left center;
+  backface-visibility: hidden;
+  box-shadow: 2px 3px 8px -4px rgb(0 0 0 / 0.35);
+  transition: transform 0.3s ease;
+}
+.book-card:hover .book-cover {
+  transform: rotateY(-8deg);
+}
+.book-card[data-opening] {
+  border-color: var(--color-brand-300);
+}
+.book-card[data-opening] .book-leaf-1 {
+  animation: book-riffle 0.2s ease-in-out both;
+}
+.book-card[data-opening] .book-leaf-2 {
+  animation: book-riffle 0.2s ease-in-out 0.09s both;
+}
+.book-card[data-opening] .book-cover {
+  animation: book-open 0.34s cubic-bezier(0.45, 0.05, 0.3, 1) 0.14s forwards;
+}
+@keyframes book-riffle {
+  0% {
+    opacity: 1;
+    transform: rotateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(-40deg);
+  }
+}
+@keyframes book-open {
+  to {
+    transform: rotateY(-160deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .searching-lens,
+  .searching-page,
+  .stagger-in > *,
+  .book-card .book-cover {
+    animation: none !important;
+    transition: none !important;
+  }
+  .searching-lens {
+    offset-distance: 30%;
+  }
+}
+
+/* -------------------------------------------------------------- warm cards */
+
+/*
+ * warm-card.tsx: homework and the register's topics, each on a warm dark
+ * card. A soft light of the card's own colour wanders over it, the school's
+ * drawings drift slowly up its right side, and a small star twinkles in the
+ * corner — always moving, never enough to read over.
+ */
+.warm-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.warm-card {
+  --warm-a: #3b2414;
+  --warm-b: #6d3b16;
+  --warm-glow: #ffb347;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  padding: 1rem 1.1rem;
+  color: #fff6ea;
+  background: linear-gradient(140deg, var(--warm-a) 0%, var(--warm-b) 100%);
+  box-shadow:
+    0 12px 26px -16px rgb(40 14 0 / 0.65),
+    inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.warm-card[data-tone="coral"] {
+  --warm-a: #3a1a1d;
+  --warm-b: #74312a;
+  --warm-glow: #ff8360;
+}
+.warm-card[data-tone="plum"] {
+  --warm-a: #2b1833;
+  --warm-b: #5b2e55;
+  --warm-glow: #f08fd6;
+}
+.warm-card[data-tone="olive"] {
+  --warm-a: #262613;
+  --warm-b: #545020;
+  --warm-glow: #f0d76c;
+}
+.warm-card:has(.warm-link):hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 30px -16px rgb(40 14 0 / 0.75),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+.warm-card-compact {
+  padding: 0.8rem 1rem;
+}
+.warm-card-glow {
+  position: absolute;
+  inset: -45%;
+  z-index: -1;
+  background: radial-gradient(circle at 32% 34%, color-mix(in oklab, var(--warm-glow) 34%, transparent), transparent 42%);
+  animation: warm-wander 11s ease-in-out infinite alternate;
+}
+@keyframes warm-wander {
+  from {
+    translate: -6% -4%;
+    scale: 1;
+  }
+  to {
+    translate: 14% 10%;
+    scale: 1.18;
+  }
+}
+.warm-card-doodles {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: -1;
+  width: 48%;
+  height: calc(100% + 160px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate%2852 58%29 rotate%28-8%29 scale%281.15%29'%3E%3Cpath d='M-14 -9h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H-14z M14 -9H4a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3C/g%3E%3Cg transform='translate%28236 84%29 rotate%2812%29 scale%281%29'%3E%3Ccircle r='2.5'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2830%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%28-30%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2890%29'/%3E%3C/g%3E%3Cg transform='translate%2872 232%29 rotate%286%29 scale%281.15%29'%3E%3Cpath d='M-17 -4l17-7 17 7-17 7z M-9 0v8c6 4 12 4 18 0v-8 M17 -4v9'/%3E%3C/g%3E%3Cg transform='translate%28214 236%29 rotate%280%29 scale%281.1%29'%3E%3Cpath d='M-13 13l3-9 17-17 6 6-17 17z M3 -9l6 6'/%3E%3C/g%3E%3Cg transform='translate%28150 158%29 rotate%2810%29 scale%280.9%29'%3E%3Cpath d='M0 -10l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.11;
+  mask-image: linear-gradient(90deg, transparent, #000 60%);
+  animation: warm-rise 24s linear infinite;
+}
+@keyframes warm-rise {
+  to {
+    translate: 0 -160px;
+  }
+}
+.warm-card-star {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.7rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--warm-glow);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: warm-twinkle 3.2s ease-in-out infinite;
+}
+.warm-card:has(.warm-card-star + div > .shrink-0) .warm-card-star {
+  top: auto;
+  bottom: 0.6rem;
+}
+@keyframes warm-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    scale: 0.6;
+    rotate: 0deg;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.15;
+    rotate: 45deg;
+  }
+}
+.warm-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  color: rgb(255 246 234 / 0.72);
+}
+.warm-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-weight: 600;
+  color: #fff;
+  background: color-mix(in oklab, var(--warm-glow) 26%, rgb(255 255 255 / 0.08));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--warm-glow) 40%, transparent);
+}
+.warm-title {
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #fff;
+  text-wrap: pretty;
+}
+.warm-link {
+  color: inherit;
+}
+.warm-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.warm-link:focus-visible {
+  outline: none;
+}
+.warm-card:has(.warm-link:focus-visible) {
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--warm-glow) 70%, transparent),
+    0 12px 26px -16px rgb(40 14 0 / 0.65);
+}
+.warm-meta {
+  margin-top: 0.35rem;
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgb(255 246 234 / 0.8);
+}
+.warm-overdue {
+  font-weight: 600;
+  color: #ffb4a6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .warm-card-glow,
+  .warm-card-doodles,
+  .warm-card-star {
+    animation: none !important;
+  }
+}

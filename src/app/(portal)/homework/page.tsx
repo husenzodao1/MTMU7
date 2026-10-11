@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { NotebookPen } from "lucide-react";
 import { ChildSwitcher } from "@/features/academic/child-switcher";
 import { resolveStudentContext } from "@/features/academic/student-context";
+import { toneFor, WarmCard } from "@/features/academic/warm-card";
 import { StatusBadge } from "@/components/ui/badge";
-import { DataTable } from "@/components/ui/data-table";
-import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
+import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { TabNav } from "@/components/ui/misc";
 import { requireModule } from "@/lib/auth/guards";
 import { formatDate, formatDateTime } from "@/lib/i18n/format";
@@ -92,47 +91,60 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
         ]}
       />
       {journal && journal.length > 0 ? (
-        <Card className="mb-5">
-          <CardHeader title={t("journalTitle")} description={t("journalHint")} />
-          <CardBody className="p-0">
-            <ul className="divide-y divide-line">
-              {journal.map((line) => (
-                <li key={line.id} className="px-5 py-3">
-                  <p className="text-xs text-ink-muted">
-                    <span className="tabular">{formatDate(line.lesson_date, locale)}</span> · {pickName(line.class_subjects.subjects, locale)}
-                  </p>
-                  <p className="font-medium text-ink">{line.topic}</p>
-                  <p className="text-sm text-ink-secondary whitespace-pre-line">{line.homework}</p>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
+        <section className="mb-6" aria-labelledby="journal-title">
+          <h2 id="journal-title" className="text-base font-semibold text-ink">
+            {t("journalTitle")}
+          </h2>
+          <p className="mb-3 text-sm text-ink-muted">{t("journalHint")}</p>
+          <ul className="warm-list stagger-in">
+            {journal.map((line) => {
+              const subject = pickName(line.class_subjects.subjects, locale);
+              return (
+                <WarmCard
+                  key={line.id}
+                  tone={toneFor(subject)}
+                  eyebrow={
+                    <>
+                      <span className="warm-chip">{subject}</span>
+                      <span className="tabular">{formatDate(line.lesson_date, locale)}</span>
+                    </>
+                  }
+                  title={line.topic}
+                >
+                  <p className="whitespace-pre-line">{line.homework}</p>
+                </WarmCard>
+              );
+            })}
+          </ul>
+        </section>
       ) : null}
-      <DataTable
-        caption={t("title")}
-        rows={rows}
-        rowKey={(r) => r.id}
-        empty={<EmptyState icon={<NotebookPen />} title={t("nothingDue")} />}
-        columns={[
-          {
-            key: "title",
-            header: t("assignment"),
-            primary: true,
-            cell: (r) => (
-              <span>
-                <Link href={`/homework/${r.id}${childQuery}`} className="font-medium text-ink hover:text-brand-text hover:underline">
-                  {r.title}
-                </Link>
-                {r.pages ? <span className="block text-sm text-ink-secondary">{t("pages")}: {r.pages}</span> : null}
-              </span>
-            ),
-          },
-          { key: "subject", header: t("subject"), cell: (r) => r.subject },
-          { key: "due", header: t("dueLabel"), cell: (r) => <span className="tabular">{r.dueAt ? formatDateTime(r.dueAt, locale) : "—"}</span> },
-          { key: "status", header: t("status"), cell: (r) => <StatusBadge status={r.status} label={ts(r.status)} /> },
-        ]}
-      />
+      {rows.length === 0 ? (
+        <Card as="div">
+          <EmptyState icon={<NotebookPen />} title={t("nothingDue")} />
+        </Card>
+      ) : (
+        <ul className="warm-list stagger-in" aria-label={t("title")}>
+          {rows.map((r) => (
+            <WarmCard
+              key={r.id}
+              tone={toneFor(r.subject)}
+              href={`/homework/${r.id}${childQuery}`}
+              eyebrow={<span className="warm-chip">{r.subject}</span>}
+              title={r.title}
+              side={<StatusBadge status={r.status} label={ts(r.status)} />}
+            >
+              {r.pages ? (
+                <p>
+                  {t("pages")}: {r.pages}
+                </p>
+              ) : null}
+              <p className="tabular">
+                {t("dueLabel")}: {r.dueAt ? formatDateTime(r.dueAt, locale) : "—"}
+              </p>
+            </WarmCard>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

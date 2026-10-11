@@ -2,15 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
-import { BookScene } from "@/features/intro/book-scene";
-import type { ScriptLine } from "@/features/intro/greeting-paths";
+import { MascotScene } from "@/features/intro/mascot-scene";
 import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * The opening over the first page: the book, the light and the greeting
- * written by hand (book-scene.tsx) — once per browser, for a year, and on the
- * app's first start only.
+ * The opening over the first page: the pupil with the book who sees you and
+ * says "Хуш омадед" (mascot-scene.tsx) — once per browser, for a year, and on
+ * the app's first start only.
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it
@@ -19,7 +18,7 @@ import { cn } from "@/lib/utils/cn";
  * away. A tap ends it early; a CSS fallback reveals the page even if no
  * script runs at all.
  */
-export function Intro({ lines }: { lines: ScriptLine[] }) {
+export function Intro({ words }: { words: string }) {
   const overlay = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
 
@@ -42,7 +41,7 @@ export function Intro({ lines }: { lines: ScriptLine[] }) {
 
   useEffect(() => {
     if (phase !== "out") return;
-    const gone = window.setTimeout(() => setPhase("gone"), 560);
+    const gone = window.setTimeout(() => setPhase("gone"), 480);
     return () => window.clearTimeout(gone);
   }, [phase]);
 
@@ -57,7 +56,7 @@ export function Intro({ lines }: { lines: ScriptLine[] }) {
       suppressHydrationWarning
       onClick={() => setPhase("out")}
     >
-      <BookScene lines={lines} />
+      <MascotScene hello={words} />
     </div>
   );
 }

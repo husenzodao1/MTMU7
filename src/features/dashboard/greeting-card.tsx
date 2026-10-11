@@ -1,42 +1,138 @@
 "use client";
 
-import { Moon, Sun, Sunrise, Sunset } from "lucide-react";
+import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { SkyScene } from "@/features/dashboard/sky-scene";
+import type { Weather, WeatherKind } from "@/features/dashboard/weather-kind";
 import { dayPart, type DayPart } from "@/lib/i18n/format";
-
-const ICONS: Record<DayPart, typeof Sun> = { morning: Sunrise, day: Sun, evening: Sunset, night: Moon };
 
 /**
  * "Шом ба хайр, Фарангис!" — the one line on the portal addressed to the
- * person reading it.
+ * person reading it, over a small living sky (sky-scene.tsx): the hour draws
+ * it, the weather in Istaravshan dresses it.
  *
- * The greeting is in white and the name in the school's gold, set in a brush
- * script, on a small sky that changes with the hour: dawn, a blue afternoon,
- * a sunset, stars. The sky is dark in every theme, so the white and the gold
- * never depend on the theme for their contrast.
+ * The line never breaks: the greeting, the name and the "!" stay on one row,
+ * the letters getting smaller for a long name (down to a floor), and only past
+ * that floor does the name end in "…" — the "!" is never left alone on a line
+ * of its own.
  *
  * The server chooses the first greeting from the school's clock. A page left
  * open across six o'clock should not go on wishing a good afternoon, so the
- * card looks at the clock again every minute.
+ * card looks at the clock again every minute. The weather comes as a promise
+ * the page does not wait for: the card is drawn at once, and the clouds or
+ * the rain arrive when the answer does.
  */
+
+const WEATHER_ICON: Record<WeatherKind, LucideIcon> = {
+  clear: Sun,
+  partly: CloudSun,
+  cloudy: Cloud,
+  fog: CloudFog,
+  drizzle: CloudDrizzle,
+  rain: CloudRain,
+  snow: CloudSnow,
+  storm: CloudLightning,
+};
+
+/** The largest and smallest size of the greeting line, in px. */
+const FIT = { phone: [30, 19], wide: [44, 24] } as const;
+
+/** Shrinks the line until it fits its row, within FIT. */
+function useOneLine(text: string) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      const [max, min] = window.innerWidth >= 640 ? FIT.wide : FIT.phone;
+      // Measured at full length: the name may not shorten itself meanwhile.
+      el.setAttribute("data-measuring", "");
+      let size = max;
+      el.style.fontSize = `${size}px`;
+      // The words' own widths, unrounded: a line that seems to fit exactly
+      // may be a fraction over, enough for the name to end in "…". Two
+      // pixels to spare.
+      const used = () => Array.from(el.children).reduce((sum, word) => sum + word.getBoundingClientRect().width, 0);
+      while (used() > el.clientWidth - 2 && size > min) {
+        size -= 1;
+        el.style.fontSize = `${size}px`;
+      }
+      el.removeAttribute("data-measuring");
+    };
+    fit();
+    // Again when the card is resized, and when the script face arrives and
+    // the words change width under the same box.
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    for (const word of Array.from(el.children)) observer.observe(word);
+    document.fonts?.addEventListener("loadingdone", fit);
+    return () => {
+      observer.disconnect();
+      document.fonts?.removeEventListener("loadingdone", fit);
+    };
+  }, [text]);
+  return ref;
+}
+
+/** The sky stops moving while nobody can see it. */
+function useOnScreen() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) el.setAttribute("data-on-screen", "");
+      else el.removeAttribute("data-on-screen");
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
+
+function WeatherSky({ part, weather }: { part: DayPart; weather: Promise<Weather | null> }) {
+  const t = useTranslations("portal.dashboard.weather");
+  const now = use(weather);
+  if (!now) return <SkyScene part={part} weather={null} />;
+  const Icon = part === "night" || part === "evening" ? (now.kind === "clear" ? Moon : now.kind === "partly" ? CloudMoon : WEATHER_ICON[now.kind]) : WEATHER_ICON[now.kind];
+  return (
+    <>
+      <SkyScene part={part} weather={now.kind} windy={now.windy} />
+      <p className="sky-chip" title={t(`kinds.${now.kind}`)}>
+        <Icon className="size-3.5" aria-hidden />
+        <span className="tabular">{now.temperature > 0 ? "+" : ""}{now.temperature}°</span>
+        <span className="sky-chip-town">{t("town")}</span>
+        <span className="sr-only">{t(`kinds.${now.kind}`)}</span>
+      </p>
+    </>
+  );
+}
+
 export function GreetingCard({
   name,
   timeZone,
   initialPart,
   dateLine,
   actions,
+  weather,
+  preview,
 }: {
   name: string;
   timeZone?: string;
   initialPart: DayPart;
   dateLine?: string;
   actions?: ReactNode;
+  /** The weather in Istaravshan, not waited for (weather.ts). */
+  weather?: Promise<Weather | null>;
+  /** A fixed hour, for the preview page: the clock is not looked at. */
+  preview?: boolean;
 }) {
   const t = useTranslations("portal.dashboard");
   const [part, setPart] = useState<DayPart>(initialPart);
 
   useEffect(() => {
+    if (preview) return;
     const tick = () => setPart(dayPart(timeZone));
     const first = window.setTimeout(tick, 0);
     const timer = window.setInterval(tick, 60_000);
@@ -44,27 +140,44 @@ export function GreetingCard({
       window.clearTimeout(first);
       window.clearInterval(timer);
     };
-  }, [timeZone]);
+  }, [timeZone, preview]);
 
-  const Icon = ICONS[part];
+  const greeting = t(`greetings.${part}`);
+  const line = useOneLine(`${greeting} ${name}`);
+  const card = useOnScreen();
 
   return (
-    <section className="greeting-card mb-6 rounded-3xl px-5 py-6 shadow-sm sm:px-8 sm:py-8" data-part={part} aria-labelledby="greeting-title">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          {dateLine ? <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/70">{dateLine}</p> : null}
-          <h1 id="greeting-title" className="mt-2 text-[1.9rem] leading-[1.3] sm:text-[2.75rem] sm:leading-[1.25]">
-            <span className="greeting-word">{t(`greetings.${part}`)},</span>{" "}
-            {name ? <span className="greeting-name inline-block text-[1.1em]">{name}</span> : null}
-            <span className="greeting-word">!</span>
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/80">{t(`wishes.${part}`)}</p>
-        </div>
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[#f5c542] ring-1 ring-white/15 backdrop-blur-sm sm:size-14" aria-hidden>
-          <Icon className="size-6 sm:size-7" />
-        </span>
+    <section
+      ref={card}
+      className="greeting-card mb-6 rounded-3xl px-5 pb-14 pt-6 shadow-sm sm:px-8 sm:pb-10 sm:pt-8"
+      data-part={part}
+      data-on-screen=""
+      aria-labelledby="greeting-title"
+    >
+      {weather ? (
+        <Suspense fallback={<SkyScene part={part} weather={null} />}>
+          <WeatherSky part={part} weather={weather} />
+        </Suspense>
+      ) : (
+        <SkyScene part={part} weather={null} />
+      )}
+      <div className="relative min-w-0">
+        {dateLine ? <p className="greeting-date text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/75">{dateLine}</p> : null}
+        <h1 ref={line} id="greeting-title" className="greeting-line mt-2">
+          <span className="greeting-word">{greeting},</span>
+          {name ? (
+            <>
+              <span className="greeting-gap" aria-hidden>
+                {" "}
+              </span>
+              <span className="greeting-name">{name}</span>
+            </>
+          ) : null}
+          <span className="greeting-word">!</span>
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 [text-shadow:0_1px_8px_rgb(0_0_0/0.35)]">{t(`wishes.${part}`)}</p>
+        {actions ? <div className="mt-5 flex flex-wrap gap-2">{actions}</div> : null}
       </div>
-      {actions ? <div className="mt-5 flex flex-wrap gap-2">{actions}</div> : null}
     </section>
   );
 }

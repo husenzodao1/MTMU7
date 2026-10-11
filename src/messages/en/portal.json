@@ -69,6 +69,19 @@
         "evening": "Have a pleasant evening and a good rest!",
         "night": "Sleep well — tomorrow is a new day."
       },
+      "weather": {
+        "town": "Istaravshan",
+        "kinds": {
+          "clear": "Clear sky",
+          "partly": "Partly cloudy",
+          "cloudy": "Cloudy",
+          "fog": "Fog",
+          "drizzle": "Drizzle",
+          "rain": "Rain",
+          "snow": "Snow",
+          "storm": "Thunderstorm"
+        }
+      },
       "faces": {
         "title": "Faces of the school",
         "active": "Students",

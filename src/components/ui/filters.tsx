@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
+import { SearchingPanel, useLingering } from "@/components/ui/searching";
 
 export interface FilterDefinition {
   name: string;
@@ -26,8 +27,12 @@ export function FilterBar({ searchLabel, filters = [], searchPlaceholder }: { se
   const params = useSearchParams();
   const [query, setQuery] = useState(params.get("q") ?? "");
   const [pending, startTransition] = useTransition();
+  // A search typed and sent shows the magnifying glass; a filter changed does not.
+  const [bySearch, setBySearch] = useState(false);
+  const searching = useLingering(pending && bySearch);
 
-  const navigate = (patch: Record<string, string | null>) => {
+  const navigate = (patch: Record<string, string | null>, fromSearch = false) => {
+    setBySearch(fromSearch);
     const next = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(patch)) {
       if (value) next.set(key, value);
@@ -40,13 +45,13 @@ export function FilterBar({ searchLabel, filters = [], searchPlaceholder }: { se
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    navigate({ q: query.trim() || null });
+    navigate({ q: query.trim() || null }, true);
   };
 
   const active = Boolean(params.get("q")) || filters.some((f) => params.get(f.name));
 
   return (
-    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end" aria-busy={pending}>
+    <div className="filter-bar mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end" aria-busy={pending} data-searching={searching || undefined}>
       {searchLabel !== undefined ? (
         <form role="search" onSubmit={onSubmit} className="flex min-w-0 flex-1 gap-2 sm:min-w-64 sm:max-w-md">
           <label htmlFor="filter-q" className="sr-only">
@@ -88,6 +93,7 @@ export function FilterBar({ searchLabel, filters = [], searchPlaceholder }: { se
           {t("clearFilters")}
         </Button>
       ) : null}
+      {searching ? <SearchingPanel label={t("searching")} /> : null}
     </div>
   );
 }

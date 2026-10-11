@@ -61,7 +61,10 @@ export async function TeacherLessons({
                   </span>
                 ) : null}
               </span>
-              <span className="min-w-0 flex-1">
+              {/* At least this wide: on a phone the badge and the button go
+                  down a line before the class and subject are squeezed into a
+                  column a letter wide. */}
+              <span className="min-w-[9rem] flex-1">
                 <span className="block font-medium">
                   {lesson.class_name} · {pickText({ tg: lesson.subject_tg, ru: lesson.subject_ru, en: lesson.subject_en }, locale)}
                 </span>

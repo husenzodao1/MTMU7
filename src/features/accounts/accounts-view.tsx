@@ -102,7 +102,7 @@ export async function AccountsView({
         {directory.rows.length === 0 ? (
           <EmptyState icon={<UsersRound />} title={t("empty")} description={t("emptyHint")} />
         ) : (
-          <ul className="grid gap-2">
+          <ul className="stagger-in grid gap-2">
             {directory.rows.map((row) => (
               <AccountRowItem key={row.id} row={row} basePath={basePath} locale={locale} canMessage={canMessage} t={t} />
             ))}

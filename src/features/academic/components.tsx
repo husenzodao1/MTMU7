@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/surface";
@@ -9,6 +8,7 @@ import type { StudentOverview } from "@/features/academic/queries";
 import { lessonMoments } from "@/features/academic/lesson-time";
 import { CalendarDays, NotebookPen, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { toneFor, WarmCard } from "@/features/academic/warm-card";
 
 /**
  * A pupil's lessons today, each at its bell, with the one under way and the
@@ -58,26 +58,24 @@ export async function HomeworkDueList({ items, hrefBase = "/homework" }: { items
   const tc = await getTranslations("common.status");
   if (items.length === 0) return <EmptyState icon={<NotebookPen />} title={t("nothingDue")} className="py-6" />;
   return (
-    <ul className="divide-y divide-line">
+    <ul className="warm-list stagger-in">
       {items.map((item) => {
         const overdue = item.due_at ? new Date(item.due_at).getTime() < getRequestTime() : false;
+        const subject = pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale);
         return (
-          <li key={item.id} className="flex items-start justify-between gap-3 py-2.5">
-            <div className="min-w-0">
-              <Link href={`${hrefBase}/${item.id}`} className="font-medium text-ink hover:text-brand-text hover:underline">
-                {item.title}
-              </Link>
-              <p className="text-sm text-ink-muted">{pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale)}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              {item.due_at ? (
-                <p className={cn("text-sm tabular", overdue ? "font-medium text-danger-700" : "text-ink-secondary")}>
-                  {t("due", { date: formatDateTime(item.due_at, locale) })}
-                </p>
-              ) : null}
-              {item.submission_status ? <StatusBadge status={item.submission_status} label={tc(item.submission_status)} /> : null}
-            </div>
-          </li>
+          <WarmCard
+            key={item.id}
+            compact
+            tone={toneFor(subject)}
+            href={`${hrefBase}/${item.id}`}
+            eyebrow={<span className="warm-chip">{subject}</span>}
+            title={item.title}
+            side={item.submission_status ? <StatusBadge status={item.submission_status} label={tc(item.submission_status)} /> : null}
+          >
+            {item.due_at ? (
+              <p className={cn("tabular", overdue && "warm-overdue")}>{t("due", { date: formatDateTime(item.due_at, locale) })}</p>
+            ) : null}
+          </WarmCard>
         );
       })}
     </ul>

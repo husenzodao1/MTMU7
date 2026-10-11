@@ -68,7 +68,7 @@ export function DataTable<T>({
               {actions ? <th scope="col" className="px-4 py-2.5"><span className="sr-only">—</span></th> : null}
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody className="stagger-in divide-y divide-line">
             {rows.map((row) => (
               <tr key={rowKey(row)} className="align-middle hover:bg-surface-muted/50">
                 {columns.map((column) => (
@@ -83,7 +83,7 @@ export function DataTable<T>({
         </table>
       </div>
 
-      <ul className="divide-y divide-line md:hidden" aria-label={caption}>
+      <ul className="stagger-in divide-y divide-line md:hidden" aria-label={caption}>
         {rows.map((row) => (
           <li key={rowKey(row)} className={cn("px-4 py-3", rowHref && "relative active:bg-surface-muted/60")}>
             {rowHref ? <Link href={rowHref(row)} className="absolute inset-0" aria-hidden tabIndex={-1} /> : null}

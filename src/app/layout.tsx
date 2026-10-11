@@ -2,11 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Bad_Script, Cormorant_Unicase, Great_Vibes, JetBrains_Mono, Noto_Sans, Noto_Serif, Pacifico, Unbounded } from "next/font/google";
-import { SupportFab } from "@/components/site/support-fab";
-import { openingScript } from "@/features/intro/greetings";
+import { Cormorant_Unicase, JetBrains_Mono, Noto_Sans, Noto_Serif, Pacifico, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
 import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
+import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
@@ -62,28 +61,6 @@ const unicase = Cormorant_Unicase({
   display: "swap",
   preload: false,
   variable: "--font-crest",
-});
-
-/**
- * The hand that writes a name under "Welcome" after signing in
- * (src/features/intro/book-scene.tsx). The greeting's own lines are drawn from
- * Great Vibes' outlines and need no font; a name is typed, so it is written
- * in Great Vibes itself — or, when it has one of ғ ҷ қ ӣ ӯ ҳ, which Great Vibes
- * lacks, in Bad Script, which has them all. Loaded only when a welcome shows.
- */
-const script = Great_Vibes({
-  subsets: ["latin", "cyrillic"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-script",
-});
-const hand = Bad_Script({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-hand",
 });
 
 /**
@@ -153,7 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page opens with the book and the greeting (src/features/intro/):
+  // The first page opens with the pupil and the greeting (src/features/intro/):
   // on the site once per browser (a year's cookie), in the app on its first
   // start (the page skips it after that), never for robots — and not on the
   // first page after signing in, which has a short welcome of its own.
@@ -171,12 +148,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={isAppUserAgent(userAgent) ? "" : undefined}
-      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (
           <>
-            <Intro lines={openingScript(locale)} />
+            <Intro words={t("welcome.opening")} />
             {/* The per-request nonce the CSP allows (src/proxy.ts). */}
             <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
           </>
@@ -187,8 +164,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ToastProvider>
             {children}
-            <SupportFab />
             <NativeApp />
+            <OfflineCover />
             <ViewportGuard />
           </ToastProvider>
         </NextIntlClientProvider>

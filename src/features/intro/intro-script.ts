@@ -11,12 +11,16 @@
  */
 export const INTRO_COOKIE = "mtmu7-intro";
 
-/** When the greeting has been written and the page is uncovered, from the moment the opening starts. */
-export const INTRO_MS = 4550;
-/** The same with reduced motion: no book, the greeting already written, a short look and gone. */
+/** When the greeting has been said and the page is uncovered, from the moment the opening starts. */
+export const INTRO_MS = 3200;
+/** The same with reduced motion: nothing moves, the greeting already there, a short look and gone. */
 export const INTRO_QUICK_MS = 1400;
-/** The greeting after a sign-in: the quick form, for everybody, shorter still. */
-export const WELCOME_MS = 900;
+/**
+ * The greeting after a sign-in (mascot-scene.tsx): the pupil sees you, opens
+ * the book and says hello by name. The portal loads underneath meanwhile, so
+ * this is time the page needed anyway, and a tap ends it.
+ */
+export const WELCOME_MS = 3000;
 
 /**
  * The oldest web view the portal is built for (Chrome 111: the colours and
@@ -34,7 +38,7 @@ const OLD_WEBVIEW = 111;
  * used to play on every start, four and a half seconds each time, and opening
  * the app felt slow — and it waits for the phone's own splash: Capacitor's bridge is on the
  * page before any of the page's scripts, so the splash is asked to go and the
- * book starts moving the moment it has. What happened is left on window for
+ * welcome starts moving the moment it has. What happened is left on window for
  * the app's diagnostics.
  */
 export const INTRO_SCRIPT = `(function(){

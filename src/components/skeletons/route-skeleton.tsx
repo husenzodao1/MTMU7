@@ -2,8 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { routeShape, type RouteShape } from "@/components/skeletons/route-shape";
+import { SLOW_EVENT } from "@/features/native/offline-cover";
 import { cn } from "@/lib/utils/cn";
 
 /*
@@ -708,10 +709,23 @@ const SHAPES: Record<RouteShape, () => ReactNode> = {
 };
 
 /** The loading screen for whichever page is on its way. */
+/** How long a page may take before the connection is called slow (offline-cover.tsx). */
+const SLOW_AFTER_MS = 8000;
+
 export function RouteSkeleton() {
   const pathname = usePathname();
   const t = useTranslations("common");
   const Shape = SHAPES[routeShape(pathname)];
+
+  // Still loading after eight seconds: the connection is slow, and the page
+  // says so. Gone again the moment the page arrives.
+  useEffect(() => {
+    const slow = window.setTimeout(() => window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: true })), SLOW_AFTER_MS);
+    return () => {
+      window.clearTimeout(slow);
+      window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: false }));
+    };
+  }, []);
   return (
     <div role="status" aria-live="polite" aria-busy="true">
       <span className="sr-only">{t("loading")}</span>
