@@ -51,16 +51,17 @@ an update. Give the keystore before handing the APK out widely.
 
 - App id / bundle id: `tj.mtmu7.app` (cannot change once published)
 - Name on the home screen: `МТМУ №7`
-- Icon: `public/brand/app-icon.svg` — the sun rising behind an open book,
-  with seven rays for the school's number, on indigo turning to teal.
+- Icon: `public/brand/app-icon.svg` — one colour and one white mark: a dot
+  over an open book (a pupil reading, the sun over the page) on the school's
+  flat orange `#ff5a1f`. No gradients, no second colour, nothing small.
   `mobile/scripts/make-assets.mjs` renders every size from it for Android,
   iPhone, Windows and the web (`npm run assets` in `mobile/`).
-- Opening: the phone's splash is the mark standing still; the moment it goes,
-  the site's opening plays (`src/features/intro/`, about 4.5 s, a tap ends it):
-  a book flies in, its pages turn, it rushes into a flash of light and
-  "Ассалому алайкум — Хуш омадед" writes itself by hand. Once per start of the
-  app; the site shows it once per visit. After signing in the same book ends
-  with "Хуш омадед" and the person's name.
+- Opening: the phone's splash is the white mark on the orange; the moment it
+  goes, the site's opening plays (`src/features/intro/`, about 3 s, a tap ends
+  it): a pupil in a graduation cap looks about, sees you, opens a book, a sun
+  rises out of it and "Салом!" appears. Once per start of the app; the site
+  shows it once per visit. After signing in the same pupil says "Салом" with
+  the person's name.
 
 ## Building
 

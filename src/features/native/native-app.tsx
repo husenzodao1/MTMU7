@@ -15,11 +15,11 @@ import { pathForAppLink } from "@/lib/native/app";
  * permissions plugin (build 10), the new icon and splash (build 11) and the
  * keyboard resizing the page instead of panning it (build 12), files
  * saved into Downloads — samples, report cards, an import's result — with
- * Google sign-in saying why it stopped (build 13), and no browser-like
- * stretch at the ends of a page (build 15). An older one is offered the
- * update.
+ * Google sign-in saying why it stopped (build 13), no browser-like stretch
+ * at the ends of a page (build 15) and the one-colour icon and splash (build
+ * 17). An older one is offered the update.
  */
-const MIN_APP_BUILD = 15;
+const MIN_APP_BUILD = 17;
 
 /** What Capacitor's bridge puts on window, as far as the diagnostics look. */
 interface CapacitorGlobal {
