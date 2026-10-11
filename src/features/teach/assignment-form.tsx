@@ -11,6 +11,7 @@ export interface AssignmentFormValues {
   id: string;
   classSubjectId: string;
   title: string;
+  pages: string | null;
   instructions: string | null;
   dueAt: string;
   maxScore: number | null;
@@ -41,7 +42,8 @@ export function AssignmentForm({
       ) : (
         <SelectField name="classSubjectId" label={t("classSubject")} options={classSubjects} defaultValue={defaultClassSubjectId} placeholder={t("chooseClass")} required />
       )}
-      <TextField name="title" label={t("assignmentTitle")} defaultValue={assignment?.title} required maxLength={300} />
+      <TextField name="title" label={t("assignmentTitle")} hint={t("assignmentTitleHint")} defaultValue={assignment?.title} required maxLength={300} />
+      <TextField name="pages" label={t("pages")} hint={t("pagesHint")} defaultValue={assignment?.pages ?? ""} maxLength={200} />
       <TextAreaField name="instructions" label={t("instructions")} hint={t("instructionsHint")} defaultValue={assignment?.instructions ?? ""} rows={8} maxLength={20000} />
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField name="dueAt" type="datetime-local" label={t("dueAt")} defaultValue={assignment?.dueAt} />

@@ -85,7 +85,10 @@
     "lessons": {
       "period": "Period {number}",
       "room": "Room {room}",
-      "substitution": "Substitution"
+      "substitution": "Substitution",
+      "now": "Now",
+      "next": "Next",
+      "shift": "Shift {shift}"
     },
     "schedule": {
       "title": "Timetable",
@@ -132,6 +135,9 @@
     },
     "homework": {
       "title": "Homework",
+      "pages": "Pages",
+      "journalTitle": "From the class journal",
+      "journalHint": "Each lesson's topic and the homework the teacher wrote in the journal, for the last two weeks.",
       "noStudent": "No student record is linked to this account.",
       "views": "Homework views",
       "current": "Current",
