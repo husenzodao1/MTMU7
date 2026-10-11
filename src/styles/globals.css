@@ -3255,3 +3255,35 @@ a.updates-card:hover {
 .mini-table tbody tr:first-child td {
   border-top: none;
 }
+
+/*
+ * Loading shapes (components/ui/skeletons.tsx). Each page's loading screen is
+ * drawn in the shapes of what is about to arrive — round where a photo will
+ * be, a row where a row will be — and one soft light passes over all of them,
+ * the same on every page. Without motion they simply stand still.
+ */
+.bone {
+  background-color: var(--color-surface-sunken);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-surface) 60%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 120% 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bone {
+    animation: bone-shine 1.5s ease-in-out infinite;
+  }
+}
+@keyframes bone-shine {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}

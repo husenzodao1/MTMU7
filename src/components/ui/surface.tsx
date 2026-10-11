@@ -136,7 +136,7 @@ export function EmptyState({ icon, title, description, action, className }: { ic
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-surface-sunken", className)} aria-hidden />;
+  return <div className={cn("bone rounded-md", className)} aria-hidden />;
 }
 
 export function LoadingState({ label }: { label: string }) {
