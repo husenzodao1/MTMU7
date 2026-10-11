@@ -24,12 +24,11 @@ describe("the filled-in examples", () => {
     assert.deepEqual([...missing], []);
   });
 
-  it("give every subject a unique name and code", () => {
+  it("give every subject a unique name, and nothing but the name", () => {
     const rows = sampleRows("subjects");
     const names = rows.map((row) => String(row[0]).toLowerCase());
-    const codes = rows.map((row) => String(row[3]));
     assert.equal(new Set(names).size, names.length);
-    assert.equal(new Set(codes).size, codes.length);
-    assert.ok(codes.every((code) => /^[A-Z0-9_-]{1,20}$/.test(code)));
+    // The Russian and English names and the code are the platform's (00087).
+    assert.ok(rows.every((row) => row.length === 1));
   });
 });

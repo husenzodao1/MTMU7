@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { FileDown, School } from "lucide-react";
+import { FileDown, FileUp, School } from "lucide-react";
+import Link from "next/link";
 import { AccountsView } from "@/features/accounts/accounts-view";
 import { AccountsToolbar } from "@/features/accounts/list-parts";
 import { loadDirectory, myHomeroomClasses, PAGE_SIZE } from "@/features/accounts/queries";
@@ -53,6 +54,12 @@ export default async function MyClassPage({ searchParams }: { searchParams: Prom
                 {classes.length > 1 ? ` · ${c.label}` : ""}
               </a>
             ))}
+            {/* The class teacher's own workbook: pupils and their parents in,
+                every login and password back (00088). */}
+            <Link href="/my-class/import" className={buttonClasses("secondary")}>
+              <FileUp aria-hidden />
+              {t("importMyClass")}
+            </Link>
             <AccountsToolbar basePath="/my-class" canCreate canImport={false} exportKinds={["students"]} newLabel={t("newPupil")} />
           </>
         }

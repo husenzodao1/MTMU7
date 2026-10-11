@@ -19,8 +19,18 @@ export interface ColumnSpec {
   width?: number;
   /** Filled in by the portal, not by the office: Логин and Парол. */
   issued?: boolean;
+  /**
+   * Read when a file has it, never written into a new template: a column an
+   * older template had, kept so an old file still reads in full.
+   */
+  legacy?: boolean;
   /** One line under the heading, in the instructions sheet. */
   hint?: string;
+}
+
+/** The columns a new workbook is written with (everything but the legacy ones). */
+export function writtenColumns(spec: SheetSpec): ColumnSpec[] {
+  return spec.columns.filter((column) => !column.legacy);
 }
 
 export interface SheetSpec {
@@ -38,13 +48,24 @@ const ISSUED: ColumnSpec[] = [
 ];
 
 const SHARED_INSTRUCTIONS = [
-  "Сутунҳои «Логин» ва «Парол»-ро пур накунед. Пас аз ворид кардан система онҳоро худаш пур мекунад ва шумо ҳамин файлро бо логину парол зеркашӣ мекунед.",
+  "Сутунҳои хокистарии «Логин» ва «Парол»-ро пур накунед. Пас аз ворид кардан система онҳоро худаш пур мекунад ва шумо ҳамин файлро бо логину парол зеркашӣ мекунед.",
   "Санаро дар шакли СССС-ММ-РР нависед, масалан 2015-03-04.",
-  "Номи синфро бо ҳарфҳои кириллӣ нависед: 5А, 7Б, 11В.",
+  "Номи синфро бо ҳарфҳои кириллӣ нависед: 5А, 7Б, 11Ғ. Синфҳои 1А … 11Д дар система аллакай ҳастанд; синфе, ки хонанда надорад, намоён нест.",
   "Почтаи электронӣ барои ҳар кас бояд ягона бошад. Ду нафар бо як почта ворид карда намешаванд.",
-  "Ҳамин файлро баъдтар ислоҳ карда, аз нав ворид кунед — маълумот навсозӣ мешавад ва такрор намешавад. Пароли додашуда иваз намешавад.",
+  "Ҳамин файлро баъдтар ислоҳ карда, аз нав ворид кунед — танҳо он чи иваз шудааст навсозӣ мешавад. Логин ва пароли додашуда иваз намешаванд ва дубора дода намешаванд.",
+  "Катаки холӣ чизеро пок намекунад: он чи дар система аллакай ҳаст, мемонад.",
   "Сутунҳои иловагӣ халал намерасонанд: система онҳоро нодида мегирад ва ҳангоми баргардонидан нигоҳ медорад.",
 ];
+
+/** The four cells written for each parent, father first. */
+function parentColumns(prefix: "father" | "mother", who: string): ColumnSpec[] {
+  return [
+    { key: `${prefix}_name`, header: `${who} (насаб, ном, номи падар)`, width: 30, hint: prefix === "father" ? "Каримов Анвар Саидович" : "Каримова Мадина Аҳмадовна" },
+    { key: `${prefix}_workplace`, header: `Ҷои кори ${who.toLowerCase()}`, width: 26, hint: "Масалан: Беморхонаи шаҳрӣ, табиб" },
+    { key: `${prefix}_phone`, header: `Телефони ${who.toLowerCase()}`, width: 20, hint: "+992 90 123 45 67" },
+    { key: `${prefix}_email`, header: `Почтаи ${who.toLowerCase()}`, width: 28, hint: "Агар бошад" },
+  ];
+}
 
 export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
   students: {
@@ -58,18 +79,24 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
       { key: "middle_name", header: "Номи падар", width: 22 },
       { key: "date_of_birth", header: "Санаи таваллуд", required: true, width: 18, hint: "СССС-ММ-РР" },
       { key: "gender", header: "Ҷинс", width: 12, hint: "писар ё духтар" },
-      { key: "email", header: "Почтаи электронӣ", required: true, width: 30, hint: "Барои синфҳои 1–5 лозим нест." },
+      { key: "email", header: "Почтаи электронӣ", width: 30, hint: "Барои синфҳои 1–5 лозим нест." },
       { key: "phone", header: "Телефон", width: 20 },
-      { key: "guardian_name", header: "Волидайн (насаб ва ном)", width: 28, hint: "Барои синфҳои 1–4 ҳатмӣ: Каримова Мадина" },
-      { key: "guardian_phone", header: "Телефони волидайн", width: 20, hint: "Барои синфҳои 1–4 ҳатмӣ" },
-      { key: "guardian_relationship", header: "Волидайн кист", width: 16, hint: "модар, падар ё васӣ" },
+      ...parentColumns("father", "Падар"),
+      ...parentColumns("mother", "Модар"),
       ...ISSUED,
+      { key: "father_login", header: "Логини падар", issued: true, width: 14, hint: "Система пур мекунад." },
+      { key: "father_password", header: "Пароли падар", issued: true, width: 14, hint: "Система пур мекунад." },
+      { key: "mother_login", header: "Логини модар", issued: true, width: 14, hint: "Система пур мекунад." },
+      { key: "mother_password", header: "Пароли модар", issued: true, width: 14, hint: "Система пур мекунад." },
     ],
     instructions: [
       "Ҳар сатр як хонанда. Хонандагонро аз рӯи синф паси ҳам нависед.",
-      "Барои синфҳои 1–4 волидайн (насаб, ном ва телефон) ҳатмист. Хонандагони синфҳои 1–5 бе почта ворид мешаванд: онҳо бо логин ворид мешаванд ва логинашон ба Telegram-и волидон фиристода мешавад.",
+      "Падар ва модарро дар ҳамин сатр нависед: ному насаб, ҷои кор, телефон ва почта (агар бошад). Волидайн танҳо аз ҳамин файл муайян мешаванд.",
+      "Ба ҳар падару модар система логин ва пароли кӯтоҳ медиҳад (ду ҳарф ва шаш рақам) ва онҳоро дар ҳамин файл бармегардонад. Бо онҳо волидайн ба сомона ва ба боти Telegram ворид мешаванд.",
+      "Бародару хоҳарон, ки падар ё модарашон бо як рақами телефон навишта шудааст, як падару модар доранд — логини дуюм дода намешавад.",
+      "Барои синфҳои 1–4 ақаллан яке аз волидайн (ном ва телефон) ҳатмист. Хонандагони синфҳои 1–5 бе почта ворид мешаванд: онҳо бо логин ворид мешаванд.",
       ...SHARED_INSTRUCTIONS,
-      "Агар синфи навишташуда ҳанӯз набошад, система онро месозад. Пеш аз тасдиқ рӯйхати синфҳои нав нишон дода мешавад — хатоҳои имлоро маҳз дар он ҷо бинед.",
+      "Хонандаи аллакай воридшуда аз рӯи насаб, ном ва санаи таваллуд шинохта мешавад — ҳатто агар синфаш иваз шуда бошад. Барои ӯ ҳисоби нав сохта намешавад.",
     ],
   },
   staff: {
@@ -81,7 +108,7 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
       { key: "last_name", header: "Насаб", required: true, width: 22 },
       { key: "first_name", header: "Ном", required: true, width: 20 },
       { key: "middle_name", header: "Номи падар", width: 22 },
-      { key: "subjects", header: "Фанҳо", width: 34, hint: "Бо нуқта-вергул ҷудо кунед: Математика; Физика" },
+      { key: "subjects", header: "Фанҳо", width: 34, hint: "Маълумот барои аккаунт: Математика; Физика" },
       { key: "homeroom_class", header: "Роҳбари синф", width: 16, hint: "Агар роҳбари синф бошад: 5А" },
       { key: "position", header: "Вазифа", width: 22, hint: "омӯзгор, директор, муовини директор, китобдор" },
       { key: "email", header: "Почтаи электронӣ", required: true, width: 30 },
@@ -91,6 +118,8 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
     instructions: [
       "Ҳар сатр як омӯзгор ё корманд.",
       "Рақами омӯзгор ягона аст ва ҳамон рақамест, ки дар ҷадвали дарсӣ дар қавс навишта мешавад — масалан «Математика (14)».",
+      "Сутуни «Фанҳо» танҳо маълумот аст ва дар аккаунти омӯзгор нишон дода мешавад. Кӣ дар кадом синф кадом фанро дарс медиҳад, аз ҷадвали дарсӣ муайян мешавад.",
+      "Роҳбари синф ба синфи худ худкор мепайвандад: баъди ворид шудан хонандагони синфи худро мебинад, онҳоро ворид мекунад ва логину пароли волидайнро мегирад.",
       ...SHARED_INSTRUCTIONS,
     ],
   },
@@ -137,47 +166,45 @@ export const TIMETABLE_TEMPLATE: SheetSpec = {
   columns: [
     { key: "class_name", header: "Синф", required: true, width: 10 },
     { key: "day", header: "Рӯз", required: true, width: 14, hint: "Душанбе … Шанбе" },
+    { key: "shift", header: "Баст", width: 8, hint: "1 ё 2" },
     ...Array.from({ length: 12 }, (_, index) => ({
       key: `p${index + 1}`,
       header: String(index + 1),
       width: 22,
+      // The school rings five bells a shift; a file from an older template
+      // with more columns is still read, so nothing in it goes unnoticed.
+      legacy: index >= 5,
     })),
   ],
   instructions: [
-    "Ҳар сатр як синф ва як рӯз. Сутунҳои 1–12 дарсҳои он рӯзанд.",
-    "Дар ҳар катак номи фан ва дар қавс рақами омӯзгорро нависед: Математика (14).",
-    "Рақами омӯзгор ҳамон рақамест, ки дар шаблони омӯзгорон навишта шудааст.",
+    "Ҳар сатр як синф ва як рӯз. Сутунҳои 1–5 дарсҳои он рӯзанд.",
+    "Дар сутуни «Баст» нависед, ки синф дар басти 1 ё 2 мехонад. Вақти дарсҳо худкор аст:",
+    "Басти 1: 8:05–8:45 · 8:50–9:35 · 9:40–10:25 · 10:35–11:20 · 11:25–12:10.",
+    "Басти 2: 13:00–13:45 · 13:50–14:35 · 14:40–15:25 · 15:35–16:20 · 16:25–17:10.",
+    "Дар ҳар катак номи фан ва дар қавс рақами омӯзгорро нависед: Математика (14). Ҳамин рақам муайян мекунад, ки кӣ дар кадом соат ба кадом синф дарс медиҳад.",
+    "Рақами омӯзгор ҳамон рақамест, ки дар файли омӯзгорон навишта шудааст.",
     "Агар синф ба ду гурӯҳ ҷудо шуда бошад, ҳар дуро бо хати каҷ нависед: Забони англисӣ (14) / Забони англисӣ (19).",
-    "Катаки холӣ маънои дарси холиро дорад.",
-    "Агар омӯзгор ҳанӯз муайян нашуда бошад, танҳо номи фанро нависед.",
+    "Катаки холӣ маънои дарси холиро дорад. Агар омӯзгор ҳанӯз муайян нашуда бошад, танҳо номи фанро нависед.",
     "Рӯзҳои дар файл буда пурра иваз мешаванд; рӯзҳое, ки дар файл нестанд, бетағйир мемонанд.",
-    "Синфҳо бояд аллакай мавҷуд бошанд — аввал хонандагонро ворид кунед, баъд ҷадвалро.",
+    "Фанҳое, ки ҳанӯз нестанд, худкор сохта мешаванд.",
   ],
 };
 
 /**
- * The school's subjects, one per row. Only the Tajik name is required; the
- * rest can follow later, and an empty cell never wipes out what a subject
- * already has. The timetable creates the subjects it meets by name, so the
- * same name here gives that subject its other names and its code.
+ * The school's subjects, one per row: the Tajik name and nothing else. The
+ * platform gives each its Russian and English names and a short code by
+ * itself (00087), and the timetable creates the subjects it meets by name,
+ * so the same name here and there is the same subject.
  */
 export const SUBJECTS_TEMPLATE: SheetSpec = {
   sheet: "Фанҳо",
   title: "Фанҳои мактаб",
   maxRows: 300,
-  columns: [
-    { key: "name_tg", header: "Номи фан", required: true, width: 30, hint: "Бо забони тоҷикӣ: Математика" },
-    { key: "name_ru", header: "Бо забони русӣ", width: 28, hint: "Математика" },
-    { key: "name_en", header: "Бо забони англисӣ", width: 26, hint: "Mathematics" },
-    { key: "code", header: "Рамз", width: 12, hint: "Ҳарфҳои лотинӣ ва рақам: MATH" },
-    { key: "weekly_hours", header: "Соат дар ҳафта", width: 16, hint: "Масалан 5 ё 1,5" },
-  ],
+  columns: [{ key: "name_tg", header: "Номи фан", required: true, width: 34, hint: "Бо забони тоҷикӣ: Математика" }],
   instructions: [
-    "Ҳар сатр як фан. Танҳо «Номи фан» ҳатмист.",
-    "Агар фан аллакай бошад (бо ҳамин ном), он навсозӣ мешавад ва такрор намешавад; фани бойгонӣ боз фаъол мегардад.",
-    "Катаки холӣ чизеро пок намекунад: он чи фан аллакай дорад, мемонад.",
-    "Рамз кӯтоҳ ва бо ҳарфҳои лотинӣ, рақам, - ё _: MATH, TAJ-LIT. Ду фан як рамз дошта наметавонанд.",
-    "Соат дар ҳафта — аз 0,5 то 20. Он ҳангоми таъин кардани фан ба синф пешниҳод мешавад.",
+    "Ҳар сатр як фан — танҳо номи он бо забони тоҷикӣ.",
+    "Номи русӣ ва англисӣ ва рамзи фанро система худаш муайян мекунад; ҳангоми интихоби забони русӣ ҷадвали дарсӣ ва баҳоҳо бо русӣ нишон дода мешаванд.",
+    "Агар фан аллакай бошад (бо ҳамин ном), такрор намешавад; фани бойгонӣ боз фаъол мегардад.",
     "Номи фанро айнан ҳамон тавр нависед, ки дар ҷадвали дарсӣ менависед — пас ҳарду як фан мешаванд.",
   ],
 };

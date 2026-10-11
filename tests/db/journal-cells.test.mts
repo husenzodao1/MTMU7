@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asUser, createDatabase, errorOf, one, type Db } from "./harness.mts";
-import { seedTenants, type Tenants } from "./fixtures.mts";
+import { SCHOOL_A, seedTenants, type Tenants } from "./fixtures.mts";
 import { seedAcademic, type Academic } from "./academic-fixtures.mts";
 
 let db: Db;
@@ -159,10 +159,9 @@ describe("ruling a column", () => {
     );
     assert.equal(column!.label, "Чоряки I");
     assert.equal(column!.kind, "term");
-    const term = await one<{ end_date: string }>(db, `SELECT end_date::text FROM public.academic_terms WHERE id = $1`, [
-      a.termCurrent,
-    ]);
-    assert.equal(column!.column_date, term!.end_date, "it still has to sit somewhere in the order");
+    // Quarters have no fixed dates: the column is the day the mark is given.
+    const today = await one<{ d: string }>(db, `SELECT app.school_today($1)::text AS d`, [SCHOOL_A]);
+    assert.equal(column!.column_date, today!.d, "dated the day it is written");
   });
 
   it("refuses a quarter column with no name", async () => {

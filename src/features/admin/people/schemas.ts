@@ -44,11 +44,6 @@ export const staffSchema = z.object({
   hireDate: optionalDate,
   phone,
   email: z.string().trim().toLowerCase().max(255).email("validation.email").optional().or(z.literal("")).transform((v) => v || null),
-  maxWeeklyHours: z
-    .string()
-    .optional()
-    .transform((v) => (v?.trim() ? Number(v.replace(",", ".")) : null))
-    .refine((v) => v === null || (Number.isFinite(v) && v > 0 && v <= 60), "validation.hours"),
 });
 
 export const guardianSchema = z.object({

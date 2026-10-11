@@ -472,7 +472,11 @@
         "invalid_code": "A code is Latin letters, digits, - and _ only (up to 20)",
         "invalid_hours": "Hours must be between 0.5 and 20",
         "code_taken": "This code already belongs to another subject",
-        "phone_taken": "this number is already on another account"
+        "phone_taken": "this number is already on another account",
+        "not_your_class": "not your class — import only the pupils of your own class",
+        "no_bell": "this shift has no such lesson (five lessons)",
+        "invalid_shift": "the shift is 1 or 2",
+        "guardian_name": "write the surname and the first name"
       },
       "workbook": {
         "instructions": "Download the workbook, fill it in with Excel and send it back. The check tells you what is wrong; the import then returns the same file with the logins and passwords filled in.",
@@ -496,7 +500,9 @@
         "sampleSuffix": "example",
         "downloadSample": "Filled-in example",
         "notifyParents": "Send new pupils' logins and passwords in grades 1–{grade} to their parents on Telegram",
-        "telegramSent": "{count} messages sent to parents on Telegram."
+        "telegramSent": "{count} messages sent to parents on Telegram.",
+        "parentsSummary": "Parents: {issued} new logins out of {total}; the rest had already been issued.",
+        "parentsIssued": "{count} parents were given a new login and password — they are in the same file."
       },
       "errors": {
         "noFile": "No file was chosen.",
@@ -522,7 +528,16 @@
         "subjects": "Subjects",
         "guardian_name": "Parent",
         "guardian_phone": "Parent's phone",
-        "guardian_relationship": "Relationship"
+        "guardian_relationship": "Relationship",
+        "father_name": "Father",
+        "father_phone": "Father's telephone",
+        "father_email": "Father's e-mail",
+        "father_workplace": "Father's workplace",
+        "mother_name": "Mother",
+        "mother_phone": "Mother's telephone",
+        "mother_email": "Mother's e-mail",
+        "mother_workplace": "Mother's workplace",
+        "shift": "Shift"
       },
       "timetable": {
         "newSubjectsTitle": "Subjects that will be created",
@@ -629,7 +644,7 @@
     },
     "classes": {
       "title": "Classes",
-      "description": "Classes of the academic year.",
+      "description": "The classes that have pupils.",
       "descriptionYear": "Classes of the {year} academic year.",
       "new": "New class",
       "newHint": "The class is created in the {year} academic year.",
@@ -639,7 +654,7 @@
       "show": "Show",
       "activeOnly": "Active classes",
       "includeArchived": "Including archived",
-      "empty": "No classes in this academic year.",
+      "empty": "No class has any pupils yet.",
       "name": "Class",
       "nameHint": "For example 9A.",
       "gradeLevel": "Grade",
@@ -689,7 +704,28 @@
       "hasActiveStudents": "Move or promote the students before archiving the class.",
       "archived": "The class has been archived.",
       "restored": "The class has been restored.",
-      "emptyHint": "Create classes for the current academic year and assign homeroom teachers."
+      "emptyHint": "Classes 1А … 11Д exist by themselves. Import the pupils from Excel — each lands in their class and the class appears here.",
+      "summary": "School year {year} · {classes} classes · {pupils} pupils",
+      "importPupils": "Import pupils (Excel)",
+      "gradeHeading": "Form {grade}",
+      "group": "group {group}",
+      "rosterHint": "Move a pupil to another class or take them out of the school. The pupils' Excel export reflects it at once.",
+      "move": "Move",
+      "moveTitle": "Move {name} to another class",
+      "moveHint": "Marks and attendance so far stay with the old class.",
+      "moveTo": "Move to",
+      "removeTitle": "Take {name} out of the school?",
+      "removeHint": "The pupil leaves the class and their login stops working. Their marks and history are kept; importing them again from Excel brings them back.",
+      "remove": "Remove",
+      "homeroomHint": "The class teacher comes from the teachers' Excel (the «Роҳбари синф» column).",
+      "changeHomeroom": "Change",
+      "shiftTitle": "Shift",
+      "shiftHint": "The class's lesson times follow its shift.",
+      "subjectsFromTimetable": "From the timetable: who teaches which subject.",
+      "openTimetable": "Timetable",
+      "noTeacher": "No teacher yet",
+      "moved": "The pupil was moved.",
+      "removedFromSchool": "The pupil was taken out of the school."
     },
     "subjects": {
       "title": "Subjects",
@@ -715,7 +751,9 @@
       "restoreTitle": "Restore subject?",
       "emptyHint": "Add the subjects taught at the school; they are then assigned to classes.",
       "import": "Import from Excel",
-      "importDescription": "Bring in all subjects at once from one Excel file: download the template or start from the ready-made sample."
+      "importDescription": "Bring in all subjects at once from one Excel file: download the template or start from the ready-made sample.",
+      "nameOnlyHint": "The Tajik name only. The Russian and English names and the code are worked out by the platform.",
+      "nameRuHint": "Filled in automatically; correct it only if it is wrong."
     },
     "gradebook": {
       "title": "Gradebook oversight",
@@ -856,7 +894,13 @@
       "substitutionSaved": "The substitution has been saved.",
       "substitutionCancelled": "The substitution has been cancelled.",
       "import": "Import the timetable",
-      "importDescription": "Load the timetable from an Excel file. Each cell holds the subject and the teacher's number in brackets."
+      "importDescription": "Load the timetable from an Excel file. Each cell holds the subject and the teacher's number in brackets.",
+      "bellsFixed": "The bells are fixed: two shifts of five lessons. Lesson times in the timetable and in every teacher's and pupil's account come from here.",
+      "time": "Time",
+      "changeShift": "Class shift",
+      "noSubjects": "No subjects yet. Import the subjects, or import the timetable — its subjects are made on the way.",
+      "teacher": "Teacher",
+      "noBell": "This shift has no bell for that lesson (five lessons only)."
     },
     "news": {
       "title": "News desk",
@@ -1731,29 +1775,17 @@
       "doneLabel": "done",
       "todoLabel": "to do",
       "steps": {
-        "year": {
-          "title": "Academic year and terms",
-          "hint": "Set the current year with its quarters or semesters."
-        },
-        "bell": {
-          "title": "Bell schedule",
-          "hint": "Lesson numbers and their times; add the second shift if there is one."
-        },
-        "classes": {
-          "title": "Classes",
-          "hint": "Class names, grade levels and homeroom teachers."
-        },
         "staff": {
-          "title": "Teachers and staff",
-          "hint": "Add staff records, then their subjects and classes."
+          "title": "Teachers from Excel",
+          "hint": "Import the teachers with their number, subjects and class — each gets a login and password."
         },
         "students": {
-          "title": "Students",
-          "hint": "Add students one by one or import the register from a file."
+          "title": "Pupils and parents from Excel",
+          "hint": "Import the pupils with their parents; the classes fill themselves."
         },
-        "identity": {
-          "title": "Official identity of the school",
-          "hint": "Names, emblem, photograph and contacts, then approve them."
+        "timetable": {
+          "title": "Timetable",
+          "hint": "Import the timetable with the teachers' numbers — the lessons appear in every teacher's and pupil's account."
         }
       }
     },
@@ -1918,7 +1950,9 @@
       "homeroom_class_id": "Homeroom class",
       "homeroomNone": "No homeroom",
       "relationship": "Relationship",
-      "searchPupil": "Find a pupil by name…"
+      "searchPupil": "Find a pupil by name…",
+      "subjects_note": "Subjects (from the teachers' list)",
+      "subjectsNoteHint": "Information only. The timetable decides who teaches what."
     },
     "positions": {
       "monitor": "Class monitor",
@@ -2020,6 +2054,30 @@
     "unhideTitle": "Bring this account back?",
     "unhideDescription": "The account becomes active again and returns to the lists.",
     "hiddenDone": "The account is hidden.",
-    "unhiddenDone": "The account is back."
+    "unhiddenDone": "The account is back.",
+    "importMyClass": "Import my class from Excel",
+    "importMyClassHint": "The pupils of {classes} with their fathers and mothers. The file comes back with everyone's login and password.",
+    "guardiansFromRegister": "Parents come only from the pupils' Excel workbook.",
+    "childrenFromRegister": "The children come from the pupils' Excel workbook.",
+    "noParents": "No parents yet. Write them in the pupils' workbook and import it again.",
+    "parent": {
+      "workplace": "Workplace",
+      "phone": "Telephone",
+      "email": "E-mail",
+      "login": "Login",
+      "telegramConfirmed": "Confirmed in Telegram",
+      "telegramNotYet": "Not yet confirmed in Telegram"
+    },
+    "classCard": {
+      "title": "Class: {name}",
+      "hint": "Move the pupil to another class or out of the school. The pupils' Excel updates by itself.",
+      "move": "Move to another class",
+      "moveTitle": "Move {name} to another class",
+      "moveTo": "Move to",
+      "chooseClass": "Choose a class",
+      "remove": "Remove from the school",
+      "removeTitle": "Take {name} out of the school?",
+      "removeHint": "Their place in the class ends today and their login stops working. Their marks and history are kept."
+    }
   }
 }

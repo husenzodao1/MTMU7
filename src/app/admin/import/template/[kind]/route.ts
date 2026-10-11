@@ -3,8 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { canEnterAdmin, getAccess } from "@/lib/auth/access";
 import { buildWorkbook } from "@/lib/export/xlsx";
 import { createClient } from "@/lib/supabase/server";
-import { isPeopleKind, PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, type SheetSpec } from "@/features/admin/import/templates";
+import { isPeopleKind, PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, writtenColumns, type SheetSpec } from "@/features/admin/import/templates";
 import { isSampleKind, sampleNotice, sampleRows } from "@/features/admin/import/samples";
+import { myHomeroomClasses } from "@/features/accounts/queries";
 
 export const runtime = "nodejs";
 
@@ -27,7 +28,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
   // page saying so, and its file name says so too.
   const wantsSample = new URL(request.url).searchParams.get("sample") === "1";
   const access = await getAccess();
-  if (!access || !canEnterAdmin(access)) return new NextResponse(null, { status: 403 });
+  if (!access) return new NextResponse(null, { status: 403 });
+  // A class teacher fills in the pupils' workbook of their own class, so the
+  // pupils' template and its example are theirs to download too.
+  if (!canEnterAdmin(access) && !(kind === "students" && access.school && (await myHomeroomClasses(access)).length > 0)) {
+    return new NextResponse(null, { status: 403 });
+  }
 
   const template: SheetSpec | null = isPeopleKind(kind)
     ? PEOPLE_TEMPLATES[kind]
@@ -38,7 +44,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
         : null;
   if (template) {
     const t = await getTranslations("admin.import.workbook");
-    const columns = template.columns.map((column) => ({
+    const columns = writtenColumns(template).map((column) => ({
       header: column.required ? `${column.header}*` : column.header,
       width: column.width,
       issued: column.issued,
@@ -51,14 +57,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
       const supabase = await createClient();
       const { data: classes } = await supabase
         .from("classes")
-        .select("name, grade_level")
+        .select("name, grade_level, enrollments!inner(status), academic_years!inner(is_current)")
         .eq("school_id", access.school.id)
         .eq("is_active", true)
+        .eq("enrollments.status", "active")
+        .eq("academic_years.is_current", true)
         .order("grade_level")
         .order("name");
-      // One prompt row per class that already exists: the office copies it down
-      // for every pupil in that class instead of retyping the name.
-      rows = (classes ?? []).map((row) => columns.map((_, index) => (index === 0 ? row.name : null)));
+      // One prompt row per class that already has pupils: the office copies
+      // it down for every pupil in that class instead of retyping the name.
+      // (1А … 11Д always exist; the empty ones would only be noise.)
+      const names = [...new Set((classes ?? []).map((row) => row.name))];
+      rows = names.map((name) => columns.map((_, index) => (index === 0 ? name : null)));
     }
 
     const front = wantsSample
@@ -84,3 +94,4 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
 
   return new NextResponse(null, { status: 404 });
 }
+

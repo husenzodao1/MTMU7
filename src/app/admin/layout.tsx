@@ -7,6 +7,21 @@ import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { welcomeScript } from "@/features/intro/greetings";
 import { requireAdminArea } from "@/lib/auth/guards";
 import { isWelcome } from "@/lib/auth/welcome";
+import { createClient } from "@/lib/supabase/server";
+
+/**
+ * The school year names and turns itself over (00086). pg_cron does it every
+ * night; the office's first page after the date says so does it too, so a
+ * database without pg_cron still moves on. When nothing is due this is one
+ * quick read.
+ */
+async function keepTheYearCurrent(): Promise<void> {
+  try {
+    await (await createClient()).rpc("ensure_school_year");
+  } catch {
+    // The pages read whatever year there is; this must never stop them.
+  }
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin.nav");
@@ -15,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const access = await requireAdminArea();
-  const [shell, nav, welcome] = await Promise.all([loadShellData(access), adminShellNav(access), isWelcome()]);
+  const [shell, nav, welcome] = await Promise.all([loadShellData(access), adminShellNav(access), isWelcome(), keepTheYearCurrent()]);
 
   return (
     <>

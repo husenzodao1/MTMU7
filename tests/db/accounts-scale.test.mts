@@ -91,7 +91,11 @@ describe("a school filled in September", { timeout: 600_000 }, () => {
             first_name: i % 2 ? "Aziz" : "Madina",
             date_of_birth: `${2019 - grade + 1}-0${1 + (i % 9)}-1${i % 10}`,
             email: grade <= 5 ? "" : `pupil${n}@example.test`,
-            ...(young ? { guardian_name: `Parent${family} Guardian`, guardian_phone: `+992 ${digits}`, guardian_relationship: i % 2 ? "падар" : "модар" } : {}),
+            ...(young
+              ? i % 2
+                ? { father_name: `Parent${family} Guardian`, father_phone: `+992 ${digits}` }
+                : { mother_name: `Parent${family} Guardian`, mother_phone: `+992 ${digits}` }
+              : {}),
           });
         }
       }
@@ -103,18 +107,16 @@ describe("a school filled in September", { timeout: 600_000 }, () => {
       const chunk = rows.slice(offset, offset + 300);
       const done = await timed(90_000, `import of rows ${offset}–${offset + chunk.length}`, () =>
         asUser(db, t.users.adminA, async (tx) =>
-          (await one<{ r: { valid: boolean; created: number; errors: unknown[]; credentials: Array<{ login: string }> } }>(tx,
+          (await one<{ r: { valid: boolean; created: number; errors: unknown[]; credentials: Array<{ login: string }>; parents: Array<{ row: number; login: string; password: string | null }> } }>(tx,
             `SELECT public.import_people('students', $1, false, 0, 300) AS r`, [JSON.stringify(chunk)]))!.r));
       assert.equal(done.valid, true, JSON.stringify(done.errors).slice(0, 400));
       assert.equal(done.created, chunk.length);
       logins.push(...done.credentials.map((c) => c.login));
 
-      const young = chunk.map((row, i): Record<string, string> => ({ ...row, login: done.credentials[i]!.login })).filter((row) => row.guardian_name);
-      if (young.length) {
-        const linked = await asUser(db, t.users.adminA, async (tx) =>
-          (await one<{ n: number }>(tx, `SELECT public.import_guardians($1) AS n`, [JSON.stringify(young)]))!.n);
-        assert.equal(linked, young.length);
-      }
+      // The parents are linked by the same call, each with a login.
+      const young = chunk.filter((row) => row.father_name || row.mother_name);
+      assert.equal(done.parents.length, young.length);
+      assert.ok(done.parents.every((p) => /^[A-Z]{2}\d+$/.test(p.login)));
     }
     assert.equal(new Set(logins).size, PUPILS, "every pupil has a login of their own");
 

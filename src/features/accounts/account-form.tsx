@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BadgeCheck,
   BookOpenCheck,
   Briefcase,
   Crown,
@@ -8,34 +9,28 @@ import {
   HeartHandshake,
   Library,
   Plus,
-  Search,
   ShieldCheck,
-  Trash2,
   UserRound,
-  Users,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { FormField, Input, Select, describedBy } from "@/components/ui/form-controls";
 import { Alert } from "@/components/ui/surface";
 import { useToast } from "@/components/ui/toast";
-import { saveAccountAction, searchPupilsAction, type PupilOption } from "@/features/accounts/actions";
+import { saveAccountAction } from "@/features/accounts/actions";
 import { CredentialsCard } from "@/features/accounts/credentials-card";
 import {
   CLASS_POSITIONS,
-  RELATIONSHIPS,
   kindFromDetails,
   type AccountDetails,
   type AccountInput,
   type AccountKind,
   type ClassPosition,
-  type GuardianInput,
+  type GuardianLink,
   type IssuedLogin,
-  type Relationship,
 } from "@/features/accounts/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -58,11 +53,6 @@ const KIND_ICON: Record<AccountKind, typeof UserRound> = {
 
 const STAFF_KINDS: AccountKind[] = ["teacher", "director", "vice_principal", "librarian", "staff"];
 
-interface GuardianDraft extends GuardianInput {
-  key: string;
-  label?: string;
-  telegram?: boolean;
-}
 
 /**
  * One form for every kind of account, new or existing.
@@ -79,7 +69,6 @@ export function AccountForm({
   basePath,
   allowedKinds,
   classes,
-  parentRequiredMaxGrade,
   parentManagedMaxGrade,
   defaultKind,
 }: {
@@ -87,7 +76,8 @@ export function AccountForm({
   basePath: string;
   allowedKinds: AccountKind[];
   classes: ClassOption[];
-  parentRequiredMaxGrade: number;
+  /** No longer used: parents are not written on this form (00088). */
+  parentRequiredMaxGrade?: number;
   parentManagedMaxGrade: number;
   defaultKind?: AccountKind;
 }) {
@@ -112,37 +102,29 @@ export function AccountForm({
   const [classId, setClassId] = useState(details?.student?.class_id ?? (classes.length === 1 ? classes[0]!.value : ""));
   const [studentNumber, setStudentNumber] = useState(details?.student?.student_number ?? "");
   const [positions, setPositions] = useState<ClassPosition[]>(details?.student?.positions ?? []);
-  const [guardians, setGuardians] = useState<GuardianDraft[]>(
-    (details?.student?.guardians ?? []).map((g) => ({
-      key: g.id,
-      id: g.id,
-      relationship: g.relationship,
-      label: `${g.last_name} ${g.first_name}`.trim(),
-      phone: g.phone ?? undefined,
-    }))
-  );
   const [staff, setStaff] = useState({
     employee_number: details?.staff?.employee_number ?? "",
     position: details?.staff?.position ?? "",
     qualification: details?.staff?.qualification ?? "",
+    subjects_note: details?.staff?.subjects_note ?? "",
     hire_date: details?.staff?.hire_date ?? "",
     homeroom_class_id: details?.staff?.homeroom_class_id ?? "",
   });
-  const [children, setChildren] = useState<Array<{ id: string; name: string; className: string | null }>>(
-    (details?.guardian?.children ?? []).map((c) => ({ id: c.student_id, name: `${c.last_name} ${c.first_name}`.trim(), className: c.class_name }))
-  );
-  const [parentRelationship, setParentRelationship] = useState<Relationship>(details?.guardian?.children[0]?.relationship ?? "mother");
+  // A parent's children come from the pupils' workbook (00088): shown here,
+  // and sent back unchanged so saving a parent's name keeps them.
+  const children = (details?.guardian?.children ?? []).map((c) => ({ id: c.student_id, name: `${c.last_name} ${c.first_name}`.trim(), className: c.class_name, relationship: c.relationship }));
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [issued, setIssued] = useState<IssuedLogin | null>(null);
 
   const chosenClass = classes.find((c) => c.value === classId);
   const typedName = `${fields.last_name} ${fields.first_name}`.trim();
   const grade = chosenClass?.grade ?? details?.student?.grade_level ?? null;
-  const parentRequired = kind === "student" && grade !== null && grade <= parentRequiredMaxGrade;
   const parentManaged = kind === "student" && grade !== null && grade <= parentManagedMaxGrade;
   const emailRequired = !(kind === "parent" || parentManaged) && !(details && !details.email);
   const editingKindLocked = details !== null && (initialKind === "student" || initialKind === "parent");
-  const kindsOnOffer = editingKindLocked ? [initialKind] : details ? allowedKinds.filter((k) => k !== "student" && k !== "parent") : allowedKinds;
+  // Nobody makes a parent by hand: parents come with their child in the
+  // pupils' workbook (00088).
+  const kindsOnOffer = editingKindLocked ? [initialKind] : details ? allowedKinds.filter((k) => k !== "student" && k !== "parent") : allowedKinds.filter((k) => k !== "parent");
 
   const error = (name: string) => errors[name]?.map((key) => tRoot(key)).join(" · ");
   const set = (name: keyof typeof fields) => (value: string) => setFields((current) => ({ ...current, [name]: value }));
@@ -154,14 +136,11 @@ export function AccountForm({
         class_id: classId,
         student_number: studentNumber,
         positions,
-        guardians: guardians.map(({ id, last_name, first_name, middle_name, phone, relationship }) =>
-          id ? { id, relationship } : { last_name, first_name, middle_name, phone, relationship }
-        ),
       };
     } else if (STAFF_KINDS.includes(kind)) {
       base.staff = { ...staff };
     } else if (kind === "parent") {
-      base.parent = { children: children.map((c) => c.id), relationship: parentRelationship };
+      base.parent = { children: children.map((c) => c.id), relationship: children[0]?.relationship ?? "guardian" };
     }
     return base;
   };
@@ -337,13 +316,8 @@ export function AccountForm({
               </div>
             </Section>
 
-            <Section
-              title={t("sections.guardians")}
-              description={parentRequired ? t("guardianRequired", { grade: parentRequiredMaxGrade }) : undefined}
-              tone={error("guardians") ? "danger" : undefined}
-            >
-              <GuardiansEditor guardians={guardians} onChange={setGuardians} />
-              {error("guardians") ? <p className="text-sm font-medium text-danger-700" role="alert">{error("guardians")}</p> : null}
+            <Section title={t("sections.guardians")} description={t("guardiansFromRegister")}>
+              <ParentsList parents={details?.student?.guardians ?? []} />
             </Section>
           </>
         ) : null}
@@ -370,21 +344,33 @@ export function AccountForm({
               </FormField>
               <Text id="hire_date" type="date" label={t("fields.hire_date")} value={staff.hire_date} onChange={(v) => setStaff((s) => ({ ...s, hire_date: v }))} />
               <Text id="qualification" label={t("fields.qualification")} value={staff.qualification} onChange={(v) => setStaff((s) => ({ ...s, qualification: v }))} className="sm:col-span-2" />
+              <Text
+                id="subjects_note"
+                label={t("fields.subjects_note")}
+                hint={t("fields.subjectsNoteHint")}
+                value={staff.subjects_note}
+                onChange={(v) => setStaff((s) => ({ ...s, subjects_note: v }))}
+                className="sm:col-span-2"
+              />
             </div>
           </Section>
         ) : null}
 
         {kind === "parent" ? (
-          <Section title={t("sections.children")} tone={error("children") ? "danger" : undefined}>
-            <FormField label={t("fields.relationship")} htmlFor="parent_relationship" className="max-w-xs">
-              <Select id="parent_relationship" value={parentRelationship} onChange={(e) => setParentRelationship(e.target.value as Relationship)}>
-                {RELATIONSHIPS.map((r) => (
-                  <option key={r} value={r}>{t(`relationships.${r}`)}</option>
+          <Section title={t("sections.children")} description={t("childrenFromRegister")}>
+            {children.length === 0 ? (
+              <p className="text-sm text-ink-muted">{t("noChildren")}</p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {children.map((c) => (
+                  <li key={c.id} className="rounded-full border border-line bg-surface-muted/60 px-3 py-1 text-sm">
+                    {c.name}
+                    {c.className ? <span className="text-ink-muted"> · {c.className}</span> : null}
+                    <span className="text-ink-muted"> · {t(`relationships.${c.relationship}`)}</span>
+                  </li>
                 ))}
-              </Select>
-            </FormField>
-            <ChildrenPicker picked={children} onChange={setChildren} />
-            {error("children") ? <p className="text-sm font-medium text-danger-700" role="alert">{error("children")}</p> : null}
+              </ul>
+            )}
           </Section>
         ) : null}
       </div>
@@ -456,140 +442,39 @@ function Text({
   );
 }
 
-/** The parents written into a pupil's form: those already linked, and new ones. */
-function GuardiansEditor({ guardians, onChange }: { guardians: GuardianDraft[]; onChange: (next: GuardianDraft[]) => void }) {
+/**
+ * A pupil's parents, as the pupils' workbook wrote them (00088): who they are,
+ * where they work, how to reach them, their own login and whether they have
+ * confirmed themselves in the Telegram bot. Read here, written only by the
+ * workbook.
+ */
+function ParentsList({ parents }: { parents: GuardianLink[] }) {
   const t = useTranslations("accounts");
-  const update = (key: string, patch: Partial<GuardianDraft>) => onChange(guardians.map((g) => (g.key === key ? { ...g, ...patch } : g)));
+  if (parents.length === 0) return <p className="text-sm text-ink-muted">{t("noParents")}</p>;
   return (
-    <div className="space-y-3">
-      {guardians.map((g) => (
-        <div key={g.key} className="rounded-xl border border-line bg-surface-muted/40 p-3">
-          <div className="flex items-start gap-3">
-            <span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-secondary ring-1 ring-line">
-              <Users className="size-4" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1 space-y-3">
-              {g.id ? (
-                <p className="text-sm">
-                  <span className="font-semibold text-ink">{g.label}</span>
-                  {g.phone ? <span className="text-ink-muted"> · {g.phone}</span> : null}
-                </p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Input aria-label={t("fields.last_name")} placeholder={t("fields.last_name")} value={g.last_name ?? ""} onChange={(e) => update(g.key, { last_name: e.target.value })} />
-                  <Input aria-label={t("fields.first_name")} placeholder={t("fields.first_name")} value={g.first_name ?? ""} onChange={(e) => update(g.key, { first_name: e.target.value })} />
-                  <Input aria-label={t("fields.phone")} placeholder={`${t("fields.phone")} +992 …`} type="tel" value={g.phone ?? ""} onChange={(e) => update(g.key, { phone: e.target.value })} />
-                </div>
-              )}
-              <div className="flex flex-wrap gap-1.5">
-                {RELATIONSHIPS.map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={g.relationship === r}
-                    onClick={() => update(g.key, { relationship: r })}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs font-medium",
-                      g.relationship === r ? "border-brand-500 bg-brand-50 text-brand-text-strong" : "border-line text-ink-secondary hover:border-brand-300"
-                    )}
-                  >
-                    {t(`relationships.${r}`)}
-                  </button>
-                ))}
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {parents.map((p) => (
+        <li key={p.id} className="rounded-xl border border-line bg-surface p-3 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{t(`relationships.${p.relationship}`)}</p>
+          <p className="mt-0.5 font-semibold text-ink">{[p.last_name, p.first_name, p.middle_name].filter(Boolean).join(" ")}</p>
+          <dl className="mt-1.5 space-y-0.5 text-ink-secondary">
+            {p.workplace ? <div><dt className="sr-only">{t("parent.workplace")}</dt><dd>{p.workplace}</dd></div> : null}
+            {p.phone ? (
+              <div>
+                <dt className="sr-only">{t("parent.phone")}</dt>
+                <dd><a href={`tel:${p.phone.replace(/[^+\d]/g, "")}`} className="hover:text-brand-text hover:underline">{p.phone}</a></dd>
               </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onChange(guardians.filter((x) => x.key !== g.key))}
-              className="rounded-full p-1.5 text-ink-muted hover:bg-danger-50 hover:text-danger-700"
-              aria-label={t("removeGuardian")}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </button>
-          </div>
-        </div>
+            ) : null}
+            {p.email ? <div><dt className="sr-only">{t("parent.email")}</dt><dd className="truncate">{p.email}</dd></div> : null}
+            {p.login ? <div><dt className="inline">{t("parent.login")}: </dt><dd className="inline font-mono">{p.login}</dd></div> : null}
+          </dl>
+          <p className={cn("mt-2 inline-flex items-center gap-1 text-xs", p.telegram_confirmed_at ? "text-success-700" : "text-ink-muted")}>
+            <BadgeCheck className="size-3.5" aria-hidden />
+            {p.telegram_confirmed_at ? t("parent.telegramConfirmed") : t("parent.telegramNotYet")}
+          </p>
+        </li>
       ))}
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={() => onChange([...guardians, { key: crypto.randomUUID(), relationship: guardians.length === 0 ? "mother" : "father" }])}
-      >
-        <Plus aria-hidden />
-        {t("addGuardian")}
-      </Button>
-    </div>
+    </ul>
   );
 }
 
-/** A parent's children, found by name among the pupils. */
-function ChildrenPicker({
-  picked: children,
-  onChange,
-}: {
-  picked: Array<{ id: string; name: string; className: string | null }>;
-  onChange: (next: Array<{ id: string; name: string; className: string | null }>) => void;
-}) {
-  const t = useTranslations("accounts");
-  const [query, setQuery] = useState("");
-  const [found, setFound] = useState<PupilOption[]>([]);
-  const [searching, startSearch] = useTransition();
-  const chosen = useMemo(() => new Set(children.map((c) => c.id)), [children]);
-
-  const search = (value: string) => {
-    setQuery(value);
-    if (value.trim().length < 2) return setFound([]);
-    startSearch(async () => {
-      const result = await searchPupilsAction(value);
-      if (result.ok) setFound(result.data ?? []);
-    });
-  };
-
-  return (
-    <div className="space-y-3">
-      {children.length === 0 ? <p className="text-sm text-ink-muted">{t("noChildren")}</p> : null}
-      <ul className="flex flex-wrap gap-2">
-        {children.map((c) => (
-          <li key={c.id} className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 py-1 pe-1 ps-3 text-sm font-medium text-brand-text-strong">
-            {c.name}
-            {c.className ? <span className="text-xs text-ink-muted">· {c.className}</span> : null}
-            <button type="button" onClick={() => onChange(children.filter((x) => x.id !== c.id))} className="rounded-full p-1 hover:bg-brand-100" aria-label={t("removeGuardian")}>
-              <X className="size-3.5" aria-hidden />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-        <Input value={query} onChange={(e) => search(e.target.value)} placeholder={t("fields.searchPupil")} className="ps-9" aria-label={t("fields.searchPupil")} />
-      </div>
-      {found.length > 0 ? (
-        <ul className={cn("max-w-md divide-y divide-line overflow-hidden rounded-xl border border-line", searching && "opacity-60")}>
-          {found
-            .filter((p) => p.studentId && !chosen.has(p.studentId))
-            .map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                <span className="min-w-0 truncate">
-                  <span className="font-medium text-ink">{p.name}</span>
-                  {p.className ? <span className="text-ink-muted"> · {p.className}</span> : null}
-                </span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    onChange([...children, { id: p.studentId!, name: p.name, className: p.className }]);
-                    setQuery("");
-                    setFound([]);
-                  }}
-                >
-                  <Plus aria-hidden />
-                  {t("addChild")}
-                </Button>
-              </li>
-            ))}
-        </ul>
-      ) : null}
-    </div>
-  );
-}

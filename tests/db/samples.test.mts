@@ -4,6 +4,7 @@ import { asUser, createDatabase, one, rows, type Db } from "./harness.mts";
 import { seedTenants, SCHOOL_A, type Tenants } from "./fixtures.mts";
 import { seedAcademic } from "./academic-fixtures.mts";
 import { sampleSpec, type SampleKind } from "../../src/features/admin/import/samples.ts";
+import { writtenColumns } from "../../src/features/admin/import/templates.ts";
 
 /**
  * The examples the school office downloads must themselves import cleanly.
@@ -32,7 +33,7 @@ async function sheet(kind: SampleKind): Promise<Array<Record<string, string>>> {
   const { sampleRows } = await import("../../src/features/admin/import/samples.ts");
   const spec = sampleSpec(kind);
   return sampleRows(kind).map((row) =>
-    Object.fromEntries(spec.columns.map((column, index) => [column.key, row[index] ?? ""]))
+    Object.fromEntries(writtenColumns(spec).map((column, index) => [column.key, row[index] ?? ""]))
   );
 }
 
@@ -67,10 +68,14 @@ describe("the example workbooks, imported in the order the office is given", () 
       one<{ r: unknown[] }>(tx, `SELECT public.import_phone_conflicts($1::jsonb) AS r`, [JSON.stringify(data)])
     );
     assert.deepEqual(phones!.r, [], "no number in the example is in it twice");
-    assert.deepEqual(preview.newClasses, ["1А", "5А", "5Б"]);
+    assert.deepEqual(preview.newClasses, [], "1А, 5А and 5Б are among the classes that are always there");
 
-    const done = await people("students", data, false);
+    const done = await people("students", data, false) as Outcome & { parents?: Array<{ password: string | null }> };
     assert.equal(done.created, data.length);
+    // Eleven parents are written beside the pupils, but the Ҳакимов brother
+    // and sister share theirs: nine accounts, each issued once.
+    assert.equal(done.parents?.length, 11);
+    assert.equal(done.parents?.filter((p) => p.password).length, 9);
   });
 
   it("pupils: the two children on one family address both get in", async () => {

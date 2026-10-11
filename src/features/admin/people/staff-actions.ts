@@ -25,7 +25,6 @@ function staffRow(v: z.output<typeof staffSchema>) {
     hire_date: v.hireDate,
     phone: v.phone,
     email: v.email,
-    max_weekly_hours: v.maxWeeklyHours,
   };
 }
 

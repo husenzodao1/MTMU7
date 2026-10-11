@@ -120,7 +120,8 @@ describe("a teacher in two places at once", () => {
   it("is caught before anything is written, and the number is named", async () => {
     await db.query(
       `INSERT INTO public.classes (school_id, academic_year_id, name, grade_level)
-       SELECT $1, y.id, '9Б', 9 FROM public.academic_years y WHERE y.school_id = $1 AND y.is_current`,
+       SELECT $1, y.id, '9Б', 9 FROM public.academic_years y WHERE y.school_id = $1 AND y.is_current
+       ON CONFLICT DO NOTHING`,
       [SCHOOL_A]
     );
     const outcome = await run(
@@ -129,6 +130,38 @@ describe("a teacher in two places at once", () => {
     );
     assert.deepEqual(problems(outcome), ["2:p3:teacher_busy"]);
     assert.equal(outcome.errors[0]!.detail, "14");
+  });
+});
+
+describe("the school's bells", () => {
+  it("are the two shifts of five lessons, the same for every school", async () => {
+    const bells = await rows<{ shift: number; period_number: number; start_time: string; end_time: string }>(db,
+      `SELECT shift, period_number, start_time::text, end_time::text FROM public.bell_periods WHERE school_id = $1 ORDER BY shift, period_number`,
+      [SCHOOL_A]);
+    assert.equal(bells.length, 10);
+    assert.deepEqual([bells[0]!.start_time, bells[4]!.end_time, bells[5]!.start_time, bells[9]!.end_time],
+      ["08:05:00", "12:10:00", "13:00:00", "17:10:00"]);
+  });
+
+  it("leave no time for a sixth lesson, and the import says so", async () => {
+    const outcome = await run([day("7А", "Шанбе", { p6: "Математика (14)" })], true);
+    assert.deepEqual(problems(outcome), ["1:p6:no_bell"]);
+  });
+
+  it("follow the shift the «Баст» column gives a class", async () => {
+    const outcome = await run([{ ...day("7А", "Шанбе", { p1: "Математика (14)" }), shift: "2" }]);
+    assert.equal(outcome.valid, true, JSON.stringify(outcome.errors));
+    const lesson = await one<{ class_shift: number; lesson_shift: number }>(db,
+      `SELECT c.shift AS class_shift, te.shift AS lesson_shift FROM public.timetable_entries te
+       JOIN public.classes c ON c.id = te.class_id
+       WHERE c.school_id = $1 AND app.class_name_key(c.name) = app.class_name_key('7А') AND te.day_of_week = 6`, [SCHOOL_A]);
+    assert.deepEqual(lesson, { class_shift: 2, lesson_shift: 2 });
+  });
+
+  it("cannot be changed by anybody", async () => {
+    const outcome = await errorOf(() => asUser(db, t.users.adminA, (tx) =>
+      tx.query(`UPDATE public.bell_periods SET start_time = '07:00' WHERE school_id = $1`, [SCHOOL_A])));
+    assert.match(outcome ?? "", /permission denied/);
   });
 });
 

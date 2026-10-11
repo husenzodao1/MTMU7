@@ -8,7 +8,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { Alert } from "@/components/ui/surface";
 import { previewPeopleImportAction } from "@/features/admin/import/people-actions";
 import type { PeopleOutcome } from "@/features/admin/import/people-import";
-import { PEOPLE_TEMPLATES, type PeopleKind } from "@/features/admin/import/templates";
+import { PEOPLE_TEMPLATES, writtenColumns, type PeopleKind } from "@/features/admin/import/templates";
 import { cn } from "@/lib/utils/cn";
 
 type Step = "upload" | "preview" | "done";
@@ -24,7 +24,16 @@ type Step = "upload" | "preview" | "done";
  * The workbook that comes back carries the only copy of the passwords. It is
  * handed over as a download the moment the import finishes, and never stored.
  */
-export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: PeopleKind; parentManagedMaxGrade?: number }) {
+export function PeopleImportWizard({
+  kind,
+  parentManagedMaxGrade = 5,
+  backHref,
+}: {
+  kind: PeopleKind;
+  parentManagedMaxGrade?: number;
+  /** Where "back to the list" goes: the office's register, or the class teacher's own class. */
+  backHref?: string;
+}) {
   const t = useTranslations("admin.import");
   const tRoot = useTranslations();
   const template = PEOPLE_TEMPLATES[kind];
@@ -34,7 +43,7 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
   const [fileName, setFileName] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<PeopleOutcome | null>(null);
-  const [summary, setSummary] = useState<{ created: number; updated: number; telegram: number } | null>(null);
+  const [summary, setSummary] = useState<{ created: number; updated: number; telegram: number; parents: number } | null>(null);
   // Send the youngest pupils' new logins to their parents' Telegram.
   const [notifyParents, setNotifyParents] = useState(kind === "students");
   const [pending, startTransition] = useTransition();
@@ -95,6 +104,7 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
         created: Number(response.headers.get("X-Import-Created") ?? 0),
         updated: Number(response.headers.get("X-Import-Updated") ?? 0),
         telegram: Number(response.headers.get("X-Telegram-Sent") ?? 0),
+        parents: Number(response.headers.get("X-Import-Parents") ?? 0),
       });
       setStep("done");
     });
@@ -130,7 +140,10 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
           <div className="rounded-lg border border-line bg-surface-muted/40 p-4 text-sm">
             <p className="font-medium text-ink">{t("columns")}</p>
             <p className="mt-1 break-words text-xs text-ink-secondary">
-              {template.columns.map((column) => (column.required ? `${column.header}*` : column.header)).join(" · ")}
+              {writtenColumns(template)
+                .filter((column) => !column.issued)
+                .map((column) => (column.required ? `${column.header}*` : column.header))
+                .join(" · ")}
             </p>
             <ul className="mt-3 space-y-1 text-ink-muted">
               {template.instructions.map((line) => (
@@ -257,10 +270,11 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
       {step === "done" && summary ? (
         <Alert tone="success" title={t("doneTitle")}>
           <p>{t("workbook.done", { created: summary.created, updated: summary.updated })}</p>
+          {summary.parents > 0 ? <p className="mt-1">{t("workbook.parentsIssued", { count: summary.parents })}</p> : null}
           {summary.telegram > 0 ? <p className="mt-1">{t("workbook.telegramSent", { count: summary.telegram })}</p> : null}
           <p className="mt-2 font-medium">{t("workbook.keepTheFile")}</p>
           <p className="mt-3 flex flex-wrap gap-2">
-            <Link href={`/admin/accounts?category=${kind === "students" ? "students" : "teachers"}`} className={buttonClasses("secondary", "sm")}>
+            <Link href={backHref ?? `/admin/accounts?category=${kind === "students" ? "students" : "teachers"}`} className={buttonClasses("secondary", "sm")}>
               {t("backToList")}
             </Link>
             <Button variant="ghost" size="sm" onClick={reset}>

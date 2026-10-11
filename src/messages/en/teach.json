@@ -135,7 +135,18 @@
       "saveCells": "Save",
       "cellHelp": "Write a mark in the square, or a letter: a — away, l — late, e — excused.",
       "cellsSaved": "{count} squares saved.",
-      "cellsRefused": "{count} squares could not be read. They are marked in red — correct them."
+      "cellsRefused": "{count} squares could not be read. They are marked in red — correct them.",
+      "termColumnDate": "Day given",
+      "termHeadings": {
+        "q1": "Quarter I",
+        "q2": "Quarter II",
+        "q3": "Quarter III",
+        "q4": "Quarter IV",
+        "h1": "First half-year",
+        "h2": "Second half-year",
+        "exam": "Exam",
+        "year": "Year"
+      }
     },
     "homework": {
       "title": "Homework",
@@ -184,6 +195,20 @@
       "reviewSaved": "The review has been saved.",
       "removeAttachmentTitle": "Remove the file?",
       "removeAttachmentConfirm": "Remove"
+    },
+    "pupil": {
+      "parents": "Parents",
+      "parentsHint": "From the pupils' workbook. Seen only by the office, the director and the pupil's teachers.",
+      "noParents": "No parents written yet.",
+      "noParentsHint": "The class teacher or the office writes them in the pupils' workbook.",
+      "moreChildren": "{count} more children at this school",
+      "note": "To the parents on Telegram",
+      "noteHint": "Everyone who follows this pupil in the school's bot gets it.",
+      "noTelegram": "This pupil's parents have not confirmed themselves in the Telegram bot yet. Call them instead.",
+      "noteLabel": "Message",
+      "send": "Send",
+      "noteSent": "The message goes to {chats} chats.",
+      "noteNobody": "Nobody follows this pupil on Telegram."
     }
   }
 }

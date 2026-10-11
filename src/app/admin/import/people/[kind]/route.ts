@@ -4,10 +4,9 @@ import { can, getAccess } from "@/lib/auth/access";
 import { buildWorkbook, type Sheet } from "@/lib/export/xlsx";
 import { createClient } from "@/lib/supabase/server";
 import { readPeopleSheet, type PeopleOutcome } from "@/features/admin/import/people-import";
-import { isPeopleKind, PEOPLE_TEMPLATES } from "@/features/admin/import/templates";
-import { guardianIssues } from "@/features/admin/import/guardians";
+import { isPeopleKind, PEOPLE_TEMPLATES, writtenColumns } from "@/features/admin/import/templates";
 import { phoneConflicts } from "@/features/admin/import/phone-conflicts";
-import { gradeLimits } from "@/features/accounts/queries";
+import { myHomeroomClasses } from "@/features/accounts/queries";
 import { sendCredentialsToParents } from "@/features/accounts/send-credentials";
 
 // Hashing a thousand passwords at the cost GoTrue uses takes real time, so the
@@ -35,21 +34,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
   const access = await getAccess();
   if (!access?.school) return new NextResponse(null, { status: 401 });
   if (!isPeopleKind(kind)) return new NextResponse(null, { status: 404 });
+  // A class teacher imports their own class; the database refuses any row of
+  // another class (import_people, 00088).
   if (!can(access, kind === "students" ? "students.import" : "staff.create")) {
-    return new NextResponse(null, { status: 403 });
+    if (kind !== "students" || (await myHomeroomClasses(access)).length === 0) return new NextResponse(null, { status: 403 });
   }
 
   const formData = await request.formData();
   const sheet = await readPeopleSheet(kind, formData.get("file"));
   if (!sheet.ok) return NextResponse.json(sheet.result, { status: 400 });
-
-  // The youngest pupils come with a parent, in the workbook as on the form.
-  if (kind === "students") {
-    const issues = guardianIssues(sheet.rows, (await gradeLimits(access.school.id)).required);
-    if (issues.length > 0) {
-      return NextResponse.json({ ok: false, message: "errors.validation", data: { errors: issues } }, { status: 400 });
-    }
-  }
 
   const supabase = await createClient();
   // The same check as the preview: a number on two accounts stops the import
@@ -59,6 +52,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     return NextResponse.json({ ok: false, message: "errors.validation", data: { errors: clashes } }, { status: 400 });
   }
   const credentials = new Map<number, { login: string; password: string }>();
+  // Every row's login, new or long issued, and each parent's beside it.
+  const logins = new Map<number, string>();
+  const parents = new Map<string, { login: string; password: string | null }>();
   let created = 0;
   let updated = 0;
   let newClasses: string[] = [];
@@ -87,35 +83,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     for (const credential of outcome.credentials) {
       credentials.set(credential.row, { login: credential.login, password: credential.password });
     }
+    for (const entry of outcome.logins ?? []) logins.set(entry.row, entry.login);
+    for (const parent of outcome.parents ?? []) {
+      parents.set(`${parent.row}:${parent.relation}`, { login: parent.login, password: parent.password });
+    }
   }
 
   const t = await getTranslations("admin.import.workbook");
   const template = PEOPLE_TEMPLATES[kind];
+  const written = writtenColumns(template);
   const columns = [
-    ...template.columns.map((column) => ({ header: column.header, width: column.width, issued: column.issued })),
+    ...written.map((column) => ({ header: column.header, width: column.width, issued: column.issued })),
     ...sheet.extras.map((extra) => ({ header: extra.header, width: 18 })),
   ];
-
-  // Logins are looked up for every row, not only the new ones: the office wants
-  // one file it can hand out from, and a row imported last term has a login too.
-  const { data: directory } = await supabase
-    .from("users")
-    .select("public_id, email")
-    .eq("school_id", access.school.id)
-    .limit(5000);
-  const loginByEmail = new Map((directory ?? []).map((row) => [row.email.toLowerCase(), row.public_id]));
-
-  // The parents written beside the pupils: found by telephone or made, and
-  // linked — after the pupils, so a new pupil's login finds them.
-  if (kind === "students") {
-    const withParents = (sheet.rows as Array<Record<string, string | undefined>>)
-      .map((row, index): Record<string, string | undefined> => ({
-        ...row,
-        login: credentials.get(index + 1)?.login ?? row.login ?? loginByEmail.get((row.email ?? "").toLowerCase()) ?? "",
-      }))
-      .filter((row) => (row.guardian_name ?? "").trim() && (row.guardian_phone ?? "").trim());
-    if (withParents.length > 0) await supabase.rpc("import_guardians", { p_rows: withParents });
-  }
 
   // The youngest pupils' new logins, straight to the parents who follow them
   // in the bot, when the office asked for it.
@@ -129,10 +109,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     columns,
     rows: sheet.rows.map((row, index) => {
       const issued = credentials.get(index + 1);
+      const parent = (relation: string) => parents.get(`${index + 1}:${relation}`);
       return [
-        ...template.columns.map((column) => {
-          if (column.key === "login") return issued?.login ?? loginByEmail.get((row.email ?? "").toLowerCase()) ?? "";
+        ...written.map((column) => {
+          if (column.key === "login") return issued?.login ?? logins.get(index + 1) ?? row.login ?? "";
           if (column.key === "password") return issued?.password ?? t("alreadyIssued");
+          const match = /^(father|mother)_(login|password)$/.exec(column.key);
+          if (match) {
+            const who = parent(match[1]!);
+            if (!who) return "";
+            return match[2] === "login" ? who.login : who.password ?? t("alreadyIssued");
+          }
           return row[column.key] ?? "";
         }),
         ...sheet.extras.map((extra) => extra.values[index] ?? ""),
@@ -145,7 +132,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
       {
         name: t("warningSheet"),
         title: t("warningTitle"),
-        lines: [t("warningBody"), t("warningKeep"), t("summary", { created, updated })],
+        lines: [
+          t("warningBody"),
+          t("warningKeep"),
+          t("summary", { created, updated }),
+          ...(kind === "students" ? [t("parentsSummary", { issued: [...parents.values()].filter((p) => p.password).length, total: parents.size })] : []),
+        ],
       },
     ],
     [body]
@@ -159,6 +151,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
       "Cache-Control": "private, no-store",
       "X-Import-Created": String(created),
       "X-Import-Updated": String(updated),
+      "X-Import-Parents": String([...parents.values()].filter((p) => p.password).length),
       "X-Telegram-Sent": String(telegram),
       "X-Import-New-Classes": encodeURIComponent(newClasses.join(",")),
     },

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -174,9 +175,13 @@ export function JournalGrid({
                   title={row.name}
                 >
                   <span className="me-1.5 text-xs text-ink-muted tabular sm:me-2">{rowIndex + 1}.</span>
-                  {/* On a phone the surname and an initial, so more of the dates fit beside it. */}
-                  <span className="sm:hidden">{shortName(row.name)}</span>
-                  <span className="hidden sm:inline">{row.name}</span>
+                  {/* The pupil's card: their parents, and a note to them through
+                      the bot. On a phone the surname and an initial, so more of
+                      the dates fit beside it. */}
+                  <Link href={`/teach/pupils/${row.id}`} className="hover:text-brand-text hover:underline">
+                    <span className="sm:hidden">{shortName(row.name)}</span>
+                    <span className="hidden sm:inline">{row.name}</span>
+                  </Link>
                 </th>
                 {columns.map((column, columnIndex) => {
                   const composite = `${row.id}|${column.key}`;

@@ -20,6 +20,22 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { robots: { index: false } };
 
 /**
+ * The headings of the last columns of a Tajik register. The value is what is
+ * written in the journal and read back by the report card, so it is the same
+ * whatever language the teacher reads the portal in.
+ */
+const TERM_HEADINGS = [
+  { key: "q1", value: "Чоряки I" },
+  { key: "q2", value: "Чоряки II" },
+  { key: "q3", value: "Чоряки III" },
+  { key: "q4", value: "Чоряки IV" },
+  { key: "h1", value: "Нимсолаи I" },
+  { key: "h2", value: "Нимсолаи II" },
+  { key: "exam", value: "Имтиҳон" },
+  { key: "year", value: "Солона" },
+] as const;
+
+/**
  * The class register, laid out as the printed one is: the subject at the top,
  * pupils down the left, dates written vertically across the marks page, and the
  * topics of the lessons on the facing page.
@@ -193,10 +209,14 @@ export default async function GradebookPage({
   return (
     <>
       <PageHeader breadcrumb={breadcrumb} title={`${cs.className} · ${cs.subjectName}`} description={t("description")} />
-      <TabNav
-        label={t("terms")}
-        items={terms.map((x) => ({ href: `/teach/gradebook/${cs.id}?term=${x.id}`, label: x.name, active: x.id === term.id }))}
-      />
+      {/* A year is one term now (00086); a school that set up quarters by
+          hand still pages through them. */}
+      {terms.length > 1 ? (
+        <TabNav
+          label={t("terms")}
+          items={terms.map((x) => ({ href: `/teach/gradebook/${cs.id}?term=${x.id}`, label: x.name, active: x.id === term.id }))}
+        />
+      ) : null}
       {term.is_locked ? (
         <Alert tone="warning" className="mb-4" title={t("lockedTitle")}>
           <span className="inline-flex items-center gap-1.5">
@@ -253,13 +273,24 @@ export default async function GradebookPage({
                   <SubmitButton size="sm">{t("ruleColumn")}</SubmitButton>
                 </ActionForm>
 
-                {/* The last columns of a register are the quarter marks, headed
-                    «Чоряки I» rather than a day in May. */}
+                {/* The last columns of a register are the quarter, half-year and
+                    year marks, headed «Чоряки I» rather than a date, and written
+                    on the day the mark is given: the quarters have no fixed
+                    dates (00086). */}
                 <ActionForm action={ruleJournalColumnAction} className="mt-4 space-y-3 border-t border-line pt-4" resetOnSuccess>
                   <input type="hidden" name="classSubjectId" value={cs.id} />
                   <input type="hidden" name="academicTermId" value={term.id} />
                   <input type="hidden" name="kind" value="term" />
-                  <TextField name="label" label={t("termColumnLabel")} hint={t("termColumnHint")} maxLength={60} defaultValue={term.name} required />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <SelectField
+                      name="label"
+                      label={t("termColumnLabel")}
+                      hint={t("termColumnHint")}
+                      required
+                      options={TERM_HEADINGS.map((heading) => ({ value: heading.value, label: t(`termHeadings.${heading.key}`) }))}
+                    />
+                    <TextField name="date" type="date" label={t("termColumnDate")} defaultValue={defaultDate} min={term.start_date} max={term.end_date} />
+                  </div>
                   <SubmitButton size="sm" variant="secondary">
                     {t("ruleTermColumn")}
                   </SubmitButton>

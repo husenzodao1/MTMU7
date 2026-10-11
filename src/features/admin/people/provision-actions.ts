@@ -67,7 +67,6 @@ const newStaffSchema = z.object({
   positionTitle: optional(200),
   qualification: optional(2000),
   hireDate: optional(10),
-  maxWeeklyHours: optional(8),
   dateOfBirth: optional(10),
   gender: optional(16),
   email,
@@ -191,7 +190,6 @@ export async function addStaffAction(_state: FormState<IssuedCredentials>, formD
       position_title: v.positionTitle,
       qualification: v.qualification,
       hire_date: v.hireDate,
-      max_weekly_hours: v.maxWeeklyHours,
     },
     v.roleId
   );

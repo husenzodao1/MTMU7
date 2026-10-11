@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Plus, School } from "lucide-react";
-import { ClassFields } from "@/features/admin/academic/class-fields";
-import { saveClassAction } from "@/features/admin/academic/structure-actions";
+import { FileSpreadsheet, School, UserRound, Users } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
-import { fullName, getStaffOptions } from "@/features/admin/queries";
-import { FormDialog } from "@/components/ui/action-form";
+import { fullName } from "@/features/admin/queries";
+import { compareClassNames } from "@/features/academic/class-order";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { FilterBar } from "@/components/ui/filters";
-import { Alert, EmptyState, PageHeader } from "@/components/ui/surface";
+import { buttonClasses } from "@/components/ui/button";
+import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
-import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,112 +17,123 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("classes") };
 }
 
-export default async function AdminClassesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+type Person = { first_name: string; last_name: string; middle_name: string | null };
+
+/**
+ * The school's classes, as boxes: the class, how many pupils it has and its
+ * class teacher, and a tap opens its pupils.
+ *
+ * Nobody makes a class here. 1А … 11Д exist every year by themselves (00086);
+ * the pupils' workbook puts each pupil in theirs, and the teachers' workbook
+ * names the class teacher. A class with no pupils is not shown, so an 11Д the
+ * school does not have this year takes no room.
+ */
+export default async function AdminClassesPage() {
   const access = await requirePermission("classes.view", "classes.create", "classes.update", "enrollments.manage");
   const t = await getTranslations("admin.classes");
-  const tc = await getTranslations("common");
-  const params = await searchParams;
   const schoolId = access.school!.id;
   const supabase = await createClient();
 
-  const { data: years } = await supabase.from("academic_years").select("id, name, is_current").eq("school_id", schoolId).order("start_date", { ascending: false });
-  const yearParam = firstValue(params.year);
-  const year = (years ?? []).find((y) => y.id === yearParam) ?? (years ?? []).find((y) => y.is_current) ?? years?.[0];
-  const showArchived = firstValue(params.archived) === "1";
+  const { data: year } = await supabase
+    .from("academic_years")
+    .select("id, name")
+    .eq("school_id", schoolId)
+    .eq("is_current", true)
+    .maybeSingle();
 
-  const [{ data: classes }, staff, { data: rooms }] = await Promise.all([
-    year
-      ? (() => {
-          let query = supabase
-            .from("classes")
-            .select("id, name, grade_level, shift, capacity, is_active, homeroom_staff_id, staff:homeroom_staff_id(first_name, last_name, middle_name), enrollments(status), class_subjects(id, teacher_id, is_active)")
-            .eq("school_id", schoolId)
-            .eq("academic_year_id", year.id)
-            .order("grade_level")
-            .order("name");
-          if (!showArchived) query = query.eq("is_active", true);
-          return query;
-        })()
-      : Promise.resolve({ data: [] }),
-    getStaffOptions(schoolId),
-    supabase.from("rooms").select("id, name").eq("school_id", schoolId).eq("is_active", true).order("name"),
-  ]);
+  const { data: classes } = year
+    ? await supabase
+        .from("classes")
+        .select("id, name, grade_level, shift, staff:homeroom_staff_id(first_name, last_name, middle_name), enrollments(status)")
+        .eq("school_id", schoolId)
+        .eq("academic_year_id", year.id)
+        .eq("is_active", true)
+    : { data: [] };
 
-  const rows = (classes ?? []).map((c) => {
-    const enrollments = (c.enrollments ?? []) as Array<{ status: string }>;
-    const subjects = ((c.class_subjects ?? []) as Array<{ teacher_id: string | null; is_active: boolean }>).filter((s) => s.is_active);
-    return {
-      ...c,
-      homeroom: c.staff ? fullName(c.staff as unknown as { first_name: string; last_name: string; middle_name: string | null }) : null,
-      students: enrollments.filter((e) => e.status === "active").length,
-      subjects: subjects.length,
-      unassigned: subjects.filter((s) => !s.teacher_id).length,
-    };
-  });
+  const rows = (classes ?? [])
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      grade: c.grade_level,
+      shift: c.shift,
+      homeroom: c.staff ? fullName(c.staff as unknown as Person) : null,
+      pupils: ((c.enrollments ?? []) as Array<{ status: string }>).filter((e) => e.status === "active").length,
+    }))
+    .filter((c) => c.pupils > 0)
+    .sort((a, b) => compareClassNames(a.name, b.name));
+
+  const grades = [...new Set(rows.map((r) => r.grade))].sort((a, b) => a - b);
+  const pupils = rows.reduce((sum, r) => sum + r.pupils, 0);
 
   return (
     <>
       <PageHeader
         breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />}
         title={t("title")}
-        description={year ? t("descriptionYear", { year: year.name }) : t("description")}
-        actions={year && can(access, "classes.create") ? (
-          <>
-            {/* Classes are not imported on their own any more: the register
-                workbook names each pupil's class, and the import makes the ones
-                the school has not made yet. One way to do it, not two. */}
-            <FormDialog action={saveClassAction} trigger={<Button><Plus aria-hidden />{t("new")}</Button>} title={t("new")} description={t("newHint", { year: year.name })} submitLabel={tc("create")} size="lg">
-              <ClassFields academicYearId={year.id} staff={staff.map(({ value, label }) => ({ value, label }))} rooms={(rooms ?? []).map((r) => ({ value: r.id, label: r.name }))} />
-            </FormDialog>
-          </>
-        ) : null}
+        description={year ? t("summary", { year: year.name, classes: rows.length, pupils }) : t("description")}
+        actions={
+          can(access, "students.import") ? (
+            <Link href="/admin/students/import" className={buttonClasses("secondary")}>
+              <FileSpreadsheet aria-hidden />
+              {t("importPupils")}
+            </Link>
+          ) : null
+        }
       />
-      {!year ? (
-        <Alert tone="warning">{t("noYear")} <Link href="/admin/academic-years" className="font-medium underline">{t("openYears")}</Link></Alert>
+      {rows.length === 0 ? (
+        <Card as="div">
+          <EmptyState
+            icon={<School />}
+            title={t("empty")}
+            description={t("emptyHint")}
+            action={
+              can(access, "students.import") ? (
+                <Link href="/admin/students/import" className={buttonClasses("primary")}>
+                  <FileSpreadsheet aria-hidden />
+                  {t("importPupils")}
+                </Link>
+              ) : null
+            }
+          />
+        </Card>
       ) : (
-        <>
-          <FilterBar
-            filters={[
-              { name: "year", label: t("year"), emptyLabel: (years ?? []).find((y) => y.is_current)?.name ?? t("year"), options: (years ?? []).filter((y) => !y.is_current).map((y) => ({ value: y.id, label: y.name })) },
-              { name: "archived", label: t("show"), emptyLabel: t("activeOnly"), options: [{ value: "1", label: t("includeArchived") }] },
-            ]}
-          />
-          <DataTable
-            caption={t("title")}
-            rows={rows}
-            rowKey={(r) => r.id}
-        rowHref={(r) => `/admin/classes/${r.id}`}
-            empty={<EmptyState icon={<School />} title={t("empty")} description={t("emptyHint")} />}
-            columns={[
-              {
-                key: "name",
-                header: t("name"),
-                primary: true,
-                cell: (r) => (
-                  <span className="flex items-center gap-2">
-                    <Link href={`/admin/classes/${r.id}`} className="font-semibold hover:text-brand-text hover:underline">{r.name}</Link>
-                    {!r.is_active ? <Badge>{tc("status.archived")}</Badge> : null}
-                  </span>
-                ),
-              },
-              { key: "grade", header: t("gradeLevel"), cell: (r) => <span className="tabular">{r.grade_level}</span> },
-              { key: "students", header: t("students"), cell: (r) => <span className="tabular">{r.students}{r.capacity ? ` / ${r.capacity}` : ""}</span> },
-              { key: "homeroom", header: t("homeroom"), cell: (r) => r.homeroom ?? <Badge tone="warning">{t("notAssigned")}</Badge> },
-              {
-                key: "subjects",
-                header: t("subjects"),
-                hideOnMobile: true,
-                cell: (r) => (
-                  <span className="flex items-center gap-2 tabular">
-                    {r.subjects}
-                    {r.unassigned > 0 ? <Badge tone="warning">{t("withoutTeacher", { count: r.unassigned })}</Badge> : null}
-                  </span>
-                ),
-              },
-              { key: "shift", header: t("shift"), hideOnMobile: true, cell: (r) => t("shiftValue", { shift: r.shift }) },
-            ]}
-          />
-        </>
+        <div className="space-y-6">
+          {grades.map((grade) => (
+            <section key={grade} aria-labelledby={`grade-${grade}`}>
+              <h2 id={`grade-${grade}`} className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">
+                {t("gradeHeading", { grade })}
+              </h2>
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {rows
+                  .filter((r) => r.grade === grade)
+                  .map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        href={`/admin/classes/${r.id}`}
+                        className="group flex h-full flex-col gap-2 rounded-xl border border-line bg-surface p-3 shadow-xs transition-colors hover:border-brand-300 hover:bg-brand-50/40 focus-visible:outline-2 focus-visible:outline-brand-600"
+                      >
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="text-2xl font-semibold tracking-tight text-ink group-hover:text-brand-text">{r.name}</span>
+                          <span className="inline-flex items-center gap-1 text-xs text-ink-muted tabular">
+                            <Users className="size-3.5" aria-hidden />
+                            {r.pupils}
+                          </span>
+                        </span>
+                        {r.homeroom ? (
+                          <span className="flex min-w-0 items-center gap-1.5 text-xs text-ink-secondary">
+                            <UserRound className="size-3.5 shrink-0" aria-hidden />
+                            <span className="truncate" title={r.homeroom}>{r.homeroom}</span>
+                          </span>
+                        ) : (
+                          <Badge tone="warning">{t("notAssigned")}</Badge>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </>
   );

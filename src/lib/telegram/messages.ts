@@ -73,15 +73,21 @@ const WORDS = {
     subscribeMissing: "Ҳанӯз обуна нашудаед. Обуна шавед ва боз санҷед.",
     subscribeOk: "Обуна тасдиқ шуд. Ташаккур!",
     askChild: "Акнун фарзандатонро илова кунед.",
-    askChildHow: "Никнейм ё логини фарзандатонро нависед — масалан",
+    askChildHow: "Логин ва пароли худро, ки мактаб ба шумо додааст, ворид кунед. Аввал логинро нависед — масалан",
     askCode: "Ҳоло <b>рамзи волидайн</b>-ро нависед.",
     askCodeHow: "Онро мактаб дар варақа додааст (8 ҳарф).",
     notFound: "Чунин хонанда ёфт нашуд. Имлоро санҷед ё логини мактабиро нависед.",
     ambiguous: "Чанд хонанда бо ҳамин ном ҳаст. Лутфан логини мактабиро нависед (масалан MT10009).",
     noCode: "Барои ин хонанда ҳанӯз рамзи волидайн сохта нашудааст. Ба мактаб муроҷиат кунед.",
-    wrongCode: "Рамз нодуруст аст. Бори дигар кӯшиш кунед.",
+    wrongCode: "Рамз ё парол нодуруст аст. Бори дигар кӯшиш кунед.",
     blocked: "Хеле зиёд кӯшиш кардед. Пас аз 15 дақиқа боз кӯшиш кунед.",
     linked: "Тайёр!",
+    askPassword: "Ҳоло <b>пароли худро</b> нависед.",
+    askPasswordHow: "Парол дар варақаи мактаб дар паҳлӯи логини шумост (ду ҳарф ва шаш рақам).",
+    wrongPassword: "Парол нодуруст аст. Бори дигар кӯшиш кунед.",
+    linkedChildren: "Шумо тасдиқ шудед. Акнун дар бораи ин фарзандон хабар мегиред:",
+    noteTitle: "Паём аз мактаб",
+    noteFrom: "Аз",
     linkedBody: "Акнун ҳар бор ки муаллим баҳо мегузорад, ман ба шумо хабар медиҳам.",
     menuTitle: "Чиро нишон диҳам?",
     noChildren: "Ҳанӯз фарзанде илова накардаед.",
@@ -146,15 +152,21 @@ const WORDS = {
     subscribeMissing: "Подписка пока не найдена. Подпишитесь и проверьте ещё раз.",
     subscribeOk: "Подписка подтверждена. Спасибо!",
     askChild: "Теперь добавьте ребёнка.",
-    askChildHow: "Напишите никнейм или школьный логин ребёнка — например",
+    askChildHow: "Войдите с логином и паролем, которые вам выдала школа. Сначала напишите логин — например",
     askCode: "Теперь напишите <b>родительский код</b>.",
     askCodeHow: "Школа выдала его на листке (8 символов).",
     notFound: "Такой ученик не найден. Проверьте написание или укажите школьный логин.",
     ambiguous: "Под этим именем несколько учеников. Укажите школьный логин (например MT10009).",
     noCode: "Для этого ученика код ещё не выпущен. Обратитесь в школу.",
-    wrongCode: "Код неверный. Попробуйте ещё раз.",
+    wrongCode: "Код или пароль неверный. Попробуйте ещё раз.",
     blocked: "Слишком много попыток. Повторите через 15 минут.",
     linked: "Готово!",
+    askPassword: "Теперь напишите <b>свой пароль</b>.",
+    askPasswordHow: "Пароль указан в листке школы рядом с вашим логином (две буквы и шесть цифр).",
+    wrongPassword: "Пароль неверный. Попробуйте ещё раз.",
+    linkedChildren: "Вы подтверждены. Теперь вы будете получать новости об этих детях:",
+    noteTitle: "Сообщение из школы",
+    noteFrom: "От",
     linkedBody: "Теперь каждый раз, когда учитель ставит оценку, я вам сообщу.",
     menuTitle: "Что показать?",
     noChildren: "Вы ещё не добавили ребёнка.",
@@ -219,15 +231,21 @@ const WORDS = {
     subscribeMissing: "No subscription found yet. Follow the channel and check again.",
     subscribeOk: "Subscription confirmed. Thank you!",
     askChild: "Now add your child.",
-    askChildHow: "Send your child's nickname or school login — for example",
+    askChildHow: "Sign in with the login and password the school gave you. First send your login — for example",
     askCode: "Now send the <b>parent code</b>.",
     askCodeHow: "The school handed it to you on paper (8 characters).",
     notFound: "No such pupil. Check the spelling, or use the school login instead.",
     ambiguous: "Several pupils answer to that name. Please use the school login (e.g. MT10009).",
     noCode: "No parent code has been issued for this pupil yet. Please ask the school.",
-    wrongCode: "That code is not right. Try again.",
+    wrongCode: "That code or password is not right. Try again.",
     blocked: "Too many attempts. Try again in 15 minutes.",
     linked: "All set!",
+    askPassword: "Now send <b>your password</b>.",
+    askPasswordHow: "It is on the school's sheet next to your login (two letters and six digits).",
+    wrongPassword: "That password is not right. Try again.",
+    linkedChildren: "You are confirmed. From now on you will hear about:",
+    noteTitle: "A message from the school",
+    noteFrom: "From",
     linkedBody: "From now on I will tell you whenever a teacher enters a mark.",
     menuTitle: "What would you like to see?",
     noChildren: "You have not added a child yet.",
@@ -515,6 +533,30 @@ export function askForCode(locale: Loc): string {
 export function linked(locale: Loc, child: Child): string {
   const w = words(locale);
   return [`🎉 <b>${w.linked}</b>`, "", childLine(child), "", w.linkedBody].join("\n");
+}
+
+/** A parent who signed in with their own login: every child they now follow. */
+export function linkedParent(locale: Loc, children: Child[]): string {
+  const w = words(locale);
+  return [`🎉 <b>${w.linked}</b>`, "", w.linkedChildren, ...children.map(childLine), "", w.linkedBody].join("\n");
+}
+
+/** A parent who gave their own login is asked for their own password. */
+export function askForPassword(locale: Loc): string {
+  const w = words(locale);
+  return [`🔐 ${w.askPassword}`, w.askPasswordHow].join("\n");
+}
+
+/** A teacher's note, sent through the bot (send_parent_note, 00088). */
+export function noteMessage(locale: Loc, child: Child, note: { text: string; from: string | null }, school?: { name?: string | null } | null): string {
+  const w = words(locale);
+  return [
+    `✉️ <b>${w.noteTitle}</b>`,
+    childLine(child),
+    "",
+    escapeHtml(note.text),
+    ...(note.from ? ["", `— ${w.noteFrom}: ${escapeHtml(note.from)}`] : []),
+  ].join("\n") + footer(school);
 }
 
 // ------------------------------------------------------------------ the menu

@@ -103,7 +103,7 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     key: "academic",
     labelKey: "admin.nav.groups.academic",
     rules: [
-      { item: { key: "years", href: "/admin/academic-years", icon: "years", labelKey: "admin.nav.academicYears" }, visible: anyOf("academic_years.manage") },
+      // The academic year names and turns itself over (00086): no page for it.
       { item: { key: "classes", href: "/admin/classes", icon: "classes", labelKey: "admin.nav.classes" }, visible: anyOf("classes.create", "classes.update", "enrollments.manage") },
       { item: { key: "subjects", href: "/admin/subjects", icon: "subjects", labelKey: "admin.nav.subjects" }, visible: anyOf("subjects.manage") },
       { item: { key: "gradebook", href: "/admin/gradebook", icon: "gradebook", labelKey: "admin.nav.gradebook" }, visible: anyOf("grades.approve", "grades.update", "assessments.manage") },

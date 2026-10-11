@@ -33,7 +33,7 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
 
   let request = supabase
     .from("subjects")
-    .select("id, name_tg, name_ru, name_en, code, default_weekly_hours, is_active, class_subjects(id, is_active)")
+    .select("id, name_tg, name_ru, name_en, code, is_active, class_subjects(id, is_active)")
     .eq("school_id", access.school!.id)
     .eq("is_active", !archived)
     .order("name_tg");
@@ -41,18 +41,14 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
   if (search) request = request.or(search);
   const { data } = await request;
 
-  const fields = (subject?: { id: string; name_tg: string; name_ru: string | null; name_en: string | null; code: string | null; default_weekly_hours: number | null }) => (
+  // The office writes the Tajik name only; the Russian and English names and
+  // the code are the platform's (00087). A Russian name the platform could
+  // not work out can be written by hand when the subject is edited.
+  const fields = (subject?: { id: string; name_tg: string; name_ru: string | null }) => (
     <>
       {subject ? <input type="hidden" name="id" value={subject.id} /> : null}
-      <TextField name="nameTg" label={t("nameTg")} defaultValue={subject?.name_tg} required maxLength={200} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <TextField name="nameRu" label={t("nameRu")} defaultValue={subject?.name_ru ?? ""} maxLength={200} />
-        <TextField name="nameEn" label={t("nameEn")} defaultValue={subject?.name_en ?? ""} maxLength={200} />
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <TextField name="code" label={t("code")} hint={t("codeHint")} defaultValue={subject?.code ?? ""} maxLength={20} />
-        <TextField name="defaultWeeklyHours" inputMode="decimal" label={t("defaultHours")} defaultValue={subject?.default_weekly_hours ?? ""} />
-      </div>
+      <TextField name="nameTg" label={t("nameTg")} hint={subject ? undefined : t("nameOnlyHint")} defaultValue={subject?.name_tg} required maxLength={200} />
+      {subject ? <TextField name="nameRu" label={t("nameRu")} hint={t("nameRuHint")} defaultValue={subject.name_ru ?? ""} maxLength={200} /> : null}
     </>
   );
 
@@ -81,9 +77,9 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
         rowKey={(r) => r.id}
         empty={<EmptyState icon={<BookMarked />} title={t("empty")} description={t("emptyHint")} />}
         columns={[
-          { key: "name", header: t("name"), primary: true, cell: (r) => <span className="font-medium">{pickName(r, locale)}</span> },
+          { key: "name", header: t("name"), primary: true, cell: (r) => <span className="font-medium">{r.name_tg}</span> },
+          { key: "nameRu", header: t("nameRu"), hideOnMobile: true, cell: (r) => <span className="text-ink-secondary">{r.name_ru ?? "—"}</span> },
           { key: "code", header: t("code"), cell: (r) => (r.code ? <Badge>{r.code}</Badge> : "—") },
-          { key: "hours", header: t("defaultHours"), hideOnMobile: true, cell: (r) => <span className="tabular">{r.default_weekly_hours ?? "—"}</span> },
           { key: "classes", header: t("usedIn"), cell: (r) => <span className="tabular">{((r.class_subjects ?? []) as Array<{ is_active: boolean }>).filter((c) => c.is_active).length}</span> },
         ]}
         actions={(r) => (

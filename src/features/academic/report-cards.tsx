@@ -65,7 +65,6 @@ export async function reportCardsPdf({
   ]);
   if (pupils.length === 0) return null;
 
-  const termList = terms ?? [];
   const subjectList = (subjects ?? [])
     .map((cs) => ({ id: cs.id, name: cs.subjects ? pickName(cs.subjects as { name_tg: string; name_ru: string | null; name_en: string | null }, locale) : "" }))
     .sort((a, b) => a.name.localeCompare(b.name, locale));
@@ -78,23 +77,51 @@ export async function reportCardsPdf({
     pending,
   });
 
-  // pupil → subject → term (or "year") → the marks found
+  // The quarters are the columns the teachers headed in the journal — «Чоряки
+  // I», «Нимсолаи I» — written on the day the mark was given (00086). A school
+  // whose quarters were set up by hand as terms, with no headings, is laid out
+  // by those terms instead.
+  const finals = (marks ?? []).filter((m) => m.kind === "term_final" || m.kind === "year_final");
+  const byHeading = finals.some((m) => m.label && !isYearHeading(m.label));
+  const termList: Array<{ id: string; name: string }> = byHeading
+    ? [...new Set(finals.filter((m) => m.label && !isYearHeading(m.label)).map((m) => m.label!.trim()))]
+        .sort((a, b) => headingOrder(a) - headingOrder(b) || a.localeCompare(b))
+        .map((label) => ({ id: label, name: label }))
+    : (terms ?? []).length > 1
+      ? (terms ?? [])
+      : [];
+
+  // pupil → subject → column (or "year") → the marks found
   const found = new Map<string, { final?: Mark; average?: Mark }>();
-  const key = (student: string, subject: string, term: string) => `${student}|${subject}|${term}`;
+  const key = (student: string, subject: string, column: string) => `${student}|${subject}|${column}`;
   for (const m of marks ?? []) {
     if (!m.student_id || !m.class_subject_id || m.mark === null) continue;
     const value = Number(m.mark);
-    if (m.kind === "year_final") {
+    if (m.kind === "year_final" || (m.label && isYearHeading(m.label))) {
       found.set(key(m.student_id, m.class_subject_id, "year"), { final: asFinal(value, !m.approved) });
-    } else if (m.academic_term_id) {
-      const k = key(m.student_id, m.class_subject_id, m.academic_term_id);
-      const entry = found.get(k) ?? {};
-      if (m.kind === "term_final") entry.final = asFinal(value, !m.approved);
-      else if (m.kind === "average") entry.average = { value, text: number(value), kind: "average", pending: false };
-      found.set(k, entry);
+      continue;
     }
+    if (m.kind === "average") {
+      // The everyday marks of the year stand in for a year mark not yet set.
+      const k = key(m.student_id, m.class_subject_id, byHeading ? "year-average" : (m.academic_term_id ?? ""));
+      const entry = found.get(k) ?? {};
+      entry.average = { value, text: number(value), kind: "average", pending: false };
+      found.set(k, entry);
+      continue;
+    }
+    const column = byHeading ? m.label?.trim() : m.academic_term_id;
+    if (!column) continue;
+    const k = key(m.student_id, m.class_subject_id, column);
+    const entry = found.get(k) ?? {};
+    entry.final = asFinal(value, !m.approved);
+    found.set(k, entry);
   }
-  const absences = new Map((attendance ?? []).map((a) => [`${a.student_id}|${a.academic_term_id}`, a]));
+  const absences = new Map<string, { absent: number; late: number }>();
+  for (const a of attendance ?? []) {
+    const k = byHeading || termList.length === 0 ? `${a.student_id}|year` : `${a.student_id}|${a.academic_term_id}`;
+    const sum = absences.get(k) ?? { absent: 0, late: 0 };
+    absences.set(k, { absent: sum.absent + (a.absent ?? 0), late: sum.late + (a.late ?? 0) });
+  }
 
   const cards: ReportCard[] = pupils.map((pupil) => ({
     name: pupil.name,
@@ -104,26 +131,28 @@ export async function reportCardsPdf({
         return entry?.final ?? entry?.average ?? NONE;
       });
       const setYear = found.get(key(pupil.id, subject.id, "year"))?.final;
-      const finals = termMarks.filter((m) => m.kind === "final");
+      const finalsSet = termMarks.filter((m) => m.kind === "final");
+      const yearAverage = found.get(key(pupil.id, subject.id, "year-average"))?.average;
       const year: Mark =
         setYear ??
-        (termList.length > 0 && finals.length === termList.length
+        (termList.length > 0 && finalsSet.length === termList.length
           ? (() => {
-              const mean = finals.reduce((sum, m) => sum + m.value, 0) / finals.length;
+              const mean = finalsSet.reduce((sum, m) => sum + m.value, 0) / finalsSet.length;
               return { value: mean, text: number(mean), kind: "average" as const, pending: false };
             })()
-          : NONE);
+          : yearAverage ?? NONE);
       return { subject: subject.name, terms: termMarks, year };
     }),
-    attendance: termList.map((term) => {
-      const a = absences.get(`${pupil.id}|${term.id}`);
-      return { absent: a?.absent ?? 0, late: a?.late ?? 0 };
-    }),
+    attendance:
+      byHeading || termList.length === 0
+        ? [absences.get(`${pupil.id}|year`) ?? { absent: 0, late: 0 }]
+        : termList.map((term) => absences.get(`${pupil.id}|${term.id}`) ?? { absent: 0, late: 0 }),
   }));
 
   const buffer = await renderReportCards({
     cards,
     terms: termList.map((term) => term.name),
+    attendanceColumns: byHeading || termList.length === 0 ? [yearName] : termList.map((term) => term.name),
     className: klass.name,
     yearName,
     school,
@@ -138,6 +167,7 @@ export async function reportCardsPdf({
 export async function renderReportCards({
   cards,
   terms,
+  attendanceColumns,
   className,
   yearName,
   school,
@@ -146,6 +176,8 @@ export async function renderReportCards({
 }: {
   cards: ReportCard[];
   terms: string[];
+  /** The columns of the attendance table: the terms, or the year as one. */
+  attendanceColumns?: string[];
   className: string;
   yearName: string;
   school: string;
@@ -199,14 +231,14 @@ export async function renderReportCards({
               </View>
             ) : null}
 
-            {terms.length > 0 ? (
+            {(attendanceColumns ?? terms).length > 0 ? (
               <View style={{ marginTop: 14 }} wrap={false}>
                 <Text style={{ fontSize: 9, fontWeight: 700, marginBottom: 4 }}>{t("attendance")}</Text>
                 <PdfTable
                   zebra={false}
                   columns={[
                     { label: "", weight: 4.45 },
-                    ...terms.map((term) => ({ label: term, weight: 1.1, align: "center" as const })),
+                    ...(attendanceColumns ?? terms).map((term) => ({ label: term, weight: 1.1, align: "center" as const })),
                     { label: t("total"), weight: 1.1, align: "center" },
                   ]}
                   rows={[
@@ -249,4 +281,16 @@ async function loadPupils(supabase: Awaited<ReturnType<typeof createClient>>, cl
       return [{ id: e.student_id, name: name(s) }];
     })
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** «Солона» (and its Russian and English) heads the year's mark, not a quarter's. */
+function isYearHeading(label: string): boolean {
+  return /^(солона|годов|year)/i.test(label.trim());
+}
+
+/** Quarters first, then the half years, then anything else a teacher wrote. */
+function headingOrder(label: string): number {
+  const order = ["Чоряки I", "Чоряки II", "Нимсолаи I", "Чоряки III", "Чоряки IV", "Нимсолаи II", "Имтиҳон"];
+  const index = order.indexOf(label.trim());
+  return index === -1 ? order.length : index;
 }

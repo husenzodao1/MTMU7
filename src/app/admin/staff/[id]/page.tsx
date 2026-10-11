@@ -39,7 +39,7 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
 
   const { data: staff } = await supabase
     .from("staff")
-    .select("id, school_id, user_id, employee_number, first_name, last_name, middle_name, gender, date_of_birth, staff_type, position, qualification, hire_date, phone, email, max_weekly_hours, status")
+    .select("id, school_id, user_id, employee_number, first_name, last_name, middle_name, gender, date_of_birth, staff_type, position, qualification, hire_date, phone, email, status")
     .eq("id", id)
     .maybeSingle();
   if (!staff || staff.school_id !== access.school!.id) notFound();
@@ -47,7 +47,7 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
   const [{ data: assignments }, { data: homerooms }, { data: account }, { data: invitations }] = await Promise.all([
     supabase
       .from("class_subjects")
-      .select("id, weekly_hours, classes!inner(id, name, grade_level, is_active, academic_years!inner(is_current)), subjects(name_tg, name_ru, name_en)")
+      .select("id, classes!inner(id, name, grade_level, is_active, academic_years!inner(is_current)), subjects(name_tg, name_ru, name_en)")
       .eq("teacher_id", id)
       .eq("is_active", true)
       .eq("classes.academic_years.is_current", true),
@@ -57,7 +57,6 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
       ? supabase.from("invitation_codes").select("id, code, expires_at, used_count, max_uses, is_active").eq("person_type", "staff").eq("person_id", id).order("created_at", { ascending: false }).limit(5)
       : Promise.resolve({ data: [] }),
   ]);
-  const totalHours = (assignments ?? []).reduce((sum, a) => sum + Number(a.weekly_hours ?? 0), 0);
   const name = fullName(staff);
   const openInvitation = (invitations ?? []).find((i) => i.is_active && i.used_count < i.max_uses && (!i.expires_at || i.expires_at > new Date().toISOString()));
 
@@ -96,14 +95,13 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
                 hireDate: staff.hire_date,
                 phone: staff.phone,
                 email: staff.email,
-                maxWeeklyHours: staff.max_weekly_hours === null ? null : Number(staff.max_weekly_hours),
               }}
             />
           </CardBody>
         </Card>
         <div className="space-y-5">
           <Card>
-            <CardHeader title={t("teaching")} description={t("teachingHours", { hours: totalHours, max: staff.max_weekly_hours ?? "—" })} />
+            <CardHeader title={t("teaching")} />
             <CardBody>
               {(homerooms ?? []).length > 0 ? (
                 <p className="mb-3 text-sm">
@@ -121,9 +119,8 @@ export default async function AdminStaffMemberPage({ params, searchParams }: { p
                     const klass = a.classes as unknown as { id: string; name: string };
                     const subject = a.subjects as { name_tg: string; name_ru: string | null; name_en: string | null } | null;
                     return (
-                      <li key={a.id} className="flex justify-between gap-2 py-2">
+                      <li key={a.id} className="py-2">
                         <Link href={`/admin/classes/${klass.id}`} className="hover:text-brand-text hover:underline">{klass.name} · {subject ? pickName(subject, locale) : ""}</Link>
-                        <span className="text-ink-muted tabular">{a.weekly_hours ?? "—"}</span>
                       </li>
                     );
                   })}

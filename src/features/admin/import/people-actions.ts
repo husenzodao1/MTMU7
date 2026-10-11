@@ -6,9 +6,8 @@ import { can, getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 import { readPeopleSheet, type PeopleOutcome } from "@/features/admin/import/people-import";
 import { isPeopleKind } from "@/features/admin/import/templates";
-import { guardianIssues } from "@/features/admin/import/guardians";
 import { phoneConflicts } from "@/features/admin/import/phone-conflicts";
-import { gradeLimits } from "@/features/accounts/queries";
+import { myHomeroomClasses } from "@/features/accounts/queries";
 
 /**
  * Checks a workbook and reports everything wrong with it, writing nothing.
@@ -22,7 +21,11 @@ export async function previewPeopleImportAction(kind: string, formData: FormData
   const access = await getAccess();
   if (!access?.school) return failure("errors.not_authenticated");
   if (!isPeopleKind(kind)) return failure("errors.invalid");
-  if (!can(access, kind === "students" ? "students.import" : "staff.create")) return failure("errors.forbidden");
+  // A class teacher imports the pupils of their own class (the database keeps
+  // them to it, row by row).
+  if (!can(access, kind === "students" ? "students.import" : "staff.create")) {
+    if (kind !== "students" || (await myHomeroomClasses(access)).length === 0) return failure("errors.forbidden");
+  }
 
   const sheet = await readPeopleSheet(kind, formData.get("file"));
   if (!sheet.ok) return sheet.result;
@@ -37,10 +40,7 @@ export async function previewPeopleImportAction(kind: string, formData: FormData
   });
   if (error) return mapDbError(error);
   const outcome = data as unknown as PeopleOutcome;
-  const extra = [
-    ...(kind === "students" ? guardianIssues(sheet.rows, (await gradeLimits(access.school.id)).required) : []),
-    ...(await phoneConflicts(supabase, sheet.rows)),
-  ];
+  const extra = await phoneConflicts(supabase, sheet.rows);
   if (extra.length > 0) {
     outcome.errors = [...outcome.errors, ...extra].sort((a, b) => a.row - b.row);
     outcome.valid = false;
