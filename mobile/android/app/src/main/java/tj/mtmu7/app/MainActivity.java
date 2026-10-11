@@ -14,9 +14,10 @@ import java.util.List;
 /**
  * The portal, opened in Capacitor's web view (capacitor.config.json).
  *
- * Three things done here: the app's own plugins are registered before the
+ * Four things done here: the app's own plugins are registered before the
  * bridge starts, the "messages" notification channel exists before the first
- * push arrives (so chat notifications ring and show on the lock screen), and
+ * push arrives (so chat notifications ring and show on the lock screen), a
+ * file the portal hands over is saved into Downloads (Downloads.listen), and
  * the first time the app opens it asks for everything it will need —
  * notifications, location, the camera and the microphone — in Android's own
  * dialogs, once. Whatever is refused there, the portal's permissions card asks
@@ -31,8 +32,10 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(GoogleAccountPlugin.class);
         registerPlugin(DevicePermissionsPlugin.class);
+        registerPlugin(FilesPlugin.class);
         super.onCreate(savedInstanceState);
         MessageNotifications.ensureChannel(this);
+        if (getBridge() != null) Downloads.listen(this, getBridge().getWebView());
         askOnFirstLaunch();
     }
 

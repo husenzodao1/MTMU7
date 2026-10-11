@@ -90,7 +90,13 @@ interface GoogleAccountPlugin {
   signIn(options?: { nonce?: string }): Promise<{ idToken: string; email: string }>;
 }
 
+/** Saving a file the page made into the phone's Downloads (FilesPlugin.java, from build 13). */
+interface FilesPlugin {
+  save(options: { data: string; name: string; mime: string }): Promise<{ name: string }>;
+}
+
 export const appPlugin = () => plugin<AppPlugin>("App");
+export const filesPlugin = () => plugin<FilesPlugin>("Files");
 export const googleAccountPlugin = () => plugin<GoogleAccountPlugin>("GoogleAccount");
 export const devicePermissionsPlugin = () => plugin<DevicePermissionsPlugin>("DevicePermissions");
 export const splashPlugin = () => plugin<SplashPlugin>("SplashScreen");
@@ -184,14 +190,22 @@ export async function forgetNativeToken(): Promise<void> {
 /** How a Google sign-in from the phone's own accounts ended. */
 export type NativeGoogleResult =
   | { kind: "signed-in"; path: string }
-  | { kind: "cancelled" }
+  | { kind: "cancelled"; message?: string }
   /**
    * Why it could not be done here: "no_bridge" (the page cannot reach the
-   * app), the plugin's own codes ("not_configured", "no_account", "failed",
-   * "unexpected"), "not_accepted" (the portal does not take this app's
-   * tokens yet), "server" or "network".
+   * app), the plugin's own codes ("not_configured", "no_account", "reauth",
+   * "interrupted", "failed", "unexpected"), "not_accepted" (the portal does
+   * not take this app's tokens yet), "server", "network" or "timeout".
    */
   | { kind: "unavailable"; reason: string; message?: string };
+
+/** However long Google's sheet stays open, and the portal's answer after it. */
+const SHEET_TIMEOUT_MS = 120_000;
+const EXCHANGE_TIMEOUT_MS = 30_000;
+
+function timeout(ms: number): Promise<"timeout"> {
+  return new Promise((resolve) => setTimeout(() => resolve("timeout"), ms));
+}
 
 /**
  * Google sign-in inside the app, from the accounts already on the phone.
@@ -205,18 +219,25 @@ export async function nativeGoogleSignIn(next?: string): Promise<NativeGoogleRes
   if (!google) return { kind: "unavailable", reason: "no_bridge" };
   let idToken: string;
   try {
-    ({ idToken } = await google.signIn());
+    // An answer always comes back from the sheet, but the button is never
+    // left waiting on one for good.
+    const answer = await Promise.race([google.signIn(), timeout(SHEET_TIMEOUT_MS)]);
+    if (answer === "timeout") return { kind: "unavailable", reason: "timeout" };
+    ({ idToken } = answer);
   } catch (error) {
     const { code, message } = error as { code?: string; message?: string };
-    if (code === "cancelled") return { kind: "cancelled" };
+    if (code === "cancelled") return { kind: "cancelled", message: message?.slice(0, 200) };
     return { kind: "unavailable", reason: code ?? "failed", message: message?.slice(0, 200) };
   }
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), EXCHANGE_TIMEOUT_MS);
   try {
     const response = await fetch("/auth/google/native", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({ idToken, next: next ?? null }),
+      signal: abort.signal,
     });
     if (!response.ok) return { kind: "unavailable", reason: "server", message: String(response.status) };
     const answer = (await response.json()) as { path?: unknown; fallback?: unknown };
@@ -224,6 +245,8 @@ export async function nativeGoogleSignIn(next?: string): Promise<NativeGoogleRes
     const path = typeof answer.path === "string" && answer.path.startsWith("/") && !answer.path.startsWith("//") ? answer.path : null;
     return path ? { kind: "signed-in", path } : { kind: "unavailable", reason: "server" };
   } catch {
-    return { kind: "unavailable", reason: "network" };
+    return { kind: "unavailable", reason: abort.signal.aborted ? "timeout" : "network" };
+  } finally {
+    clearTimeout(timer);
   }
 }

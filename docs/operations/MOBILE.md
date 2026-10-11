@@ -14,6 +14,7 @@ What the app adds to the site:
 | "Send location" | browser prompt | the phone's own location prompt |
 | Sign in with Google | same tab | the phone's browser, then back into the app (`tj.mtmu7.app://`) |
 | No connection | browser error | `mobile/www/offline.html`, which retries by itself |
+| A file to download | the browser's download | Android's DownloadManager, into Downloads (build 13) |
 
 The site knows it is inside the app by `MTMU7App` in the User-Agent
 (`src/lib/native/app.ts`). Only two things change there: Google sign-in returns
@@ -103,6 +104,26 @@ By hand:
 The database side is migration `00069_device_tokens.sql`: phones are kept in
 `device_tokens`, and `claim_message_push` hands them out with the browsers.
 
+## Files the portal hands over
+
+A web view saves nothing by itself: without a download listener a link that
+answers with an attachment is dropped, which is why "Download sample" did
+nothing in builds up to 12. From build 13:
+
+- A link with an address of its own (a workbook template or sample, a report
+  card, a library file) goes to Android's DownloadManager
+  (`Downloads.listen`), with the session's cookies — most of these are for
+  signed-in people only — and lands in Downloads under the name the server
+  gave it, Cyrillic included (`filename*=UTF-8''…`, which Android's own guess
+  turns into `downloadfile.bin`).
+- A file the page made itself has no address to fetch again: the import's
+  result, the only copy of the passwords it issued. The page sends its bytes
+  to `FilesPlugin` (`saveFile` in `src/features/native/files.ts`), which
+  writes them into Downloads. An older app cannot, so the import wizard stops
+  before importing and asks for the update, rather than issue passwords
+  nobody can save; and the finished import keeps a "Download the file again"
+  button until the page is closed.
+
 ## Google sign-in inside the app
 
 Google refuses to sign anybody in inside an app's web view, and sending them
@@ -115,6 +136,17 @@ app: Google's page would open in Chrome, and nobody ever came back from there
 signed in. If the build has no Google client, or Supabase does not accept its
 tokens yet, the button stops and says so, with the reason's code in brackets
 (`not_configured`, `not_accepted`, `no_account`, …).
+
+After an account is chosen, Google can still give up: its sheet spins, closes,
+and answers "cancelled" — the same answer as closing the sheet. The
+diagnostics showed exactly that (half a minute, then `cancelled`). From build
+13 the plugin tells "[16] Account reauth failed" apart (`reauth`: the account
+wants its password again on the phone, or Google does not know this build's
+signing key — see the SHA-1 below), every answer carries Google's own message
+into the diagnostics, and the page stops waiting after two minutes for the
+sheet and thirty seconds for the portal. A "cancelled" that came after five
+seconds or more is said out loud too, so nobody is left looking at the button
+they pressed.
 
 It needs three settings, which `scripts/setup/android.ps1` walks through on
 Windows (it also makes the release key, below):

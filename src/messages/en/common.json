@@ -241,7 +241,7 @@
     },
     "appUpdate": {
       "title": "A new version of the app",
-      "text": "The page no longer breaks after the keyboard; a new icon.",
+      "text": "Files (samples, import results) are saved to Downloads; Google sign-in says what went wrong.",
       "action": "Update",
       "later": "Later"
     }
