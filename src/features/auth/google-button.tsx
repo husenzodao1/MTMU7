@@ -21,11 +21,16 @@ function GoogleMark({ className }: { className?: string }) {
   );
 }
 
+type ProblemKey = "notReady" | "noAccount" | "network" | "failed" | "reauth" | "stopped" | "slow";
+
 /** Which sentence explains a reason nativeGoogleSignIn gave. */
-function problemKey(reason: string): "notReady" | "noAccount" | "network" | "failed" {
+function problemKey(reason: string): ProblemKey {
   if (reason === "no_bridge" || reason === "not_configured" || reason === "not_accepted") return "notReady";
   if (reason === "no_account") return "noAccount";
   if (reason === "network") return "network";
+  if (reason === "reauth") return "reauth";
+  if (reason === "timeout") return "slow";
+  if (reason === "cancelled" || reason === "interrupted") return "stopped";
   return "failed";
 }
 
@@ -47,7 +52,7 @@ export function GoogleSignInButton({ label, next }: { label: string; next?: stri
   const t = useTranslations("auth.login.googleApp");
   const href = next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google";
   const [busy, setBusy] = useState(false);
-  const [problem, setProblem] = useState<{ key: ReturnType<typeof problemKey>; reason: string } | null>(null);
+  const [problem, setProblem] = useState<{ key: ProblemKey; reason: string } | null>(null);
 
   async function onClick(event: MouseEvent<HTMLAnchorElement>) {
     if (!isInApp()) return;
@@ -55,6 +60,7 @@ export function GoogleSignInButton({ label, next }: { label: string; next?: stri
     if (busy) return;
     setBusy(true);
     setProblem(null);
+    const started = Date.now();
     let answer: NativeGoogleResult;
     try {
       answer = await nativeGoogleSignIn(next);
@@ -62,13 +68,18 @@ export function GoogleSignInButton({ label, next }: { label: string; next?: stri
       // Whatever happens, the button does not stay spinning.
       answer = { kind: "unavailable", reason: "error", message: String(error).slice(0, 200) };
     }
-    report("google.result", { ...answer, path: undefined }, true);
+    const seconds = Math.round((Date.now() - started) / 1000);
+    report("google.result", { ...answer, path: undefined, seconds }, true);
     if (answer.kind === "signed-in") {
       window.location.assign(answer.path);
       return;
     }
     setBusy(false);
     if (answer.kind === "unavailable") setProblem({ key: problemKey(answer.reason), reason: answer.reason });
+    // Closing the sheet at once is a choice; a sheet that spun for a while
+    // after an account was chosen and then closed is Google giving up, and
+    // the person is told so instead of being left where they started.
+    else if (answer.kind === "cancelled" && seconds >= 5) setProblem({ key: "stopped", reason: "cancelled" });
   }
 
   return (

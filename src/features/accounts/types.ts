@@ -81,6 +81,13 @@ export interface GuardianLink {
   relationship: Relationship;
   is_primary: boolean;
   user_id: string | null;
+  /** From the pupils' workbook (00088). */
+  workplace?: string | null;
+  email?: string | null;
+  /** The parent's own login, when they have an account. */
+  login?: string | null;
+  /** When the parent confirmed themselves in the Telegram bot. */
+  telegram_confirmed_at?: string | null;
 }
 
 export interface AccountDetails {
@@ -124,6 +131,8 @@ export interface AccountDetails {
     staff_type: string;
     position: string | null;
     qualification: string | null;
+    /** The subjects the teachers' workbook lists: information only (00088). */
+    subjects_note?: string | null;
     hire_date: string | null;
     homeroom_class_id: string | null;
     homeroom_class_name: string | null;
@@ -160,12 +169,14 @@ export interface AccountInput {
     student_number?: string;
     address?: string;
     positions: ClassPosition[];
-    guardians: GuardianInput[];
+    /** No longer sent: parents come from the pupils' workbook (00088). */
+    guardians?: GuardianInput[];
   };
   staff?: {
     employee_number?: string;
     position?: string;
     qualification?: string;
+    subjects_note?: string;
     hire_date?: string;
     homeroom_class_id?: string;
   };

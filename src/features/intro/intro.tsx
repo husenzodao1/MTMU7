@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
 import { IntroScene } from "@/features/intro/intro-scene";
-import type { ScriptLine } from "@/features/intro/greeting-paths";
 import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * The opening over the first page: the school's mark and the greeting written
- * by hand in brass on the night canvas (intro-scene.tsx) — once per visit to
- * the site, and on each start of the app.
+ * The opening over the first page: the school's mark and "Хуш омадед"
+ * written out on the night canvas (intro-scene.tsx) — once per browser, for a
+ * year, and on the app's first start only.
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it
@@ -19,7 +18,7 @@ import { cn } from "@/lib/utils/cn";
  * away. A tap ends it early; a CSS fallback reveals the page even if no
  * script runs at all.
  */
-export function Intro({ lines }: { lines: ScriptLine[] }) {
+export function Intro({ words }: { words: string }) {
   const overlay = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
 
@@ -57,7 +56,7 @@ export function Intro({ lines }: { lines: ScriptLine[] }) {
       suppressHydrationWarning
       onClick={() => setPhase("out")}
     >
-      <IntroScene lines={lines} />
+      <IntroScene words={words} />
     </div>
   );
 }

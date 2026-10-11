@@ -7,11 +7,13 @@ import {
   asLocale,
   askForChild,
   askForCode,
+  askForPassword,
   backKeyboard,
   childMenu,
   firstGreeting,
   languageMenu,
   linked,
+  linkedParent,
   menu,
   reportCaption,
   reportMessage,
@@ -160,6 +162,13 @@ async function handleText(chat: number, user: number, text: string, languageCode
 
   if (state.state === "awaiting_code") {
     const result = await db.confirmChild(chat, trimmed);
+    // A parent who signed in with their own login hears about all their
+    // children at once (00088); one who used a child's code, about that child.
+    if (result.ok && (result.children?.length ?? 0) > 1) {
+      await sendMessage(chat, linkedParent(locale, result.children!));
+      await showMenu(chat, await db.touchChat(chat));
+      return;
+    }
     if (result.ok && result.child) {
       await sendMessage(chat, linked(locale, result.child));
       await showMenu(chat, await db.touchChat(chat));
@@ -190,7 +199,7 @@ async function handleText(chat: number, user: number, text: string, languageCode
     await sendMessage(chat, `📄 ${w.noCode}`);
     return;
   }
-  await sendMessage(chat, askForCode(locale));
+  await sendMessage(chat, found.parent ? askForPassword(locale) : askForCode(locale));
 }
 
 /**

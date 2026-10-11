@@ -88,12 +88,18 @@ describe("finding the rows in a workbook that is not quite ours", () => {
 });
 
 describe("the workbooks themselves", () => {
-  it("end with the two columns the portal fills in", () => {
+  it("end with the columns the portal fills in", () => {
     for (const template of Object.values(PEOPLE_TEMPLATES)) {
-      const last = template.columns.slice(-2);
-      assert.deepEqual(last.map((column) => column.key), ["login", "password"], template.sheet);
-      assert.ok(last.every((column) => column.issued), "both must be marked as issued, so they are drawn grey");
+      const firstIssued = template.columns.findIndex((column) => column.issued);
+      const issued = template.columns.slice(firstIssued);
+      assert.ok(issued.every((column) => column.issued), `${template.sheet}: the issued columns come last, drawn grey`);
+      assert.deepEqual(issued.slice(0, 2).map((column) => column.key), ["login", "password"], template.sheet);
     }
+    // The parents' logins and passwords are handed back beside the pupil's.
+    assert.deepEqual(
+      PEOPLE_TEMPLATES.students.columns.filter((column) => column.issued).map((column) => column.key),
+      ["login", "password", "father_login", "father_password", "mother_login", "mother_password"]
+    );
   });
 
   it("give every column a distinct heading", () => {
@@ -106,7 +112,9 @@ describe("the workbooks themselves", () => {
   it("require what the import cannot work without", () => {
     const required = (kind: keyof typeof PEOPLE_TEMPLATES) =>
       PEOPLE_TEMPLATES[kind].columns.filter((column) => column.required).map((column) => column.key).sort();
-    assert.deepEqual(required("students"), ["class_name", "date_of_birth", "email", "first_name", "last_name"]);
-    assert.deepEqual(required("staff"), ["email", "employee_number", "first_name", "last_name"]);
+    // An address is asked of nobody (00092): without one the account signs
+    // in with the login the import issues.
+    assert.deepEqual(required("students"), ["class_name", "date_of_birth", "first_name", "last_name"]);
+    assert.deepEqual(required("staff"), ["employee_number", "first_name", "last_name"]);
   });
 });

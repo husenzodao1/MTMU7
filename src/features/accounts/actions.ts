@@ -47,7 +47,8 @@ const inputSchema = z.object({
             relationship: z.enum(RELATIONSHIPS),
           })
         )
-        .max(6),
+        .max(6)
+        .optional(),
     })
     .optional(),
   staff: z
@@ -55,6 +56,7 @@ const inputSchema = z.object({
       employee_number: text(32),
       position: text(200),
       qualification: text(2000),
+      subjects_note: text(500),
       hire_date: text(10),
       homeroom_class_id: z.string().max(36).optional(),
     })

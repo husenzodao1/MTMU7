@@ -1713,6 +1713,7 @@ export type Database = {
           updated_at: string;
           birth_year: number | null;
           workplace: string | null;
+          telegram_confirmed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -1729,6 +1730,7 @@ export type Database = {
           updated_at?: string;
           birth_year?: number | null;
           workplace?: string | null;
+          telegram_confirmed_at?: string | null;
         };
         Update: {
           id?: string;
@@ -1745,6 +1747,7 @@ export type Database = {
           updated_at?: string;
           birth_year?: number | null;
           workplace?: string | null;
+          telegram_confirmed_at?: string | null;
         };
         Relationships: [
           {
@@ -1778,6 +1781,7 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          pages: string | null;
         };
         Insert: {
           id?: string;
@@ -1793,6 +1797,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          pages?: string | null;
         };
         Update: {
           id?: string;
@@ -1808,6 +1813,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          pages?: string | null;
         };
         Relationships: [
           {
@@ -4510,6 +4516,7 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           updated_at: string;
+          subjects_note: string | null;
         };
         Insert: {
           id?: string;
@@ -4532,6 +4539,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          subjects_note?: string | null;
         };
         Update: {
           id?: string;
@@ -4554,6 +4562,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+          subjects_note?: string | null;
         };
         Relationships: [
           {
@@ -5042,6 +5051,7 @@ export type Database = {
           subscribed_at: string | null;
           created_at: string;
           updated_at: string;
+          pending_guardian: string | null;
         };
         Insert: {
           chat_id: number;
@@ -5054,6 +5064,7 @@ export type Database = {
           subscribed_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          pending_guardian?: string | null;
         };
         Update: {
           chat_id?: number;
@@ -5066,8 +5077,16 @@ export type Database = {
           subscribed_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          pending_guardian?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "telegram_chats_pending_guardian_fkey";
+            columns: ["pending_guardian"];
+            isOneToOne: false;
+            referencedRelation: "guardians";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "telegram_chats_pending_student_fkey";
             columns: ["pending_student"];
@@ -5619,6 +5638,7 @@ export type Database = {
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
+      ensure_school_year: { Args: Record<PropertyKey, never>; Returns: string };
       forget_my_device_token: { Args: { p_token: string }; Returns: undefined };
       get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null; media_name: string | null; media_size: number | null; media_mime: string | null; media_duration: number | null; reactions: Json | null }[] };
       get_member_card: { Args: { p_user_id: string }; Returns: Json };
@@ -5649,7 +5669,6 @@ export type Database = {
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
       my_children: { Args: Record<PropertyKey, never>; Returns: { id: string | null; first_name: string | null; last_name: string | null; class_name: string | null; relationship: string | null }[] };
-      my_guardians: { Args: Record<PropertyKey, never>; Returns: { guardian_id: string | null; relationship: string | null; last_name: string | null; first_name: string | null; middle_name: string | null; birth_year: number | null; phone: string | null; workplace: string | null; shared_with: number | null }[] };
       my_teaching_timetable: { Args: Record<PropertyKey, never>; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_id: string | null; class_name: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; room_name: string | null }[] };
       news_engagement: { Args: { p_ids: string[] }; Returns: { article_id: string | null; views: number | null; likes: number | null; comments: number | null; liked: boolean | null; author_name: string | null; author_role: Json | null }[] };
       open_support_conversation: { Args: Record<PropertyKey, never>; Returns: string };
@@ -5660,9 +5679,10 @@ export type Database = {
       record_news_view: { Args: { p_article_id: string }; Returns: undefined };
       remove_conversation_member: { Args: { p_conversation_id: string; p_user_id: string }; Returns: undefined };
       remove_my_guardian: { Args: { p_guardian_id: string }; Returns: undefined };
+      remove_student: { Args: { p_student: string; p_reason?: string }; Returns: undefined };
       report_attendance: { Args: { p_from: string; p_to: string; p_class_id?: string; p_school_id?: string }; Returns: { student_id: string | null; student_name: string | null; class_name: string | null; present: number | null; late: number | null; absent: number | null; excused: number | null; total: number | null; attendance_rate: number | null }[] };
       report_card_attendance: { Args: { p_class_id: string }; Returns: { student_id: string | null; academic_term_id: string | null; absent: number | null; late: number | null }[] };
-      report_card_marks: { Args: { p_class_id: string }; Returns: { student_id: string | null; class_subject_id: string | null; academic_term_id: string | null; kind: string | null; mark: number | null; approved: boolean | null; marks_count: number | null }[] };
+      report_card_marks: { Args: { p_class_id: string }; Returns: { student_id: string | null; class_subject_id: string | null; academic_term_id: string | null; kind: string | null; mark: number | null; approved: boolean | null; marks_count: number | null; label: string | null; marked_on: string | null }[] };
       report_content_activity: { Args: { p_from: string; p_to: string; p_school_id?: string }; Returns: { month: string | null; news_published: number | null; announcements_published: number | null; events_held: number | null; documents_published: number | null; books_published: number | null; registrations: number | null }[] };
       report_enrollment: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { class_id: string | null; class_name: string | null; grade_level: number | null; homeroom_teacher: string | null; capacity: number | null; active_count: number | null; male_count: number | null; female_count: number | null; transferred_count: number | null; completed_count: number | null }[] };
       report_grades: { Args: { p_class_id: string; p_term_id?: string; p_school_id?: string }; Returns: { student_id: string | null; student_name: string | null; subject_id: string | null; subject_name: string | null; grade_count: number | null; average_percent: number | null; final_score: number | null }[] };
@@ -5681,15 +5701,19 @@ export type Database = {
       save_journal_cells: { Args: { p_class_subject_id: string; p_academic_term_id: string; p_cells: Json }; Returns: Json };
       save_my_guardian: { Args: { p_relationship: string; p_last_name: string; p_first_name: string; p_middle_name?: string; p_birth_year?: number; p_phone?: string; p_workplace?: string; p_guardian_id?: string; p_sibling_of?: string }; Returns: Json };
       save_push_subscription: { Args: { p_endpoint: string; p_p256dh: string; p_auth: string; p_locale?: string }; Returns: undefined };
+      save_timetable_lesson: { Args: { p_class_id: string; p_subject_id: string; p_teacher_id: string; p_day: number; p_period: number; p_room_id?: string }; Returns: string };
       school_faces: { Args: { p_limit?: number }; Returns: Json };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
+      send_parent_note: { Args: { p_student: string; p_text: string }; Returns: number };
       set_account_hidden: { Args: { p_user_id: string; p_hidden: boolean; p_reason?: string }; Returns: undefined };
+      set_class_shift: { Args: { p_class_id: string; p_shift: number }; Returns: undefined };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       set_message_reaction: { Args: { p_message_id: string; p_emoji: string }; Returns: undefined };
       start_new_school_year: { Args: { p_name: string; p_start: string; p_end: string; p_terms?: boolean; p_subjects?: boolean }; Returns: Json };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
+      student_parents: { Args: { p_student: string }; Returns: { guardian_id: string | null; relationship: string | null; last_name: string | null; first_name: string | null; middle_name: string | null; workplace: string | null; phone: string | null; email: string | null; login: string | null; telegram_confirmed_at: string | null; telegram_chats: number | null; children: number | null }[] };
       student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
       submit_support_request: { Args: { p_school_id: string; p_name: string; p_contact: string; p_message: string }; Returns: string };
       teacher_today: { Args: { p_date?: string }; Returns: Json };

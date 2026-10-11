@@ -1,22 +1,35 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/surface";
-import { formatDateTime, formatNumber, formatShortDate, formatTime } from "@/lib/i18n/format";
+import { formatDateTime, formatNumber, formatShortDate, formatTime, minutesIn } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { getRequestTime } from "@/lib/request-time";
 import type { StudentOverview } from "@/features/academic/queries";
+import { lessonMoments } from "@/features/academic/lesson-time";
 import { CalendarDays, NotebookPen, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { WorkCard } from "@/features/academic/work-card";
 
-export async function LessonList({ lessons, emptyLabel }: { lessons: StudentOverview["lessons"]; emptyLabel: string }) {
+/**
+ * A pupil's lessons today, each at its bell, with the one under way and the
+ * next one marked against the school's clock (lesson-time.ts).
+ */
+export async function LessonList({ lessons, emptyLabel, timeZone }: { lessons: StudentOverview["lessons"]; emptyLabel: string; timeZone?: string }) {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("portal.lessons");
   if (lessons.length === 0) return <EmptyState icon={<CalendarDays />} title={emptyLabel} className="py-6" />;
+  const moments = lessonMoments(lessons, minutesIn(timeZone, new Date(getRequestTime())));
   return (
     <ol className="divide-y divide-line">
-      {lessons.map((lesson) => (
-        <li key={`${lesson.shift}-${lesson.period_number}`} className="flex items-start gap-3 py-2.5">
+      {lessons.map((lesson, index) => (
+        <li
+          key={`${lesson.shift}-${lesson.period_number}`}
+          className={cn(
+            "flex items-start gap-3 py-2.5",
+            moments[index] === "now" && "-mx-2 rounded-md bg-brand-50 px-2 ring-1 ring-brand-200",
+            moments[index] === "past" && "opacity-60"
+          )}
+        >
           <div className="w-16 shrink-0 text-sm tabular">
             <span className="block font-semibold text-ink">{t("period", { number: lesson.period_number })}</span>
             {lesson.start_time ? (
@@ -31,6 +44,7 @@ export async function LessonList({ lessons, emptyLabel }: { lessons: StudentOver
               {[lesson.teacher, lesson.room ? t("room", { room: lesson.room }) : null].filter(Boolean).join(" · ")}
             </p>
           </div>
+          {moments[index] === "now" ? <Badge tone="brand" dot>{t("now")}</Badge> : moments[index] === "next" ? <Badge>{t("next")}</Badge> : null}
           {lesson.is_substitution ? <Badge tone="warning">{t("substitution")}</Badge> : null}
         </li>
       ))}
@@ -44,26 +58,23 @@ export async function HomeworkDueList({ items, hrefBase = "/homework" }: { items
   const tc = await getTranslations("common.status");
   if (items.length === 0) return <EmptyState icon={<NotebookPen />} title={t("nothingDue")} className="py-6" />;
   return (
-    <ul className="divide-y divide-line">
+    <ul className="work-list">
       {items.map((item) => {
         const overdue = item.due_at ? new Date(item.due_at).getTime() < getRequestTime() : false;
+        const subject = pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale);
         return (
-          <li key={item.id} className="flex items-start justify-between gap-3 py-2.5">
-            <div className="min-w-0">
-              <Link href={`${hrefBase}/${item.id}`} className="font-medium text-ink hover:text-brand-text hover:underline">
-                {item.title}
-              </Link>
-              <p className="text-sm text-ink-muted">{pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale)}</p>
-            </div>
-            <div className="shrink-0 text-right">
-              {item.due_at ? (
-                <p className={cn("text-sm tabular", overdue ? "font-medium text-danger-700" : "text-ink-secondary")}>
-                  {t("due", { date: formatDateTime(item.due_at, locale) })}
-                </p>
-              ) : null}
-              {item.submission_status ? <StatusBadge status={item.submission_status} label={tc(item.submission_status)} /> : null}
-            </div>
-          </li>
+          <WorkCard
+            key={item.id}
+            compact
+            href={`${hrefBase}/${item.id}`}
+            eyebrow={<span className="work-chip">{subject}</span>}
+            title={item.title}
+            side={item.submission_status ? <StatusBadge status={item.submission_status} label={tc(item.submission_status)} /> : null}
+          >
+            {item.due_at ? (
+              <p className={cn("tabular", overdue && "work-overdue")}>{t("due", { date: formatDateTime(item.due_at, locale) })}</p>
+            ) : null}
+          </WorkCard>
         );
       })}
     </ul>

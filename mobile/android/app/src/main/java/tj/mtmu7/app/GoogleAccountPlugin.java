@@ -10,6 +10,7 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.GetCredentialCancellationException;
 import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.GetCredentialInterruptedException;
 import androidx.credentials.exceptions.NoCredentialException;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -18,6 +19,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+import java.util.Locale;
 
 /**
  * "Sign in with Google" from the Google accounts already on the phone.
@@ -63,28 +65,49 @@ public class GoogleAccountPlugin extends Plugin {
             new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
                 @Override
                 public void onResult(GetCredentialResponse response) {
-                    Credential credential = response.getCredential();
-                    if (credential instanceof CustomCredential
-                        && GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
-                        GoogleIdTokenCredential google = GoogleIdTokenCredential.createFrom(credential.getData());
-                        JSObject result = new JSObject();
-                        result.put("idToken", google.getIdToken());
-                        result.put("email", google.getId());
-                        call.resolve(result);
-                    } else {
-                        call.reject("Not a Google account", "unexpected");
+                    // Whatever goes wrong here, the page hears of it: an
+                    // exception thrown out of this callback would leave the
+                    // portal's button spinning for good.
+                    try {
+                        Credential credential = response.getCredential();
+                        if (credential instanceof CustomCredential
+                            && GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
+                            GoogleIdTokenCredential google = GoogleIdTokenCredential.createFrom(credential.getData());
+                            JSObject result = new JSObject();
+                            result.put("idToken", google.getIdToken());
+                            result.put("email", google.getId());
+                            call.resolve(result);
+                        } else {
+                            call.reject("Not a Google account: " + credential.getType(), "unexpected");
+                        }
+                    } catch (Exception error) {
+                        call.reject(String.valueOf(error.getMessage()), "unexpected");
                     }
                 }
 
                 @Override
                 public void onError(GetCredentialException error) {
-                    String code = error instanceof GetCredentialCancellationException
-                        ? "cancelled"
-                        : error instanceof NoCredentialException ? "no_account" : "failed";
-                    call.reject(error.getMessage(), code);
+                    call.reject(error.getType() + ": " + error.getMessage(), code(error));
                 }
             }
         );
+    }
+
+    /**
+     * What the page is told went wrong. Google answers "cancelled" both when
+     * the sheet is closed and when the account chosen in it could not be
+     * confirmed ("[16] Account reauth failed": the account wants its password
+     * again, or Google does not know this build's signing key); only the
+     * first is the person's own choice, so the second gets a code of its own.
+     */
+    private static String code(GetCredentialException error) {
+        String message = String.valueOf(error.getMessage()).toLowerCase(Locale.ROOT);
+        if (error instanceof GetCredentialCancellationException) {
+            return message.contains("reauth") || message.contains("[16]") ? "reauth" : "cancelled";
+        }
+        if (error instanceof NoCredentialException) return "no_account";
+        if (error instanceof GetCredentialInterruptedException) return "interrupted";
+        return "failed";
     }
 
     /** The Firebase web client id the google-services plugin wrote, if it did. */

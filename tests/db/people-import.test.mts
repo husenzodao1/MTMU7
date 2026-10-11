@@ -52,8 +52,16 @@ after(async () => {
 
 describe("who may hand the school its register", () => {
   it("nobody without the permission to import it", async () => {
-    assert.equal(await errorOf(() => importAs(t.users.teacherA, "students", [pupil()])), "forbidden");
+    assert.equal(await errorOf(() => importAs(t.users.librarianA, "students", [pupil()])), "forbidden");
     assert.equal(await errorOf(() => importAs(t.users.studentA, "staff", [pupil()])), "forbidden");
+    assert.equal(await errorOf(() => importAs(t.users.teacherA, "staff", [pupil()])), "forbidden");
+  });
+
+  it("a class teacher, for their own class only", async () => {
+    const elsewhere = await importAs(t.users.teacherA, "students", [pupil()], true);
+    assert.deepEqual(problems(elsewhere), ["1:class_name:not_your_class"]);
+    const own = await importAs(t.users.teacherA, "students", [pupil({ class_name: "9A", email: "own.pupil@maktab.tj", date_of_birth: "2011-02-02" })], true);
+    assert.equal(own.valid, true, JSON.stringify(own.errors));
   });
 });
 
@@ -82,9 +90,9 @@ describe("a sheet that is not right yet", () => {
     assert.equal(after!.n, before!.n, "a preview writes nothing");
   });
 
-  it("says which classes it is about to bring into being", async () => {
-    const outcome = await run([pupil({ class_name: "5А" }), pupil({ class_name: "5Б", email: "b@maktab.tj" })], true);
-    assert.deepEqual(outcome.newClasses, ["5А", "5Б"], "a typo in a class name shows up here, before anything exists");
+  it("says which classes it is about to bring into being, beyond the 1А … 11Д that are always there", async () => {
+    const outcome = await run([pupil({ class_name: "5А" }), pupil({ class_name: "5Е", email: "b@maktab.tj", last_name: "Другой" })], true);
+    assert.deepEqual(outcome.newClasses, ["5Е"], "a typo in a class name shows up here, before anything exists");
   });
 
   it("refuses a login nobody holds, rather than inventing a second pupil", async () => {
@@ -104,8 +112,8 @@ describe("the first import", () => {
     ]);
   });
 
-  it("creates the classes the sheet mentions", async () => {
-    assert.deepEqual(first.newClasses.sort(), ["5А", "5Б"]);
+  it("puts the pupils in classes that are already there", async () => {
+    assert.deepEqual(first.newClasses, [], "1А … 11Д exist before anybody is put in one");
     const classes = await rows<{ name: string; grade_level: number }>(
       db,
       `SELECT name, grade_level FROM public.classes WHERE school_id = $1 AND name IN ('5А', '5Б') ORDER BY name`,

@@ -20,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const ALERT_LINKS: Record<string, string> = {
-  no_current_academic_year: "/admin/academic-years",
-  no_terms_defined: "/admin/academic-years",
+  no_current_academic_year: "/admin/classes",
+  no_terms_defined: "/admin/classes",
   classes_without_homeroom_teacher: "/admin/classes",
   subjects_without_teacher: "/admin/classes",
   no_bell_schedule: "/admin/timetable",

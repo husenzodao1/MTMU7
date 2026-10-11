@@ -34,7 +34,7 @@ export default async function TeachAssignmentPage({ params, searchParams }: { pa
 
   const { data: assignment } = await supabase
     .from("homework_assignments")
-    .select("id, class_subject_id, title, instructions, due_at, max_score, allow_submissions, status, published_at, homework_attachments(id, file_name, size_bytes, uploaded_by)")
+    .select("id, class_subject_id, title, pages, instructions, due_at, max_score, allow_submissions, status, published_at, homework_attachments(id, file_name, size_bytes, uploaded_by)")
     .eq("id", id)
     .maybeSingle();
   if (!assignment) notFound();
@@ -73,6 +73,7 @@ export default async function TeachAssignmentPage({ params, searchParams }: { pa
                   id: assignment.id,
                   classSubjectId: assignment.class_subject_id,
                   title: assignment.title,
+                  pages: assignment.pages,
                   instructions: assignment.instructions,
                   dueAt: isoToLocalInput(assignment.due_at, timeZone),
                   maxScore: assignment.max_score === null ? null : Number(assignment.max_score),

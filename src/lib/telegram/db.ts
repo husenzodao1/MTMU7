@@ -48,13 +48,13 @@ export const setState = (chat: number, state: ChatState["state"]) =>
   call<void>("telegram_set_state", { p_chat: chat, p_state: state });
 
 export const findChild = (chat: number, needle: string) =>
-  call<{ found: boolean; ambiguous?: boolean; noCode?: boolean }>("telegram_find_child", {
+  call<{ found: boolean; ambiguous?: boolean; noCode?: boolean; parent?: boolean }>("telegram_find_child", {
     p_chat: chat,
     p_needle: needle,
   });
 
 export const confirmChild = (chat: number, code: string) =>
-  call<{ ok: boolean; reason?: string; child?: Child }>("telegram_confirm_child", { p_chat: chat, p_code: code });
+  call<{ ok: boolean; reason?: string; child?: Child; children?: Child[] }>("telegram_confirm_child", { p_chat: chat, p_code: code });
 
 export const report = (chat: number, student: string, kind: string) =>
   call<Report>("telegram_report", { p_chat: chat, p_student: student, p_kind: kind, p_date: null });
@@ -65,12 +65,14 @@ export interface DueMessage {
   id: string;
   chat: number;
   locale: Loc;
-  kind: "grade" | "absence" | "digest";
+  kind: "grade" | "absence" | "digest" | "note";
   school: { name: string | null; slug: string } | null;
   child: Child;
   grade: GradeNews | null;
   absence: AbsenceNews | null;
   digest: Report | null;
+  /** A teacher's note (00088). */
+  note?: { text: string; from: string | null } | null;
 }
 
 export const dueMessages = (limit: number) => call<DueMessage[]>("telegram_due", { p_limit: limit });

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Downloads.java: a file from the portal, saved into the phone's Downloads. -->
+    <string name="download_started">Зеркашӣ сар шуд: %1$s</string>
+    <string name="download_saved">Дар «Downloads» нигоҳ дошта шуд: %1$s</string>
+    <string name="download_failed">Файл зеркашӣ нашуд. Бори дигар кӯшиш кунед.</string>
+    <string name="download_unsupported">Ин файлро барнома нигоҳ дошта наметавонад. Саҳифаро нав кунед.</string>
+</resources>

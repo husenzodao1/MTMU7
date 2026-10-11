@@ -25,7 +25,7 @@ const path = require("node:path");
 const SITE = "https://mtmuraqami7.vercel.app";
 const HOME = `${SITE}/dashboard`;
 const SCHEME = "tj.mtmu7.app";
-const BACKGROUND = "#17306d";
+const BACKGROUND = "#0a0e17";
 
 let win = null;
 

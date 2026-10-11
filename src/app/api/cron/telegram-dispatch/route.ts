@@ -3,7 +3,7 @@ import { serverEnv } from "@/lib/env.server";
 import { hasValidCronAuthorization } from "@/lib/security/cron";
 import { isTelegramConfigured, sendMessage, sendPhotoFile, TelegramError } from "@/lib/telegram/api";
 import * as db from "@/lib/telegram/db";
-import { absenceMessage, asLocale, gradeMessage, reportCaption, reportMessage } from "@/lib/telegram/messages";
+import { absenceMessage, asLocale, gradeMessage, noteMessage, reportCaption, reportMessage } from "@/lib/telegram/messages";
 import { renderReportCard } from "@/lib/telegram/report-card";
 
 export const runtime = "nodejs";
@@ -69,6 +69,8 @@ async function dispatch(request: Request) {
       text = gradeMessage(locale, item.child, item.grade, item.school);
     } else if (item.kind === "absence" && item.absence) {
       text = absenceMessage(locale, item.child, item.absence, item.school);
+    } else if (item.kind === "note" && item.note?.text) {
+      text = noteMessage(locale, item.child, { text: item.note.text, from: item.note.from ?? null }, item.school);
     } else if (item.kind === "digest" && item.digest) {
       // The evening report is a picture with a line under it; the text is
       // kept for when the picture cannot be drawn.

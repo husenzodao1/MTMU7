@@ -163,8 +163,9 @@ export function AttendanceRoster({
         })}
       </ol>
 
+      {/* Room at the end for the chat button, which floats over this corner. */}
       {!readOnly ? (
-        <div className="sticky bottom-20 z-10 flex justify-end rounded-xl border border-line bg-surface/95 p-3 shadow-overlay lg:bottom-4">
+        <div className="sticky bottom-20 z-10 flex justify-end rounded-xl border border-line bg-surface/95 p-3 pe-20 shadow-overlay sm:pe-24 lg:bottom-4">
           <SubmitButton className="w-full sm:w-auto">{t("save")}</SubmitButton>
         </div>
       ) : null}

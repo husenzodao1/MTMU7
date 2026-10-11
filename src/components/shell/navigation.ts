@@ -36,6 +36,9 @@ function isTeachingStaff(access: Access) {
   return canAny(access, ["grades.enter", "attendance.mark", "homework.create"]);
 }
 
+/** The support desk, at the foot of every menu. */
+const SUPPORT: NavItem = { key: "support", href: "/support", icon: "support", labelKey: "nav.support" };
+
 const PORTAL_RULES: Rule[] = [
   { item: { key: "dashboard", href: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard" }, visible: () => true },
   { item: { key: "teach", href: "/teach", icon: "teach", labelKey: "nav.teach" }, visible: isTeachingStaff },
@@ -63,6 +66,9 @@ const PORTAL_RULES: Rule[] = [
   { item: { key: "documents", href: "/documents", icon: "documents", labelKey: "nav.documents" }, visible: moduleAnd("documents", "documents.view") },
   { item: { key: "messages", href: "/messages", icon: "messages", labelKey: "nav.messages" }, visible: moduleAnd("messages", "messages.use") },
   { item: { key: "contacts", href: "/friends", icon: "contacts", labelKey: "nav.contacts" }, visible: (a) => hasModule(a, "friends") },
+  // Last, like any other item: the floating button that used to sit over
+  // every page is gone.
+  { item: SUPPORT, visible: () => true },
 ];
 
 export function portalNavigation(access: Access): NavItem[] {
@@ -103,7 +109,7 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     key: "academic",
     labelKey: "admin.nav.groups.academic",
     rules: [
-      { item: { key: "years", href: "/admin/academic-years", icon: "years", labelKey: "admin.nav.academicYears" }, visible: anyOf("academic_years.manage") },
+      // The academic year names and turns itself over (00086): no page for it.
       { item: { key: "classes", href: "/admin/classes", icon: "classes", labelKey: "admin.nav.classes" }, visible: anyOf("classes.create", "classes.update", "enrollments.manage") },
       { item: { key: "subjects", href: "/admin/subjects", icon: "subjects", labelKey: "admin.nav.subjects" }, visible: anyOf("subjects.manage") },
       { item: { key: "gradebook", href: "/admin/gradebook", icon: "gradebook", labelKey: "admin.nav.gradebook" }, visible: anyOf("grades.approve", "grades.update", "assessments.manage") },
@@ -151,9 +157,15 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
 ];
 
 export function adminNavigation(access: Access): NavGroup[] {
-  return ADMIN_GROUPS.map((group) => ({
+  const groups = ADMIN_GROUPS.map((group) => ({
     key: group.key,
     labelKey: group.labelKey,
     items: group.rules.filter((rule) => rule.visible(access)).map((rule) => rule.item),
   })).filter((group) => group.items.length > 0);
+  // Whoever answers the support desk has it in the office already; everybody
+  // else finds their own way to it at the foot of the menu.
+  if (!groups.some((group) => group.items.some((item) => item.key === "support"))) {
+    groups.push({ key: "help", labelKey: "", items: [SUPPORT] });
+  }
+  return groups;
 }

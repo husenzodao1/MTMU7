@@ -8,6 +8,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bell, ChevronDown, CircleAlert, LogOut, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
+import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { Avatar } from "@/components/ui/misc";
@@ -228,55 +229,71 @@ function CountBadge({ count, label }: { count: number; label: string }) {
 }
 
 /**
- * On a phone the menu also opens with a swipe to the right anywhere on the
- * page, and closes with a swipe back to the left — except where the finger is
- * on something that moves sideways itself: a horizontal list, a ribbon, a
- * text field, a slider.
+ * The phone's bottom bar. A quiet pill of the accent sits under the chosen
+ * section's icon and slides to the next one when another is tapped — at
+ * once, before the page has answered. Nothing moves on the first paint: only
+ * a choice moves it.
  */
-function useSwipeMenu(open: boolean, setOpen: (open: boolean) => void) {
+function BottomBar({ items, pathname, messagesUnread }: { items: NavItem[]; pathname: string; messagesUnread: number }) {
+  const t = useTranslations();
+  const current = items.findIndex((item) => isActive(pathname, item.href));
+  const [tapped, setTapped] = useState<{ index: number; from: string } | null>(null);
+  // A tap is believed until the page it asked for arrives (or another does).
+  const active = tapped && tapped.from === pathname ? tapped.index : current;
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    let start: { x: number; y: number; at: number } | null = null;
-    const movesSideways = (target: EventTarget | null) => {
-      for (let el = target instanceof Element ? target : null; el && el !== document.body; el = el.parentElement) {
-        if (el.matches("input, textarea, select, [contenteditable='true'], [role='slider'], [data-swipe='own']")) return true;
-        const style = getComputedStyle(el);
-        if ((style.overflowX === "auto" || style.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 1) return true;
-      }
-      return false;
-    };
-    const onStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || window.innerWidth >= 1024) {
-        start = null;
-        return;
-      }
-      const touch = event.touches[0]!;
-      start = movesSideways(event.target) ? null : { x: touch.clientX, y: touch.clientY, at: performance.now() };
-    };
-    const onEnd = (event: TouchEvent) => {
-      if (!start) return;
-      const touch = event.changedTouches[0]!;
-      const dx = touch.clientX - start.x;
-      const dy = touch.clientY - start.y;
-      const quick = performance.now() - start.at < 700;
-      start = null;
-      if (!quick || Math.abs(dy) > 45 || Math.abs(dx) < 70) return;
-      if (dx > 0 && !open) setOpen(true);
-      if (dx < 0 && open) setOpen(false);
-    };
-    document.addEventListener("touchstart", onStart, { passive: true });
-    document.addEventListener("touchend", onEnd, { passive: true });
-    return () => {
-      document.removeEventListener("touchstart", onStart);
-      document.removeEventListener("touchend", onEnd);
-    };
-  }, [open, setOpen]);
+    const frame = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  return (
+    <nav
+      aria-label={t("nav.quick")}
+      className="bar fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:hidden safe-bottom print:hidden"
+      data-ready={ready || undefined}
+      style={{ "--n": items.length, "--i": Math.max(active, 0) } as React.CSSProperties}
+    >
+      <span className="bar-pill" data-hidden={active < 0 || undefined} aria-hidden />
+      <ul className="relative grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map((item, index) => {
+          const on = index === active;
+          return (
+            <li key={item.key}>
+              <Link
+                href={item.href}
+                aria-current={on ? "page" : undefined}
+                onClick={() => setTapped({ index, from: pathname })}
+                className={cn("bar-item flex min-h-14 flex-col items-center justify-start gap-0.5 px-1 pb-1 pt-1.5 text-xs", on ? "font-semibold text-brand-text" : "text-ink-muted")}
+              >
+                <span className="flex h-8 w-[3.75rem] items-center justify-center">
+                  <span className="relative">
+                    <NavIcon name={item.icon} className="size-5" />
+                    {item.key === "messages" ? <CountBadge count={messagesUnread} label={t("nav.messagesUnread", { count: messagesUnread })} /> : null}
+                  </span>
+                </span>
+                <span className="max-w-full truncate">{t(item.labelKey)}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
 }
 
 export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  useSwipeMenu(drawerOpen, setDrawerOpen);
+  const appRoot = useRef<HTMLDivElement>(null);
+  const burger = useRef<HTMLButtonElement>(null);
+  // A link in the menu, the back button, a notification: wherever the page
+  // goes, the menu does not come along.
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
+    setDrawerOpen(false);
+  }
   const [filter, setFilter] = useState("");
   const [notifications, setNotifications] = useState(unreadNotifications);
 
@@ -391,7 +408,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
   return (
     <>
-      <div className="min-h-dvh lg:grid lg:grid-cols-[16.5rem_1fr]">
+      <div ref={appRoot} className="min-h-dvh lg:grid lg:grid-cols-[16.5rem_1fr]">
         <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface pt-[var(--strip-h)] lg:flex print:hidden">
           <div className="flex h-14 shrink-0 items-center border-b border-line px-4">
             <Link href={variant === "admin" ? "/admin" : "/dashboard"} className="min-w-0 rounded-md">
@@ -407,20 +424,21 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         <div className={cn("flex min-h-dvh min-w-0 flex-col", mobileBar && mobileBar.length > 0 && "shell-over-bar")}>
           {/* The phone's status bar is above it (--strip-h), so it pads itself below. */}
           <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
-            <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
-              <DialogPrimitive.Trigger asChild>
-                <button type="button" className="shell-icon lg:hidden" aria-label={t("nav.openMenu")} aria-expanded={drawerOpen}>
-                  <span className="burger" data-open={drawerOpen || undefined} aria-hidden>
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                </button>
-              </DialogPrimitive.Trigger>
-              <Overlay.DrawerContent title={school.fullName || school.name} closeLabel={t("common.close")} bare footer={<DrawerFooter />}>
-                {sidebar(() => setDrawerOpen(false))}
-              </Overlay.DrawerContent>
-            </DialogPrimitive.Root>
+            <button
+              ref={burger}
+              type="button"
+              className="shell-icon lg:hidden"
+              aria-label={t("nav.openMenu")}
+              aria-expanded={drawerOpen}
+              aria-controls="menu-drawer"
+              onClick={() => setDrawerOpen((was) => !was)}
+            >
+              <span className="burger" data-open={drawerOpen || undefined} aria-hidden>
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
 
             <div className="min-w-0 flex-1 lg:hidden">
               <SchoolMark school={school} subtitle={subtitle} />
@@ -485,8 +503,12 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                 <Overlay.DropdownMenuSeparator />
                 <form
                   action={async () => {
+                    // At once, whatever the network: the page dims and says it
+                    // is on its way out (html[data-leaving], globals.css).
+                    document.documentElement.setAttribute("data-leaving", "");
                     // In the phone app this phone stops getting this person's
-                    // notifications first; in a browser it returns at once.
+                    // notifications first (a second at most); in a browser it
+                    // returns at once.
                     await forgetNativeToken();
                     await signOutAction();
                   }}
@@ -508,31 +530,11 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
         <DevicePermissions locale={locale} userId={user.id} />
 
-        {mobileBar && mobileBar.length > 0 ? (
-          <nav aria-label={t("nav.quick")} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface lg:hidden safe-bottom print:hidden">
-            <ul className="grid" style={{ gridTemplateColumns: `repeat(${mobileBar.length}, minmax(0, 1fr))` }}>
-              {mobileBar.map((item) => {
-                const active = isActive(pathname, item.href);
-                return (
-                  <li key={item.key}>
-                    <Link
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn("relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs", active ? "font-semibold text-brand-text" : "text-ink-muted")}
-                    >
-                      <span className="relative">
-                        <NavIcon name={item.icon} className="size-5" />
-                        {item.key === "messages" ? <CountBadge count={messagesUnread} label={t("nav.messagesUnread", { count: messagesUnread })} /> : null}
-                      </span>
-                      <span className="max-w-full truncate">{t(item.labelKey)}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        ) : null}
+        {mobileBar && mobileBar.length > 0 ? <BottomBar items={mobileBar} pathname={pathname} messagesUnread={messagesUnread} /> : null}
       </div>
+      <MenuDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label={school.fullName || school.name} appRoot={appRoot} trigger={burger} footer={<DrawerFooter />}>
+        {sidebar(() => setDrawerOpen(false))}
+      </MenuDrawer>
     </>
   );
 }

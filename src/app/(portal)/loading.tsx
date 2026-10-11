@@ -1,7 +1,6 @@
-import { getTranslations } from "next-intl/server";
-import { LoadingState } from "@/components/ui/surface";
+import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
 
-export default async function Loading() {
-  const t = await getTranslations("common");
-  return <LoadingState label={t("loading")} />;
+/** Every page's loading screen, in the shape of the page on its way (route-shape.ts). */
+export default function Loading() {
+  return <RouteSkeleton />;
 }

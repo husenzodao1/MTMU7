@@ -14,8 +14,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     description: t("platformDescription"),
     start_url: "/dashboard",
     display: "standalone",
-    // The app's own night blue behind the icon while it opens.
-    background_color: "#0a0e17",
+    // The icon's own orange behind it while the installed app opens; the
+    // bar above the page keeps the portal's night.
+    background_color: "#ff5a1f",
     theme_color: "#0a0e17",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

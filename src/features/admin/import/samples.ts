@@ -17,7 +17,7 @@
 // Relative and with its extension, unlike the rest of src/: this module is
 // also read by scripts/import/make-samples.mts, which runs under plain Node
 // rather than the bundler that resolves "@/" and bare paths.
-import { PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, type SheetSpec } from "./templates.ts";
+import { PEOPLE_TEMPLATES, SUBJECTS_TEMPLATE, TIMETABLE_TEMPLATE, writtenColumns, type SheetSpec } from "./templates.ts";
 
 export type SampleKind = "students" | "staff" | "timetable" | "subjects";
 
@@ -25,7 +25,7 @@ type Row = Record<string, string>;
 
 const STUDENTS: Row[] = [
   // A first-grader: no address of their own (they sign in with the login),
-  // and the parent the school must have for the youngest classes.
+  // and the parents the school must have for the youngest classes.
   {
     class_name: "1А",
     last_name: "Назаров",
@@ -35,9 +35,14 @@ const STUDENTS: Row[] = [
     gender: "писар",
     email: "",
     phone: "",
-    guardian_name: "Назарова Шаҳло",
-    guardian_phone: "+992 93 555 44 33",
-    guardian_relationship: "модар",
+    father_name: "Назаров Бахтиёр Каримович",
+    father_workplace: "Ҷамъияти «Тоҷиктелеком», муҳандис",
+    father_phone: "+992 93 555 44 30",
+    father_email: "",
+    mother_name: "Назарова Шаҳло Рустамовна",
+    mother_workplace: "Беморхонаи шаҳрӣ, ҳамшираи тиббӣ",
+    mother_phone: "+992 93 555 44 33",
+    mother_email: "",
   },
   {
     class_name: "5А",
@@ -48,9 +53,14 @@ const STUDENTS: Row[] = [
     gender: "писар",
     email: "ali.karimov@gmail.com",
     phone: "+992 90 123 45 67",
-    guardian_name: "Каримова Мадина",
-    guardian_phone: "+992 90 111 22 33",
-    guardian_relationship: "модар",
+    father_name: "Каримов Раҳим Саидович",
+    father_workplace: "Бонки «Амонатбонк», хазинадор",
+    father_phone: "+992 90 111 22 30",
+    father_email: "rahim.karimov@gmail.com",
+    mother_name: "Каримова Мадина Аҳмадовна",
+    mother_workplace: "Мактаби №7, омӯзгор",
+    mother_phone: "+992 90 111 22 33",
+    mother_email: "",
   },
   {
     class_name: "5А",
@@ -61,11 +71,15 @@ const STUDENTS: Row[] = [
     gender: "духтар",
     email: "nilufar.saidova@gmail.com",
     phone: "+992 92 234 56 78",
+    mother_name: "Саидова Гулрухсор Ҳасановна",
+    mother_workplace: "Хонашин",
+    mother_phone: "+992 92 234 56 70",
   },
   // Two children of one family. One inbox, two addresses: everything after the
   // + is ignored on delivery, so both codes reach the parent while Supabase
-  // still sees two different people. A telephone number, though, belongs to
-  // one account in the school: the younger one has none of her own yet.
+  // still sees two different people. The parents are written beside both
+  // with the same telephones, so the two share one father and one mother —
+  // and the parents get their login once.
   {
     class_name: "5А",
     last_name: "Ҳакимов",
@@ -75,6 +89,12 @@ const STUDENTS: Row[] = [
     gender: "писар",
     email: "hakimov.oila+somon@gmail.com",
     phone: "+992 93 345 67 89",
+    father_name: "Ҳакимов Аскар Олимович",
+    father_workplace: "Ширкати сохтмонии «Истаравшан», сардор",
+    father_phone: "+992 93 345 67 80",
+    mother_name: "Ҳакимова Зебо Назаровна",
+    mother_workplace: "Бозори марказӣ, фурӯшанда",
+    mother_phone: "+992 93 345 67 81",
   },
   {
     class_name: "5Б",
@@ -85,6 +105,10 @@ const STUDENTS: Row[] = [
     gender: "духтар",
     email: "hakimov.oila+sabina@gmail.com",
     phone: "",
+    father_name: "Ҳакимов Аскар Олимович",
+    father_phone: "+992 93 345 67 80",
+    mother_name: "Ҳакимова Зебо Назаровна",
+    mother_phone: "+992 93 345 67 81",
   },
   {
     class_name: "5Б",
@@ -95,6 +119,9 @@ const STUDENTS: Row[] = [
     gender: "духтар",
     email: "zarina.rajabova@gmail.com",
     phone: "+992 91 456 78 90",
+    father_name: "Раҷабов Нурулло Шарифович",
+    father_workplace: "Муҳоҷири меҳнатӣ, Русия",
+    father_phone: "+992 91 456 78 91",
   },
   {
     class_name: "5Б",
@@ -105,6 +132,10 @@ const STUDENTS: Row[] = [
     gender: "писар",
     email: "jamshed.toirov@gmail.com",
     phone: "+992 98 567 89 01",
+    mother_name: "Тоирова Муҳаббат Валиевна",
+    mother_workplace: "Хонашин",
+    mother_phone: "+992 98 567 89 02",
+    mother_email: "toirova.m@mail.ru",
   },
 ];
 
@@ -218,10 +249,13 @@ const WEEK: Record<string, Record<string, string[]>> = {
   },
 };
 
+/** 5А studies in the first shift and 5Б in the second: the «Баст» column says so. */
+const SHIFT: Record<string, string> = { "5А": "1", "5Б": "2" };
+
 const TIMETABLE: Row[] = Object.entries(WEEK).flatMap(([className, days]) =>
   DAYS.map((day) => {
     const periods = days[day] ?? [];
-    const row: Row = { class_name: className, day };
+    const row: Row = { class_name: className, day, shift: SHIFT[className] ?? "1" };
     for (let index = 0; index < 12; index += 1) row[`p${index + 1}`] = periods[index] ?? "";
     return row;
   })
@@ -229,33 +263,33 @@ const TIMETABLE: Row[] = Object.entries(WEEK).flatMap(([className, days]) =>
 
 /**
  * The subjects of a Tajik school, with the names the timetable above uses, so
- * importing this first and the timetable after gives every lesson a subject
- * that already has its Russian and English names and its code.
+ * importing this first and the timetable after gives every lesson a subject.
+ * The name is all the office writes: the platform gives each subject its
+ * Russian and English names and its code (00087).
  */
-const SUBJECT = (name_tg: string, name_ru: string, name_en: string, code: string, weekly_hours: string): Row => ({ name_tg, name_ru, name_en, code, weekly_hours });
 const SUBJECTS: Row[] = [
-  SUBJECT("Забони тоҷикӣ", "Таджикский язык", "Tajik language", "TAJ", "4"),
-  SUBJECT("Адабиёти тоҷик", "Таджикская литература", "Tajik literature", "TAJ-LIT", "2"),
-  SUBJECT("Математика", "Математика", "Mathematics", "MATH", "5"),
-  SUBJECT("Алгебра", "Алгебра", "Algebra", "ALG", "3"),
-  SUBJECT("Геометрия", "Геометрия", "Geometry", "GEOM", "2"),
-  SUBJECT("Забони русӣ", "Русский язык", "Russian language", "RUS", "3"),
-  SUBJECT("Забони англисӣ", "Английский язык", "English language", "ENG", "2"),
-  SUBJECT("Табиатшиносӣ", "Природоведение", "Natural science", "NAT", "2"),
-  SUBJECT("Физика", "Физика", "Physics", "PHYS", "2"),
-  SUBJECT("Химия", "Химия", "Chemistry", "CHEM", "2"),
-  SUBJECT("Биология", "Биология", "Biology", "BIO", "2"),
-  SUBJECT("География", "География", "Geography", "GEO", "2"),
-  SUBJECT("Таърихи халқи тоҷик", "История таджикского народа", "History of the Tajik people", "HIST-TJ", "2"),
-  SUBJECT("Таърихи умумӣ", "Всеобщая история", "World history", "HIST", "1"),
-  SUBJECT("Ҳуқуқ", "Право", "Law", "LAW", "1"),
-  SUBJECT("Информатика", "Информатика", "Computer science", "IT", "1"),
-  SUBJECT("Технология", "Технология", "Technology", "TECH", "1"),
-  SUBJECT("Санъати тасвирӣ", "Изобразительное искусство", "Fine art", "ART", "1"),
-  SUBJECT("Мусиқӣ", "Музыка", "Music", "MUS", "1"),
-  SUBJECT("Тарбияи ҷисмонӣ", "Физическая культура", "Physical education", "PE", "2"),
-  SUBJECT("Соати тарбиявӣ", "Классный час", "Form period", "FORM", "1"),
-];
+  "Забони тоҷикӣ",
+  "Адабиёти тоҷик",
+  "Математика",
+  "Алгебра",
+  "Геометрия",
+  "Забони русӣ",
+  "Забони англисӣ",
+  "Табиатшиносӣ",
+  "Физика",
+  "Химия",
+  "Биология",
+  "География",
+  "Таърихи халқи тоҷик",
+  "Таърихи умумӣ",
+  "Ҳуқуқ",
+  "Информатика",
+  "Технология",
+  "Санъати тасвирӣ",
+  "Мусиқӣ",
+  "Тарбияи ҷисмонӣ",
+  "Соати тарбиявӣ",
+].map((name_tg) => ({ name_tg }));
 
 const SAMPLES: Record<SampleKind, Row[]> = { students: STUDENTS, staff: STAFF, timetable: TIMETABLE, subjects: SUBJECTS };
 
@@ -268,7 +302,7 @@ export function sampleSpec(kind: SampleKind): SheetSpec {
 /** The example rows, in the column order of that workbook. */
 export function sampleRows(kind: SampleKind): Array<Array<string | null>> {
   const spec = sampleSpec(kind);
-  return SAMPLES[kind].map((row) => spec.columns.map((column) => row[column.key] ?? null));
+  return SAMPLES[kind].map((row) => writtenColumns(spec).map((column) => row[column.key] ?? null));
 }
 
 export function isSampleKind(value: string): value is SampleKind {
@@ -280,11 +314,13 @@ export const SAMPLE_NOTICE = [
   "Ин файл НАМУНА аст. Одамони дар он буда вуҷуд надоранд — онро ворид накунед.",
   "Онро кушоед, бинед, ки сутунҳо чӣ гуна пур мешаванд, ва баъд шаблони холиро бо маълумоти мактаби худ пур кунед.",
   "",
-  "Ба чор чиз диққат диҳед:",
+  "Ба ин чизҳо диққат диҳед:",
   "1. Сана ҳамеша дар шакли СССС-ММ-РР: 2015-03-04, на 04.03.2015.",
   "2. Номи синф бо ҳарфи кириллӣ: 5А. Ҳарфи лотинии A шабеҳ аст, вале система онро ҳам мефаҳмад ва ба кириллӣ табдил медиҳад.",
-  "3. Ду фарзанди як оила бо як почта ворид карда намешаванд. Дар намуна оилаи Ҳакимов нишон дода шудааст: hakimov.oila+somon@gmail.com ва hakimov.oila+sabina@gmail.com — ҳарду ба ҳамон як почта мерасанд, вале барои система ду суроғаи ҷудогонаанд.",
-  "4. Дар ҷадвали дарсӣ омӯзгор бо РАҚАМ навишта мешавад, на бо насаб: «Математика (11)». Ҳамон рақаме, ки дар шаблони омӯзгорон навиштаед.",
+  "3. Падар ва модар дар ҳамон сатри хонанда навишта мешаванд: ному насаб, ҷои кор, телефон ва почта. Ба ҳар яки онҳо логин ва пароли кӯтоҳ дода мешавад.",
+  "4. Бародару хоҳар (оилаи Ҳакимовҳо дар намуна) падару модарро бо ҳамон рақамҳои телефон менависанд — пас онҳо як падару як модар доранд ва логин як бор дода мешавад.",
+  "5. Ду фарзанди як оила бо як почта ворид карда намешаванд: hakimov.oila+somon@gmail.com ва hakimov.oila+sabina@gmail.com ба ҳамон як почта мерасанд, вале барои система ду суроғаи ҷудогонаанд.",
+  "6. Дар ҷадвали дарсӣ омӯзгор бо РАҚАМ навишта мешавад, на бо насаб: «Математика (11)». Ҳамон рақаме, ки дар шаблони омӯзгорон навиштаед. Сутуни «Баст» мегӯяд, ки синф дар басти 1 ё 2 мехонад.",
   "",
   "Дар намуна ду чизи дигар низ нишон дода шудааст:",
   "— «Забони англисӣ (19) / Забони англисӣ (23)» — синф ба ду гурӯҳ ҷудо шуда, ҳар гурӯҳ омӯзгори худро дорад.",
@@ -298,12 +334,10 @@ export const SAMPLE_NOTICE = [
  */
 export const SUBJECTS_SAMPLE_NOTICE = [
   "Ин рӯйхати намунавии фанҳои мактаби тоҷикӣ аст.",
-  "Онро метавонед ҳамчун асос истифода баред: фанҳоеро, ки дар мактаби шумо нестанд, нест кунед, соатҳоро ислоҳ кунед ва ворид кунед.",
+  "Онро метавонед ҳамчун асос истифода баред: фанҳоеро, ки дар мактаби шумо нестанд, нест кунед ва ворид кунед.",
   "",
-  "Ба се чиз диққат диҳед:",
-  "1. Номи фан айнан ҳамон тавр бошад, ки дар ҷадвали дарсӣ менависед: «Забони англисӣ», на «Англисӣ».",
-  "2. Рамз кӯтоҳ ва бо ҳарфҳои лотинӣ: MATH, TAJ-LIT.",
-  "3. Соат дар ҳафта бо вергул ё нуқта: 1,5 ё 1.5.",
+  "Танҳо номи фанро бо забони тоҷикӣ нависед — номи русӣ ва англисӣ ва рамзро система худаш муайян мекунад.",
+  "Номи фан айнан ҳамон тавр бошад, ки дар ҷадвали дарсӣ менависед: «Забони англисӣ», на «Англисӣ».",
 ];
 
 /** The front page a filled-in example opens with. */

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { IntroScene, SCHOOL_MARK } from "@/features/intro/intro-scene";
-import type { ScriptLine } from "@/features/intro/greeting-paths";
 import { INTRO_QUICK_MS, WELCOME_MS } from "@/features/intro/intro-script";
 import { report } from "@/features/native/diagnostics";
 import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
@@ -14,17 +13,17 @@ import { cn } from "@/lib/utils/cn";
 const VEIL_ATTRIBUTE = "data-signin-veil";
 
 /**
- * The moment between signing in and the portal: the same night canvas as the
- * site's opening (intro-scene.tsx), where "Welcome" writes itself in brass and
- * the person's name follows under it.
+ * The moment between signing in and the portal: on the same night canvas as
+ * the sign-in veil, "Салом" is written out and the person's name follows in
+ * brass (intro-scene.tsx), in about two seconds (WELCOME_MS) while the portal
+ * loads underneath. A tap skips it; with reduced motion it is the finished
+ * greeting for a moment.
  *
  * Rendered by the portal's layouts on the first page after a sign-in (the
- * one-minute cookie markWelcome() leaves) and by nothing else, so it is seen
- * once per sign-in and never on an ordinary visit. It carries straight on from
- * the sign-in veil, which has the same canvas and mark. A tap skips it, and
- * with reduced motion it is the greeting, already written, for a moment.
+ * one-minute cookie markWelcome() leaves) and by nothing else.
  */
-export function WelcomeTransition({ firstName, script }: { firstName: string; script: ScriptLine }) {
+export function WelcomeTransition({ firstName }: { firstName: string }) {
+  const t = useTranslations("common.welcome");
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
 
   useEffect(() => {
@@ -46,7 +45,7 @@ export function WelcomeTransition({ firstName, script }: { firstName: string; sc
   if (phase === "gone") return null;
   return (
     <div className={cn("intro intro-welcome", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")}>
-      <IntroScene lines={[script]} name={firstName} />
+      <IntroScene words={t("hello")} name={firstName} />
     </div>
   );
 }
@@ -66,6 +65,8 @@ export function SignInVeil() {
   useEffect(() => {
     if (!pending) {
       document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
+      // Arrived from signing out: the dimmed portal is gone.
+      document.documentElement.removeAttribute("data-leaving");
       return;
     }
     report("signin.submit");

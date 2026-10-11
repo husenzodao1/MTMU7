@@ -7,8 +7,10 @@ import { useId, useRef, useState, useTransition } from "react";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Alert } from "@/components/ui/surface";
 import { previewPeopleImportAction } from "@/features/admin/import/people-actions";
+import { filesPlugin, isInApp } from "@/features/native/bridge";
+import { saveFile } from "@/features/native/files";
 import type { PeopleOutcome } from "@/features/admin/import/people-import";
-import { PEOPLE_TEMPLATES, type PeopleKind } from "@/features/admin/import/templates";
+import { PEOPLE_TEMPLATES, writtenColumns, type PeopleKind } from "@/features/admin/import/templates";
 import { cn } from "@/lib/utils/cn";
 
 type Step = "upload" | "preview" | "done";
@@ -24,7 +26,16 @@ type Step = "upload" | "preview" | "done";
  * The workbook that comes back carries the only copy of the passwords. It is
  * handed over as a download the moment the import finishes, and never stored.
  */
-export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: PeopleKind; parentManagedMaxGrade?: number }) {
+export function PeopleImportWizard({
+  kind,
+  parentManagedMaxGrade = 5,
+  backHref,
+}: {
+  kind: PeopleKind;
+  parentManagedMaxGrade?: number;
+  /** Where "back to the list" goes: the office's register, or the class teacher's own class. */
+  backHref?: string;
+}) {
   const t = useTranslations("admin.import");
   const tRoot = useTranslations();
   const template = PEOPLE_TEMPLATES[kind];
@@ -34,7 +45,10 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
   const [fileName, setFileName] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<PeopleOutcome | null>(null);
-  const [summary, setSummary] = useState<{ created: number; updated: number; telegram: number } | null>(null);
+  const [summary, setSummary] = useState<{ created: number; updated: number; telegram: number; parents: number; stoppedAt: number | null } | null>(null);
+  // The result, kept in this page only, so it can be saved again if the first
+  // save went nowhere: the passwords in it are issued once.
+  const [result, setResult] = useState<{ blob: Blob; name: string } | null>(null);
   // Send the youngest pupils' new logins to their parents' Telegram.
   const [notifyParents, setNotifyParents] = useState(kind === "students");
   const [pending, startTransition] = useTransition();
@@ -44,9 +58,18 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
     setStep("upload");
     setOutcome(null);
     setSummary(null);
+    setResult(null);
     setProblem(null);
     setFileName("");
   };
+
+  async function hand(file: { blob: Blob; name: string }) {
+    try {
+      if ((await saveFile(file.blob, file.name)) === "app-too-old") setProblem(t("workbook.appTooOld"));
+    } catch {
+      setProblem(t("workbook.saveFailed"));
+    }
+  }
 
   function onFile(file: File | undefined) {
     setProblem(null);
@@ -71,6 +94,12 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
     const file = fileRef.current;
     if (!file) return;
     startTransition(async () => {
+      // An app that cannot save the result would lose the passwords, and an
+      // import run again does not issue them twice: it is stopped before.
+      if (isInApp() && !(await filesPlugin())) {
+        setProblem(t("workbook.appTooOld"));
+        return;
+      }
       const body = new FormData();
       body.set("file", file);
       if (notifyParents) body.set("notifyParents", "1");
@@ -83,18 +112,16 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
 
       // The passwords live in this response and nowhere else, so the file is
       // put in front of the administrator before anything else happens.
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `${kind}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      const handed = { blob: await response.blob(), name: `${kind}-${new Date().toISOString().slice(0, 10)}.xlsx` };
+      setResult(handed);
+      await hand(handed);
 
       setSummary({
         created: Number(response.headers.get("X-Import-Created") ?? 0),
         updated: Number(response.headers.get("X-Import-Updated") ?? 0),
         telegram: Number(response.headers.get("X-Telegram-Sent") ?? 0),
+        parents: Number(response.headers.get("X-Import-Parents") ?? 0),
+        stoppedAt: response.headers.has("X-Import-Stopped-At") ? Number(response.headers.get("X-Import-Stopped-At")) : null,
       });
       setStep("done");
     });
@@ -130,7 +157,10 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
           <div className="rounded-lg border border-line bg-surface-muted/40 p-4 text-sm">
             <p className="font-medium text-ink">{t("columns")}</p>
             <p className="mt-1 break-words text-xs text-ink-secondary">
-              {template.columns.map((column) => (column.required ? `${column.header}*` : column.header)).join(" · ")}
+              {writtenColumns(template)
+                .filter((column) => !column.issued)
+                .map((column) => (column.required ? `${column.header}*` : column.header))
+                .join(" · ")}
             </p>
             <ul className="mt-3 space-y-1 text-ink-muted">
               {template.instructions.map((line) => (
@@ -257,10 +287,18 @@ export function PeopleImportWizard({ kind, parentManagedMaxGrade = 5 }: { kind: 
       {step === "done" && summary ? (
         <Alert tone="success" title={t("doneTitle")}>
           <p>{t("workbook.done", { created: summary.created, updated: summary.updated })}</p>
+          {summary.parents > 0 ? <p className="mt-1">{t("workbook.parentsIssued", { count: summary.parents })}</p> : null}
           {summary.telegram > 0 ? <p className="mt-1">{t("workbook.telegramSent", { count: summary.telegram })}</p> : null}
+          {summary.stoppedAt !== null ? <p className="mt-2 font-medium text-warning-700">{t("workbook.stopped", { row: summary.stoppedAt })}</p> : null}
           <p className="mt-2 font-medium">{t("workbook.keepTheFile")}</p>
           <p className="mt-3 flex flex-wrap gap-2">
-            <Link href={`/admin/accounts?category=${kind === "students" ? "students" : "teachers"}`} className={buttonClasses("secondary", "sm")}>
+            {result ? (
+              <Button variant="primary" size="sm" onClick={() => void hand(result)}>
+                <Download aria-hidden />
+                {t("workbook.saveAgain")}
+              </Button>
+            ) : null}
+            <Link href={backHref ?? `/admin/accounts?category=${kind === "students" ? "students" : "teachers"}`} className={buttonClasses("secondary", "sm")}>
               {t("backToList")}
             </Link>
             <Button variant="ghost" size="sm" onClick={reset}>

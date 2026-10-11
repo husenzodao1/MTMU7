@@ -2,11 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Bad_Script, Great_Vibes, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
-import { SupportFab } from "@/components/site/support-fab";
-import { openingScript } from "@/features/intro/greetings";
+import { JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
 import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
+import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
 import { isAppUserAgent } from "@/lib/native/app";
@@ -24,8 +23,8 @@ const notoSans = Noto_Sans({
 
 /**
  * For the few lines that are meant to be looked at rather than read through:
- * the front page's title, page titles, the dashboard's greeting, the school's
- * name in the footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
+ * the front page's title, page titles, the dashboard's greeting, the opening,
+ * the school's name in the footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
  * most display faces do not, so the letters that make the language its own do
  * not fall back to a different font mid-word.
  */
@@ -34,28 +33,6 @@ const notoSerif = Noto_Serif({
   weight: ["400", "600", "700"],
   display: "swap",
   variable: "--font-noto-serif",
-});
-
-/**
- * The hand that writes a name under "Welcome" after signing in
- * (src/features/intro/intro-scene.tsx). The greeting's own lines are drawn from
- * Great Vibes' outlines and need no font; a name is typed, so it is written
- * in Great Vibes itself — or, when it has one of ғ ҷ қ ӣ ӯ ҳ, which Great Vibes
- * lacks, in Bad Script, which has them all. Loaded only when a welcome shows.
- */
-const script = Great_Vibes({
-  subsets: ["latin", "cyrillic"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-script",
-});
-const hand = Bad_Script({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-hand",
 });
 
 /**
@@ -126,10 +103,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page of a visit opens with the school's mark and the greeting
-  // (src/features/intro/): in the app on each start, on the site once per visit
-  // (a session cookie) and never for robots — and not on the first page after
-  // signing in, which has a welcome of its own.
+  // The first page opens with the school's mark and a greeting (src/features/intro/):
+  // on the site once per browser (a year's cookie), in the app on its first
+  // start (the page skips it after that), never for robots — and not on the
+  // first page after signing in, which has a short welcome of its own.
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
   const opening =
@@ -142,12 +119,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
-      className={`${notoSans.variable} ${notoSerif.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
+      // Inside the phone app: taps are answered as in an app (globals.css).
+      data-app={isAppUserAgent(userAgent) ? "" : undefined}
+      className={`${notoSans.variable} ${notoSerif.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (
           <>
-            <Intro lines={openingScript(locale)} />
+            <Intro words={t("welcome.opening")} />
             {/* The per-request nonce the CSP allows (src/proxy.ts). */}
             <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
           </>
@@ -158,8 +137,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ToastProvider>
             {children}
-            <SupportFab />
             <NativeApp />
+            <OfflineCover />
             <ViewportGuard />
           </ToastProvider>
         </NextIntlClientProvider>

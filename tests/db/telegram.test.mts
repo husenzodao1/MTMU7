@@ -111,14 +111,14 @@ describe("the slips the school hands out", () => {
 describe("a parent linking their child", () => {
   it("finds the child by nickname", async () => {
     await touch(CHAT);
-    assert.deepEqual(await find(CHAT, "somon"), { found: true, noCode: false });
+    assert.deepEqual(await find(CHAT, "somon"), { found: true, noCode: false, parent: false });
   });
 
   it("finds the same child by the school login", async () => {
     const login = await one<{ public_id: string }>(db, `SELECT public_id FROM public.users WHERE id = $1`, [
       t.users.studentA,
     ]);
-    assert.deepEqual(await find(CHAT, login!.public_id.toLowerCase()), { found: true, noCode: false });
+    assert.deepEqual(await find(CHAT, login!.public_id.toLowerCase()), { found: true, noCode: false, parent: false });
   });
 
   it("says nothing useful about a name that is not there", async () => {
@@ -165,6 +165,30 @@ describe("a parent linking their child", () => {
   it("leaves a parent already linked alone when codes are reissued", async () => {
     const state = await touch(CHAT);
     assert.equal(state.children.length, 1, "a code is a door, not a licence");
+  });
+});
+
+describe("a parent signing in with their own login", () => {
+  const PARENT_CHAT = 5150009;
+
+  it("is asked for their password, and a wrong one is counted", async () => {
+    await db.query(`UPDATE auth.users SET encrypted_password = extensions.crypt('kp482913', extensions.gen_salt('bf', 4)) WHERE id = $1`, [t.users.parentA]);
+    const login = await one<{ public_id: string }>(db, `SELECT public_id FROM public.users WHERE id = $1`, [t.users.parentA]);
+    await touch(PARENT_CHAT);
+    assert.deepEqual(await find(PARENT_CHAT, login!.public_id), { found: true, noCode: false, parent: true });
+    assert.deepEqual(await confirm(PARENT_CHAT, "kp000000"), { ok: false, reason: "wrong" });
+  });
+
+  it("hears about every one of their children once the password is right, and is marked confirmed", async () => {
+    const answer = (await confirm(PARENT_CHAT, "kp482913")) as { ok: boolean; children?: Array<{ id: string }> };
+    assert.equal(answer.ok, true);
+    assert.deepEqual(answer.children?.map((c) => c.id), [a.students.studentA]);
+    const state = await touch(PARENT_CHAT);
+    assert.equal(state.children.length, 1);
+    const confirmed = await one<{ at: string | null }>(db, `SELECT telegram_confirmed_at::text AS at FROM public.guardians WHERE id = $1`, [a.guardianA]);
+    assert.ok(confirmed!.at, "the pupil's card can say Telegram is confirmed");
+    // The chats below count on the two parents linked earlier, and no third.
+    await asService(db, (tx) => tx.query(`SELECT public.telegram_forget($1)`, [PARENT_CHAT.toString()]));
   });
 });
 

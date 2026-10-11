@@ -11,6 +11,10 @@ export interface PeopleOutcome {
   created: number;
   updated: number;
   credentials: Array<{ row: number; login: string; password: string }>;
+  /** The parents written beside each pupil: their login, and a password only when it was just issued. */
+  parents?: Array<{ row: number; relation: "father" | "mother"; login: string; password: string | null }>;
+  /** Every row's login, issued now or long ago. */
+  logins?: Array<{ row: number; login: string }>;
   newClasses: string[];
 }
 

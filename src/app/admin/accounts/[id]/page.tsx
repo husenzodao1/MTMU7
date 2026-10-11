@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ExternalLink, Eye, EyeOff } from "lucide-react";
+import { ArrowRightLeft, ExternalLink, Eye, EyeOff, UserMinus } from "lucide-react";
+import { moveStudentAction, removeStudentAction } from "@/features/admin/academic/structure-actions";
+import { compareClassNames } from "@/features/academic/class-order";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { getClassOptions } from "@/features/admin/queries";
 import { setAccountHiddenAction, setUserStatusAction } from "@/features/admin/users/actions";
@@ -11,10 +13,10 @@ import { AccountForm } from "@/features/accounts/account-form";
 import { AccountSecurity } from "@/features/accounts/account-security";
 import { gradeLimits, loadDetails } from "@/features/accounts/queries";
 import { kindFromDetails } from "@/features/accounts/types";
-import { FormDialog } from "@/components/ui/action-form";
+import { ConfirmAction, FormDialog } from "@/components/ui/action-form";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button, buttonClasses } from "@/components/ui/button";
-import { TextAreaField } from "@/components/ui/fields";
+import { SelectField, TextAreaField } from "@/components/ui/fields";
 import { Avatar } from "@/components/ui/misc";
 import { Alert, Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
@@ -123,6 +125,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
                 { term: t("lastLogin"), description: details.last_login_at ? formatDateTime(details.last_login_at, locale, timeZone) : t("never") },
                 { term: t("credentialsIssued"), description: details.credentials_issued_at ? formatDateTime(details.credentials_issued_at, locale, timeZone) : "—" },
                 ...(details.staff?.subjects.length ? [{ term: tCard("subjects"), description: details.staff.subjects.join(" · ") }] : []),
+                ...(details.staff?.subjects_note ? [{ term: t("fields.subjects_note"), description: details.staff.subjects_note }] : []),
               ]}
             />
           </CardBody>
@@ -141,6 +144,52 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
           </CardBody>
         </Card>
       </div>
+
+      {/* A pupil's class, changed in one step: moved to another class, or
+          taken out of the school (00088). The workbook exported afterwards
+          says the same. */}
+      {details.student && details.can_edit && (can(access, "enrollments.manage") || can(access, "students.archive")) ? (
+        <Card className="mb-5">
+          <CardHeader
+            title={t("classCard.title", { name: details.student.class_name ?? "—" })}
+            description={t("classCard.hint")}
+            actions={
+              <span className="flex flex-wrap gap-2">
+                {can(access, "enrollments.manage") ? (
+                  <FormDialog
+                    action={moveStudentAction}
+                    trigger={<Button variant="secondary" size="sm"><ArrowRightLeft aria-hidden />{t("classCard.move")}</Button>}
+                    title={t("classCard.moveTitle", { name })}
+                    submitLabel={t("classCard.move")}
+                  >
+                    <input type="hidden" name="studentId" value={details.student.id} />
+                    <SelectField
+                      name="toClassId"
+                      label={t("classCard.moveTo")}
+                      placeholder={t("classCard.chooseClass")}
+                      required
+                      options={classes
+                        .filter((c) => c.value !== details.student!.class_id)
+                        .sort((a, b) => compareClassNames(a.label, b.label))
+                        .map(({ value, label }) => ({ value, label }))}
+                    />
+                  </FormDialog>
+                ) : null}
+                {can(access, "students.archive") || can(access, "students.update") ? (
+                  <ConfirmAction
+                    action={removeStudentAction}
+                    fields={{ studentId: details.student.id }}
+                    title={t("classCard.removeTitle", { name })}
+                    description={t("classCard.removeHint")}
+                    confirmLabel={t("classCard.remove")}
+                    trigger={<Button variant="danger-outline" size="sm"><UserMinus aria-hidden />{t("classCard.remove")}</Button>}
+                  />
+                ) : null}
+              </span>
+            }
+          />
+        </Card>
+      ) : null}
 
       {details.can_edit ? (
         <AccountForm

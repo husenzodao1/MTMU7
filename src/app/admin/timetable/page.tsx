@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { saveRoomAction } from "@/features/admin/academic/structure-actions";
+import { saveRoomAction, setClassShiftAction } from "@/features/admin/academic/structure-actions";
 import {
   cancelSubstitutionAction,
   deleteTimetableEntryAction,
-  saveBellScheduleAction,
   saveSubstitutionAction,
   saveTimetableEntryAction,
 } from "@/features/admin/academic/schedule-actions";
@@ -78,44 +77,36 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
     return (
       <>
         {header}
-        <div className="grid gap-5 lg:grid-cols-3">
-          {/* The school teaches in two shifts (00080). */}
-          {[1, 2].map((shift) => {
-            const byPeriod = new Map((bells ?? []).filter((b) => b.shift === shift).map((b) => [b.period_number, b]));
-            return (
-              <Card key={shift}>
-                <CardHeader title={t("shift", { shift })} description={t("bellHint")} />
-                <CardBody>
-                  <ActionForm action={saveBellScheduleAction} className="space-y-3">
-                    <input type="hidden" name="shift" value={shift} />
-                    <table className="w-full text-sm">
-                      <caption className="sr-only">{t("shift", { shift })}</caption>
-                      <thead>
-                        <tr className="text-xs uppercase tracking-wide text-ink-muted">
-                          <th scope="col" className="py-1 text-start">{t("period")}</th>
-                          <th scope="col" className="py-1 text-start">{t("start")}</th>
-                          <th scope="col" className="py-1 text-start">{t("end")}</th>
+        <Alert tone="info" className="mb-4">{t("bellsFixed")}</Alert>
+        <div className="grid gap-5 sm:grid-cols-2 lg:max-w-3xl">
+          {/* Two shifts of five lessons, rung the same everywhere (00086). */}
+          {[1, 2].map((shift) => (
+            <Card key={shift}>
+              <CardHeader title={t("shift", { shift })} />
+              <CardBody className="p-0">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">{t("shift", { shift })}</caption>
+                  <thead>
+                    <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-muted">
+                      <th scope="col" className="px-5 py-2 text-start">{t("period")}</th>
+                      <th scope="col" className="px-5 py-2 text-start">{t("time")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {(bells ?? [])
+                      .filter((b) => b.shift === shift)
+                      .sort((a, b) => a.period_number - b.period_number)
+                      .map((bell) => (
+                        <tr key={bell.period_number}>
+                          <th scope="row" className="px-5 py-2 text-start font-medium tabular">{bell.period_number}</th>
+                          <td className="px-5 py-2 tabular">{bell.start_time.slice(0, 5)} – {bell.end_time.slice(0, 5)}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map((period) => {
-                          const bell = byPeriod.get(period);
-                          return (
-                            <tr key={period}>
-                              <th scope="row" className="py-1 text-start font-medium tabular">{period}</th>
-                              <td className="py-1 pe-2"><TextField name={`start_${period}`} id={`s${shift}-start-${period}`} type="time" label={<span className="sr-only">{t("startOf", { period })}</span>} defaultValue={bell?.start_time?.slice(0, 5) ?? ""} /></td>
-                              <td className="py-1"><TextField name={`end_${period}`} id={`s${shift}-end-${period}`} type="time" label={<span className="sr-only">{t("endOf", { period })}</span>} defaultValue={bell?.end_time?.slice(0, 5) ?? ""} /></td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    <SubmitButton variant="secondary">{tc("save")}</SubmitButton>
-                  </ActionForm>
-                </CardBody>
-              </Card>
-            );
-          })}
+                      ))}
+                  </tbody>
+                </table>
+              </CardBody>
+            </Card>
+          ))}
         </div>
       </>
     );
@@ -266,17 +257,18 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
       </>
     );
   }
-  const [{ data: klass }, { data: entries }, { data: classSubjects }, { data: bells }] = await Promise.all([
+  const [{ data: klass }, { data: entries }, { data: subjects }, { data: bells }] = await Promise.all([
     supabase.from("classes").select("id, name, shift").eq("id", classId).maybeSingle(),
     supabase
       .from("timetable_entries")
       .select("id, day_of_week, period_number, class_subjects(subjects(name_tg, name_ru, name_en)), staff:teacher_id(first_name, last_name, middle_name), rooms(name)")
       .eq("class_id", classId),
-    supabase.from("class_subjects").select("id, subjects(name_tg, name_ru, name_en), staff:teacher_id(first_name, last_name, middle_name)").eq("class_id", classId).eq("is_active", true),
+    supabase.from("subjects").select("id, name_tg, name_ru, name_en").eq("school_id", schoolId).eq("is_active", true).order("name_tg"),
     supabase.from("bell_periods").select("shift, period_number, start_time, end_time").eq("school_id", schoolId),
   ]);
-  const shiftBells = (bells ?? []).filter((b) => b.shift === (klass?.shift ?? 1));
-  const periods = Math.max(7, ...(entries ?? []).map((e) => e.period_number), ...shiftBells.map((b) => b.period_number));
+  const shiftBells = (bells ?? []).filter((b) => b.shift === (klass?.shift ?? 1)).sort((a, b) => a.period_number - b.period_number);
+  const bellOf = new Map(shiftBells.map((b) => [b.period_number, `${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`]));
+  const periods = Math.max(shiftBells.length || 5, ...(entries ?? []).map((e) => e.period_number));
   const cell = new Map((entries ?? []).map((e) => [`${e.day_of_week}-${e.period_number}`, e]));
 
   return (
@@ -285,7 +277,23 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
       <FilterBar filters={[{ name: "class", label: t("class"), emptyLabel: classes[0]?.label, options: classes.slice(1).map(({ value, label }) => ({ value, label })) }]} />
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card>
-          <CardHeader title={t("gridTitle", { name: klass?.name ?? "" })} description={t("shift", { shift: klass?.shift ?? 1 })} />
+          <CardHeader
+            title={t("gridTitle", { name: klass?.name ?? "" })}
+            description={t("shift", { shift: klass?.shift ?? 1 })}
+            actions={
+              <ActionForm action={setClassShiftAction} className="flex items-end gap-2">
+                <input type="hidden" name="classId" value={classId} />
+                <SelectField
+                  name="shift"
+                  id="class-shift"
+                  label={<span className="sr-only">{t("changeShift")}</span>}
+                  defaultValue={String(klass?.shift ?? 1)}
+                  options={[1, 2].map((shift) => ({ value: String(shift), label: t("shift", { shift }) }))}
+                />
+                <SubmitButton variant="secondary" size="sm">{tc("save")}</SubmitButton>
+              </ActionForm>
+            }
+          />
           <CardBody className="p-0">
             {/* On a phone the week is swiped through inside this box, with the
                 period numbers pinned at the left edge. */}
@@ -303,7 +311,10 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
                 <tbody className="divide-y divide-line">
                   {Array.from({ length: periods }, (_, i) => i + 1).map((period) => (
                     <tr key={period}>
-                      <th scope="row" className="sticky left-0 z-10 bg-surface px-3 py-2 text-start align-top font-semibold tabular">{period}</th>
+                      <th scope="row" className="sticky left-0 z-10 bg-surface px-3 py-2 text-start align-top font-semibold tabular">
+                        {period}
+                        {bellOf.get(period) ? <span className="block text-[0.6875rem] font-normal text-ink-muted">{bellOf.get(period)}</span> : null}
+                      </th>
                       {[1, 2, 3, 4, 5, 6].map((day) => {
                         const entry = cell.get(`${day}-${period}`);
                         if (!entry) return <td key={day} className="px-3 py-2 align-top text-ink-muted">—</td>;
@@ -337,19 +348,16 @@ export default async function AdminTimetablePage({ searchParams }: { searchParam
         <Card>
           <CardHeader title={t("addEntry")} description={t("addEntryHint")} />
           <CardBody>
-            {(classSubjects ?? []).length === 0 ? (
-              <p className="text-sm text-ink-muted">{t("noClassSubjects")}</p>
+            {(subjects ?? []).length === 0 ? (
+              <p className="text-sm text-ink-muted">{t("noSubjects")}</p>
             ) : (
               <ActionForm action={saveTimetableEntryAction} className="space-y-3">
                 <input type="hidden" name="classId" value={classId} />
-                <SelectField name="classSubjectId" label={t("subject")} required placeholder={t("chooseSubject")} options={(classSubjects ?? []).map((cs) => {
-                  const subject = cs.subjects as Named | null;
-                  const teacher = cs.staff as unknown as Person | null;
-                  return { value: cs.id, label: `${subject ? pickName(subject, locale) : ""}${teacher ? ` · ${fullName(teacher)}` : ` · ${t("noTeacher")}`}` };
-                })} />
+                <SelectField name="subjectId" label={t("subject")} required placeholder={t("chooseSubject")} options={(subjects ?? []).map((subject) => ({ value: subject.id, label: pickName(subject, locale) }))} />
+                <SelectField name="teacherId" label={t("teacher")} placeholder={t("noTeacher")} options={staffOptions} />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <SelectField name="dayOfWeek" label={t("day")} options={[1, 2, 3, 4, 5, 6].map((d) => ({ value: String(d), label: tc(`weekdays.${d}`) }))} />
-                  <SelectField name="periodNumber" label={t("period")} options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
+                  <SelectField name="periodNumber" label={t("period")} options={(shiftBells.length ? shiftBells : Array.from({ length: 5 }, (_, i) => ({ period_number: i + 1, start_time: "", end_time: "" }))).map((b) => ({ value: String(b.period_number), label: b.start_time ? `${b.period_number} · ${b.start_time.slice(0, 5)}` : String(b.period_number) }))} />
                 </div>
                 <SelectField name="roomId" label={t("room")} placeholder={t("classRoom")} options={roomOptions} />
                 <SubmitButton>{t("saveEntry")}</SubmitButton>

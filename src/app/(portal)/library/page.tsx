@@ -100,6 +100,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       <TabNav label={t("views")} items={VIEWS.map((v) => ({ href: tabHref(v), label: t(`view.${v}`), active: v === view }))} />
       {view === "catalog" ? (
         <FilterBar
+          folded
           searchLabel={t("search")}
           filters={[
             { name: "category", label: t("category"), options: categories },

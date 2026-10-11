@@ -1,8 +1,10 @@
 "use client";
 
+import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useState, type ReactNode } from "react";
+import type { Weather, WeatherKind } from "@/features/dashboard/weather-kind";
 import { dayPart, type DayPart } from "@/lib/i18n/format";
 
 /**
@@ -16,6 +18,37 @@ import { dayPart, type DayPart } from "@/lib/i18n/format";
  */
 const SCHOOL_PHOTO = "/images/school-bg.webp";
 
+const WEATHER_ICON: Record<WeatherKind, LucideIcon> = {
+  clear: Sun,
+  partly: CloudSun,
+  cloudy: Cloud,
+  fog: CloudFog,
+  drizzle: CloudDrizzle,
+  rain: CloudRain,
+  snow: CloudSnow,
+  storm: CloudLightning,
+};
+
+/** The weather in Istaravshan as one quiet line: an icon, the temperature, the town. */
+function WeatherLine({ part, weather }: { part: DayPart; weather: Promise<Weather | null> }) {
+  const t = useTranslations("portal.dashboard.weather");
+  const now = use(weather);
+  if (!now) return null;
+  const dark = part === "night" || part === "evening";
+  const Icon = dark && now.kind === "clear" ? Moon : dark && now.kind === "partly" ? CloudMoon : WEATHER_ICON[now.kind];
+  return (
+    <p className="greeting-weather" title={t(`kinds.${now.kind}`)}>
+      <Icon aria-hidden />
+      <span className="tabular">
+        {now.temperature > 0 ? "+" : ""}
+        {now.temperature}°
+      </span>
+      <span>{t("town")}</span>
+      <span className="sr-only">{t(`kinds.${now.kind}`)}</span>
+    </p>
+  );
+}
+
 /**
  * "Шом ба хайр, Фарангис" — the one line on the portal addressed to the
  * person reading it, and the one thing they most likely came to do.
@@ -23,7 +56,8 @@ const SCHOOL_PHOTO = "/images/school-bg.webp";
  * The greeting is set in the serif in warm white, the name in brass. The
  * server chooses the first greeting from the school's clock; a page left open
  * across six o'clock should not go on wishing a good afternoon, so the card
- * looks at the clock again every minute.
+ * looks at the clock again every minute. The weather comes as a promise the
+ * page does not wait for: the card is drawn at once and the line joins it.
  */
 export function GreetingCard({
   name,
@@ -31,12 +65,15 @@ export function GreetingCard({
   initialPart,
   dateLine,
   actions,
+  weather,
 }: {
   name: string;
   timeZone?: string;
   initialPart: DayPart;
   dateLine?: string;
   actions?: ReactNode;
+  /** The weather in Istaravshan, not waited for (weather.ts). */
+  weather?: Promise<Weather | null>;
 }) {
   const t = useTranslations("portal.dashboard");
   const [part, setPart] = useState<DayPart>(initialPart);
@@ -63,7 +100,14 @@ export function GreetingCard({
         className="greeting-photo"
       />
       <div className="greeting-body">
-        {dateLine ? <p className="greeting-date">{dateLine}</p> : null}
+        <div className="greeting-top">
+          {dateLine ? <p className="greeting-date">{dateLine}</p> : null}
+          {weather ? (
+            <Suspense fallback={null}>
+              <WeatherLine part={part} weather={weather} />
+            </Suspense>
+          ) : null}
+        </div>
         <h1 id="greeting-title" className="greeting-title">
           {t(`greetings.${part}`)}
           {name ? (

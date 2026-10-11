@@ -15,6 +15,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { buildWorkbook } from "../../src/lib/export/xlsx.ts";
 import { isSampleKind, sampleNotice, sampleRows, sampleSpec, type SampleKind } from "../../src/features/admin/import/samples.ts";
+import { writtenColumns } from "../../src/features/admin/import/templates.ts";
 
 const OUT = resolve(process.argv[2] ?? "samples");
 mkdirSync(OUT, { recursive: true });
@@ -24,7 +25,7 @@ const KINDS: SampleKind[] = ["students", "staff", "timetable", "subjects"];
 for (const kind of KINDS) {
   if (!isSampleKind(kind)) continue;
   const spec = sampleSpec(kind);
-  const columns = spec.columns.map((column) => ({
+  const columns = writtenColumns(spec).map((column) => ({
     header: column.required ? `${column.header}*` : column.header,
     width: column.width,
     issued: column.issued,

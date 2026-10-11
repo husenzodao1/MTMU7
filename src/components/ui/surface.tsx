@@ -14,7 +14,7 @@ export function CardHeader({ title, description, actions, className }: { title: 
         <h2 className="text-base font-semibold text-ink">{title}</h2>
         {description ? <p className="mt-0.5 text-sm text-ink-muted">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
@@ -136,7 +136,7 @@ export function EmptyState({ icon, title, description, action, className }: { ic
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-surface-sunken", className)} aria-hidden />;
+  return <div className={cn("bone rounded-md", className)} aria-hidden />;
 }
 
 export function LoadingState({ label }: { label: string }) {

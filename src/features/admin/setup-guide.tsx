@@ -3,9 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { ArrowRight, Check } from "lucide-react";
 import type { AdminDashboard } from "@/features/admin/dashboard-query";
 import { Card, CardBody, CardHeader } from "@/components/ui/surface";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 
-type StepKey = "year" | "bell" | "classes" | "staff" | "students" | "identity";
+type StepKey = "staff" | "students" | "timetable";
 
 interface Step {
   key: StepKey;
@@ -18,19 +19,22 @@ interface Step {
  * derived from what the dashboard actually reports — no invented progress —
  * and the card disappears once the school is running.
  */
-export function setupSteps(data: AdminDashboard): Step[] {
-  const alerts = new Set(data.alerts);
+export function setupSteps(data: AdminDashboard, hasTimetable: boolean): Step[] {
+  // The year, its classes (1А … 11Д) and the bells are there by themselves
+  // (00086): what is left for the office is three workbooks, in this order.
   return [
-    { key: "year", href: "/admin/academic-years", done: data.academic_year !== null && !alerts.has("no_terms_defined") },
-    { key: "bell", href: "/admin/timetable", done: !alerts.has("no_bell_schedule") },
-    { key: "classes", href: "/admin/classes", done: Number(data.counts.classes_active) > 0 },
-    { key: "staff", href: "/admin/staff", done: Number(data.counts.teachers_active) > 0 },
-    { key: "students", href: "/admin/students", done: Number(data.counts.students_active) > 0 },
+    { key: "staff", href: "/admin/staff/import", done: Number(data.counts.teachers_active) > 0 },
+    { key: "students", href: "/admin/students/import", done: Number(data.counts.students_active) > 0 },
+    { key: "timetable", href: "/admin/timetable/import", done: hasTimetable },
   ];
 }
 
 export async function SetupGuide({ data, className }: { data: AdminDashboard; className?: string }) {
-  const steps = setupSteps(data);
+  // Whether there is a timetable, not how long it is: one row answers it.
+  const { data: anyLesson } = data.academic_year
+    ? await (await createClient()).from("timetable_entries").select("id").eq("academic_year_id", data.academic_year.id).limit(1)
+    : { data: [] };
+  const steps = setupSteps(data, (anyLesson?.length ?? 0) > 0);
   const pending = steps.filter((step) => !step.done);
   if (pending.length === 0) return null;
   const t = await getTranslations("admin.setup");

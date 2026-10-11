@@ -42,17 +42,19 @@ const pupil = (klass: string, extra: Record<string, unknown> = {}) => ({
 });
 
 describe("a pupil, added from one form", () => {
-  it("will not add a young pupil without a parent", async () => {
+  it("adds a young pupil without a parent: parents come from the register workbook", async () => {
     const result = await save(t.users.adminA, null, pupil(class3A));
-    assert.equal(result.valid, false);
-    assert.ok(result.errors.some((e) => e.code === "guardian_required"));
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
   });
 
-  it("adds the pupil, their parent and a login, with no address of their own", async () => {
-    const result = await save(t.users.adminA, null, pupil(class3A, {
-      guardians: [{ last_name: "Karimova", first_name: "Madina", phone: "+992 90 123 45 67", relationship: "mother" }],
-      positions: ["monitor"],
-    }));
+  it("adds the pupil and a login, with no address of their own, and writes no parent from the form", async () => {
+    const result = await save(t.users.adminA, null, {
+      ...pupil(class3A, {
+        guardians: [{ last_name: "Karimova", first_name: "Madina", phone: "+992 90 123 45 67", relationship: "mother" }],
+        positions: ["monitor"],
+      }),
+      first_name: "Anvar",
+    });
     assert.equal(result.valid, true, JSON.stringify(result.errors));
     assert.ok(result.password && result.password.length >= 10);
     const row = await one<{ email: string; confirmed: boolean; class_name: string; guardians: number; monitor: number }>(db, `
@@ -65,20 +67,23 @@ describe("a pupil, added from one form", () => {
     assert.match(row!.email, /\.invalid$/);
     assert.equal(row!.confirmed, true);
     assert.equal(row!.class_name, "3А");
-    assert.equal(row!.guardians, 1);
+    assert.equal(row!.guardians, 0, "the form does not write parents");
     assert.equal(row!.monitor, 1);
   });
 
-  it("finds the same parent by telephone for a brother, and keeps one monitor per class", async () => {
-    const result = await save(t.users.adminA, null, {
-      ...pupil(class3A, { guardians: [{ last_name: "Karimova", first_name: "Madina", phone: "901234567", relationship: "mother" }], positions: ["monitor"] }),
-      first_name: "Bahrom",
-    });
+  it("keeps one monitor per class", async () => {
+    const result = await save(t.users.adminA, null, { ...pupil(class3A, { positions: ["monitor"] }), first_name: "Bahrom" });
     assert.equal(result.valid, true, JSON.stringify(result.errors));
-    const counts = await one<{ guardians: number; monitors: number }>(db, `
-      SELECT (SELECT count(*)::int FROM public.guardians WHERE last_name = 'Karimova') AS guardians,
-             (SELECT count(*)::int FROM public.class_positions WHERE class_id = $1 AND position = 'monitor') AS monitors`, [class3A]);
-    assert.deepEqual(counts, { guardians: 1, monitors: 1 });
+    const counts = await one<{ monitors: number }>(db,
+      `SELECT count(*)::int AS monitors FROM public.class_positions WHERE class_id = $1 AND position = 'monitor'`, [class3A]);
+    assert.deepEqual(counts, { monitors: 1 });
+  });
+
+  it("does not make a parent from the form", async () => {
+    const message = await errorOf(() => save(t.users.adminA, null, {
+      kind: "parent", last_name: "Karimova", first_name: "Madina", phone: "+992 90 765 43 21", parent: { children: [], relationship: "mother" },
+    }));
+    assert.match(message ?? "", /parents_from_register/);
   });
 
   it("moves a pupil to another class as a transfer, taking their posts with the old class", async () => {
@@ -139,9 +144,13 @@ describe("staff and administrators", () => {
     assert.match(row!.number, /^\d+$/);
   });
 
-  it("asks a teacher for an e-mail, and a pupil's parents for nothing of the kind", async () => {
+  it("makes a teacher without an e-mail, who signs in with the login (00092)", async () => {
     const result = await save(t.users.adminA, null, { kind: "teacher", last_name: "X", first_name: "Y" });
-    assert.ok(result.errors.some((e) => e.field === "email" && e.code === "required"));
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
+    const user = await one<{ email: string; confirmed: boolean }>(db,
+      `SELECT au.email, au.email_confirmed_at IS NOT NULL AS confirmed FROM auth.users au WHERE au.id = $1`, [result.userId]);
+    assert.match(user!.email, /@staff\.invalid$/);
+    assert.equal(user!.confirmed, true, "nothing to confirm at the first sign-in");
   });
 
   it("lets only an administrator make an administrator", async () => {
@@ -202,32 +211,76 @@ describe("the register workbook", () => {
       (await one<{ r: { valid: boolean; errors: Array<{ field: string; code: string }>; credentials: Array<{ login: string }> } }>(tx,
         `SELECT public.import_people('students', $1, $2, 0, 300) AS r`, [JSON.stringify(rows), dryRun]))!.r);
 
-  it("imports a first-grader with no address and links the parent written beside them", async () => {
+  it("imports a first-grader with no address, and gives the parent written beside them an account", async () => {
     const rows = [{
       class_name: "1А", last_name: "Nazarov", first_name: "Firdavs", date_of_birth: "2019-09-01", email: "",
-      guardian_name: "Nazarova Shahlo", guardian_phone: "+992 93 555 44 33", guardian_relationship: "модар",
+      mother_name: "Nazarova Shahlo Rustamovna", mother_phone: "+992 93 555 44 33", mother_workplace: "School 7, teacher",
     }];
     const preview = await importRows(rows, true);
     assert.equal(preview.valid, true, JSON.stringify(preview.errors));
-    const done = await importRows(rows, false);
+    const done = await importRows(rows, false) as unknown as {
+      credentials: Array<{ login: string }>; parents: Array<{ relation: string; login: string; password: string | null }>;
+    };
     const login = done.credentials[0]!.login;
-    const linked = await asUser(db, t.users.adminA, (tx) =>
-      one<{ n: number }>(tx, `SELECT public.import_guardians($1) AS n`, [JSON.stringify([{ ...rows[0], login }])]));
-    assert.equal(linked!.n, 1);
-    const row = await one<{ email: string; confirmed: boolean; relationship: string }>(db, `
-      SELECT u.email, au.email_confirmed_at IS NOT NULL AS confirmed, sg.relationship
+    assert.equal(done.parents.length, 1);
+    assert.equal(done.parents[0]!.relation, "mother");
+    assert.match(done.parents[0]!.password ?? "", /^[a-z]{2}\d{6}$/, "two letters and six digits");
+    const row = await one<{ email: string; confirmed: boolean; relationship: string; workplace: string; parent_login: string; parent_role: boolean }>(db, `
+      SELECT u.email, au.email_confirmed_at IS NOT NULL AS confirmed, sg.relationship, g.workplace,
+             pu.public_id AS parent_login,
+             EXISTS (SELECT 1 FROM public.user_roles ur JOIN public.roles r ON r.id = ur.role_id WHERE ur.user_id = pu.id AND r.slug = 'parent') AS parent_role
       FROM public.users u JOIN auth.users au ON au.id = u.id
       JOIN public.students s ON s.user_id = u.id
       JOIN public.student_guardians sg ON sg.student_id = s.id
+      JOIN public.guardians g ON g.id = sg.guardian_id
+      JOIN public.users pu ON pu.id = g.user_id
       WHERE u.public_id = $1`, [login]);
     assert.match(row!.email, /\.invalid$/);
     assert.equal(row!.confirmed, true);
     assert.equal(row!.relationship, "mother");
+    assert.equal(row!.workplace, "School 7, teacher");
+    assert.equal(row!.parent_login, done.parents[0]!.login);
+    assert.equal(row!.parent_role, true);
   });
 
-  it("still asks an older pupil for an address", async () => {
+  it("issues nothing twice: the same workbook again, with the pupil moved to another class", async () => {
+    const rows = [{
+      class_name: "1Б", last_name: "Nazarov", first_name: "Firdavs", date_of_birth: "2019-09-01", email: "",
+      mother_name: "Nazarova Shahlo Rustamovna", mother_phone: "+992 93 555 44 33",
+    }];
+    const preview = await importRows(rows, true);
+    assert.equal(preview.valid, true, JSON.stringify(preview.errors));
+    const again = await importRows(rows, false) as unknown as {
+      created: number; updated: number; credentials: unknown[]; parents: Array<{ password: string | null }>; logins: Array<{ login: string }>;
+    };
+    assert.equal(again.created, 0);
+    assert.equal(again.updated, 1);
+    assert.deepEqual(again.credentials, [], "no new password for the pupil");
+    assert.equal(again.parents[0]!.password, null, "no new password for the parent");
+    const moved = await one<{ class_name: string; pupils: number; parents: number; workplace: string }>(db, `
+      SELECT (SELECT c.name FROM public.classes c WHERE c.id = app.student_current_class(s.id)) AS class_name,
+             (SELECT count(*)::int FROM public.students x WHERE x.last_name = 'Nazarov' AND x.first_name = 'Firdavs') AS pupils,
+             (SELECT count(*)::int FROM public.guardians g WHERE g.last_name = 'Nazarova') AS parents,
+             (SELECT g.workplace FROM public.guardians g WHERE g.last_name = 'Nazarova') AS workplace
+      FROM public.students s JOIN public.users u ON u.id = s.user_id WHERE u.public_id = $1`, [again.logins[0]!.login]);
+    assert.deepEqual(moved, { class_name: "1Б", pupils: 1, parents: 1, workplace: "School 7, teacher" },
+      "the same pupil, moved; the same parent; an empty cell keeps the workplace");
+  });
+
+  it("a brother written with the same telephone shares the parent and gets no second login for them", async () => {
+    const done = await importRows([{
+      class_name: "3А", last_name: "Nazarov", first_name: "Umed", date_of_birth: "2017-05-05", email: "",
+      mother_name: "Nazarova Shahlo", mother_phone: "93 555 44 33",
+    }], false) as unknown as { parents: Array<{ login: string; password: string | null }> };
+    assert.equal(done.parents[0]!.password, null);
+    const shared = await one<{ children: number }>(db, `
+      SELECT count(*)::int AS children FROM public.student_guardians sg
+      JOIN public.guardians g ON g.id = sg.guardian_id WHERE g.last_name = 'Nazarova'`);
+    assert.equal(shared!.children, 2);
+  });
+
+  it("takes an older pupil without an address (00092)", async () => {
     const preview = await importRows([{ class_name: "7А", last_name: "Older", first_name: "Pupil", date_of_birth: "2013-01-01", email: "" }], true);
-    assert.equal(preview.valid, false);
-    assert.ok(preview.errors.some((e) => e.field === "email" && e.code === "required"));
+    assert.equal(preview.valid, true, JSON.stringify(preview.errors));
   });
 });

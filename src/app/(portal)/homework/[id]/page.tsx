@@ -32,7 +32,7 @@ export default async function HomeworkDetailPage({ params, searchParams }: { par
   const supabase = await createClient();
   const { data: assignment } = await supabase
     .from("homework_assignments")
-    .select("id, title, instructions, due_at, max_score, allow_submissions, status, class_subjects!inner(subjects!inner(name_tg, name_ru, name_en)), homework_attachments(id, file_name, size_bytes)")
+    .select("id, title, pages, instructions, due_at, max_score, allow_submissions, status, class_subjects!inner(subjects!inner(name_tg, name_ru, name_en)), homework_attachments(id, file_name, size_bytes)")
     .eq("id", id)
     .maybeSingle();
   if (!assignment) notFound();
@@ -62,6 +62,11 @@ export default async function HomeworkDetailPage({ params, searchParams }: { par
         <Card className="lg:col-span-2">
           <CardHeader title={t("instructions")} />
           <CardBody className="space-y-4">
+            {assignment.pages ? (
+              <p className="rounded-md border border-brand-200 bg-brand-50 px-3 py-2 text-sm">
+                <span className="font-semibold">{t("pages")}:</span> {assignment.pages}
+              </p>
+            ) : null}
             {assignment.instructions ? <Markdown source={assignment.instructions} /> : <p className="text-sm text-ink-muted">{t("noInstructions")}</p>}
             {assignment.homework_attachments.length > 0 ? (
               <ul className="space-y-1.5">

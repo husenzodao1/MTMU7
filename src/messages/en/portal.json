@@ -69,6 +69,19 @@
         "evening": "Have a pleasant evening and a good rest!",
         "night": "Sleep well — tomorrow is a new day."
       },
+      "weather": {
+        "town": "Istaravshan",
+        "kinds": {
+          "clear": "Clear sky",
+          "partly": "Partly cloudy",
+          "cloudy": "Cloudy",
+          "fog": "Fog",
+          "drizzle": "Drizzle",
+          "rain": "Rain",
+          "snow": "Snow",
+          "storm": "Thunderstorm"
+        }
+      },
       "faces": {
         "title": "Faces of the school",
         "active": "Students",
@@ -91,7 +104,10 @@
     "lessons": {
       "period": "Period {number}",
       "room": "Room {room}",
-      "substitution": "Substitution"
+      "substitution": "Substitution",
+      "now": "Now",
+      "next": "Next",
+      "shift": "Shift {shift}"
     },
     "schedule": {
       "title": "Timetable",
@@ -138,6 +154,9 @@
     },
     "homework": {
       "title": "Homework",
+      "pages": "Pages",
+      "journalTitle": "From the class journal",
+      "journalHint": "Each lesson's topic and the homework the teacher wrote in the journal, for the last two weeks.",
       "noStudent": "No student record is linked to this account.",
       "views": "Homework views",
       "current": "Current",

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, ClipboardCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AttendanceSummary, GradeList, HomeworkDueList, LessonList } from "@/features/academic/components";
 import { RegistrationNotice } from "@/features/auth/registration-notice";
 import { getMyChildren, getStudentOverview, getTeacherToday } from "@/features/academic/queries";
@@ -10,18 +10,19 @@ import { getAdminDashboard } from "@/features/admin/dashboard-query";
 import { SetupGuide } from "@/features/admin/setup-guide";
 import { getSchoolFaces } from "@/features/dashboard/faces";
 import { FacesRibbon } from "@/features/dashboard/faces-ribbon";
+import { TeacherLessons } from "@/features/teach/teacher-lessons";
 import { GreetingCard } from "@/features/dashboard/greeting-card";
+import { getIstaravshanWeather } from "@/features/dashboard/weather";
 import { Showcase, type ShowcaseCard } from "@/features/dashboard/showcase";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements, publicMediaUrl } from "@/features/content/queries";
 import { splitLeadImage } from "@/components/ui/misc";
 import { markdownToPlainText } from "@/lib/content/markdown";
-import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Alert, Card, CardBody, CardHeader, Metric } from "@/components/ui/surface";
 import { can, canAny, canEnterAdmin, hasModule, hasRole } from "@/lib/auth/access";
 import { getPortalSession } from "@/lib/auth/guards";
 import { dayPart, formatDate, todayIso } from "@/lib/i18n/format";
-import { pickText, type Locale } from "@/lib/i18n/text";
+import { type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
@@ -93,9 +94,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const childOverview = isParent && firstChild ? await getStudentOverview(firstChild.id, today) : null;
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
   const tc = await getTranslations("common");
-  const tg = await getTranslations("portal.guardians");
-  const { data: myGuardians, error: guardiansError } = student ? await (await createClient()).rpc("my_guardians") : { data: null, error: null };
-  const guardiansMissing = Boolean(student) && !guardiansError && (myGuardians ?? []).length === 0;
 
   // The notice board's cards: the picture an announcement leads with (or the
   // first one in it), a news story's cover, the first words of each.
@@ -145,6 +143,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         timeZone={access.school?.timezone}
         initialPart={dayPart(access.school?.timezone)}
         dateLine={`${tc(`weekdays.${weekday}`)}, ${formatDate(today, locale)}`}
+        // Not awaited: the card is drawn at once and the weather joins it.
+        weather={getIstaravshanWeather()}
         actions={
           actions.length > 0
             ? actions.map((action, index) => (
@@ -158,13 +158,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       />
 
       {welcome ? <Alert tone="success" className="mb-5">{t("welcome")}</Alert> : null}
-
-      {/* A pupil who has not named their parents yet is asked to (00081). */}
-      {student && guardiansMissing ? (
-        <Alert tone="warning" className="mb-4" actions={<Link href="/profile#guardians" className={buttonClasses("secondary", "sm")}>{tg("add")}</Link>}>
-          {tg("missing")}
-        </Alert>
-      ) : null}
 
       {announcementCards.length > 0 || newsCards.length > 0 || eventCards.length > 0 ? (
         <Showcase announcements={announcementCards} news={newsCards} events={eventCards} />
@@ -190,39 +183,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     {t("teacher.dailyPending", { className: c.class_name })}
                   </Alert>
                 ))}
-                {teacher.lessons.length === 0 ? (
-                  <p className="text-sm text-ink-muted">{t("teacher.noLessons")}</p>
-                ) : (
-                  <ol className="divide-y divide-line">
-                    {teacher.lessons.map((lesson) => (
-                      <li key={lesson.timetable_entry_id} className="flex flex-wrap items-center gap-3 py-2.5">
-                        <span className="w-10 text-sm font-semibold tabular">{lesson.period_number}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium">
-                            {lesson.class_name} · {pickText({ tg: lesson.subject_tg, ru: lesson.subject_ru, en: lesson.subject_en }, locale)}
-                          </p>
-                          <p className="text-sm text-ink-muted">
-                            {[lesson.start_time?.slice(0, 5), lesson.room].filter(Boolean).join(" · ")}
-                            {lesson.is_substitution ? ` · ${t("teacher.substitution")}` : ""}
-                          </p>
-                        </div>
-                        {lesson.cancelled_for_me ? (
-                          <Badge>{t("teacher.covered")}</Badge>
-                        ) : lesson.attendance_marked ? (
-                          <Badge tone="success" dot>{t("teacher.marked")}</Badge>
-                        ) : (
-                          <Link
-                            href={`/teach/attendance?classSubject=${lesson.class_subject_id}&date=${today}&period=${lesson.period_number}`}
-                            className={buttonClasses("primary", "sm")}
-                          >
-                            <ClipboardCheck aria-hidden />
-                            {t("teacher.mark")}
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                )}
+                <TeacherLessons lessons={teacher.lessons} today={today} timeZone={access.school?.timezone} emptyLabel={t("teacher.noLessons")} />
                 {teacher.submissions_to_review > 0 ? (
                   <p className="mt-3 text-sm">
                     <Link href="/teach/homework" className="font-medium text-brand-text hover:underline">
@@ -239,7 +200,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               <Card>
                 <CardHeader title={t("student.today")} description={student.student.class_name ?? undefined} />
                 <CardBody>
-                  <LessonList lessons={student.lessons} emptyLabel={t("student.noLessons")} />
+                  <LessonList lessons={student.lessons} emptyLabel={t("student.noLessons")} timeZone={access.school?.timezone} />
                 </CardBody>
               </Card>
               <div className="grid gap-5 lg:grid-cols-2">

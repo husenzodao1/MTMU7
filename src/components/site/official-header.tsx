@@ -71,65 +71,75 @@ export async function SiteFooter({ schoolName, hideSignIn = false }: { schoolNam
   const school = await getAuthSchool();
   const social = resolveContacts(school?.socialLinks);
 
-  return (
-    <footer className="site-footer print:hidden">
-      <div className="footer-inner">
-        <div className="footer-main">
-          <p className="footer-brand">
-            {/* eslint-disable-next-line @next/next/no-img-element -- the national flag, a small static SVG */}
-            <img src="/gov/flag-tj.svg" alt={t("flag")} width={20} height={10} className="footer-flag" />
-            <span className="min-w-0 truncate">{schoolName || t("brand")}</span>
-          </p>
+  const socials = SOCIAL_KEYS.map((key) => ({ key, Icon: SOCIAL_ICON[key], href: social[key], label: t(key) }));
 
-          <nav aria-label={t("siteLinks")}>
-            <ul className="footer-links">
-              <li>
-                <Link className="footer-link" href="/schools">
-                  {t("schools")}
-                </Link>
-              </li>
-              {download.offer ? (
+  return (
+    <>
+      <footer className="site-footer print:hidden">
+        <div className="footer-inner">
+          <div className="footer-main">
+            <p className="footer-brand">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the national flag, a small static SVG */}
+              <img src="/gov/flag-tj.svg" alt={t("flag")} width={20} height={10} className="footer-flag" />
+              <span className="min-w-0 truncate">{schoolName || t("brand")}</span>
+            </p>
+
+            <nav aria-label={t("siteLinks")}>
+              <ul className="footer-links">
                 <li>
-                  <DownloadApp labels={download.labels} recommended={download.recommended} variant="footer" />
-                </li>
-              ) : null}
-              {identity.supportEmail ? (
-                <li>
-                  <a className="footer-link" href={`mailto:${identity.supportEmail}`}>
-                    {t("support")}
-                  </a>
-                </li>
-              ) : null}
-              {hideSignIn ? null : (
-                <li>
-                  <Link className="footer-link" href="/login">
-                    {t("signIn")}
+                  <Link className="footer-link" href="/schools">
+                    {t("schools")}
                   </Link>
                 </li>
-              )}
-            </ul>
-          </nav>
+                {download.offer ? (
+                  <li>
+                    <DownloadApp labels={download.labels} recommended={download.recommended} variant="footer" />
+                  </li>
+                ) : null}
+                <li>
+                  <Link className="footer-link" href="/support">
+                    {t("support")}
+                  </Link>
+                </li>
+                {hideSignIn ? null : (
+                  <li>
+                    <Link className="footer-link" href="/login">
+                      {t("signIn")}
+                    </Link>
+                  </li>
+                )}
+              </ul>
+            </nav>
 
-          <ul className="footer-socials">
-            {SOCIAL_KEYS.map((key) => {
-              const Icon = SOCIAL_ICON[key];
-              return (
+            <ul className="footer-socials">
+              {socials.map(({ key, Icon, href, label }) => (
                 <li key={key}>
-                  <a href={social[key]} rel="noopener noreferrer" target="_blank" aria-label={t(key)} title={t(key)} className="footer-social">
+                  <a href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="footer-social">
                     <Icon className="size-3" />
                   </a>
                 </li>
-              );
-            })}
-          </ul>
-        </div>
+              ))}
+            </ul>
+          </div>
 
-        <p className="footer-fine">
-          <span className="tabular">{copyright || `© ${year}`}</span>
-          <span aria-hidden className="footer-dot" />
-          <span>{t("platform")}</span>
-        </p>
-      </div>
-    </footer>
+          <p className="footer-fine">
+            <span className="tabular">{copyright || `© ${year}`}</span>
+            <span aria-hidden className="footer-dot" />
+            <span>{t("platform")}</span>
+          </p>
+        </div>
+      </footer>
+      {/* In the phone app the footer is not an app's: only the school's four
+          marks stay, small, at the foot of the page. globals.css shows one or
+          the other from html[data-app], which the server writes, so neither
+          flashes. */}
+      <nav className="app-socials print:hidden" aria-label={t("siteLinks")}>
+        {socials.map(({ key, Icon, href, label }) => (
+          <a key={key} href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="app-social" data-network={key}>
+            <Icon className="size-[1.0625rem]" />
+          </a>
+        ))}
+      </nav>
+    </>
   );
 }

@@ -21,7 +21,6 @@ export interface StaffFormValues {
   hireDate: string | null;
   phone: string | null;
   email: string | null;
-  maxWeeklyHours: number | null;
 }
 
 export function StaffForm({ staff, readOnly }: { staff: StaffFormValues | null; readOnly?: boolean }) {
@@ -51,7 +50,6 @@ export function StaffForm({ staff, readOnly }: { staff: StaffFormValues | null; 
             <TextField name="hireDate" type="date" label={t("hireDate")} defaultValue={staff?.hireDate ?? ""} />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <TextField name="maxWeeklyHours" inputMode="decimal" label={t("maxWeeklyHours")} defaultValue={staff?.maxWeeklyHours ?? ""} />
           </div>
           <TextAreaField name="qualification" label={t("qualification")} defaultValue={staff?.qualification ?? ""} rows={3} maxLength={2000} />
         </Fieldset>

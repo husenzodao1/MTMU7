@@ -29,8 +29,7 @@ Every text token meets WCAG AA (4.5:1) on the surface in both themes.
 
 - **Type:** Noto Sans for reading and Noto Serif (`font-display`) for titles
   and the greeting. Both carry every Tajik letter (ғ ҷ қ ӣ ӯ ҳ). Unbounded is
-  used only for the "МТМУ №7" mark. Great Vibes and Bad Script are used only
-  for the handwritten opening.
+  used only for the "МТМУ №7" mark. No script or display faces are loaded.
 - **Radii:** 6, 8, 10, 14, 18 and 22 px. Buttons and inputs use 8 px
   (`rounded-md`), cards 14–18 px. Pills are kept for badges, chips and
   counters only.
@@ -49,21 +48,21 @@ There is one language (`--ease-*` and `--duration-*` tokens):
 - **Reduced motion:** `prefers-reduced-motion` turns movement off everywhere,
   through a global rule plus explicit overrides in the opening.
 
-The **opening** (`src/features/intro/`) lasts about 1.8 s:
+The **opening** (`src/features/intro/`) lasts about 1.8 s. It plays once per
+browser per year, and only on the app's first start:
 
 1. The "МТМУ №7" mark settles in.
-2. "Ассалому алайкум" is written in brass: a pen traces each letter's real
-   outline, then the ink fills it.
+2. "Хуш омадед" is written out in the serif, left to right.
 3. A hairline draws under it and the page is uncovered.
 
-After a sign-in, "Хуш омадед" is written the same way and the person's name
-follows (2.1 s). While the password is being checked, the veil shows the mark
-and a thin brass progress line. A tap ends any of these at once.
+After a sign-in, "Салом," is written out the same way and the person's name
+follows in brass (2.1 s). While the password is being checked, the veil shows
+the mark and a thin brass progress line. A tap ends any of these at once.
 
 ## Removed as noise
 
 - **Opening:** the book. The flying, page-turning, light-flash sequence (4.5 s)
-  is gone.
+  is gone, as is the later pupil mascot with the opening book (3 s).
 - **Dashboard:** the drifting notice board and the drifting faces ribbons.
   - The notice board is now a still rail you scroll sideways, ordered urgent →
     announcements → events → news.
@@ -74,6 +73,27 @@ and a thin brass progress line. A tap ends any of these at once.
 - **Other gradients and blur:** the conic gradients on avatar rings, the
   crest and the member card; the glass blur on the footer; the moving washes
   on the front page; the coloured platform tints on the app page.
+- **Work merged from a parallel session** (the same day):
+  - The dashboard's living sky (hills, tulips, birds, twinkling and falling
+    stars, weather effects) and the drifting "school wall" behind it are
+    gone. The weather stays as one still line on the greeting: an icon, the
+    temperature and the town.
+  - The bottom bar's gliding, squashing light and the per-icon acts are gone.
+    It keeps a plain pill that slides under the chosen icon.
+  - Artificial delays are gone: the search's magnifying glass that stayed for
+    at least 2.2 s, and the library book that riffled for 0.46 s before its
+    page opened. A search now shows a thin line only while it is actually
+    pending, and a book opens at once.
+  - The amber, coral, plum and olive homework cards with wandering light and
+    drifting drawings are now plain work cards.
+  - The rows that rose in one after another, in lists and in the menu, are
+    gone.
+  - The offline cover, where a graduation cap fell on the Wi-Fi sign and broke
+    it, is now a still sign with plain words, in the portal and in the app's
+    own `offline.html`.
+  - Kept as they were: the menu that follows the finger, the loading
+    skeletons, the app-like tap behaviour, and the support entry in every
+    menu.
 
 ## Dashboard order
 
@@ -126,10 +146,8 @@ These are not shipped. Nothing stands in for them pretending to be them.
     components.
   - The welcome after a real sign-in.
   - The Android app's web view.
-- **Not changed yet:** the native splash screens of the Android, iOS and
-  Windows apps.
-  - They are still the old blue `#17306d`. This colour is baked into the
-    splash images, which are set in `mobile/capacitor.config.json` and
-    `desktop/main.js`.
-  - Change both to `#0a0e17` and regenerate the splash images with the next
-    app build.
+- **Takes effect with the next app build:** the background behind the page
+  in the Android and iOS apps (`mobile/capacitor.config.json`) and the Windows
+  window (`desktop/main.js`) are now the night canvas `#0a0e17`. The splash
+  keeps the orange of the new app icon (`#ff5a1f`). Installed apps show the
+  old blue until they are rebuilt.

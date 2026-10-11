@@ -15,6 +15,7 @@ const assignmentSchema = z.object({
   id: uuid.optional().or(z.literal("")).transform((v) => v || undefined),
   classSubjectId: uuid,
   title: z.string().trim().min(2, "validation.too_small").max(300, "validation.too_big"),
+  pages: z.string().max(200, "validation.too_big").optional().transform((v) => v?.trim() || null),
   instructions: z.string().max(20000, "validation.too_big").optional().transform((v) => v?.trim() || null),
   dueAt: z.string().optional(),
   maxScore: z
@@ -52,6 +53,7 @@ export async function saveAssignmentAction(_state: FormState, formData: FormData
   const status = v.intent === "publish" ? "published" : v.intent === "archive" ? "archived" : "draft";
   const payload = {
     title: v.title,
+    pages: v.pages,
     instructions: v.instructions,
     due_at: dueAt,
     max_score: v.maxScore,

@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { asUser, createDatabase, errorOf, one, type Db } from "./harness.mts";
-import { seedTenants, type Tenants } from "./fixtures.mts";
+import { SCHOOL_A, seedTenants, type Tenants } from "./fixtures.mts";
 import { seedAcademic, type Academic } from "./academic-fixtures.mts";
 
 let db: Db;
@@ -104,6 +104,60 @@ describe("one square, one pen", () => {
   });
 });
 
+describe("the journal and the roll taken at the lesson", () => {
+  const rollOf = (student = a.students.studentA) =>
+    db.query<{ status: string; period_number: number | null }>(
+      `SELECT status, period_number FROM public.attendance_records
+       WHERE student_id = $1 AND class_subject_id = $2 AND attendance_date = $3 ORDER BY period_number NULLS LAST`,
+      [student, a.mathA, day]
+    ).then((r) => r.rows);
+  const takeRoll = async (status: string, student = a.students.studentA) => {
+    await db.query(`DELETE FROM public.attendance_records WHERE student_id = $1 AND class_subject_id = $2 AND attendance_date = $3`, [student, a.mathA, day]);
+    await db.query(
+      `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, period_number, status)
+       SELECT cs.school_id, $1, cs.class_id, cs.id, $3, 2, $4 FROM public.class_subjects cs WHERE cs.id = $2`,
+      [student, a.mathA, day, status]
+    );
+  };
+
+  it("a mark keeps the pupil's 'present' from the lesson's roll", async () => {
+    await save(t.users.teacherA, [cell("  ")]);
+    await takeRoll("present");
+    await save(t.users.teacherA, [cell("5")]);
+    assert.equal(Number((await markOf())!.score), 5);
+    assert.deepEqual((await rollOf()).map((r) => r.status), ["present"], "the lesson must not drop out of the pupil's attendance");
+  });
+
+  it("a mark keeps a late arrival", async () => {
+    await save(t.users.teacherA, [cell("  ")]);
+    await takeRoll("late");
+    await save(t.users.teacherA, [cell("4")]);
+    assert.deepEqual((await rollOf()).map((r) => r.status), ["late"]);
+  });
+
+  it("a mark takes an absence away: a pupil who was marked was there", async () => {
+    await save(t.users.teacherA, [cell("ғ")]);
+    await save(t.users.teacherA, [cell("4")]);
+    assert.equal(Number((await markOf())!.score), 4);
+    assert.deepEqual(await rollOf(), []);
+  });
+
+  it("emptying a mark removes the mark and leaves the roll", async () => {
+    await save(t.users.teacherA, [cell("  ")]);
+    await takeRoll("present");
+    await save(t.users.teacherA, [cell("3")]);
+    await save(t.users.teacherA, [cell("  ")]);
+    assert.equal(await markOf(), undefined);
+    assert.deepEqual((await rollOf()).map((r) => r.status), ["present"]);
+  });
+
+  it("emptying a letter removes the letter", async () => {
+    await save(t.users.teacherA, [cell("у")]);
+    await save(t.users.teacherA, [cell("  ")]);
+    assert.deepEqual(await rollOf(), []);
+  });
+});
+
 describe("who may write in it", () => {
   it("the teacher whose journal it is", async () => {
     const outcome = await save(t.users.teacherA, [cell("5")]);
@@ -159,10 +213,9 @@ describe("ruling a column", () => {
     );
     assert.equal(column!.label, "Чоряки I");
     assert.equal(column!.kind, "term");
-    const term = await one<{ end_date: string }>(db, `SELECT end_date::text FROM public.academic_terms WHERE id = $1`, [
-      a.termCurrent,
-    ]);
-    assert.equal(column!.column_date, term!.end_date, "it still has to sit somewhere in the order");
+    // Quarters have no fixed dates: the column is the day the mark is given.
+    const today = await one<{ d: string }>(db, `SELECT app.school_today($1)::text AS d`, [SCHOOL_A]);
+    assert.equal(column!.column_date, today!.d, "dated the day it is written");
   });
 
   it("refuses a quarter column with no name", async () => {

@@ -21,7 +21,7 @@ export async function BookGrid({ items }: { items: BookCardItem[] }) {
     <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {items.map((book) => (
         <li key={book.id}>
-          <Link href={`/library/${book.id}`} className="group flex h-full flex-col rounded-xl border border-line bg-surface p-3 shadow-xs hover:border-brand-300 focus-visible:border-brand-600">
+          <Link href={`/library/${book.id}`} className="group flex h-full flex-col rounded-xl border border-line bg-surface p-3 transition-colors hover:border-line-strong focus-visible:border-brand-solid">
             <div className="mb-3 flex aspect-[3/4] items-center justify-center overflow-hidden rounded-md bg-surface-muted">
               {book.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- cover served through a short-lived signed URL

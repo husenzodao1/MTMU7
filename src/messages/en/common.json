@@ -26,6 +26,7 @@
     "previous": "Previous",
     "continue": "Continue",
     "search": "Search",
+    "searching": "Searching…",
     "filter": "Filter",
     "clearFilters": "Clear filters",
     "all": "All",
@@ -237,13 +238,24 @@
       }
     },
     "welcome": {
-      "signingIn": "Signing you in…"
+      "signingIn": "Signing you in…",
+      "hello": "Hello",
+      "opening": "Welcome"
     },
     "appUpdate": {
       "title": "A new version of the app",
-      "text": "The page no longer breaks after the keyboard; a new icon.",
+      "text": "Files (samples, import results) are saved to Downloads; Google sign-in says what went wrong.",
       "action": "Update",
       "later": "Later"
+    },
+    "offline": {
+      "title": "No internet connection",
+      "text": "When the connection comes back, everything carries on by itself from where it was.",
+      "retry": "Try again",
+      "slowTitle": "Slow internet",
+      "slowText": "The page is still loading — just a moment.",
+      "hide": "Hide",
+      "back": "Connected!"
     }
   },
   "nav": {
@@ -272,6 +284,7 @@
     "settings": "Settings",
     "language": "Language",
     "signOut": "Sign out",
+    "support": "Support",
     "adminCenter": "Admin Control Center",
     "backToPortal": "Back to portal",
     "myClass": "My class",

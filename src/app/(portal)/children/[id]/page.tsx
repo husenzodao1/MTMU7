@@ -42,7 +42,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
         <div className="space-y-5 xl:col-span-2">
           <Card>
             <CardHeader title={td("student.today")} />
-            <CardBody><LessonList lessons={overview.lessons} emptyLabel={td("student.noLessons")} /></CardBody>
+            <CardBody><LessonList lessons={overview.lessons} emptyLabel={td("student.noLessons")} timeZone={access.school?.timezone} /></CardBody>
           </Card>
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
