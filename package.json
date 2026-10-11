@@ -19,7 +19,8 @@
     "admin:password": "node scripts/admin/set-user-password.mts",
     "import:samples": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import/make-samples.mts",
     "telegram:install": "node scripts/telegram/install.mts",
-    "portal:setup": "node scripts/setup/portal.mts"
+    "portal:setup": "node scripts/setup/portal.mts",
+    "demo:workbooks": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo/demo-school.mts"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.2",
