@@ -144,9 +144,13 @@ describe("staff and administrators", () => {
     assert.match(row!.number, /^\d+$/);
   });
 
-  it("asks a teacher for an e-mail, and a pupil's parents for nothing of the kind", async () => {
+  it("makes a teacher without an e-mail, who signs in with the login (00092)", async () => {
     const result = await save(t.users.adminA, null, { kind: "teacher", last_name: "X", first_name: "Y" });
-    assert.ok(result.errors.some((e) => e.field === "email" && e.code === "required"));
+    assert.equal(result.valid, true, JSON.stringify(result.errors));
+    const user = await one<{ email: string; confirmed: boolean }>(db,
+      `SELECT au.email, au.email_confirmed_at IS NOT NULL AS confirmed FROM auth.users au WHERE au.id = $1`, [result.userId]);
+    assert.match(user!.email, /@staff\.invalid$/);
+    assert.equal(user!.confirmed, true, "nothing to confirm at the first sign-in");
   });
 
   it("lets only an administrator make an administrator", async () => {
@@ -275,9 +279,8 @@ describe("the register workbook", () => {
     assert.equal(shared!.children, 2);
   });
 
-  it("still asks an older pupil for an address", async () => {
+  it("takes an older pupil without an address (00092)", async () => {
     const preview = await importRows([{ class_name: "7А", last_name: "Older", first_name: "Pupil", date_of_birth: "2013-01-01", email: "" }], true);
-    assert.equal(preview.valid, false);
-    assert.ok(preview.errors.some((e) => e.field === "email" && e.code === "required"));
+    assert.equal(preview.valid, true, JSON.stringify(preview.errors));
   });
 });

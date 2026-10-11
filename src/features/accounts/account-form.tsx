@@ -120,7 +120,9 @@ export function AccountForm({
   const typedName = `${fields.last_name} ${fields.first_name}`.trim();
   const grade = chosenClass?.grade ?? details?.student?.grade_level ?? null;
   const parentManaged = kind === "student" && grade !== null && grade <= parentManagedMaxGrade;
-  const emailRequired = !(kind === "parent" || parentManaged) && !(details && !details.email);
+  // Nobody needs an address (00092): without one the account signs in with
+  // the login the school issued.
+  const emailRequired = false;
   const editingKindLocked = details !== null && (initialKind === "student" || initialKind === "parent");
   // Nobody makes a parent by hand: parents come with their child in the
   // pupils' workbook (00088).

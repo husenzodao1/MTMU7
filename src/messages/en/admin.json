@@ -1942,7 +1942,7 @@
       "female": "Female",
       "phone": "Phone",
       "email": "Email",
-      "emailOptional": "Optional: young pupils and parents sign in with their login.",
+      "emailOptional": "Optional. Without an address the account signs in with the school's login and password; the office resets the password.",
       "emailRequired": "For confirmation codes and password recovery.",
       "class_id": "Class",
       "chooseClass": "Choose a class",

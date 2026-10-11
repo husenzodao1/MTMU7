@@ -112,9 +112,9 @@ describe("the workbooks themselves", () => {
   it("require what the import cannot work without", () => {
     const required = (kind: keyof typeof PEOPLE_TEMPLATES) =>
       PEOPLE_TEMPLATES[kind].columns.filter((column) => column.required).map((column) => column.key).sort();
-    // An address is not asked of the youngest pupils, so the column may be
-    // missing; the import asks each older pupil's row for one.
+    // An address is asked of nobody (00092): without one the account signs
+    // in with the login the import issues.
     assert.deepEqual(required("students"), ["class_name", "date_of_birth", "first_name", "last_name"]);
-    assert.deepEqual(required("staff"), ["email", "employee_number", "first_name", "last_name"]);
+    assert.deepEqual(required("staff"), ["employee_number", "first_name", "last_name"]);
   });
 });
