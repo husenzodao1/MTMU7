@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { done, failure, formDataToObject, parseInput, success, type ActionResult, type FormState } from "@/lib/actions/result";
 import { markWelcome } from "@/lib/auth/welcome";
@@ -33,14 +33,14 @@ export async function verifySecondStepAction(_state: FormState, formData: FormDa
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: input.data.token });
   if (error) return done(failure("auth.twoFactor.wrong", { token: ["auth.twoFactor.wrong"] }));
   await markWelcome();
-  redirect(postSignInPath(input.data.next));
+  redirect(postSignInPath(input.data.next), RedirectType.replace);
 }
 
 /** Gives up on the second step: signs out, back to the start. */
 export async function abandonSecondStepAction(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login", RedirectType.replace);
 }
 
 export interface Enrolment {

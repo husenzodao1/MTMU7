@@ -38,6 +38,10 @@ interface FirebaseMessaging {
 /** The part of @capacitor/app the site uses. */
 interface AppPlugin {
   addListener(event: "appUrlOpen", handler: (event: { url: string }) => void): Promise<Listener>;
+  /** Android's back button; while anything listens, the web view's own going back is off. */
+  addListener(event: "backButton", handler: (event: { canGoBack: boolean }) => void): Promise<Listener>;
+  /** Puts the app in the background, as the home button does. */
+  minimizeApp(): Promise<void>;
   /** The link the app was started with, when a link (or a notification) started it. */
   getLaunchUrl(): Promise<{ url?: string } | undefined>;
   /** The installed app's own version, e.g. 1.0.12. */
@@ -179,9 +183,10 @@ export async function forgetNativeToken(): Promise<void> {
   }
   if (!token) return;
   try {
-    // Signing out waits for this, so it gets three seconds and no more.
+    // Signing out waits for this, so it gets a second and no more: a phone
+    // left on the list is pruned when its token next fails.
     const forget = getBrowserClient().rpc("forget_my_device_token", { p_token: token }).then(() => undefined);
-    await Promise.race([forget, new Promise<void>((resolve) => setTimeout(resolve, 3000))]);
+    await Promise.race([forget, new Promise<void>((resolve) => setTimeout(resolve, 1000))]);
   } catch {
     /* the next person to sign in on this phone takes the token over anyway */
   }

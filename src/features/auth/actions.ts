@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { done, failure, formDataToObject, keepValues, parseInput, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
@@ -102,12 +102,12 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
   const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (level?.currentLevel === "aal1" && level.nextLevel === "aal2") {
     const next = input.data.next ? `?next=${encodeURIComponent(safeRedirectPath(input.data.next))}` : "";
-    redirect(`/two-factor${next}`);
+    redirect(`/two-factor${next}`, RedirectType.replace);
   }
 
   const access = await getAccess();
   if (access && (!access.isActive || access.status === "blocked")) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     return done(failure("errors.account_inactive", undefined, kept));
   }
   // The school wrote the address down; the person still has to show they can
@@ -115,7 +115,8 @@ export async function signInAction(_state: FormState, formData: FormData): Promi
   if (access && !access.emailVerified) return startConfirmation(supabase, email, input.data.next);
 
   await markWelcome();
-  redirect(postSignInPath(input.data.next));
+  // Replacing the sign-in page: the back button does not lead back to it.
+  redirect(postSignInPath(input.data.next), RedirectType.replace);
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +156,8 @@ export async function confirmEmailAction(_state: FormState, formData: FormData):
 
   (await cookies()).delete(CONFIRM_COOKIE);
   await markWelcome();
-  redirect(postSignInPath(input.data.next));
+  // Replacing the sign-in page: the back button does not lead back to it.
+  redirect(postSignInPath(input.data.next), RedirectType.replace);
 }
 
 // ---------------------------------------------------------------------------

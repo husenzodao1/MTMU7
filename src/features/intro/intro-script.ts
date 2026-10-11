@@ -5,9 +5,9 @@
  */
 
 /**
- * Set once the opening has played in a browser: a session cookie, so the site
- * greets a visitor once per visit rather than on every page. The app plays it
- * on every start instead (see below).
+ * Set once the opening has played in a browser, for a year: the book opens for
+ * a newcomer, and the portal is simply there for everyone after. The app
+ * keeps the same in its own storage (see below).
  */
 export const INTRO_COOKIE = "mtmu7-intro";
 
@@ -15,6 +15,8 @@ export const INTRO_COOKIE = "mtmu7-intro";
 export const INTRO_MS = 4550;
 /** The same with reduced motion: no book, the greeting already written, a short look and gone. */
 export const INTRO_QUICK_MS = 1400;
+/** The greeting after a sign-in: the quick form, for everybody, shorter still. */
+export const WELCOME_MS = 900;
 
 /**
  * The oldest web view the portal is built for (Chrome 111: the colours and
@@ -28,9 +30,9 @@ const OLD_WEBVIEW = 111;
  * the styles before it), long before the page's own JavaScript.
  *
  * In a browser it starts the opening at once and leaves the cookie that says
- * it has been seen. In the app it plays on each start of the app and not on a
- * reload within one (sessionStorage lives exactly as long as the app's web
- * view), and it waits for the phone's own splash: Capacitor's bridge is on the
+ * it has been seen. In the app it plays on the app's first start only — it
+ * used to play on every start, four and a half seconds each time, and opening
+ * the app felt slow — and it waits for the phone's own splash: Capacitor's bridge is on the
  * page before any of the page's scripts, so the splash is asked to go and the
  * book starts moving the moment it has. What happened is left on window for
  * the app's diagnostics.
@@ -39,8 +41,8 @@ export const INTRO_SCRIPT = `(function(){
 var ua=navigator.userAgent,cap=window.Capacitor,app=ua.indexOf('MTMU7App')>=0;
 var el=document.getElementById('intro');
 if(el){var seen=false,done=false;
-if(app){try{seen=sessionStorage.getItem('INTRO_COOKIE')==='1';sessionStorage.setItem('INTRO_COOKIE','1');}catch(e){}}
-else{document.cookie='INTRO_COOKIE=1; path=/; SameSite=Lax';}
+if(app){try{seen=localStorage.getItem('INTRO_COOKIE')==='1'||sessionStorage.getItem('INTRO_COOKIE')==='1';localStorage.setItem('INTRO_COOKIE','1');}catch(e){}}
+else{document.cookie='INTRO_COOKIE=1; path=/; max-age=31536000; SameSite=Lax';}
 if(seen)el.setAttribute('data-skip','');
 var play=function(how){if(done)return;done=true;el.setAttribute('data-play','');window.__appLaunch={at:Math.round(performance.now()),splash:how,skipped:seen};};
 try{if(app&&cap&&typeof cap.nativePromise==='function'){cap.nativePromise('SplashScreen','hide',{fadeOutDuration:seen?120:220}).then(function(){play('hidden')},function(){play('refused')});setTimeout(function(){play('timeout')},700);}

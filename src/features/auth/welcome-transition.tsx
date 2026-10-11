@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { BookScene } from "@/features/intro/book-scene";
 import type { ScriptLine } from "@/features/intro/greeting-paths";
-import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
+import { WELCOME_MS } from "@/features/intro/intro-script";
 import { report } from "@/features/native/diagnostics";
 import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 import { cn } from "@/lib/utils/cn";
@@ -14,24 +14,22 @@ import { cn } from "@/lib/utils/cn";
 const VEIL_ATTRIBUTE = "data-signin-veil";
 
 /**
- * The moment between signing in and the portal: the same book as the site's
- * opening (book-scene.tsx) — it opens, its pages turn, it rushes into a flash
- * of light — and on the paper "Welcome" writes itself by hand, and the
- * person's name under it.
+ * The moment between signing in and the portal: "Welcome" and the person's
+ * name on the book's paper, already written, for under a second (WELCOME_MS),
+ * and gone. It used to be the whole opening — the book flying in, its pages
+ * turning, the greeting written by hand — five seconds after every sign-in,
+ * which is most of what made signing in feel slow; the full book is the
+ * site's first opening only (intro.tsx).
  *
  * Rendered by the portal's layouts on the first page after a sign-in (the
- * one-minute cookie markWelcome() leaves) and by nothing else, so it is seen
- * once per sign-in and never on an ordinary visit. After the veil the book is
- * already in the middle and does not fly in again. A tap skips it, and with
- * reduced motion it is the greeting, already written, for a moment.
+ * one-minute cookie markWelcome() leaves) and by nothing else. A tap skips it.
  */
 export function WelcomeTransition({ firstName, script }: { firstName: string; script: ScriptLine }) {
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
 
   useEffect(() => {
     document.cookie = `${WELCOME_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
-    const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const out = window.setTimeout(() => setPhase("out"), quick ? INTRO_QUICK_MS : INTRO_MS);
+    const out = window.setTimeout(() => setPhase("out"), WELCOME_MS);
     return () => window.clearTimeout(out);
   }, []);
 
@@ -40,13 +38,13 @@ export function WelcomeTransition({ firstName, script }: { firstName: string; sc
     const gone = window.setTimeout(() => {
       setPhase("gone");
       document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
-    }, 560);
+    }, 300);
     return () => window.clearTimeout(gone);
   }, [phase]);
 
   if (phase === "gone") return null;
   return (
-    <div className={cn("intro intro-welcome", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")}>
+    <div className={cn("intro intro-welcome intro-quick", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")}>
       <BookScene lines={[script]} name={firstName} />
     </div>
   );
@@ -67,6 +65,8 @@ export function SignInVeil() {
   useEffect(() => {
     if (!pending) {
       document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
+      // Arrived from signing out: the dimmed portal is gone.
+      document.documentElement.removeAttribute("data-leaving");
       return;
     }
     report("signin.submit");

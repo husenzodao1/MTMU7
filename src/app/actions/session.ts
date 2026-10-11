@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAccess } from "@/lib/auth/access";
 import { isLocale } from "@/lib/i18n/text";
@@ -9,10 +9,16 @@ import { isTheme, THEME_COOKIE } from "@/lib/theme";
 import { safeRedirectPath } from "@/lib/security/redirect";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Signs this device out — only this one: the default ("global") also ended the
+ * person's sessions on every other phone and computer, so signing out of the
+ * app signed them out of the site too. The sign-in page replaces the page
+ * they left, so the back button does not lead back into the portal.
+ */
 export async function signOutAction(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login", RedirectType.replace);
 }
 
 /** Stores the interface language in a cookie and, for signed-in users, in their settings. */

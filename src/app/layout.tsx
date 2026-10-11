@@ -153,10 +153,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page of a visit opens with the book and the greeting
-  // (src/features/intro/): in the app on each start, on the site once per visit
-  // (a session cookie) and never for robots — and not on the first page after
-  // signing in, which has a welcome of its own.
+  // The first page opens with the book and the greeting (src/features/intro/):
+  // on the site once per browser (a year's cookie), in the app on its first
+  // start (the page skips it after that), never for robots — and not on the
+  // first page after signing in, which has a short welcome of its own.
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
   const opening =
@@ -169,6 +169,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
+      // Inside the phone app: taps are answered as in an app (globals.css).
+      data-app={isAppUserAgent(userAgent) ? "" : undefined}
       className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">

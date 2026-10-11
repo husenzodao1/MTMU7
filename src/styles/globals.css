@@ -1388,6 +1388,37 @@
   }
 }
 
+/*
+ * The short greeting after a sign-in (WelcomeTransition): what reduced motion
+ * shows, for everybody — the greeting already written, a moment, and gone —
+ * so signing in costs a second, not five.
+ */
+.intro-quick *,
+.intro-quick *::before,
+.intro-quick *::after {
+  animation: none !important;
+}
+.intro-quick .intro-scene,
+.intro-quick .intro-flash {
+  display: none;
+}
+.intro-quick .intro-paper {
+  opacity: 1;
+}
+.intro-quick .intro-glyph {
+  fill-opacity: 1;
+  stroke-dashoffset: 0;
+}
+.intro-quick .intro-name {
+  clip-path: none;
+}
+.intro-quick .intro-hairline {
+  transform: none;
+}
+.intro-quick.intro-leaving .intro-writing {
+  transform: none;
+}
+
 /* ------------------------------------------------------------ avatar rings */
 
 /*
@@ -3286,4 +3317,58 @@ a.updates-card:hover {
   to {
     background-position: -30% 0;
   }
+}
+
+/*
+ * Signing out (app-shell.tsx): the page dims and a ring turns from the moment
+ * the button is pressed, until the sign-in page has replaced it.
+ */
+html[data-leaving]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: color-mix(in oklab, var(--color-surface) 72%, transparent);
+  backdrop-filter: blur(2px);
+  cursor: progress;
+}
+html[data-leaving]::before {
+  content: "";
+  position: fixed;
+  z-index: 301;
+  top: 50%;
+  left: 50%;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem 0 0 -1rem;
+  border-radius: 999px;
+  border: 3px solid var(--color-brand-600);
+  border-top-color: transparent;
+  animation: leaving-turn 0.8s linear infinite;
+}
+@keyframes leaving-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Inside the phone app (html[data-app]) a tap is answered the way an app
+ * answers it, not the way a web page does: no blue flash over what was
+ * touched, no words selected by a long press on a button or a menu, no glow
+ * or bounce at the ends of the page, and whatever was pressed dims at once,
+ * before the network has said anything.
+ */
+html[data-app] {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], label, nav, summary) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], summary):active {
+  opacity: 0.72;
+  transition: opacity 0s;
 }

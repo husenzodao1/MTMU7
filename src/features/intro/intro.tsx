@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils/cn";
 
 /**
  * The opening over the first page: the book, the light and the greeting
- * written by hand (book-scene.tsx) — once per visit to the site, and on each
- * start of the app.
+ * written by hand (book-scene.tsx) — once per browser, for a year, and on the
+ * app's first start only.
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it

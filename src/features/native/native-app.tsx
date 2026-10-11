@@ -33,6 +33,30 @@ interface CapacitorGlobal {
  * — and when a notification is tapped. Renders nothing, and in a browser does
  * nothing at all.
  */
+/** Pages back does not go behind: from these the app steps aside, like any app at its start. */
+const ROOT_PATHS = new Set(["/", "/dashboard", "/login", "/admin"]);
+
+/**
+ * What Android's back button does in the app. A browser's back walks the
+ * whole history — after signing out it led back into the portal, after a menu
+ * it reopened the page under it. An app closes what is open first (a menu, a
+ * dialog, a sheet), then goes one page back, and from its first page it steps
+ * aside to the home screen instead of leaving a blank web view.
+ */
+function backButton(app: { minimizeApp?: () => Promise<void> }, canGoBack: boolean) {
+  const open = document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"]');
+  if (open) {
+    (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }));
+    return;
+  }
+  if (ROOT_PATHS.has(location.pathname) || !canGoBack) {
+    if (ROOT_PATHS.has(location.pathname)) void app.minimizeApp?.();
+    else location.replace("/dashboard");
+    return;
+  }
+  history.back();
+}
+
 export function NativeApp() {
   const pathname = usePathname();
   const t = useTranslations("common.appUpdate");
@@ -80,6 +104,8 @@ export function NativeApp() {
   // Every page after the first, so a sign-in can be followed to where it led.
   const firstPage = useRef(true);
   useEffect(() => {
+    // Signing out dims the page until the next one is here (app-shell.tsx).
+    document.documentElement.removeAttribute("data-leaving");
     if (firstPage.current) firstPage.current = false;
     else report("page");
   }, [pathname]);
@@ -110,6 +136,8 @@ export function NativeApp() {
       const [app, messaging] = await Promise.all([appPlugin(), messagingPlugin()]);
       if (app) {
         keep(await app.addListener("appUrlOpen", ({ url }) => go(pathForAppLink(url, location.origin))));
+        // Android's back button, as in any app rather than as in a browser.
+        keep(await app.addListener("backButton", ({ canGoBack }) => backButton(app, canGoBack)));
         // Started by tapping a notification while the app was closed: the
         // link arrives as the launch URL rather than as an event. Followed
         // once per launch, not on every page after it.

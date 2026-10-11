@@ -485,8 +485,12 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                 <Overlay.DropdownMenuSeparator />
                 <form
                   action={async () => {
+                    // At once, whatever the network: the page dims and says it
+                    // is on its way out (html[data-leaving], globals.css).
+                    document.documentElement.setAttribute("data-leaving", "");
                     // In the phone app this phone stops getting this person's
-                    // notifications first; in a browser it returns at once.
+                    // notifications first (a second at most); in a browser it
+                    // returns at once.
                     await forgetNativeToken();
                     await signOutAction();
                   }}
