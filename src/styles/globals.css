@@ -2115,6 +2115,191 @@ html[data-app] .app-socials {
 }
 
 /*
+ * A search with its filters folded away (filters.tsx, FoldedFilterBar): one
+ * rounded field and a round filter button beside it. The button's three lines
+ * narrow downwards like a funnel; open, they turn the other way up, and the
+ * panel under the field lifts in with every filter as a row of choices.
+ */
+.filter-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    scale 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.filter-toggle:hover {
+  border-color: var(--color-ink-muted);
+}
+.filter-toggle:active {
+  scale: 0.92;
+}
+.filter-toggle:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+.filter-toggle[data-open] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+.filter-glyph {
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.filter-glyph path {
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.filter-toggle[data-open] .filter-glyph path:nth-child(1) {
+  scale: 0.25 1;
+}
+.filter-toggle[data-open] .filter-glyph path:nth-child(3) {
+  scale: 4 1;
+}
+.filter-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+  box-shadow: 0 0 0 2px var(--color-canvas);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2rem;
+  text-align: center;
+  animation: filter-count-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes filter-count-pop {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+}
+.filter-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.filter-panel[data-open] {
+  grid-template-rows: 1fr;
+}
+.filter-panel-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.filter-panel-body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.625rem;
+  padding: 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  opacity: 0;
+  translate: 0 -8px;
+  transition:
+    opacity 0.25s ease,
+    translate 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.filter-panel[data-open] .filter-panel-body {
+  opacity: 1;
+  translate: 0 0;
+}
+.filter-group {
+  display: grid;
+  gap: 0.5rem;
+}
+.filter-group-label {
+  color: var(--color-ink-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.filter-chip {
+  height: 2rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    scale 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.filter-chip:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+.filter-chip:active {
+  scale: 0.95;
+}
+.filter-chip:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+.filter-chip[aria-pressed="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+.filter-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.35rem;
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.filter-clear:hover {
+  color: var(--color-ink);
+}
+.filter-clear svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .filter-panel,
+  .filter-panel-body,
+  .filter-glyph path,
+  .filter-count {
+    transition: none;
+    animation: none;
+  }
+}
+
+/*
  * The phone's menu (menu-drawer.tsx). --p is how far out it is, 0 to 1: the
  * finger sets it directly while it drags (no transition), and letting go
  * finishes the way at the finger's speed (--dur) on one easing. Shut, the

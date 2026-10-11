@@ -68,7 +68,9 @@ describe("storage policies (SEC-011)", () => {
 describe("dashboards", () => {
   before(async () => {
     await db.query(`INSERT INTO public.bell_periods (school_id, period_number, start_time, end_time) VALUES ($1, 1, '08:00', '08:45'), ($1, 2, '08:55', '09:40')`, [SCHOOL_A]);
-    const dow = (await one<{ d: number }>(db, `SELECT least(extract(isodow FROM current_date)::int, 6) AS d`))!.d;
+    // The school's day, not the server's: from 19:00 UTC it is already
+    // tomorrow in Dushanbe, and teacher_today goes by the school's.
+    const dow = (await one<{ d: number }>(db, `SELECT least(extract(isodow FROM app.school_today($1))::int, 6) AS d`, [SCHOOL_A]))!.d;
     await db.query(`INSERT INTO public.timetable_entries (school_id, academic_year_id, class_id, class_subject_id, day_of_week, period_number)
                     VALUES ($1, $2, $3, $4, $5, 1), ($1, $2, $3, $6, $5, 2)`, [SCHOOL_A, a.yearA, a.class9A, a.mathA, dow, a.physicsA]);
     await db.query(`INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, period_number, status)
