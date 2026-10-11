@@ -112,7 +112,14 @@ function AppPermissions({ plugin, locale }: { plugin: NonNullable<Awaited<Return
   const ask = async (key: DevicePermission) => {
     setBusy(key);
     try {
-      apply(await plugin.request({ which: [key] }), false);
+      const answer = await plugin.request({ which: [key] });
+      apply(answer, false);
+      // Android settles some answers a moment after its dialog closes
+      // ("only this time", approximate location): looked at once more.
+      if (answer[key] !== "granted") {
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+        apply(await plugin.check(), false);
+      }
     } catch {
       // The dialog could not be shown; the row stays as it was.
     }
@@ -264,20 +271,34 @@ function BrowserPermissions({ locale, userId }: { locale: string; userId: string
 
   const askGeo = () => {
     setBusy("geo");
+    let settled = false;
+    const settle = (next: GeoState) => {
+      if (settled) return;
+      settled = true;
+      setBusy(null);
+      setGeo(next);
+      finishIfDone(push, next);
+    };
+    // Only the permission is wanted here, and the browser says it was given
+    // the moment it is — long before a position is found, which indoors or
+    // with the GPS off may take a while or never come. The row used to wait
+    // for the position and, when finding it timed out, went back to "Allow"
+    // although the permission had been given.
+    void navigator.permissions
+      ?.query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        status.onchange = () => {
+          if (status.state === "granted" || status.state === "denied") settle(status.state);
+        };
+      })
+      .catch(() => undefined);
     navigator.geolocation.getCurrentPosition(
-      () => {
-        // Only the permission is wanted here. The position itself is dropped
-        // on the floor: nothing is sent until somebody taps the pin in a chat.
-        setBusy(null);
-        setGeo("granted");
-        finishIfDone(push, "granted");
-      },
-      (error) => {
-        setBusy(null);
-        const next: GeoState = error.code === error.PERMISSION_DENIED ? "denied" : "prompt";
-        setGeo(next);
-        finishIfDone(push, next);
-      },
+      // The position itself is dropped on the floor: nothing is sent until
+      // somebody taps the pin in a chat.
+      () => settle("granted"),
+      // Only a refusal is a refusal: a position that could not be found, or
+      // took too long, was looked for with the permission already given.
+      (error) => settle(error.code === error.PERMISSION_DENIED ? "denied" : "granted"),
       { enableHighAccuracy: false, timeout: 15_000, maximumAge: 600_000 }
     );
   };

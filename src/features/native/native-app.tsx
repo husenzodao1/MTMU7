@@ -37,6 +37,7 @@ export function NativeApp() {
   const pathname = usePathname();
   const t = useTranslations("common.appUpdate");
   const [outdated, setOutdated] = useState(false);
+  const [oldBuild, setOldBuild] = useState(false);
 
   // What the app's page could see as it woke — for reading back when
   // something inside the app does not work (features/native/diagnostics.ts).
@@ -53,6 +54,7 @@ export function NativeApp() {
         .catch(() => undefined);
       const build = Number(info?.build);
       if (Number.isFinite(build) && build > 0 && build < MIN_APP_BUILD && capacitor?.getPlatform?.() === "android") {
+        setOldBuild(true);
         try {
           if (sessionStorage.getItem("app-update-dismissed") !== "1") setOutdated(true);
         } catch {
@@ -142,6 +144,20 @@ export function NativeApp() {
     };
   }, []);
 
+  // An app too old to save files: a download link tapped in it brings the
+  // update back, rather than doing nothing at all.
+  useEffect(() => {
+    if (!oldBuild) return;
+    const onClick = (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest?.("a[download]");
+      if (!link) return;
+      event.preventDefault();
+      setOutdated(true);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [oldBuild]);
+
   if (!outdated) return null;
   return (
     <div
@@ -155,7 +171,11 @@ export function NativeApp() {
         <span className="block text-sm font-semibold text-ink">{t("title")}</span>
         <span className="block text-xs text-ink-muted">{t("text")}</span>
       </span>
-      <a href="/download/android" download className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
+      {/* To the phone's browser, which downloads and installs an APK: the app's
+          own web view drops a download, and builds before 13 have nothing to
+          take one. Capacitor sends any address it does not serve itself — the
+          same host over http — to the browser, and the site turns it to https. */}
+      <a href={`http://${typeof location === "undefined" ? "" : location.host}/download/android`} className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
         {t("action")}
       </a>
       <button
