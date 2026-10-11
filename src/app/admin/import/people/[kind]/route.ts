@@ -14,7 +14,20 @@ import { sendCredentialsToParents } from "@/features/accounts/send-credentials";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const CHUNK = 300;
+/**
+ * Rows per call. A pupil's row makes up to three accounts (the pupil and the
+ * two parents) and each password hash takes tens of milliseconds, so a pupil
+ * chunk is kept small enough to finish well inside one call's time limit.
+ */
+const CHUNK = { students: 40, staff: 100 } as const;
+/** One call may take this long: far beyond a chunk, far short of the function's limit. */
+const CALL_TIMEOUT_MS = 120_000;
+/**
+ * No chunk is started after this. The rows done so far are handed back with
+ * their passwords, and the import is run again for the rest, rather than the
+ * platform stopping the function with every password of the run in it.
+ */
+const BUDGET_MS = 230_000;
 
 /**
  * Imports the register and hands the workbook straight back with the Логин and
@@ -40,11 +53,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     if (kind !== "students" || (await myHomeroomClasses(access)).length === 0) return new NextResponse(null, { status: 403 });
   }
 
+  const started = Date.now();
   const formData = await request.formData();
   const sheet = await readPeopleSheet(kind, formData.get("file"));
   if (!sheet.ok) return NextResponse.json(sheet.result, { status: 400 });
 
-  const supabase = await createClient();
+  const supabase = await createClient({ timeoutMs: CALL_TIMEOUT_MS });
   // The same check as the preview: a number on two accounts stops the import
   // here, row by row, rather than half-way through it.
   const clashes = await phoneConflicts(supabase, sheet.rows);
@@ -58,22 +72,33 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
   let created = 0;
   let updated = 0;
   let newClasses: string[] = [];
+  // The first row not imported, when the run stopped before the end.
+  let stoppedAt: number | null = null;
+  const chunk = CHUNK[kind];
 
-  for (let offset = 0; offset < sheet.rows.length; offset += CHUNK) {
+  for (let offset = 0; offset < sheet.rows.length; offset += chunk) {
+    if (offset > 0 && Date.now() - started > BUDGET_MS) {
+      stoppedAt = offset + 1;
+      break;
+    }
     const { data, error } = await supabase.rpc("import_people", {
       p_kind: kind,
       p_rows: sheet.rows,
       p_dry_run: false,
       p_offset: offset,
-      p_limit: CHUNK,
+      p_limit: chunk,
     });
     if (error) {
-      // A chunk that fails leaves the ones before it in place. Saying how far
-      // it got is the difference between "run it again" and "start over".
-      return NextResponse.json(
-        { ok: false, message: "errors.unexpected", data: { created, updated, failedAt: offset + 1 } },
-        { status: 500 }
-      );
+      console.error("import_people failed", { kind, offset, code: error.code, message: error.message });
+      // Nothing imported yet: nothing to hand back.
+      if (offset === 0) {
+        return NextResponse.json({ ok: false, message: "errors.unexpected", data: { created, updated, failedAt: 1 } }, { status: 500 });
+      }
+      // The chunks before this one are in, with passwords issued that exist
+      // nowhere but here: they go back in the file, and the rest is imported
+      // by running the same file again, which issues nothing twice.
+      stoppedAt = offset + 1;
+      break;
     }
     const outcome = data as unknown as PeopleOutcome;
     if (!outcome.valid) return NextResponse.json({ ok: false, message: "errors.validation", data: outcome }, { status: 400 });
@@ -110,8 +135,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     rows: sheet.rows.map((row, index) => {
       const issued = credentials.get(index + 1);
       const parent = (relation: string) => parents.get(`${index + 1}:${relation}`);
+      const skipped = stoppedAt !== null && index + 1 >= stoppedAt;
       return [
         ...written.map((column) => {
+          if (skipped && (column.key === "login" || column.key === "password")) return t("notImported");
           if (column.key === "login") return issued?.login ?? logins.get(index + 1) ?? row.login ?? "";
           if (column.key === "password") return issued?.password ?? t("alreadyIssued");
           const match = /^(father|mother)_(login|password)$/.exec(column.key);
@@ -136,6 +163,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
           t("warningBody"),
           t("warningKeep"),
           t("summary", { created, updated }),
+          ...(stoppedAt !== null ? [t("stoppedAt", { row: stoppedAt })] : []),
           ...(kind === "students" ? [t("parentsSummary", { issued: [...parents.values()].filter((p) => p.password).length, total: parents.size })] : []),
         ],
       },
@@ -154,6 +182,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
       "X-Import-Parents": String([...parents.values()].filter((p) => p.password).length),
       "X-Telegram-Sent": String(telegram),
       "X-Import-New-Classes": encodeURIComponent(newClasses.join(",")),
+      ...(stoppedAt !== null ? { "X-Import-Stopped-At": String(stoppedAt) } : {}),
     },
   });
 }
