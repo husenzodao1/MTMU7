@@ -161,6 +161,13 @@ export function hourIn(timeZone = DEFAULT_TIME_ZONE, at: Date = new Date()): num
   return Number(new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(at)) % 24;
 }
 
+/** Minutes since midnight where the school is, for setting lessons against the bells. */
+export function minutesIn(timeZone = DEFAULT_TIME_ZONE, at: Date = new Date()): number {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(at);
+  const part = (type: "hour" | "minute") => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return (part("hour") % 24) * 60 + part("minute");
+}
+
 export type DayPart = "morning" | "day" | "evening" | "night";
 
 /**

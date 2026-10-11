@@ -2,21 +2,34 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/surface";
-import { formatDateTime, formatNumber, formatShortDate, formatTime } from "@/lib/i18n/format";
+import { formatDateTime, formatNumber, formatShortDate, formatTime, minutesIn } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import { getRequestTime } from "@/lib/request-time";
 import type { StudentOverview } from "@/features/academic/queries";
+import { lessonMoments } from "@/features/academic/lesson-time";
 import { CalendarDays, NotebookPen, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-export async function LessonList({ lessons, emptyLabel }: { lessons: StudentOverview["lessons"]; emptyLabel: string }) {
+/**
+ * A pupil's lessons today, each at its bell, with the one under way and the
+ * next one marked against the school's clock (lesson-time.ts).
+ */
+export async function LessonList({ lessons, emptyLabel, timeZone }: { lessons: StudentOverview["lessons"]; emptyLabel: string; timeZone?: string }) {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("portal.lessons");
   if (lessons.length === 0) return <EmptyState icon={<CalendarDays />} title={emptyLabel} className="py-6" />;
+  const moments = lessonMoments(lessons, minutesIn(timeZone, new Date(getRequestTime())));
   return (
     <ol className="divide-y divide-line">
-      {lessons.map((lesson) => (
-        <li key={`${lesson.shift}-${lesson.period_number}`} className="flex items-start gap-3 py-2.5">
+      {lessons.map((lesson, index) => (
+        <li
+          key={`${lesson.shift}-${lesson.period_number}`}
+          className={cn(
+            "flex items-start gap-3 py-2.5",
+            moments[index] === "now" && "-mx-2 rounded-md bg-brand-50 px-2 ring-1 ring-brand-200",
+            moments[index] === "past" && "opacity-60"
+          )}
+        >
           <div className="w-16 shrink-0 text-sm tabular">
             <span className="block font-semibold text-ink">{t("period", { number: lesson.period_number })}</span>
             {lesson.start_time ? (
@@ -31,6 +44,7 @@ export async function LessonList({ lessons, emptyLabel }: { lessons: StudentOver
               {[lesson.teacher, lesson.room ? t("room", { room: lesson.room }) : null].filter(Boolean).join(" · ")}
             </p>
           </div>
+          {moments[index] === "now" ? <Badge tone="brand" dot>{t("now")}</Badge> : moments[index] === "next" ? <Badge>{t("next")}</Badge> : null}
           {lesson.is_substitution ? <Badge tone="warning">{t("substitution")}</Badge> : null}
         </li>
       ))}

@@ -160,6 +160,9 @@ export default async function GradebookPage({
       title: [formatShortDate(date, locale), ruledColumn?.label, type ? pickName(type, locale) : null].filter(Boolean).join(" · "),
     };
   });
+  // By date; on the day a quarter's mark is written, after that day's lesson,
+  // as the mark closes the quarter.
+  columns.sort((a, b) => a.date.localeCompare(b.date) || Number(a.kind === "term") - Number(b.kind === "term") || a.key.localeCompare(b.key));
 
   const markAt = new Map(grades.map((g) => [`${g.student_id}|${g.grade_date}~${g.assessment_type_id}`, g]));
   const absenceAt = new Map((attendanceRows ?? []).map((r) => [`${r.student_id}|${r.attendance_date}`, r.status]));
