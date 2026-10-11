@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/form-controls";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatDate } from "@/lib/i18n/format";
+import { formatDate, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { createClient } from "@/lib/supabase/server";
 
@@ -114,54 +114,66 @@ export default async function AcademicYearsPage() {
                   {terms.length === 0 ? (
                     <p className="px-5 py-4 text-sm text-ink-muted">{t("noTerms")}</p>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <caption className="sr-only">{t("termsOf", { name: year.name })}</caption>
-                        <thead>
-                          <tr className="border-y border-line bg-surface-muted/60 text-xs uppercase tracking-wide text-ink-muted">
-                            <th scope="col" className="px-4 py-2 text-start">{t("termName")}</th>
-                            <th scope="col" className="px-4 py-2 text-start">{t("termKind")}</th>
-                            <th scope="col" className="px-4 py-2 text-start">{t("dates")}</th>
-                            <th scope="col" className="px-4 py-2 text-start">{t("grading")}</th>
-                            <th scope="col" className="px-4 py-2 text-end"><span className="sr-only">{tc("actions")}</span></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                          {terms.map((term) => (
-                            <tr key={term.id}>
-                              <th scope="row" className="px-4 py-2.5 text-start font-medium">{term.name}</th>
-                              <td className="px-4 py-2.5">{t(`kinds.${term.kind as "quarter"}`)}</td>
-                              <td className="px-4 py-2.5 tabular">{formatDate(term.start_date, locale)} — {formatDate(term.end_date, locale)}</td>
-                              <td className="px-4 py-2.5">{term.is_locked ? <Badge tone="warning"><Lock className="size-3" aria-hidden />{t("locked")}</Badge> : <Badge>{t("open")}</Badge>}</td>
-                              <td className="px-4 py-2.5">
-                                <span className="flex justify-end gap-1">
-                                  <ConfirmAction
-                                    action={setTermLockAction}
-                                    fields={{ id: term.id, locked: term.is_locked ? "false" : "true" }}
-                                    title={term.is_locked ? t("unlockTitle") : t("lockTitle")}
-                                    description={term.is_locked ? t("unlockDescription") : t("lockDescription")}
-                                    confirmLabel={term.is_locked ? t("unlock") : t("lock")}
-                                    tone={term.is_locked ? "primary" : "danger"}
-                                    trigger={<Button variant="ghost" size="icon-sm" aria-label={term.is_locked ? t("unlockNamed", { name: term.name }) : t("lockNamed", { name: term.name })}>{term.is_locked ? <LockOpen aria-hidden /> : <Lock aria-hidden />}</Button>}
-                                  />
-                                  {manage ? (
-                                    <>
-                                      <FormDialog action={saveTermAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editTerm", { name: term.name })}><Pencil aria-hidden /></Button>} title={t("editTermTitle")} submitLabel={tc("save")} size="md">
-                                        {termFields(year.id, term)}
-                                      </FormDialog>
-                                      <ConfirmAction action={deleteTermAction} fields={{ id: term.id }} title={t("deleteTermTitle")} description={t("deleteTermDescription")} confirmLabel={tc("delete")} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("deleteTerm", { name: term.name })}><Trash2 aria-hidden /></Button>} />
-                                    </>
-                                  ) : null}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    // One row per term. On a phone the four columns fold into two lines —
+                    // the name and its buttons, then the dates and the grading — so
+                    // nothing hides off to the right; from a tablet up they line up
+                    // under a header row as a table does.
+                    <div>
+                      <div aria-hidden className="hidden grid-cols-[minmax(0,1.1fr)_minmax(0,0.7fr)_minmax(0,1.7fr)_7rem_auto] gap-x-3 border-y border-line bg-surface-muted/60 px-4 py-2 text-xs sm:px-5 uppercase tracking-wide text-ink-muted sm:grid">
+                        <span>{t("termName")}</span>
+                        <span>{t("termKind")}</span>
+                        <span>{t("dates")}</span>
+                        <span>{t("grading")}</span>
+                        <span className="w-[6.5rem]" />
+                      </div>
+                      <ul aria-label={t("termsOf", { name: year.name })} className="divide-y divide-line border-t border-line text-sm sm:border-t-0">
+                        {terms.map((term) => (
+                          <li
+                            key={term.id}
+                            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:px-5 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.7fr)_minmax(0,1.7fr)_7rem_auto] sm:gap-y-0"
+                          >
+                            <p className="min-w-0 truncate font-medium text-ink">
+                              {term.name}
+                              <span className="font-normal text-ink-muted sm:hidden"> · {t(`kinds.${term.kind as "quarter"}`)}</span>
+                            </p>
+                            <span className="hidden text-ink-secondary sm:block">{t(`kinds.${term.kind as "quarter"}`)}</span>
+                            <span className="col-start-1 row-start-2 whitespace-nowrap text-xs text-ink-muted tabular sm:col-start-auto sm:row-start-auto sm:whitespace-normal sm:text-sm sm:text-ink-secondary">
+                              <span className="sm:hidden">
+                                {formatShortDate(term.start_date, locale)} – {formatShortDate(term.end_date, locale)}
+                              </span>
+                              <span className="hidden sm:inline">
+                                {formatDate(term.start_date, locale)} — {formatDate(term.end_date, locale)}
+                              </span>
+                            </span>
+                            <span className="col-start-2 row-start-2 justify-self-end sm:col-start-auto sm:row-start-auto sm:justify-self-start">
+                              {term.is_locked ? <Badge tone="warning"><Lock className="size-3" aria-hidden />{t("locked")}</Badge> : <Badge>{t("open")}</Badge>}
+                            </span>
+                            <span className="col-start-2 row-start-1 flex w-[6.5rem] justify-end gap-0.5 sm:col-start-auto sm:row-start-auto">
+                              <ConfirmAction
+                                action={setTermLockAction}
+                                fields={{ id: term.id, locked: term.is_locked ? "false" : "true" }}
+                                title={term.is_locked ? t("unlockTitle") : t("lockTitle")}
+                                description={term.is_locked ? t("unlockDescription") : t("lockDescription")}
+                                confirmLabel={term.is_locked ? t("unlock") : t("lock")}
+                                tone={term.is_locked ? "primary" : "danger"}
+                                trigger={<Button variant="ghost" size="icon-sm" aria-label={term.is_locked ? t("unlockNamed", { name: term.name }) : t("lockNamed", { name: term.name })}>{term.is_locked ? <LockOpen aria-hidden /> : <Lock aria-hidden />}</Button>}
+                              />
+                              {manage ? (
+                                <>
+                                  <FormDialog action={saveTermAction} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("editTerm", { name: term.name })}><Pencil aria-hidden /></Button>} title={t("editTermTitle")} submitLabel={tc("save")} size="md">
+                                    {termFields(year.id, term)}
+                                  </FormDialog>
+                                  <ConfirmAction action={deleteTermAction} fields={{ id: term.id }} title={t("deleteTermTitle")} description={t("deleteTermDescription")} confirmLabel={tc("delete")} trigger={<Button variant="ghost" size="icon-sm" aria-label={t("deleteTerm", { name: term.name })}><Trash2 aria-hidden /></Button>} />
+                                </>
+                              ) : null}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   {manage && year.status !== "closed" ? (
-                    <div className="border-t border-line px-5 py-3">
+                    <div className="border-t border-line px-4 py-3 sm:px-5">
                       <FormDialog action={saveTermAction} trigger={<Button variant="secondary" size="sm"><Plus aria-hidden />{t("addTerm")}</Button>} title={t("addTerm")} description={t("addTermHint")} submitLabel={tc("create")} size="md">
                         {termFields(year.id)}
                       </FormDialog>

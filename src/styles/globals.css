@@ -566,7 +566,26 @@
     min-width: 0;
   }
 
+  /*
+   * And nothing at all may make the page wider than the screen. On its own,
+   * `overflow-x: clip` on the body was handed up to the viewport, which only
+   * stops sideways scrolling: a phone still measured the page by its widest
+   * content and zoomed out to fit it after a dialog or the keyboard closed —
+   * the page shrank to the left with an empty strip on the right. The culprit
+   * was the hidden "Actions" label in a table header: absolutely positioned,
+   * it escaped the table's own scrolling box and stood past the right edge.
+   *
+   * With the root clipped too, the body keeps its clip for itself, and as the
+   * containing block of everything absolutely positioned it cuts all of it off
+   * at the screen's edge. `clip`, not `hidden`, so neither becomes a scroller
+   * and sticky headers still stick. The viewport's minimum-scale of 1
+   * (app/layout.tsx) is the second lock: the page can be zoomed in, never out.
+   */
+  html {
+    overflow-x: clip;
+  }
   body {
+    position: relative;
     overflow-x: clip;
     /* A long link or word in a card breaks where it must, not past the edge. */
     overflow-wrap: break-word;

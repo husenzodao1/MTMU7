@@ -20,7 +20,11 @@ export function CardHeader({ title, description, actions, className }: { title: 
 }
 
 export function CardBody({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("px-4 py-4 sm:px-5", className)}>{children}</div>;
+  // "p-0" asks for no padding at any width. Merged with the base, it lost to
+  // the wider sm:px-5, so a table meant to run edge to edge sat inset from
+  // the card's sides on a tablet or a computer.
+  const flush = /(?:^|\s)p-0(?:\s|$)/.test(className ?? "");
+  return <div className={cn(!flush && "px-4 py-4 sm:px-5", className)}>{children}</div>;
 }
 
 export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {

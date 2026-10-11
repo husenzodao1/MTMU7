@@ -15,7 +15,8 @@ export function Badge({ tone = "neutral", children, className, dot }: { tone?: B
   return (
     <span className={cn("inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium", tones[tone], className)}>
       {dot ? <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden /> : null}
-      <span className="truncate">{children}</span>
+      {/* An icon given with the words stays on their line instead of above them. */}
+      <span className="truncate [&_svg]:me-1 [&_svg]:inline [&_svg]:align-[-0.125em]">{children}</span>
     </span>
   );
 }

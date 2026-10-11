@@ -111,6 +111,9 @@ const mono = JetBrains_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Zoom in as much as you like; never out. A phone zooms a page out on its
+  // own when anything stands past the right edge, and then it stays shrunk.
+  minimumScale: 1,
   viewportFit: "cover",
   // The keyboard shrinks the page rather than covering it, so a chat's
   // composer stays above the keyboard on Android as it does on an iPhone.
