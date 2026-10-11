@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Trash2 } from "lucide-react";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { ActionForm, ConfirmAction, SubmitButton } from "@/components/ui/action-form";
+import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/misc";
 import { Card, CardBody, CardHeader } from "@/components/ui/surface";
 import { TextAreaField } from "@/components/ui/fields";
@@ -62,12 +63,15 @@ export async function NewsComments({ articleId }: { articleId: string }) {
                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-secondary">{comment.body}</p>
                 </div>
                 {comment.is_mine ? (
-                  <ActionForm action={deleteNewsCommentAction} className="shrink-0">
-                    <input type="hidden" name="commentId" value={comment.id} />
-                    <SubmitButton variant="ghost" size="icon-sm" aria-label={t("commentDelete")}>
-                      <Trash2 aria-hidden />
-                    </SubmitButton>
-                  </ActionForm>
+                  <span className="shrink-0">
+                    <ConfirmAction
+                      action={deleteNewsCommentAction}
+                      fields={{ commentId: comment.id }}
+                      title={t("commentDeleteTitle")}
+                      confirmLabel={t("commentDeleteConfirm")}
+                      trigger={<Button variant="ghost" size="icon-sm" aria-label={t("commentDelete")}><Trash2 aria-hidden /></Button>}
+                    />
+                  </span>
                 ) : null}
               </li>
             ))}

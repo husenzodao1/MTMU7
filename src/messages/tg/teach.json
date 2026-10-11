@@ -181,7 +181,9 @@
       "markReviewed": "Нигоҳ доштани санҷиш",
       "returnForChanges": "Барои ислоҳ баргардонидан",
       "markMissing": "Ҳамчун насупурдашуда қайд кардан",
-      "reviewSaved": "Санҷиш нигоҳ дошта шуд."
+      "reviewSaved": "Санҷиш нигоҳ дошта шуд.",
+      "removeAttachmentTitle": "Файл нест карда шавад?",
+      "removeAttachmentConfirm": "Нест кардан"
     }
   }
 }

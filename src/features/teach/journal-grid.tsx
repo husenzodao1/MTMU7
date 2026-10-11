@@ -133,7 +133,7 @@ export function JournalGrid({
             <tr>
               <th
                 scope="col"
-                className="sticky left-0 z-20 min-w-56 border-b border-e border-line bg-surface-muted px-3 py-2 text-start align-bottom text-xs font-semibold uppercase tracking-wide text-ink-muted"
+                className="sticky left-0 z-20 min-w-[8.5rem] border-b border-e border-line bg-surface-muted px-2 py-2 text-start align-bottom text-xs font-semibold uppercase tracking-wide text-ink-muted sm:min-w-56 sm:px-3"
               >
                 {t("student")}
               </th>
@@ -170,10 +170,13 @@ export function JournalGrid({
               <tr key={row.id} className="even:bg-surface-muted/30">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 border-b border-e border-line bg-surface px-3 py-1 text-start font-medium"
+                  className="sticky left-0 z-10 max-w-[8.5rem] truncate border-b border-e border-line bg-surface px-2 py-1 text-start text-[0.8125rem] font-medium sm:max-w-none sm:px-3 sm:text-sm"
+                  title={row.name}
                 >
-                  <span className="me-2 text-xs text-ink-muted tabular">{rowIndex + 1}.</span>
-                  {row.name}
+                  <span className="me-1.5 text-xs text-ink-muted tabular sm:me-2">{rowIndex + 1}.</span>
+                  {/* On a phone the surname and an initial, so more of the dates fit beside it. */}
+                  <span className="sm:hidden">{shortName(row.name)}</span>
+                  <span className="hidden sm:inline">{row.name}</span>
                 </th>
                 {columns.map((column, columnIndex) => {
                   const composite = `${row.id}|${column.key}`;
@@ -221,4 +224,10 @@ export function JournalGrid({
       ) : null}
     </div>
   );
+}
+
+/** "Каримов Алишер Валиевич" → "Каримов А." */
+function shortName(name: string): string {
+  const [surname, given] = name.trim().split(/\s+/);
+  return given ? `${surname} ${given.charAt(0)}.` : (surname ?? name);
 }

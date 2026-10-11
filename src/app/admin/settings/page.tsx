@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ChevronRight, School } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { updateSchoolSettingsAction } from "@/features/admin/management/actions";
@@ -7,6 +9,7 @@ import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { TextField } from "@/components/ui/fields";
 import { Checkbox, Fieldset } from "@/components/ui/form-controls";
 import { Card, CardBody, PageHeader } from "@/components/ui/surface";
+import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { pickName, type Locale } from "@/lib/i18n/text";
 import { createClient } from "@/lib/supabase/server";
@@ -35,6 +38,22 @@ export default async function SchoolSettingsPage() {
   return (
     <>
       <PageHeader breadcrumb={<AdminBreadcrumb items={[{ label: t("title") }]} />} title={t("title")} description={t("description")} />
+      {/* The school's own page left the menu; its photograph, contacts and links are changed from here. */}
+      {can(access, "schools.update") || can(access, "settings.view") ? (
+        <Link
+          href="/admin/school"
+          className="mb-4 flex max-w-3xl items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:bg-surface-muted"
+        >
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-text">
+            <School className="size-4" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-ink">{t("schoolProfile")}</span>
+            <span className="block text-xs text-ink-muted">{t("schoolProfileHint")}</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        </Link>
+      ) : null}
       <Card className="max-w-3xl">
         <CardBody>
           <ActionForm action={updateSchoolSettingsAction} className="space-y-6">

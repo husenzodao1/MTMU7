@@ -46,9 +46,16 @@ interface ShellProps {
   footer?: ReactNode;
 }
 
+/** Pages that belong under another menu item: an article lights up "News". */
+const ALSO_UNDER: Record<string, string[]> = {
+  "/updates": ["/news", "/announcements", "/events"],
+  "/admin/accounts": ["/admin/guardians", "/admin/users"],
+};
+
 function isActive(pathname: string, href: string) {
   if (href === "/admin" || href === "/dashboard") return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const under = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
+  return under(href) || (ALSO_UNDER[href] ?? []).some(under);
 }
 
 /** The emblem of the Republic, shipped with the build. */

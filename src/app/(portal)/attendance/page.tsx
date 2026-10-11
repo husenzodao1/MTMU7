@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ClipboardCheck } from "lucide-react";
-import { ChildSwitcher } from "@/features/academic/child-switcher";
+import { ChildSwitcher, YearSwitcher } from "@/features/academic/child-switcher";
 import { AttendanceSummary } from "@/features/academic/components";
 import { getStudentOverview } from "@/features/academic/queries";
 import { resolveStudentContext } from "@/features/academic/student-context";
@@ -35,25 +35,51 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
   }
 
   const supabase = await createClient();
-  const [overview, { data: records }] = await Promise.all([
-    getStudentOverview(context.studentId),
+  // A past year shows that year's absences and its own totals; this year, the
+  // term under way as before.
+  const year = context.pastYear ? context.years.find((y) => y.id === context.academicYearId) ?? null : null;
+  let records_ = supabase
+    .from("attendance_records")
+    .select("id, attendance_date, status, minutes_late, note, period_number, class_subjects(subjects(name_tg, name_ru, name_en))")
+    .eq("student_id", context.studentId)
+    .neq("status", "present")
+    .order("attendance_date", { ascending: false })
+    .limit(100);
+  if (year) records_ = records_.gte("attendance_date", year.start).lte("attendance_date", year.end);
+  const count = (status: string) =>
     supabase
       .from("attendance_records")
-      .select("id, attendance_date, status, minutes_late, note, period_number, class_subjects(subjects(name_tg, name_ru, name_en))")
+      .select("id", { count: "exact", head: true })
       .eq("student_id", context.studentId)
-      .neq("status", "present")
-      .order("attendance_date", { ascending: false })
-      .limit(100),
+      .eq("status", status)
+      .gte("attendance_date", year!.start)
+      .lte("attendance_date", year!.end)
+      .then((r) => r.count ?? 0);
+  const [overview, { data: records }, yearTotals] = await Promise.all([
+    year ? Promise.resolve(null) : getStudentOverview(context.studentId),
+    records_,
+    year ? Promise.all(["present", "late", "absent", "excused"].map(count)) : Promise.resolve(null),
   ]);
+  const summary = yearTotals
+    ? {
+        present: yearTotals[0]!,
+        late: yearTotals[1]!,
+        absent: yearTotals[2]!,
+        excused: yearTotals[3]!,
+        total: yearTotals.reduce((sum, n) => sum + n, 0),
+        lessons: 0,
+      }
+    : overview?.attendance_term ?? null;
 
   return (
     <>
       <PageHeader title={t("title")} description={[`${context.firstName} ${context.lastName}`, context.className].filter(Boolean).join(" · ")} />
       <ChildSwitcher context={context} pathname="/attendance" />
+      <YearSwitcher context={context} pathname="/attendance" />
       <div className="grid gap-5 lg:grid-cols-3">
         <Card>
-          <CardHeader title={t("termSummary")} />
-          <CardBody>{overview ? <AttendanceSummary summary={overview.attendance_term} /> : null}</CardBody>
+          <CardHeader title={year ? t("yearSummary", { year: year.name }) : t("termSummary")} />
+          <CardBody>{summary ? <AttendanceSummary summary={summary} /> : null}</CardBody>
         </Card>
         <Card className="lg:col-span-2">
           <CardHeader title={t("exceptions")} description={t("exceptionsHint")} />

@@ -32,3 +32,9 @@ jobs:
       - run: node scripts/i18n/check-usage.mts
       - run: npm run security:secrets
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke check (every public page at phone, tablet and computer widths)
+        run: |
+          npm start &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:3000/login && break; sleep 1; done
+          npm run test:smoke

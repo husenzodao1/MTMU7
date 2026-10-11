@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Download, FileBarChart } from "lucide-react";
+import { Download, FileBarChart, FileDown } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { getClassOptions } from "@/features/admin/queries";
 import { isReportKey, readReportParams, REPORT_KEYS, runReport } from "@/features/admin/reports/definitions";
@@ -79,10 +79,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <span className="flex flex-wrap items-center gap-2 print:hidden">
                 {result.rows.length > 0 ? <PrintButton /> : null}
                 {can(access, "reports.export") && result.rows.length > 0 ? (
-                  <a href={`/admin/reports/export?${exportQuery.toString()}`} className={buttonClasses("secondary", "sm")}>
-                    <Download aria-hidden />
-                    {tc("exportCsv")}
-                  </a>
+                  <>
+                    <a href={`/admin/reports/export?${exportQuery.toString()}&format=pdf`} download className={buttonClasses("secondary", "sm")}>
+                      <FileDown aria-hidden />
+                      PDF
+                    </a>
+                    <a href={`/admin/reports/export?${exportQuery.toString()}`} className={buttonClasses("secondary", "sm")}>
+                      <Download aria-hidden />
+                      {tc("exportCsv")}
+                    </a>
+                  </>
                 ) : null}
               </span>
             }

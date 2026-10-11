@@ -3,7 +3,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Bell, BellRing } from "lucide-react";
 import { deleteReadNotificationsAction, markAllNotificationsReadAction } from "@/features/notifications/actions";
 import { NOTIFICATION_TYPES, renderNotifications, type NotificationRow } from "@/features/notifications/render";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { ActionForm, ConfirmAction, SubmitButton } from "@/components/ui/action-form";
+import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filters";
 import { TabNav } from "@/components/ui/misc";
 import { ListBox, Pagination } from "@/components/ui/pagination";
@@ -56,9 +57,14 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                 <SubmitButton variant="secondary">{t("markAllRead")}</SubmitButton>
               </ActionForm>
             ) : null}
-            <ActionForm action={deleteReadNotificationsAction}>
-              <SubmitButton variant="ghost">{t("clearRead")}</SubmitButton>
-            </ActionForm>
+            <ConfirmAction
+              action={deleteReadNotificationsAction}
+              fields={{}}
+              title={t("clearReadTitle")}
+              description={t("clearReadDescription")}
+              confirmLabel={t("clearRead")}
+              trigger={<Button variant="ghost">{t("clearRead")}</Button>}
+            />
           </>
         }
       />

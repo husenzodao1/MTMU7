@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Trash2 } from "lucide-react";
+import { FileDown, Trash2 } from "lucide-react";
 import { ClassFields } from "@/features/admin/academic/class-fields";
 import {
   enrollStudentsAction,
@@ -16,11 +16,11 @@ import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
 import { fullName, getStaffOptions } from "@/features/admin/queries";
 import { ActionForm, ConfirmAction, SubmitButton } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { Checkbox } from "@/components/ui/form-controls";
 import { Alert, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
-import { can } from "@/lib/auth/access";
+import { can, hasModule } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { pickName, type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
@@ -34,6 +34,7 @@ export default async function AdminClassPage({ params, searchParams }: { params:
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const saved = firstValue((await searchParams).saved);
   const t = await getTranslations("admin.classes");
+  const tr = await getTranslations("reportCard");
   const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
   const schoolId = access.school!.id;
@@ -99,7 +100,15 @@ export default async function AdminClassPage({ params, searchParams }: { params:
         title={t("classTitle", { name: klass.name })}
         description={[year?.name, t("studentsCount", { count: students.length })].filter(Boolean).join(" · ")}
         meta={!klass.is_active ? <Badge>{tc("status.archived")}</Badge> : null}
-        actions={can(access, "classes.archive") ? (
+        actions={
+          <>
+            {hasModule(access, "grades") ? (
+              <a href={`/report-cards?class=${klass.id}`} download className={buttonClasses("secondary")}>
+                <FileDown aria-hidden />
+                {tr("classButton")}
+              </a>
+            ) : null}
+            {can(access, "classes.archive") ? (
           <ConfirmAction
             action={setClassActiveAction}
             fields={{ id: klass.id, active: klass.is_active ? "false" : "true" }}
@@ -110,6 +119,8 @@ export default async function AdminClassPage({ params, searchParams }: { params:
             trigger={<Button variant="secondary">{klass.is_active ? tc("archive") : tc("restore")}</Button>}
           />
         ) : null}
+          </>
+        }
       />
       {saved === "created" ? <Alert tone="success" className="mb-4">{t("created")}</Alert> : null}
 

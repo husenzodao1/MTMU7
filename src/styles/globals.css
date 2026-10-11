@@ -2625,6 +2625,14 @@ html.chat-lock body {
   color: var(--color-ink);
   background: var(--color-surface-muted);
 }
+/* This rule sits outside Tailwind's layers, so it outranks the utilities: the
+   menu button's lg:hidden lost to display: inline-flex and the button stayed
+   on a computer, beside the sidebar it would open again. */
+@media (min-width: 64rem) {
+  .shell-icon.lg\:hidden {
+    display: none;
+  }
+}
 /* Three lines that turn into a cross while the menu is open. */
 .burger {
   position: relative;

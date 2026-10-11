@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Repeat2 } from "lucide-react";
 import { ChildSwitcher } from "@/features/academic/child-switcher";
 import { resolveStudentContext } from "@/features/academic/student-context";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { canAny } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
-import { formatTime, todayIso } from "@/lib/i18n/format";
+import { formatShortDate, formatTime, todayIso } from "@/lib/i18n/format";
 import { pickText, type Locale } from "@/lib/i18n/text";
 import type { SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
@@ -40,13 +40,29 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   let slots: Slot[] = [];
   let subtitle: string | undefined;
   let teachers: Array<{ name: string; subjects: string; phone: string | null }> = [];
+  let substitutions: Array<{ key: string; date: string; period: number; subject: string; teacher: string | null; room: string | null }> = [];
   const context = await resolveStudentContext(access, params);
 
   if (context?.classId) {
-    const [{ data }, { data: staff }] = await Promise.all([
+    const [{ data }, { data: staff }, { data: changes }] = await Promise.all([
       supabase.rpc("class_timetable", { p_class_id: context.classId }),
       supabase.rpc("class_teachers", { p_class_id: context.classId }),
+      supabase.rpc("class_substitutions", { p_class_id: context.classId }),
     ]);
+    substitutions = (changes ?? []).flatMap((row) =>
+      row.substitution_date && row.period_number
+        ? [
+            {
+              key: `${row.substitution_date}-${row.period_number}`,
+              date: row.substitution_date,
+              period: row.period_number,
+              subject: pickText({ tg: row.subject_tg, ru: row.subject_ru, en: row.subject_en }, locale),
+              teacher: row.teacher_name,
+              room: row.room_name,
+            },
+          ]
+        : []
+    );
     teachers = (staff ?? []).map((row) => ({
       name: row.teacher_name ?? "",
       subjects: pickText({ tg: row.subjects_tg, ru: row.subjects_ru, en: row.subjects_en }, locale),
@@ -98,6 +114,29 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader title={t("title")} description={subtitle} />
       {context ? <ChildSwitcher context={context} pathname="/schedule" /> : null}
+      {/* The week's changes first: a lesson taken by somebody else is the one thing that differs from the table below. */}
+      {substitutions.length > 0 ? (
+        <section aria-labelledby="substitutions" className="mb-4 rounded-xl border border-warning-600/30 bg-warning-50 px-4 py-3">
+          <h2 id="substitutions" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-warning-700">
+            <Repeat2 className="size-3.5" aria-hidden />
+            {t("substitutions")}
+          </h2>
+          <ul className="mt-1.5 space-y-1 text-sm">
+            {substitutions.map((change) => (
+              <li key={change.key} className="flex flex-wrap items-baseline gap-x-2 text-ink">
+                <span className="tabular text-xs text-ink-muted">
+                  {tc(`weekdaysShort.${new Date(`${change.date}T12:00:00Z`).getUTCDay() || 7}`)} {formatShortDate(change.date, locale).slice(0, 5)} · {t("lessonNumber", { number: change.period })}
+                </span>
+                <span className="font-medium">{change.subject}</span>
+                <span className="text-ink-secondary">
+                  {change.teacher ? t("takenBy", { name: change.teacher }) : t("noTeacherYet")}
+                  {change.room ? ` · ${t("room", { room: change.room })}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {slots.length === 0 ? (
         <Card as="div">
           <EmptyState icon={<CalendarDays />} title={t("empty")} description={t("emptyHint")} />

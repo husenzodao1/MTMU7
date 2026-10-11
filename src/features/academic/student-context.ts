@@ -12,6 +12,10 @@ export interface StudentContext {
   classId: string | null;
   className: string | null;
   academicYearId: string | null;
+  /** Every school year the pupil was in a class, newest first, for a year switcher. */
+  years: Array<{ id: string; name: string; className: string | null; current: boolean; start: string; end: string }>;
+  /** True when ?year= chose a year that is not the current one. */
+  pastYear: boolean;
   /** Children the guardian can switch between (empty for students). */
   children: ChildSummary[];
   viewer: "student" | "guardian";
@@ -40,25 +44,51 @@ export async function resolveStudentContext(access: Access, params: SearchParams
   }
   if (!studentId) return null;
 
-  const [{ data: student }, { data: enrollment }] = await Promise.all([
+  const [{ data: student }, { data: enrollments }] = await Promise.all([
     supabase.from("students").select("id, first_name, last_name").eq("id", studentId).maybeSingle(),
     supabase
       .from("enrollments")
-      .select("class_id, academic_year_id, classes(name), academic_years!inner(is_current)")
+      .select("class_id, academic_year_id, status, classes(name), academic_years!inner(name, is_current, start_date, end_date)")
       .eq("student_id", studentId)
-      .eq("status", "active")
-      .eq("academic_years.is_current", true)
-      .maybeSingle(),
+      .in("status", ["active", "completed", "transferred"]),
   ]);
   if (!student) return null;
+
+  // One entry per year, the active enrolment winning over an older one.
+  const byYear = new Map<string, NonNullable<typeof enrollments>[number]>();
+  for (const e of enrollments ?? []) {
+    // This year counts only while the pupil is still in the class.
+    if ((e.academic_years as { is_current: boolean }).is_current && e.status !== "active") continue;
+    const seen = byYear.get(e.academic_year_id);
+    if (!seen || (e.status === "active" && seen.status !== "active")) byYear.set(e.academic_year_id, e);
+  }
+  const years = [...byYear.values()]
+    .map((e) => {
+      const year = e.academic_years as { name: string; is_current: boolean; start_date: string; end_date: string };
+      return {
+        id: e.academic_year_id,
+        name: year.name,
+        className: (e.classes as { name: string } | null)?.name ?? null,
+        current: year.is_current,
+        start: year.start_date,
+        end: year.end_date,
+        classId: e.class_id,
+      };
+    })
+    .sort((a, b) => b.start.localeCompare(a.start));
+
+  const requestedYear = firstValue(params.year);
+  const chosen = years.find((y) => y.id === requestedYear) ?? years.find((y) => y.current) ?? null;
 
   return {
     studentId: student.id,
     firstName: student.first_name,
     lastName: student.last_name,
-    classId: enrollment?.class_id ?? null,
-    className: (enrollment?.classes as { name: string } | null)?.name ?? null,
-    academicYearId: enrollment?.academic_year_id ?? null,
+    classId: chosen?.classId ?? null,
+    className: chosen?.className ?? null,
+    academicYearId: chosen?.id ?? null,
+    years: years.map((y) => ({ id: y.id, name: y.name, className: y.className, current: y.current, start: y.start, end: y.end })),
+    pastYear: Boolean(chosen && !chosen.current),
     children,
     viewer,
   };

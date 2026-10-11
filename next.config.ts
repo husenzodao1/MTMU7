@@ -48,6 +48,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/cron/telegram-dispatch": ["src/lib/telegram/fonts/*.ttf"],
     "/api/telegram/webhook": ["src/lib/telegram/fonts/*.ttf"],
+    // Report cards and office reports as PDF (src/lib/pdf): the same fonts and the emblem.
+    "/report-cards": ["src/lib/telegram/fonts/*.ttf", "src/lib/pdf/assets/*.png"],
+    "/admin/reports/export": ["src/lib/telegram/fonts/*.ttf", "src/lib/pdf/assets/*.png"],
   },
   experimental: {
     serverActions: {
@@ -62,6 +65,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/s/:path*", destination: "/", permanent: false },
       { source: "/admin/website", destination: "/admin", permanent: false },
+      // One way in for people: the older list pages lead to the account block.
+      { source: "/admin/users", destination: "/admin/accounts", permanent: false },
+      { source: "/admin/parents", destination: "/admin/accounts/parents", permanent: false },
     ];
   },
   async headers() {

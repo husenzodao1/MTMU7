@@ -43,6 +43,19 @@ export function useFormError(): { message: string | null; token: object | null }
 }
 
 /**
+ * The plain numbers and words an action returned, for its success message to
+ * quote ("{moved} pupils moved up"). Anything else it returned is left out.
+ */
+function messageValues(data: unknown): Record<string, string | number> | undefined {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return undefined;
+  const values: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === "string" || typeof value === "number") values[key] = value;
+  }
+  return values;
+}
+
+/**
  * Progressive-enhancement form bound to a Server Action returning FormState.
  * Shows field errors inline, the form-level error in an alert, and a toast on
  * success. Works without JavaScript (the action still runs).
@@ -79,7 +92,7 @@ export function ActionForm<T>({
     if (state.status !== "done" || handled.current === state) return;
     handled.current = state;
     if (state.ok) {
-      if (showSuccessToast && state.message) toast("success", t(state.message));
+      if (showSuccessToast && state.message) toast("success", t(state.message, messageValues(state.data)));
       if (resetOnSuccess) formRef.current?.reset();
       onSuccess?.(state);
       if (successRedirect) router.push(successRedirect);

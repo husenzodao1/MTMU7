@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { School } from "lucide-react";
+import { FileDown, School } from "lucide-react";
 import { AccountsView } from "@/features/accounts/accounts-view";
 import { AccountsToolbar } from "@/features/accounts/list-parts";
 import { loadDirectory, myHomeroomClasses, PAGE_SIZE } from "@/features/accounts/queries";
+import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requireAccess } from "@/lib/auth/guards";
@@ -22,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function MyClassPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const access = await requireAccess();
   const t = await getTranslations("accounts");
+  const tr = await getTranslations("reportCard");
   const classes = await myHomeroomClasses(access);
   if (classes.length === 0) {
     return (
@@ -42,7 +44,18 @@ export default async function MyClassPage({ searchParams }: { searchParams: Prom
       <PageHeader
         title={`${t("myClassTitle")} · ${classes.map((c) => c.label).join(", ")}`}
         description={t("myClassDescription")}
-        actions={<AccountsToolbar basePath="/my-class" canCreate canImport={false} exportKinds={["students"]} newLabel={t("newPupil")} />}
+        actions={
+          <>
+            {classes.map((c) => (
+              <a key={c.value} href={`/report-cards?class=${c.value}`} download className={buttonClasses("secondary")}>
+                <FileDown aria-hidden />
+                {tr("classButton")}
+                {classes.length > 1 ? ` · ${c.label}` : ""}
+              </a>
+            ))}
+            <AccountsToolbar basePath="/my-class" canCreate canImport={false} exportKinds={["students"]} newLabel={t("newPupil")} />
+          </>
+        }
       />
       <AccountsView
         directory={directory}

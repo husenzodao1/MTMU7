@@ -32,3 +32,38 @@ export async function ChildSwitcher({ context, pathname }: { context: StudentCon
     </nav>
   );
 }
+
+/**
+ * The school years the pupil was in a class, as small chips: this year first
+ * by default, last year's marks one press away. Shown only when there is more
+ * than one year to choose from.
+ */
+export async function YearSwitcher({ context, pathname }: { context: StudentContext; pathname: string }) {
+  if (context.years.length < 2) return null;
+  const t = await getTranslations("portal.children");
+  const child = context.viewer === "guardian" ? `child=${context.studentId}&` : "";
+  return (
+    <nav aria-label={t("years")} className="mb-4">
+      <ul className="flex gap-1.5 overflow-x-auto pb-0.5">
+        {context.years.map((year) => {
+          const active = year.id === context.academicYearId;
+          return (
+            <li key={year.id} className="shrink-0">
+              <Link
+                href={year.current ? `${pathname}${child ? `?${child.slice(0, -1)}` : ""}` : `${pathname}?${child}year=${year.id}`}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs tabular transition-colors",
+                  active ? "border-brand-600 bg-brand-50 font-semibold text-brand-text-strong" : "border-line bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink"
+                )}
+              >
+                {year.name}
+                {year.className ? <span className={active ? "font-normal" : "text-ink-muted"}>· {year.className}</span> : null}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}

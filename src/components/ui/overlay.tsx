@@ -40,9 +40,9 @@ export function DialogContent({
       >
         <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div className="min-w-0">
-            <DialogPrimitive.Title className="text-lg font-semibold text-ink">{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Title className="text-base font-semibold text-ink">{title}</DialogPrimitive.Title>
             {description ? (
-              <DialogPrimitive.Description className="mt-1 text-sm text-ink-secondary">{description}</DialogPrimitive.Description>
+              <DialogPrimitive.Description className="mt-0.5 text-[0.8125rem] text-ink-muted">{description}</DialogPrimitive.Description>
             ) : null}
           </div>
           <DialogPrimitive.Close className="-m-1 rounded-md p-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink" aria-label={closeLabel}>

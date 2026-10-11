@@ -16,6 +16,7 @@ import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
+import { AccountsTabs } from "@/features/accounts/accounts-tabs";
 import { ilikeAny, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
@@ -85,6 +86,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
           </FormDialog>
         ) : null}
       />
+      <AccountsTabs access={access} active="guardians" />
       <FilterBar
         searchLabel={t("search")}
         filters={[

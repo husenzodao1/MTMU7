@@ -7,10 +7,10 @@ import { AccountsView } from "@/features/accounts/accounts-view";
 import { AccountsToolbar } from "@/features/accounts/list-parts";
 import { loadDirectory, PAGE_SIZE } from "@/features/accounts/queries";
 import { ACCOUNT_CATEGORIES, type AccountCategory } from "@/features/accounts/types";
-import { TabNav } from "@/components/ui/misc";
 import { PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
+import { AccountsTabs } from "@/features/accounts/accounts-tabs";
 import { parseListParams, type SearchParams } from "@/lib/list-params";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -51,13 +51,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           />
         }
       />
-      <TabNav
-        label={t("title")}
-        items={[
-          { href: "/admin/accounts", label: t("tabs.accounts"), active: true },
-          { href: "/admin/accounts/parents", label: t("tabs.parents"), active: false },
-        ]}
-      />
+      <AccountsTabs access={access} active="accounts" />
       <AccountsView
         directory={directory}
         basePath="/admin/accounts"

@@ -2,7 +2,15 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CalendarRange, Lock, LockOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { AdminBreadcrumb } from "@/features/admin/breadcrumb";
-import { deleteTermAction, saveAcademicYearAction, saveTermAction, setTermLockAction, setYearStatusAction } from "@/features/admin/academic/structure-actions";
+import {
+  addStandardTermsAction,
+  deleteTermAction,
+  saveAcademicYearAction,
+  saveTermAction,
+  setTermLockAction,
+  setYearStatusAction,
+} from "@/features/admin/academic/structure-actions";
+import { NewYearDialog, previewNewYear } from "@/features/admin/academic/new-year";
 import { ConfirmAction, FormDialog } from "@/components/ui/action-form";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +43,11 @@ export default async function AcademicYearsPage() {
     .select("id, name, start_date, end_date, is_current, status, academic_terms(id, name, kind, start_date, end_date, is_locked, sort_order)")
     .eq("school_id", access.school!.id)
     .order("start_date", { ascending: false });
+
+  // What moving up a year would do, read from the current year: shown before
+  // anything happens, in the dialog that does it.
+  const current = (years ?? []).find((y) => y.is_current) ?? null;
+  const rollover = current && manage && can(access, "enrollments.manage") ? await previewNewYear(supabase, current) : null;
 
   const yearFields = (year?: { id: string; name: string; start_date: string; end_date: string; is_current: boolean }) => (
     <>
@@ -71,9 +84,17 @@ export default async function AcademicYearsPage() {
         title={t("title")}
         description={t("description")}
         actions={manage ? (
-          <FormDialog action={saveAcademicYearAction} trigger={<Button><Plus aria-hidden />{t("newYear")}</Button>} title={t("newYear")} submitLabel={tc("create")}>
-            {yearFields()}
-          </FormDialog>
+          <span className="flex flex-wrap gap-2">
+            {rollover ? <NewYearDialog preview={rollover} /> : null}
+            <FormDialog
+              action={saveAcademicYearAction}
+              trigger={<Button variant={rollover ? "secondary" : "primary"}><Plus aria-hidden />{t("newYear")}</Button>}
+              title={t("newYear")}
+              submitLabel={tc("create")}
+            >
+              {yearFields()}
+            </FormDialog>
+          </span>
         ) : null}
       />
       {!years || years.length === 0 ? (
@@ -173,7 +194,18 @@ export default async function AcademicYearsPage() {
                     </div>
                   )}
                   {manage && year.status !== "closed" ? (
-                    <div className="border-t border-line px-4 py-3 sm:px-5">
+                    <div className="flex flex-wrap gap-2 border-t border-line px-4 py-3 sm:px-5">
+                      {terms.length === 0 ? (
+                        <ConfirmAction
+                          action={addStandardTermsAction}
+                          fields={{ id: year.id }}
+                          title={t("quarters.title")}
+                          description={t("quarters.description")}
+                          confirmLabel={t("quarters.confirm")}
+                          tone="primary"
+                          trigger={<Button size="sm"><CalendarRange aria-hidden />{t("quarters.button")}</Button>}
+                        />
+                      ) : null}
                       <FormDialog action={saveTermAction} trigger={<Button variant="secondary" size="sm"><Plus aria-hidden />{t("addTerm")}</Button>} title={t("addTerm")} description={t("addTermHint")} submitLabel={tc("create")} size="md">
                         {termFields(year.id)}
                       </FormDialog>
@@ -188,3 +220,4 @@ export default async function AcademicYearsPage() {
     </>
   );
 }
+

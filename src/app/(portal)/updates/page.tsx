@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { CalendarDays, Megaphone, Newspaper, Search } from "lucide-react";
+import { CalendarDays, Megaphone, Newspaper, PenLine, Search } from "lucide-react";
 import { splitLeadImage } from "@/components/ui/misc";
 import { EmptyState } from "@/components/ui/surface";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements, mapEvent, publicMediaUrl } from "@/features/content/queries";
@@ -148,6 +148,15 @@ export default async function UpdatesPage({ searchParams }: { searchParams: Prom
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-center font-display text-base font-semibold text-ink">{t("title")}</h1>
+      {/* Writers of news reach their own articles from here, now that this is the menu's one way in. */}
+      {allowed.news && can(access, "news.create") ? (
+        <p className="mt-1 text-center">
+          <Link href="/news/mine" className="inline-flex items-center gap-1 text-xs font-medium text-brand-text hover:underline">
+            <PenLine className="size-3" aria-hidden />
+            {t("myArticles")}
+          </Link>
+        </p>
+      ) : null}
 
       <div className="updates-filters">
         <nav aria-label={t("kind")} className="updates-chips">

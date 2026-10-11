@@ -5,8 +5,9 @@ import { Paperclip, Trash2 } from "lucide-react";
 import { AssignmentForm } from "@/features/teach/assignment-form";
 import { removeAssignmentAttachmentAction, reviewSubmissionAction } from "@/features/teach/homework-actions";
 import { getClassSubjectContext, getRoster } from "@/features/teach/queries";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { ActionForm, ConfirmAction, SubmitButton } from "@/components/ui/action-form";
 import { StatusBadge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TextAreaField, TextField } from "@/components/ui/fields";
 import { Alert, Breadcrumb, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
@@ -96,12 +97,14 @@ export default async function TeachAssignmentPage({ params, searchParams }: { pa
                         <span className="shrink-0 text-ink-muted">({formatBytes(file.size_bytes)})</span>
                       </a>
                       {file.uploaded_by === access.userId ? (
-                        <ActionForm action={removeAssignmentAttachmentAction}>
-                          <input type="hidden" name="attachmentId" value={file.id} />
-                          <SubmitButton variant="ghost" size="icon-sm" aria-label={t("removeAttachment", { name: file.file_name })}>
-                            <Trash2 aria-hidden />
-                          </SubmitButton>
-                        </ActionForm>
+                        <ConfirmAction
+                          action={removeAssignmentAttachmentAction}
+                          fields={{ attachmentId: file.id }}
+                          title={t("removeAttachmentTitle")}
+                          description={file.file_name}
+                          confirmLabel={t("removeAttachmentConfirm")}
+                          trigger={<Button variant="ghost" size="icon-sm" aria-label={t("removeAttachment", { name: file.file_name })}><Trash2 aria-hidden /></Button>}
+                        />
                       ) : null}
                     </li>
                   ))}

@@ -5599,6 +5599,7 @@ export type Database = {
       account_directory: { Args: { p_category?: string; p_query?: string; p_class_id?: string; p_limit?: number; p_offset?: number }; Returns: Json };
       add_conversation_members: { Args: { p_conversation_id: string; p_member_ids: string[] }; Returns: number };
       add_news_comment: { Args: { p_article: string; p_body: string }; Returns: string };
+      add_standard_terms: { Args: { p_year_id: string }; Returns: number };
       admin_dashboard: { Args: { p_school_id?: string }; Returns: Json };
       admin_get_user: { Args: { p_user_id: string }; Returns: Json };
       admin_search_users: { Args: { p_query?: string; p_role?: string; p_status?: string; p_sort?: string; p_limit?: number; p_offset?: number; p_school_id?: string }; Returns: { id: string | null; public_id: string | null; email: string | null; first_name: string | null; last_name: string | null; middle_name: string | null; phone: string | null; avatar_url: string | null; status: string | null; is_active: boolean | null; created_at: string | null; last_login_at: string | null; roles: Json | null; total_count: number | null }[] };
@@ -5608,6 +5609,7 @@ export type Database = {
       advance_academic_year: { Args: { p_name: string; p_start: string; p_end: string }; Returns: Json };
       analytics_overview: { Args: { p_school_id?: string }; Returns: Json };
       change_student_status: { Args: { p_student_ids: string[]; p_status: string; p_effective_date?: string; p_reason?: string }; Returns: number };
+      class_substitutions: { Args: { p_class_id: string }; Returns: { substitution_date: string | null; period_number: number | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null; reason: string | null }[] };
       class_teachers: { Args: { p_class_id: string }; Returns: { teacher_name: string | null; subjects_tg: string | null; subjects_ru: string | null; subjects_en: string | null; phone: string | null }[] };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
       confirm_account: { Args: { p_user_id: string }; Returns: undefined };
@@ -5659,6 +5661,8 @@ export type Database = {
       remove_conversation_member: { Args: { p_conversation_id: string; p_user_id: string }; Returns: undefined };
       remove_my_guardian: { Args: { p_guardian_id: string }; Returns: undefined };
       report_attendance: { Args: { p_from: string; p_to: string; p_class_id?: string; p_school_id?: string }; Returns: { student_id: string | null; student_name: string | null; class_name: string | null; present: number | null; late: number | null; absent: number | null; excused: number | null; total: number | null; attendance_rate: number | null }[] };
+      report_card_attendance: { Args: { p_class_id: string }; Returns: { student_id: string | null; academic_term_id: string | null; absent: number | null; late: number | null }[] };
+      report_card_marks: { Args: { p_class_id: string }; Returns: { student_id: string | null; class_subject_id: string | null; academic_term_id: string | null; kind: string | null; mark: number | null; approved: boolean | null; marks_count: number | null }[] };
       report_content_activity: { Args: { p_from: string; p_to: string; p_school_id?: string }; Returns: { month: string | null; news_published: number | null; announcements_published: number | null; events_held: number | null; documents_published: number | null; books_published: number | null; registrations: number | null }[] };
       report_enrollment: { Args: { p_academic_year_id?: string; p_school_id?: string }; Returns: { class_id: string | null; class_name: string | null; grade_level: number | null; homeroom_teacher: string | null; capacity: number | null; active_count: number | null; male_count: number | null; female_count: number | null; transferred_count: number | null; completed_count: number | null }[] };
       report_grades: { Args: { p_class_id: string; p_term_id?: string; p_school_id?: string }; Returns: { student_id: string | null; student_name: string | null; subject_id: string | null; subject_name: string | null; grade_count: number | null; average_percent: number | null; final_score: number | null }[] };
@@ -5684,6 +5688,7 @@ export type Database = {
       set_account_hidden: { Args: { p_user_id: string; p_hidden: boolean; p_reason?: string }; Returns: undefined };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       set_message_reaction: { Args: { p_message_id: string; p_emoji: string }; Returns: undefined };
+      start_new_school_year: { Args: { p_name: string; p_start: string; p_end: string; p_terms?: boolean; p_subjects?: boolean }; Returns: Json };
       student_overview: { Args: { p_student_id?: string; p_date?: string }; Returns: Json };
       student_statistics: { Args: { p_student: string; p_from: string; p_to: string; p_bucket?: string }; Returns: Json };
       submit_support_request: { Args: { p_school_id: string; p_name: string; p_contact: string; p_message: string }; Returns: string };

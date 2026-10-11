@@ -54,9 +54,12 @@ const PORTAL_RULES: Rule[] = [
     visible: (a) => hasModule(a, "homework") && (hasRole(a, "student") || hasRole(a, "parent")),
   },
   { item: { key: "library", href: "/library", icon: "library", labelKey: "nav.library" }, visible: moduleAnd("library", "library.view") },
-  { item: { key: "news", href: "/news", icon: "news", labelKey: "nav.news" }, visible: moduleAnd("news", "news.view") },
-  { item: { key: "announcements", href: "/announcements", icon: "announcements", labelKey: "nav.announcements" }, visible: moduleAnd("announcements", "announcements.view") },
-  { item: { key: "events", href: "/events", icon: "events", labelKey: "nav.events" }, visible: moduleAnd("events", "events.view") },
+  // News, announcements and events are read in one place, with filters
+  // (/updates); the three older pages still answer for links into them.
+  {
+    item: { key: "news", href: "/updates", icon: "news", labelKey: "nav.updates" },
+    visible: (a) => moduleAnd("news", "news.view")(a) || moduleAnd("announcements", "announcements.view")(a) || moduleAnd("events", "events.view")(a),
+  },
   { item: { key: "documents", href: "/documents", icon: "documents", labelKey: "nav.documents" }, visible: moduleAnd("documents", "documents.view") },
   { item: { key: "messages", href: "/messages", icon: "messages", labelKey: "nav.messages" }, visible: moduleAnd("messages", "messages.use") },
   { item: { key: "contacts", href: "/friends", icon: "contacts", labelKey: "nav.contacts" }, visible: (a) => hasModule(a, "friends") },

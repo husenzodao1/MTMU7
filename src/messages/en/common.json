@@ -155,7 +155,8 @@
     },
     "error": {
       "title": "Something went wrong",
-      "description": "The page could not be loaded. Please try again. If the problem persists, contact the school administrator."
+      "description": "The page could not be loaded. Please try again. If the problem persists, contact the school administrator.",
+      "home": "Go home"
     },
     "placeholder": {
       "ownerContent": "Awaiting official text from the school",
@@ -281,6 +282,7 @@
     "aboutBody": "The school’s website and app for pupils, parents and teachers.",
     "aboutClose": "OK",
     "appVersion": "App version: {version}",
-    "makers": "Made by"
+    "makers": "Made by",
+    "updates": "News and notices"
   }
 }

@@ -181,7 +181,9 @@
       "markReviewed": "Сохранить проверку",
       "returnForChanges": "Вернуть на доработку",
       "markMissing": "Отметить как несданное",
-      "reviewSaved": "Проверка сохранена."
+      "reviewSaved": "Проверка сохранена.",
+      "removeAttachmentTitle": "Удалить файл?",
+      "removeAttachmentConfirm": "Удалить"
     }
   }
 }

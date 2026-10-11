@@ -181,7 +181,9 @@
       "markReviewed": "Save review",
       "returnForChanges": "Return for changes",
       "markMissing": "Mark as missing",
-      "reviewSaved": "The review has been saved."
+      "reviewSaved": "The review has been saved.",
+      "removeAttachmentTitle": "Remove the file?",
+      "removeAttachmentConfirm": "Remove"
     }
   }
 }

@@ -9,11 +9,11 @@ import { loadDirectory, PAGE_SIZE } from "@/features/accounts/queries";
 import { buttonClasses } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/fields";
 import { FilterBar } from "@/components/ui/filters";
-import { TabNav } from "@/components/ui/misc";
 import { ListBox, Pagination } from "@/components/ui/pagination";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
+import { AccountsTabs } from "@/features/accounts/accounts-tabs";
 import { parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
@@ -73,13 +73,7 @@ export default async function ParentsTelegramPage({ searchParams }: { searchPara
           <AccountsToolbar basePath="/admin/accounts" canCreate={false} canImport={false} exportKinds={["parents", "students"]} newLabel={t("new")} />
         }
       />
-      <TabNav
-        label={t("title")}
-        items={[
-          { href: "/admin/accounts", label: t("tabs.accounts"), active: false },
-          { href: "/admin/accounts/parents", label: t("tabs.parents"), active: true },
-        ]}
-      />
+      <AccountsTabs access={access} active="parents" />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">

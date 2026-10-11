@@ -596,7 +596,36 @@
       "termCreated": "The term has been added.",
       "termInUse": "The term has grades and cannot be deleted.",
       "termLocked": "Grading for the term is locked.",
-      "termUnlocked": "Grading for the term is open."
+      "termUnlocked": "Grading for the term is open.",
+      "rollover": {
+        "button": "Move to the new year",
+        "title": "Move to the new school year",
+        "description": "Every class moves up a year. See what will happen before you confirm.",
+        "submit": "Move up",
+        "whatHappens": "What will happen",
+        "moving": "{classes} classes move up a year · {pupils} pupils",
+        "leaving": "{classes} leave school · {pupils} pupils",
+        "firstForms": "New first forms: {classes}",
+        "termsCopied": "{count} terms on this year's dates, a year later",
+        "termsStandard": "The usual 4 quarters",
+        "subjects": "{count} subjects with their teachers carry over to the new classes",
+        "classList": "Class list",
+        "optTerms": "Quarters",
+        "optTermsHint": "This year's dates, a year later.",
+        "optSubjects": "Subjects and teachers",
+        "optSubjectsHint": "From this year's class of the same name: the new 6A gets what this year's 6A had."
+      },
+      "quarters": {
+        "button": "4 quarters",
+        "title": "Add the quarters?",
+        "description": "Last year's quarters on the same dates, a year later; if there are none, the usual 4 quarters.",
+        "confirm": "Add"
+      },
+      "started": "Year {name} started: {moved} pupils moved up, {graduated} left school, {terms} terms, {subjects} subjects.",
+      "alreadyStarted": "This year has already started. Nothing changed.",
+      "noCurrent": "Set the current school year first.",
+      "termsAdded": "{count} quarters added.",
+      "termsExist": "This year already has terms."
     },
     "classes": {
       "title": "Classes",
@@ -1342,7 +1371,9 @@
       "studentsCreateGroups": "Students may create group conversations",
       "attendance": "Attendance",
       "correctionDays": "Correction period (days)",
-      "correctionDaysHint": "How many days back teachers may correct registers. Administrators can always correct."
+      "correctionDaysHint": "How many days back teachers may correct registers. Administrators can always correct.",
+      "schoolProfile": "School profile",
+      "schoolProfileHint": "The school name, sign-in photograph, contacts and social links"
     },
     "roles": {
       "title": "Roles and permissions",
@@ -1824,7 +1855,8 @@
     "tabs": {
       "accounts": "Accounts",
       "parents": "Parents & Telegram",
-      "import": "Import from Excel"
+      "import": "Import from Excel",
+      "guardians": "Parents and guardians"
     },
     "excel": "Excel",
     "importStudents": "Import pupils",

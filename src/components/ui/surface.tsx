@@ -81,8 +81,8 @@ export function PageHeader({
       {breadcrumb}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-ink sm:text-[1.625rem]">{title}</h1>
-          {description ? <p className="mt-1 max-w-3xl text-sm text-ink-secondary sm:text-base">{description}</p> : null}
+          <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-[1.375rem]">{title}</h1>
+          {description ? <p className="mt-0.5 max-w-3xl text-[0.8125rem] text-ink-muted sm:text-sm">{description}</p> : null}
           {meta ? <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

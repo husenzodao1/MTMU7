@@ -102,7 +102,11 @@
       "bellsTitle": "Ҷадвали зангҳо",
       "shift": "Басти {shift}",
       "lesson": "Дарс",
-      "time": "Вақт"
+      "time": "Вақт",
+      "substitutions": "Ивазкунӣ дар ҳафтаи наздик",
+      "lessonNumber": "дарси {number}",
+      "takenBy": "иваз: {name}",
+      "noTeacherYet": "омӯзгори ивазкунанда ҳанӯз маълум нест"
     },
     "grades": {
       "title": "Баҳоҳо",
@@ -123,7 +127,8 @@
       "noExceptions": "Ғоиб ё деромадан қайд нашудааст.",
       "daily": "Давомоти рӯзона",
       "period": "дарси {number}",
-      "minutesLate": "{minutes, plural, other {# дақиқа дер}}"
+      "minutesLate": "{minutes, plural, other {# дақиқа дер}}",
+      "yearSummary": "Соли {year}"
     },
     "homework": {
       "title": "Вазифаҳои хонагӣ",
@@ -172,7 +177,8 @@
         "grandparent": "Бобо ё бибӣ",
         "sibling": "Бародар ё хоҳар",
         "other": "Хешованд"
-      }
+      },
+      "years": "Солҳои таҳсил"
     },
     "announcements": {
       "title": "Эълонҳо",
@@ -266,7 +272,9 @@
       "commentSubmit": "Фиристодан",
       "noComments": "Ҳанӯз шарҳе нест.",
       "commentLabel": "Шарҳи шумо",
-      "commentDelete": "Шарҳро нест кардан"
+      "commentDelete": "Шарҳро нест кардан",
+      "commentDeleteTitle": "Шарҳи шумо нест карда шавад?",
+      "commentDeleteConfirm": "Нест кардан"
     },
     "newsEditor": {
       "sections": {
@@ -635,7 +643,9 @@
           "title": "Паёми нав ба дастгирӣ аз {name}",
           "body": "Паёмро дар қуттии дастгирӣ кушоед."
         }
-      }
+      },
+      "clearReadTitle": "Огоҳиҳои хондашуда тоза шаванд?",
+      "clearReadDescription": "Огоҳиҳои нахонда боқӣ мемонанд."
     },
     "profile": {
       "title": "Профил",
@@ -763,7 +773,8 @@
         "month": "Моҳ"
       },
       "search": "Ҷустуҷӯ",
-      "empty": "Чизе ёфт нашуд"
+      "empty": "Чизе ёфт нашуд",
+      "myArticles": "Мақолаҳои ман"
     },
     "guardians": {
       "title": "Падару модар ё васӣ",
@@ -796,5 +807,30 @@
       "siblingNo": "Не",
       "siblingNoHint": "Рақами дигарро нависед: як рақам — як волид."
     }
+  },
+  "reportCard": {
+    "title": "Табели баҳоҳо",
+    "subtitle": "Соли таҳсили {year}",
+    "authority": "Вазорати маориф ва илми Ҷумҳурии Тоҷикистон",
+    "pupil": "Хонанда",
+    "class": "Синф",
+    "year": "Соли таҳсил",
+    "issued": "Санаи додан",
+    "subject": "Фан",
+    "yearMark": "Солона",
+    "averageNote": "Рақамҳои хокистарӣ — миёнаи баҳоҳои ҷорӣ; баҳои ниҳоӣ ҳанӯз гузошта нашудааст.",
+    "pendingNote": "* баҳо ҳанӯз аз ҷониби маъмурият тасдиқ нашудааст.",
+    "attendance": "Давомот",
+    "total": "Ҳамагӣ",
+    "missed": "Дарсҳои ғоибӣ",
+    "late": "Дер омадан",
+    "classTeacher": "Роҳбари синф",
+    "director": "Директор",
+    "parent": "Волид",
+    "stamp": "М.Ҷ.",
+    "page": "Саҳифаи {page} аз {total}",
+    "fileName": "Табел",
+    "button": "Табел (PDF)",
+    "classButton": "Табелҳои синф (PDF)"
   }
 }

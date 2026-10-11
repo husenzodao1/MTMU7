@@ -163,39 +163,48 @@ export default async function AdminGradebookPage({ searchParams }: { searchParam
           <Card>
             <CardHeader title={t("pendingFinals", { count: pending.length })} description={t("pendingFinalsHint")} actions={<SubmitButton name="decision" value="approve" size="sm">{t("approveSelected")}</SubmitButton>} />
             <CardBody className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <caption className="sr-only">{t("pendingFinals", { count: pending.length })}</caption>
-                  <thead>
-                    <tr className="border-b border-line bg-surface-muted/60 text-xs uppercase tracking-wide text-ink-muted">
-                      <th scope="col" className="w-10 px-4 py-2"><span className="sr-only">{t("select")}</span></th>
-                      <th scope="col" className="px-4 py-2 text-start">{t("student")}</th>
-                      <th scope="col" className="px-4 py-2 text-start">{t("class")}</th>
-                      <th scope="col" className="px-4 py-2 text-start">{t("subject")}</th>
-                      <th scope="col" className="px-4 py-2 text-start">{t("assessment")}</th>
-                      <th scope="col" className="px-4 py-2 text-end">{t("score")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {pending.map((g) => {
-                      const student = g.students as { first_name: string; last_name: string } | null;
-                      const cs = g.class_subjects as unknown as { classes: { name: string }; subjects: Named | null };
-                      const type = g.assessment_types as unknown as Named;
-                      const studentName = student ? `${student.last_name} ${student.first_name}` : "";
-                      return (
-                        <tr key={g.id}>
-                          <td className="px-4 py-2"><input type="checkbox" name="gradeId" value={g.id} defaultChecked className="size-4 accent-brand-600" aria-label={t("selectGrade", { name: studentName })} /></td>
-                          <th scope="row" className="px-4 py-2 text-start font-medium">{studentName}</th>
-                          <td className="px-4 py-2">{cs.classes.name}</td>
-                          <td className="px-4 py-2">{cs.subjects ? pickName(cs.subjects, locale) : ""}</td>
-                          <td className="px-4 py-2">{pickName(type, locale)}{(g.academic_terms as { name: string } | null)?.name ? ` · ${(g.academic_terms as { name: string }).name}` : ""}<span className="block text-xs text-ink-muted">{formatShortDate(g.grade_date, locale)}</span></td>
-                          <td className="px-4 py-2 text-end font-semibold tabular">{formatNumber(g.score, locale)} / {formatNumber(g.max_score, locale)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              {/* One row per grade. On a phone: the tick, the pupil with the class
+                  and subject under the name, and the mark; from a tablet up the
+                  same as columns under a header row. */}
+              <div aria-hidden className="hidden grid-cols-[1.5rem_minmax(0,1.3fr)_4rem_minmax(0,1fr)_minmax(0,1.2fr)_4.5rem] gap-x-3 border-b border-line bg-surface-muted/60 px-4 py-2 text-xs uppercase tracking-wide text-ink-muted sm:grid sm:px-5">
+                <span />
+                <span>{t("student")}</span>
+                <span>{t("class")}</span>
+                <span>{t("subject")}</span>
+                <span>{t("assessment")}</span>
+                <span className="text-end">{t("score")}</span>
               </div>
+              <ul aria-label={t("pendingFinals", { count: pending.length })} className="divide-y divide-line text-sm">
+                {pending.map((g) => {
+                  const student = g.students as { first_name: string; last_name: string } | null;
+                  const cs = g.class_subjects as unknown as { classes: { name: string }; subjects: Named | null };
+                  const type = g.assessment_types as unknown as Named;
+                  const studentName = student ? `${student.last_name} ${student.first_name}` : "";
+                  const subject = cs.subjects ? pickName(cs.subjects, locale) : "";
+                  const term = (g.academic_terms as { name: string } | null)?.name;
+                  return (
+                    <li
+                      key={g.id}
+                      className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-x-3 px-4 py-2.5 sm:grid-cols-[1.5rem_minmax(0,1.3fr)_4rem_minmax(0,1fr)_minmax(0,1.2fr)_4.5rem] sm:px-5"
+                    >
+                      <input type="checkbox" name="gradeId" value={g.id} defaultChecked className="size-4 accent-brand-600" aria-label={t("selectGrade", { name: studentName })} />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-ink">{studentName}</p>
+                        <p className="truncate text-xs text-ink-muted sm:hidden">
+                          {[cs.classes.name, subject, pickName(type, locale), term].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                      <span className="hidden text-ink-secondary sm:block">{cs.classes.name}</span>
+                      <span className="hidden truncate text-ink-secondary sm:block">{subject}</span>
+                      <span className="hidden min-w-0 text-ink-secondary sm:block">
+                        <span className="block truncate">{pickName(type, locale)}{term ? ` · ${term}` : ""}</span>
+                        <span className="block text-xs text-ink-muted tabular">{formatShortDate(g.grade_date, locale)}</span>
+                      </span>
+                      <span className="text-end font-semibold tabular">{formatNumber(g.score, locale)} / {formatNumber(g.max_score, locale)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             </CardBody>
           </Card>
         </ActionForm>

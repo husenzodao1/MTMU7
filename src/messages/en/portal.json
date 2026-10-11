@@ -102,7 +102,11 @@
       "bellsTitle": "Bell times",
       "shift": "Shift {shift}",
       "lesson": "Lesson",
-      "time": "Time"
+      "time": "Time",
+      "substitutions": "Substitutions this coming week",
+      "lessonNumber": "lesson {number}",
+      "takenBy": "taken by {name}",
+      "noTeacherYet": "substitute not yet known"
     },
     "grades": {
       "title": "Grades",
@@ -123,7 +127,8 @@
       "noExceptions": "No absences or late arrivals recorded.",
       "daily": "Daily attendance",
       "period": "period {number}",
-      "minutesLate": "{minutes, plural, one {# minute late} other {# minutes late}}"
+      "minutesLate": "{minutes, plural, one {# minute late} other {# minutes late}}",
+      "yearSummary": "School year {year}"
     },
     "homework": {
       "title": "Homework",
@@ -172,7 +177,8 @@
         "grandparent": "Grandparent",
         "sibling": "Sibling",
         "other": "Relative"
-      }
+      },
+      "years": "School years"
     },
     "announcements": {
       "title": "Announcements",
@@ -266,7 +272,9 @@
       "commentSubmit": "Send",
       "noComments": "No comments yet.",
       "commentLabel": "Your comment",
-      "commentDelete": "Delete comment"
+      "commentDelete": "Delete comment",
+      "commentDeleteTitle": "Delete your comment?",
+      "commentDeleteConfirm": "Delete"
     },
     "newsEditor": {
       "sections": {
@@ -635,7 +643,9 @@
           "title": "New support note from {name}",
           "body": "Open it in the support inbox."
         }
-      }
+      },
+      "clearReadTitle": "Clear the read notifications?",
+      "clearReadDescription": "Unread notifications stay."
     },
     "profile": {
       "title": "Profile",
@@ -763,7 +773,8 @@
         "month": "Month"
       },
       "search": "Search",
-      "empty": "Nothing found"
+      "empty": "Nothing found",
+      "myArticles": "My articles"
     },
     "guardians": {
       "title": "Parents or guardian",
@@ -796,5 +807,30 @@
       "siblingNo": "No",
       "siblingNoHint": "Use another number: one number, one parent."
     }
+  },
+  "reportCard": {
+    "title": "Report card",
+    "subtitle": "School year {year}",
+    "authority": "Ministry of Education and Science of the Republic of Tajikistan",
+    "pupil": "Pupil",
+    "class": "Class",
+    "year": "School year",
+    "issued": "Issued",
+    "subject": "Subject",
+    "yearMark": "Year",
+    "averageNote": "Grey figures are the average of the everyday marks; the final mark has not been set yet.",
+    "pendingNote": "* not yet approved by the school office.",
+    "attendance": "Attendance",
+    "total": "Total",
+    "missed": "Lessons missed",
+    "late": "Late",
+    "classTeacher": "Class teacher",
+    "director": "Director",
+    "parent": "Parent",
+    "stamp": "Seal",
+    "page": "Page {page} of {total}",
+    "fileName": "Report card",
+    "button": "Report card (PDF)",
+    "classButton": "Class report cards (PDF)"
   }
 }

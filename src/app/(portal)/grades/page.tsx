@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { GraduationCap } from "lucide-react";
-import { ChildSwitcher } from "@/features/academic/child-switcher";
+import { FileDown, GraduationCap } from "lucide-react";
+import { ChildSwitcher, YearSwitcher } from "@/features/academic/child-switcher";
 import { scoreTone } from "@/features/academic/components";
 import { resolveStudentContext } from "@/features/academic/student-context";
 import { Badge } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/surface";
 import { TabNav } from "@/components/ui/misc";
 import { requireModule } from "@/lib/auth/guards";
@@ -21,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function GradesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const access = await requireModule("grades");
   const t = await getTranslations("portal.grades");
+  const tr = await getTranslations("reportCard");
   const locale = (await getLocale()) as Locale;
   const params = await searchParams;
   const context = await resolveStudentContext(access, params);
@@ -46,7 +48,8 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
 
   const today = new Date().toISOString().slice(0, 10);
   const requestedTerm = firstValue(params.term);
-  const currentTerm = terms?.find((term) => term.start_date <= today && term.end_date >= today) ?? terms?.at(-1);
+  // A past year opens on its last term; this year on the one under way.
+  const currentTerm = (context.pastYear ? undefined : terms?.find((term) => term.start_date <= today && term.end_date >= today)) ?? terms?.at(-1);
   const termId = terms?.some((term) => term.id === requestedTerm) ? requestedTerm : currentTerm?.id;
 
   let query = supabase
@@ -55,6 +58,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     .eq("student_id", context.studentId)
     .order("grade_date", { ascending: true });
   if (termId) query = query.eq("academic_term_id", termId);
+  else if (context.classId) query = query.eq("class_subjects.class_id", context.classId);
   const { data: grades } = await query;
 
   type Row = NonNullable<typeof grades>[number];
@@ -66,12 +70,27 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     bySubject.set(subject.id, entry);
   }
   const subjects = [...bySubject.values()].sort((x, y) => x.name.localeCompare(y.name, locale));
-  const childQuery = context.viewer === "guardian" ? `child=${context.studentId}&` : "";
+  const childQuery = [
+    context.viewer === "guardian" ? `child=${context.studentId}&` : "",
+    context.pastYear ? `year=${context.academicYearId}&` : "",
+  ].join("");
 
   return (
     <>
-      <PageHeader title={t("title")} description={[`${context.firstName} ${context.lastName}`, context.className].filter(Boolean).join(" · ")} />
+      <PageHeader
+        title={t("title")}
+        description={[`${context.firstName} ${context.lastName}`, context.className].filter(Boolean).join(" · ")}
+        actions={
+          context.classId ? (
+            <a href={`/report-cards${childQuery ? `?${childQuery.slice(0, -1)}` : ""}`} download className={buttonClasses("secondary", "sm")}>
+              <FileDown aria-hidden />
+              {tr("button")}
+            </a>
+          ) : null
+        }
+      />
       <ChildSwitcher context={context} pathname="/grades" />
+      <YearSwitcher context={context} pathname="/grades" />
       {terms && terms.length > 0 ? (
         <TabNav
           label={t("terms")}

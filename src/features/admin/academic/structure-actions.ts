@@ -63,6 +63,66 @@ export async function setYearStatusAction(_state: FormState, formData: FormData)
   return done(success("common.saved"));
 }
 
+const newYearSchema = z
+  .object({
+    name: z.string().trim().min(4, "validation.too_small").max(50, "validation.too_big"),
+    startDate: date,
+    endDate: date,
+    terms: checkbox,
+    subjects: checkbox,
+  })
+  .refine((v) => v.endDate > v.startDate, { path: ["endDate"], message: "validation.dateOrder" });
+
+/**
+ * The first of September in one step: every class up a year, the leavers
+ * out, a new first form, the year's quarters, and each class's subjects and
+ * teachers carried over (start_new_school_year, migration 00083). Running it
+ * again changes nothing, and says so.
+ */
+type Counts = Record<string, number | string>;
+
+export async function startNewYearAction(_state: FormState<Counts>, formData: FormData): Promise<FormState<Counts>> {
+  const s = await session("academic_years.manage");
+  if ("error" in s) return s.error!;
+  if (!can(s.access, "enrollments.manage")) return done(failure("errors.forbidden"));
+  const input = parseInput(newYearSchema, formDataToObject(formData));
+  if (!input.ok) return done(input.result);
+  const v = input.data;
+  const { data, error } = await s.supabase.rpc("start_new_school_year", {
+    p_name: v.name,
+    p_start: v.startDate,
+    p_end: v.endDate,
+    p_terms: v.terms,
+    p_subjects: v.subjects,
+  });
+  if (error) return done(error.message === "no_current_academic_year" ? failure("admin.years.noCurrent") : mapDbError(error));
+  const r = (data ?? {}) as { moved?: number; graduated?: number; termsCreated?: number; subjectsCopied?: number; alreadyDone?: boolean };
+  revalidatePath("/", "layout");
+  if (r.alreadyDone) return done(success("admin.years.alreadyStarted"));
+  return done(
+    success("admin.years.started", {
+      name: v.name,
+      moved: r.moved ?? 0,
+      graduated: r.graduated ?? 0,
+      terms: r.termsCreated ?? 0,
+      subjects: r.subjectsCopied ?? 0,
+    })
+  );
+}
+
+/** The quarters for a year that has none, in one press instead of four dialogs. */
+export async function addStandardTermsAction(_state: FormState<Counts>, formData: FormData): Promise<FormState<Counts>> {
+  const s = await session("academic_years.manage");
+  if ("error" in s) return s.error!;
+  const id = uuid.safeParse(formData.get("id"));
+  if (!id.success) return done(failure("errors.invalid"));
+  const { data, error } = await s.supabase.rpc("add_standard_terms", { p_year_id: id.data });
+  if (error) return done(mapDbError(error));
+  if (!data) return done(failure("admin.years.termsExist"));
+  revalidatePath("/", "layout");
+  return done(success("admin.years.termsAdded", { count: data }));
+}
+
 const TERM_KINDS = ["quarter", "semester", "trimester", "term", "exam_period", "holiday"] as const;
 const termSchema = z
   .object({
