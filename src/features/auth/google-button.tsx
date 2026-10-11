@@ -77,7 +77,7 @@ export function GoogleSignInButton({ label, next }: { label: string; next?: stri
         href={href}
         onClick={onClick}
         aria-busy={busy || undefined}
-        className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-full border px-4 text-sm font-medium shadow-xs transition-colors aria-busy:opacity-70"
+        className="google-button flex h-11 w-full items-center justify-center gap-2.5 rounded-md border px-4 text-sm font-medium shadow-xs transition-colors aria-busy:opacity-70"
       >
         {busy ? <span className="size-[18px] animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden /> : <GoogleMark className="size-[18px]" />}
         <span>{label}</span>

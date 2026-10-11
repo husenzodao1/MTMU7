@@ -127,31 +127,33 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     tone: null,
   }));
 
+  // The one thing each person most likely came for, first; the office second
+  // for somebody who also teaches.
+  const actions = [
+    isTeaching && { href: "/teach", label: "teacher" },
+    isStudent && { href: "/schedule", label: "student" },
+    isParent && { href: "/children", label: "parent" },
+    canEnterAdmin(access) && { href: "/admin", label: "admin" },
+  ]
+    .filter((action): action is { href: string; label: "teacher" | "student" | "parent" | "admin" } => Boolean(action))
+    .slice(0, 2);
+
   return (
     <>
-      {faces && (faces.active.length > 0 || faces.graduates.length > 0) ? (
-        <FacesRibbon
-          active={faces.active}
-          graduates={faces.graduates}
-          labels={{ title: t("faces.title"), active: t("faces.active"), graduates: t("faces.graduates") }}
-        />
-      ) : null}
-
       <GreetingCard
         name={access.firstName}
         timeZone={access.school?.timezone}
         initialPart={dayPart(access.school?.timezone)}
         dateLine={`${tc(`weekdays.${weekday}`)}, ${formatDate(today, locale)}`}
         actions={
-          canEnterAdmin(access) ? (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-white/20"
-            >
-              {t("openAdmin")}
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
-          ) : null
+          actions.length > 0
+            ? actions.map((action, index) => (
+                <Link key={action.href} href={action.href} className={index === 0 ? "greeting-action" : "greeting-action-quiet"}>
+                  {t(`primary.${action.label}`)}
+                  {index === 0 ? <ArrowRight className="size-4" aria-hidden /> : null}
+                </Link>
+              ))
+            : null
         }
       />
 
@@ -317,6 +319,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         ) : null}
       </div>
+
+      {faces && (faces.active.length > 0 || faces.graduates.length > 0) ? (
+        <FacesRibbon
+          active={faces.active}
+          graduates={faces.graduates}
+          labels={{ title: t("faces.title"), active: t("faces.active"), graduates: t("faces.graduates") }}
+        />
+      ) : null}
     </>
   );
 }

@@ -153,7 +153,7 @@ export function NativeApp() {
         <span className="block text-sm font-semibold text-ink">{t("title")}</span>
         <span className="block text-xs text-ink-muted">{t("text")}</span>
       </span>
-      <a href="/download/android" download className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
+      <a href="/download/android" download className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
         {t("action")}
       </a>
       <button

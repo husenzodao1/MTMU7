@@ -9,8 +9,8 @@ import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n/text";
  */
 const greeting = (locale: string) => GREETING_PATHS[isLocale(locale) ? locale : DEFAULT_LOCALE];
 
-/** The opening: "Ассалому алайкум", then "Хуш омадед". */
-export const openingScript = (locale: string): ScriptLine[] => [greeting(locale).hello, greeting(locale).welcome];
+/** The opening: "Ассалому алайкум" — one line, so it is read at a glance. */
+export const openingScript = (locale: string): ScriptLine[] => [greeting(locale).hello];
 
 /** After signing in: "Хуш омадед", with the name written under it. */
 export const welcomeScript = (locale: string): ScriptLine => greeting(locale).welcome;

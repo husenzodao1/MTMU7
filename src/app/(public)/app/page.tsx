@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { AndroidIcon, AppleIcon, WindowsIcon } from "@/components/site/download-app";
 import { downloadUrl, platformOf, type AppPlatform } from "@/lib/native/downloads";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,11 +12,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const ICON = { android: AndroidIcon, ios: AppleIcon, windows: WindowsIcon } as const;
-const TINT: Record<AppPlatform, string> = {
-  android: "bg-[#3ddc84]/15 text-[#16a34a]",
-  ios: "bg-ink/10 text-ink",
-  windows: "bg-[#0078d4]/12 text-[#0078d4]",
-};
 
 /**
  * The app, for all three: where each comes from and the two or three taps it
@@ -31,11 +27,11 @@ export default async function AppPage() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
-      <div className="app-hero relative overflow-hidden rounded-[2rem] px-6 py-10 text-center text-white sm:px-10 sm:py-14">
+      <div className="app-hero relative overflow-hidden rounded-2xl px-6 py-10 text-center sm:px-10 sm:py-14">
         {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a static file */}
-        <img src="/icons/icon-192.png" alt="" width={96} height={96} className="mx-auto size-24 rounded-[1.6rem] shadow-2xl ring-1 ring-white/20" />
-        <h1 className="mt-6 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{t("title")}</h1>
-        <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-white/80">{t("lead")}</p>
+        <img src="/icons/icon-192.png" alt="" width={96} height={96} className="mx-auto size-20 rounded-[1.25rem] ring-1 ring-line" />
+        <h1 className="mt-5 font-display text-2xl font-semibold text-ink sm:text-3xl">{t("title")}</h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-secondary sm:text-base sm:leading-7">{t("lead")}</p>
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -47,11 +43,11 @@ export default async function AppPage() {
             <article
               key={platform}
               id={platform}
-              className={cn("flex scroll-mt-24 flex-col rounded-2xl border border-line bg-surface p-5 shadow-xs", platform === mine && "ring-2 ring-brand-500")}
+              className={cn("flex scroll-mt-24 flex-col rounded-xl border border-line bg-surface p-5", platform === mine && "border-brand-solid")}
             >
               <div className="flex items-center gap-3">
-                <span className={cn("inline-flex size-12 items-center justify-center rounded-2xl", TINT[platform])}>
-                  <Icon className="size-6" />
+                <span className="inline-flex size-10 items-center justify-center rounded-lg bg-surface-muted text-ink-secondary">
+                  <Icon className="size-5" />
                 </span>
                 <div>
                   <h2 className="text-lg font-semibold text-ink">{td(`platforms.${platform}.name`)}</h2>
@@ -61,7 +57,7 @@ export default async function AppPage() {
               <ol className="mt-4 flex-1 space-y-2.5 text-sm leading-relaxed text-ink-secondary">
                 {steps.map((step, index) => (
                   <li key={index} className="flex gap-2.5">
-                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[0.6875rem] font-semibold text-brand-text-strong">
+                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong text-[0.6875rem] font-semibold text-ink-secondary">
                       {index + 1}
                     </span>
                     <span>{step}</span>
@@ -72,7 +68,7 @@ export default async function AppPage() {
                 <a
                   href={`/download/${platform}`}
                   download={platform === "android" ? "MTMU7.apk" : undefined}
-                  className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-brand-solid px-5 text-sm font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover"
+                  className={buttonClasses("primary", "lg", "mt-5")}
                 >
                   {t("get")}
                 </a>

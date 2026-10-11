@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
-import { BookScene } from "@/features/intro/book-scene";
+import { IntroScene, SCHOOL_MARK } from "@/features/intro/intro-scene";
 import type { ScriptLine } from "@/features/intro/greeting-paths";
-import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
+import { INTRO_QUICK_MS, WELCOME_MS } from "@/features/intro/intro-script";
 import { report } from "@/features/native/diagnostics";
 import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 import { cn } from "@/lib/utils/cn";
@@ -14,16 +14,15 @@ import { cn } from "@/lib/utils/cn";
 const VEIL_ATTRIBUTE = "data-signin-veil";
 
 /**
- * The moment between signing in and the portal: the same book as the site's
- * opening (book-scene.tsx) — it opens, its pages turn, it rushes into a flash
- * of light — and on the paper "Welcome" writes itself by hand, and the
- * person's name under it.
+ * The moment between signing in and the portal: the same night canvas as the
+ * site's opening (intro-scene.tsx), where "Welcome" writes itself in brass and
+ * the person's name follows under it.
  *
  * Rendered by the portal's layouts on the first page after a sign-in (the
  * one-minute cookie markWelcome() leaves) and by nothing else, so it is seen
- * once per sign-in and never on an ordinary visit. After the veil the book is
- * already in the middle and does not fly in again. A tap skips it, and with
- * reduced motion it is the greeting, already written, for a moment.
+ * once per sign-in and never on an ordinary visit. It carries straight on from
+ * the sign-in veil, which has the same canvas and mark. A tap skips it, and
+ * with reduced motion it is the greeting, already written, for a moment.
  */
 export function WelcomeTransition({ firstName, script }: { firstName: string; script: ScriptLine }) {
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
@@ -31,7 +30,7 @@ export function WelcomeTransition({ firstName, script }: { firstName: string; sc
   useEffect(() => {
     document.cookie = `${WELCOME_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
     const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const out = window.setTimeout(() => setPhase("out"), quick ? INTRO_QUICK_MS : INTRO_MS);
+    const out = window.setTimeout(() => setPhase("out"), quick ? INTRO_QUICK_MS : WELCOME_MS);
     return () => window.clearTimeout(out);
   }, []);
 
@@ -40,24 +39,24 @@ export function WelcomeTransition({ firstName, script }: { firstName: string; sc
     const gone = window.setTimeout(() => {
       setPhase("gone");
       document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
-    }, 560);
+    }, 400);
     return () => window.clearTimeout(gone);
   }, [phase]);
 
   if (phase === "gone") return null;
   return (
     <div className={cn("intro intro-welcome", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")}>
-      <BookScene lines={[script]} name={firstName} />
+      <IntroScene lines={[script]} name={firstName} />
     </div>
   );
 }
 
 /**
- * The same night blue over the sign-in form while the portal checks the
- * password — the book, shut, waiting in the middle: after a quarter of a
- * second, so a quick answer never flickers, and gone again if the answer is
- * no. When the answer is yes, the page that follows opens with
- * WelcomeTransition, whose book starts exactly here.
+ * The same night canvas over the sign-in form while the portal checks the
+ * password — the mark and a thin brass line running for as long as the answer
+ * takes: after a quarter of a second, so a quick answer never flickers, and
+ * gone again if the answer is no. When the answer is yes, the page that
+ * follows opens with WelcomeTransition on the same canvas.
  */
 export function SignInVeil() {
   const t = useTranslations("common.welcome");
@@ -86,8 +85,13 @@ export function SignInVeil() {
   if (!pending || !shown) return null;
   return (
     <div className="intro intro-welcome intro-veil" role="status" aria-live="polite">
-      <BookScene closed />
-      <p className="intro-veil-label">{t("signingIn")}</p>
+      <div className="intro-writing">
+        <span className="intro-mark" aria-hidden>
+          {SCHOOL_MARK}
+        </span>
+        <span className="intro-progress" aria-hidden />
+        <p className="intro-veil-label">{t("signingIn")}</p>
+      </div>
     </div>
   );
 }

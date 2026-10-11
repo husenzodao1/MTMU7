@@ -1,26 +1,12 @@
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
-import { DriftRow } from "@/features/dashboard/drift-row";
 import type { Face } from "@/features/dashboard/faces";
 
 /**
- * Across the very top of the dashboard, two ribbons of faces drift by: on the
- * left the pupils studying now, sliding left; on the right the school's
- * graduates, sliding the other way. Small round photographs in a thin ring, a
- * small name under each. A finger holds a ribbon or drags it (DriftRow); a tap
- * on a face opens that person's profile. Without graduates yet, empty rings
- * with a cap drift in their place.
+ * At the foot of the dashboard, the school's people: the pupils studying now
+ * and the graduates, each a row of small round photographs with a name under
+ * them. The rows stand still and scroll sideways; a tap on a face opens that
+ * person's profile. A row with nobody in it is left out.
  */
-
-/** Enough faces in one copy to be wider than half a phone, so the loop never shows a gap. */
-const MIN_LOOP = 8;
-
-function repeated<T>(items: T[], min: number): T[] {
-  if (items.length === 0) return [];
-  const out = [...items];
-  while (out.length < min) out.push(...items);
-  return out;
-}
 
 function initials(name: string): string {
   return name
@@ -31,54 +17,41 @@ function initials(name: string): string {
     .join("");
 }
 
-function FaceChip({ face, echo }: { face: Face; echo: boolean }) {
+function FaceChip({ face }: { face: Face }) {
   const inner = (
     <>
-      <span className="face-ring">
-        {face.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element -- avatars are public storage URLs of any size
-          <img src={face.avatar} alt="" className="face-img" loading="lazy" decoding="async" draggable={false} />
-        ) : (
-          <span className="face-img face-initials">{initials(face.name)}</span>
-        )}
-      </span>
+      {face.avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element -- avatars are public storage URLs of any size
+        <img src={face.avatar} alt="" className="face-img" loading="lazy" decoding="async" />
+      ) : (
+        <span className="face-img face-initials" aria-hidden>
+          {initials(face.name)}
+        </span>
+      )}
       <span className="face-name">{face.name}</span>
     </>
   );
-  // The repeats that only fill the loop are not read out.
-  if (!face.nickname) {
-    return (
-      <span className="face" aria-hidden={echo || undefined}>
-        {inner}
-      </span>
-    );
-  }
-  return (
-    <Link href={`/u/${face.nickname}`} className="face" draggable={false} aria-hidden={echo || undefined} tabIndex={echo ? -1 : undefined}>
+  return face.nickname ? (
+    <Link href={`/u/${face.nickname}`} className="face">
       {inner}
     </Link>
+  ) : (
+    <span className="face">{inner}</span>
   );
 }
 
-function Ribbon({ kind, title, faces }: { kind: "active" | "graduates"; title: string; faces: Face[] }) {
-  const loop = repeated(faces, MIN_LOOP);
+function Row({ title, faces }: { title: string; faces: Face[] }) {
+  if (faces.length === 0) return null;
   return (
-    <div className={`faces-half faces-${kind}`}>
+    <div className="faces-row">
       <p className="faces-title">{title}</p>
-      <DriftRow direction={kind === "active" ? "left" : "right"} speed={14} className="faces-window">
-        {loop.length
-          ? loop.map((face, index) => <FaceChip key={`${face.id}-${index}`} face={face} echo={index >= faces.length} />)
-          : Array.from({ length: MIN_LOOP }, (_, index) => (
-              <span key={index} className="face" aria-hidden>
-                <span className="face-ring">
-                  <span className="face-img face-initials face-empty">
-                    <GraduationCap className="size-3.5" />
-                  </span>
-                </span>
-                <span className="face-name">&nbsp;</span>
-              </span>
-            ))}
-      </DriftRow>
+      <ul className="faces-rail">
+        {faces.map((face) => (
+          <li key={face.id}>
+            <FaceChip face={face} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -94,8 +67,8 @@ export function FacesRibbon({
 }) {
   return (
     <section className="faces" aria-label={labels.title}>
-      <Ribbon kind="active" title={labels.active} faces={active} />
-      <Ribbon kind="graduates" title={labels.graduates} faces={graduates} />
+      <Row title={labels.active} faces={active} />
+      <Row title={labels.graduates} faces={graduates} />
     </section>
   );
 }

@@ -12,9 +12,11 @@
 export const INTRO_COOKIE = "mtmu7-intro";
 
 /** When the greeting has been written and the page is uncovered, from the moment the opening starts. */
-export const INTRO_MS = 4550;
-/** The same with reduced motion: no book, the greeting already written, a short look and gone. */
-export const INTRO_QUICK_MS = 1400;
+export const INTRO_MS = 1800;
+/** The same after a sign-in, which writes the person's name as well. */
+export const WELCOME_MS = 2100;
+/** Either with reduced motion: the greeting already written, a short look and gone. */
+export const INTRO_QUICK_MS = 900;
 
 /**
  * The oldest web view the portal is built for (Chrome 111: the colours and
@@ -32,7 +34,7 @@ const OLD_WEBVIEW = 111;
  * reload within one (sessionStorage lives exactly as long as the app's web
  * view), and it waits for the phone's own splash: Capacitor's bridge is on the
  * page before any of the page's scripts, so the splash is asked to go and the
- * book starts moving the moment it has. What happened is left on window for
+ * greeting starts writing the moment it has. What happened is left on window for
  * the app's diagnostics.
  */
 export const INTRO_SCRIPT = `(function(){

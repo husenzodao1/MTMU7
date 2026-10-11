@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
-import { BookScene } from "@/features/intro/book-scene";
+import { IntroScene } from "@/features/intro/intro-scene";
 import type { ScriptLine } from "@/features/intro/greeting-paths";
 import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * The opening over the first page: the book, the light and the greeting
- * written by hand (book-scene.tsx) — once per visit to the site, and on each
- * start of the app.
+ * The opening over the first page: the school's mark and the greeting written
+ * by hand in brass on the night canvas (intro-scene.tsx) — once per visit to
+ * the site, and on each start of the app.
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it
@@ -42,7 +42,7 @@ export function Intro({ lines }: { lines: ScriptLine[] }) {
 
   useEffect(() => {
     if (phase !== "out") return;
-    const gone = window.setTimeout(() => setPhase("gone"), 560);
+    const gone = window.setTimeout(() => setPhase("gone"), 400);
     return () => window.clearTimeout(gone);
   }, [phase]);
 
@@ -57,7 +57,7 @@ export function Intro({ lines }: { lines: ScriptLine[] }) {
       suppressHydrationWarning
       onClick={() => setPhase("out")}
     >
-      <BookScene lines={lines} />
+      <IntroScene lines={lines} />
     </div>
   );
 }

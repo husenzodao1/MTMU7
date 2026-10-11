@@ -126,12 +126,12 @@ export function MemberCardDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/45 backdrop-blur-[2px] data-[state=open]:animate-fade" />
         <DialogPrimitive.Content
-          className="member-card fixed left-1/2 top-1/2 z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[1.75rem] bg-surface shadow-overlay focus:outline-none data-[state=open]:animate-fade"
+          className="member-card fixed left-1/2 top-1/2 z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-line bg-surface shadow-overlay focus:outline-none data-[state=open]:animate-fade"
           aria-describedby={undefined}
         >
-          <div className="member-card-cover relative h-28">
+          <div className="member-card-cover relative h-24">
             <DialogPrimitive.Close
-              className="absolute end-3 top-3 inline-flex size-8 items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-sm transition-colors hover:bg-black/35"
+              className="absolute end-3 top-3 inline-flex size-8 items-center justify-center rounded-full border border-line bg-surface text-ink-secondary transition-colors hover:text-ink"
               aria-label={tRoot("common.close")}
             >
               <X className="size-4" aria-hidden />
@@ -139,8 +139,8 @@ export function MemberCardDialog({
           </div>
 
           {/* Positioned, so it paints over the band it rises out of. */}
-          <div className="relative -mt-14 flex flex-col items-center px-6 pb-6 text-center">
-            <div className="member-card-ring rounded-full p-1">
+          <div className="relative -mt-12 flex flex-col items-center px-6 pb-6 text-center">
+            <div className="member-card-ring rounded-full p-0.5">
               {avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element -- a member's photo from storage, drawn at one fixed size
                 <img src={avatar} alt="" className="size-24 rounded-full bg-surface object-cover ring-4 ring-surface" />
@@ -203,7 +203,7 @@ export function MemberCardDialog({
                       if (result && !result.ok) toast("danger", tRoot(result.message));
                     })
                   }
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-solid px-4 text-sm font-semibold text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-[0.98] disabled:opacity-60"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand-solid px-4 text-sm font-semibold text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-[0.98] disabled:opacity-60"
                 >
                   <MessageCircle className={cn("size-4", starting && "animate-pulse")} aria-hidden />
                   {t("write")}
@@ -213,7 +213,7 @@ export function MemberCardDialog({
                 <Link
                   href={`/profile/${seed.userId}`}
                   onClick={onClose}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-surface-muted px-4 text-sm font-semibold text-ink transition-[transform,background-color] hover:bg-line active:scale-[0.98]"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-line-strong bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:bg-surface-muted"
                 >
                   <UserRound className="size-4" aria-hidden />
                   {t("profile")}

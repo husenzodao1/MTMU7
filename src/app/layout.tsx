@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Bad_Script, Cormorant_Unicase, Great_Vibes, JetBrains_Mono, Noto_Sans, Noto_Serif, Pacifico, Unbounded } from "next/font/google";
+import { Bad_Script, Great_Vibes, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { SupportFab } from "@/components/site/support-fab";
 import { openingScript } from "@/features/intro/greetings";
 import { Intro } from "@/features/intro/intro";
@@ -24,8 +24,8 @@ const notoSans = Noto_Sans({
 
 /**
  * For the few lines that are meant to be looked at rather than read through:
- * the front page's title, its section headings, the school's name in the
- * footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
+ * the front page's title, page titles, the dashboard's greeting, the school's
+ * name in the footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
  * most display faces do not, so the letters that make the language its own do
  * not fall back to a different font mid-word.
  */
@@ -37,36 +37,8 @@ const notoSerif = Noto_Serif({
 });
 
 /**
- * The greeting's face. A brush script is the least institutional thing on the
- * portal, which is the point of the one line addressed to the reader — and
- * Pacifico is one of the few that carries ғ ҷ қ ӣ ӯ ҳ, so "Рӯз ба хайр" does
- * not change font half-way through a word. Not preloaded: it is used on one
- * page, and the browser fetches the few glyphs it needs when that page draws.
- */
-const pacifico = Pacifico({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: "400",
-  display: "swap",
-  preload: false,
-  variable: "--font-greeting",
-});
-
-/**
- * The school's name on its crest: a unicase, where capitals and small letters
- * share one height, the way a name is cut into a seal. Checked for the whole
- * Tajik alphabet for the same reason as above.
- */
-const unicase = Cormorant_Unicase({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: ["600", "700"],
-  display: "swap",
-  preload: false,
-  variable: "--font-crest",
-});
-
-/**
  * The hand that writes a name under "Welcome" after signing in
- * (src/features/intro/book-scene.tsx). The greeting's own lines are drawn from
+ * (src/features/intro/intro-scene.tsx). The greeting's own lines are drawn from
  * Great Vibes' outlines and need no font; a name is typed, so it is written
  * in Great Vibes itself — or, when it has one of ғ ҷ қ ӣ ӯ ҳ, which Great Vibes
  * lacks, in Bad Script, which has them all. Loaded only when a welcome shows.
@@ -118,7 +90,8 @@ export const viewport: Viewport = {
   // The keyboard shrinks the page rather than covering it, so a chat's
   // composer stays above the keyboard on Android as it does on an iPhone.
   interactiveWidget: "resizes-content",
-  themeColor: "#c4861c",
+  // The night canvas, so the browser's and the phone's bars belong to the page.
+  themeColor: "#0a0e17",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -153,7 +126,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page of a visit opens with the book and the greeting
+  // The first page of a visit opens with the school's mark and the greeting
   // (src/features/intro/): in the app on each start, on the site once per visit
   // (a session cookie) and never for robots — and not on the first page after
   // signing in, which has a welcome of its own.
@@ -169,7 +142,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
-      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${script.variable} ${hand.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (
