@@ -80,14 +80,17 @@ rule now where they differ from the lists below (`src/styles/motion.css`):
 - **A tap moves at once**: the next page's loading screen is drawn the moment
   a link is tapped (`instant-nav.ts`).
 - **The offline cover** comes only for an outage that lasts (four seconds, or
-  the phone saying it has no network); a slow page gets a small note instead.
+  the device saying it has no network *and* the portal not answering — Windows
+  says "no network" with the internet working); a slow page gets a small note
+  instead.
+- **Icon options** for the next app icon, seven dark and seven light, are in
+  `docs/design/icon-options/` (`preview.png` shows them side by side).
 - **The networks live in the menu**: the school's four marks as bare hairline
   glyphs (`social-lines.tsx`), centred at the foot of the menu above the line
-  over "About the app" — on the phone's drawer and the computer's sidebar.
-- **The footer is a colophon**: a short brass hairline fading at both ends,
-  the flag and the school's name in small spaced capitals, the links divided
-  by dots and the year in fine print, centred on the page's own ground; the
-  networks join it only where there is no menu (the public and sign-in pages).
+  over "About the app" — on the phone's drawer and the computer's sidebar —
+  and nowhere else.
+- **The footer is one line**: "© 2026 Портали мактаб", small and quiet,
+  centred under the site's pages. The phone and Windows apps have none.
 - **Messages read like a messenger** (`styles/messenger.css`): a large title,
   a rounded search, a row of stories, chips (all, unread, groups, channels),
   airy rows with round faces, the time in the school's orange while something

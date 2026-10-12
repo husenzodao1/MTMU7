@@ -11,7 +11,8 @@
  * Never a page and never data: a school portal that shows yesterday's marks
  * from a cache is worse than one that says it is offline. Only files whose
  * address changes whenever their content does (Next's /_next/static/) or that
- * never change (the icons and pictures shipped with the site) are kept.
+ * never change (the icons and pictures shipped with the site, and the sizes
+ * Next.js makes of those pictures — the greeting's skies) are kept.
  */
 
 const STATIC_CACHE = "static-v1";
@@ -30,6 +31,13 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+/** A picture the site ships, at one of the sizes Next.js makes of it. */
+function isShippedPicture(url) {
+  if (url.pathname !== "/_next/image") return false;
+  const source = url.searchParams.get("url") || "";
+  return source.startsWith("/_next/static/") || source.startsWith("/images/");
+}
+
 function isStatic(url) {
   return (
     url.origin === self.location.origin &&
@@ -38,7 +46,8 @@ function isStatic(url) {
       url.pathname.startsWith("/brand/") ||
       url.pathname.startsWith("/gov/") ||
       url.pathname.startsWith("/flags/") ||
-      url.pathname.startsWith("/images/"))
+      url.pathname.startsWith("/images/") ||
+      isShippedPicture(url))
   );
 }
 

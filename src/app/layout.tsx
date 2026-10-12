@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
+import { preconnect } from "react-dom";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Bad_Script, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
@@ -125,6 +126,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
   const opening = !(await isWelcome()) && (isAppUserAgent(userAgent) || !isRobot(userAgent));
+  // The database's address is greeted while the page is still arriving, so
+  // the first live update, photo or chat message does not wait for the
+  // handshake — on a slow line that is the better part of a second.
+  preconnect(publicEnv.NEXT_PUBLIC_SUPABASE_URL, { crossOrigin: "anonymous" });
 
   return (
     <html

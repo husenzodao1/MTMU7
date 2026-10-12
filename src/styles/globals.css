@@ -1616,153 +1616,25 @@ html.chat-lock body {
 
 /* --------------------------------------------------------------- the footer */
 /*
- * The foot of every page (official-header.tsx, SiteFooter), set like a
- * colophon: centred on the page's own ground, no band, no border. A short
- * hairline in brass that fades at both ends opens it; then the flag and the
- * school's name in small spaced capitals, the links in small type divided by
- * dots, the networks as bare hairline marks where there is no menu to hold
- * them, and the year in fine print.
+ * The foot of the site (official-header.tsx, SiteFooter): one quiet line,
+ * "© 2026 Портали мактаб", centred on the page's own ground. The apps have
+ * none: an app ends where its content does.
  */
 .site-footer {
   position: relative;
   z-index: 10;
   margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.footer-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.55rem;
-  margin-inline: auto;
-  max-width: 64rem;
-  padding: 1.75rem 1rem 1.25rem;
+  padding: 1.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
 }
-.footer-rule {
-  display: block;
-  width: 3rem;
-  height: 1px;
-  margin-bottom: 0.35rem;
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, #d9be8c 85%, var(--color-ink-muted)), transparent);
+.footer-line {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: color-mix(in oklab, var(--color-ink-muted) 85%, transparent);
 }
-.footer-brand {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--color-ink-secondary);
-}
-.footer-flag {
-  flex-shrink: 0;
-  width: 1rem;
-  height: 0.5rem;
-  border-radius: 1px;
-  box-shadow: 0 0 0 0.5px rgb(15 23 42 / 0.18);
-}
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  row-gap: 0.2rem;
-  font-size: 0.6875rem;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
-.footer-links > li {
-  display: inline-flex;
-  align-items: center;
-}
-/* A small dot before every link but the first. */
-.footer-links > li + li::before {
-  content: "";
-  display: inline-block;
-  width: 2px;
-  height: 2px;
-  margin-inline: 0.6rem;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--color-ink-muted) 55%, transparent);
-}
-.footer-link {
-  position: relative;
-  border-radius: 2px;
-  color: var(--color-ink-muted);
-  transition: color var(--duration-fast) var(--ease-standard);
-}
-/* The underline draws out from the middle. */
-.footer-link::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  bottom: -2px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.5;
-  transform: scaleX(0);
-  transition: transform 0.25s var(--ease-standard);
-}
-.footer-link:hover {
-  color: var(--color-ink);
-}
-.footer-link:hover::after {
-  transform: scaleX(1);
-}
-.footer-socials {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.footer-social {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  color: var(--color-ink-muted);
-  transition:
-    color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard);
-}
-.footer-social svg {
-  width: 1.0625rem;
-  height: 1.0625rem;
-}
-.footer-social:hover {
-  color: var(--color-ink);
-  transform: translateY(-1px);
-}
-.footer-fine {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.5625rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: color-mix(in oklab, var(--color-ink-muted) 75%, transparent);
-}
-.footer-dot {
-  width: 2px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  opacity: 0.6;
-}
-/* The phone app is already installed: no "download the app" in it. */
-html[data-app] .footer-download {
+html[data-app] .site-footer {
   display: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .footer-link::after,
-  .footer-social {
-    transition: none;
-  }
 }
 
 /* In the portal on a phone the bottom bar is fixed over the foot of the

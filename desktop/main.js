@@ -9,7 +9,9 @@
  *   - the night-blue launch colour instead of a white flash, and the portal's
  *     own opening animation, which the site shows to the app (MTMU7App in the
  *     User-Agent);
- *   - an offline page that returns by itself when the connection does;
+ *   - a page that fails to load is tried again quietly, then an offline page
+ *     that returns by itself when the connection does — never on Windows'
+ *     own word that there is no network, which is often wrong;
  *   - links to anywhere else open in the normal browser, and Google sign-in —
  *     which Google refuses inside an embedded window — is finished in the
  *     browser and handed back through tj.mtmu7.app://, exactly as on phones;
@@ -146,9 +148,23 @@ function createWindow() {
   // /auth/google answers with a redirect to Google's page: out to the browser.
   win.webContents.on("will-redirect", stayOnSite);
 
-  // No connection: the offline page, which comes back on its own.
+  // A page that did not load. A hiccup — the network changing under the
+  // window, a connection reset, a moment's timeout — is tried again quietly,
+  // twice; only then the offline page, which comes back on its own.
+  let retries = 0;
+  win.webContents.on("did-finish-load", () => {
+    if (isSite(win.webContents.getURL())) retries = 0;
+  });
   win.webContents.on("did-fail-load", (_event, code, _description, url, isMainFrame) => {
     if (!isMainFrame || code === -3 || !isSite(url)) return; // -3: navigation cancelled
+    if (retries < 2) {
+      retries += 1;
+      setTimeout(() => {
+        if (win && !win.isDestroyed()) win.loadURL(url);
+      }, 900 * retries);
+      return;
+    }
+    retries = 0;
     win.loadFile(path.join(__dirname, "offline.html"));
   });
 

@@ -13,13 +13,15 @@ export const SLOW_EVENT = "mtmu7:slow";
  * calls the app offline the moment one request fails — on a slow or shaky
  * line, or while a large file goes up, that happens with the internet there
  * all along — and its own check calls it back online within a second or two.
- * Only an outage that outlasts that is one. The phone saying it has no
- * network at all is believed sooner.
+ * Only an outage that outlasts that is one.
  */
 const CONFIRM_MS = 4000;
+/** The device says it has no network and the portal cannot be reached either. */
 const DEVICE_OFFLINE_MS = 1200;
-/** How often the cover looks for the server itself while Next.js says offline. */
-const PROBE_MS = 2000;
+/** How often the cover looks for the server itself while anything says offline. */
+const PROBE_MS = 2500;
+/** A look with no answer by now went out and is waiting — the line is there, only slow. Shorter than CONFIRM_MS, so a slow line never shows the cover. */
+const PROBE_TIMEOUT_MS = 3000;
 
 /**
  * The cover over the page when the internet has really gone: a still Wi-Fi
@@ -41,8 +43,13 @@ export function OfflineCover() {
   const [slow, setSlow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  // Every word from the device — online or offline — is checked at once.
+  const [nudge, setNudge] = useState(0);
   useEffect(() => {
-    const update = () => setDeviceOffline(!navigator.onLine);
+    const update = () => {
+      setDeviceOffline(!navigator.onLine);
+      setNudge((n) => n + 1);
+    };
     const first = window.setTimeout(update, 0);
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
@@ -63,39 +70,54 @@ export function OfflineCover() {
     return () => window.removeEventListener(SLOW_EVENT, onSlow);
   }, []);
 
-  // Next.js keeps calling the app offline until its own check gets through.
-  // While the phone says it is online, the cover looks for itself too, every
-  // couple of seconds, with the smallest request the portal answers: one that
-  // arrives is the connection back, whatever became of Next.js's check.
-  const [reached, setReached] = useState(false);
+  // Neither Next.js nor the device is believed on its word. Windows tells
+  // the browser "no network" whenever its own check of Microsoft's test page
+  // fails — behind many providers, all the time, with the internet working —
+  // and the Windows app said "no internet" over a page that was loading fine.
+  // So while either says offline, the cover asks the portal itself, at once
+  // and every couple of seconds, with the smallest request it answers: an
+  // answer is the connection, whatever anybody said; a request that fails at
+  // once is no connection; one that is still out after a few seconds went out
+  // and is waiting — a slow line, not a lost one.
+  const suspected = flagged || deviceOffline;
+  const [reached, setReached] = useState<boolean | null>(null);
   useEffect(() => {
-    if (!flagged) {
-      const reset = window.setTimeout(() => setReached(false), 0);
+    if (!suspected) {
+      const reset = window.setTimeout(() => setReached(null), 0);
       return () => window.clearTimeout(reset);
     }
     let stopped = false;
     const look = () => {
-      if (!navigator.onLine) return;
-      fetch("/manifest.webmanifest", { method: "HEAD", cache: "no-store" }).then(
-        () => {
-          if (!stopped) setReached(true);
-        },
-        () => undefined
-      );
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+      fetch("/manifest.webmanifest", { method: "HEAD", cache: "no-store", signal: controller.signal })
+        .then(
+          () => {
+            if (!stopped) setReached(true);
+          },
+          (error: unknown) => {
+            if (!stopped) setReached(error instanceof DOMException && error.name === "AbortError");
+          }
+        )
+        .finally(() => window.clearTimeout(timeout));
     };
+    look();
     const timer = window.setInterval(look, PROBE_MS);
     return () => {
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [flagged]);
+  }, [suspected, nudge]);
 
   // Offline only once it has lasted; back online the moment it is over, with
-  // a short "connected" — and only if the cover was up at all.
-  const suspect = (flagged && !reached) || deviceOffline;
+  // a short "connected" — and only if the cover was up at all. The device's
+  // own word counts only once the portal has failed to answer too.
+  const suspect = flagged ? reached !== true : deviceOffline && reached === false;
   useEffect(() => {
     if (suspect && !offline) {
-      const confirm = window.setTimeout(() => setOffline(true), deviceOffline ? DEVICE_OFFLINE_MS : CONFIRM_MS);
+      // Device and portal agree there is nothing: said soon. Only Next.js
+      // saying so: said once it has lasted.
+      const confirm = window.setTimeout(() => setOffline(true), deviceOffline && reached === false ? DEVICE_OFFLINE_MS : CONFIRM_MS);
       return () => window.clearTimeout(confirm);
     }
     if (!suspect && offline) {
@@ -105,7 +127,7 @@ export function OfflineCover() {
       }, 0);
       return () => window.clearTimeout(over);
     }
-  }, [suspect, deviceOffline, offline]);
+  }, [suspect, deviceOffline, reached, offline]);
 
   useEffect(() => {
     if (!back) return;

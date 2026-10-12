@@ -44,7 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         socials={shell.socials}
         locale={shell.locale}
         switchHref={nav.switchHref}
-        footer={<SiteFooter schoolName={shell.school?.name ?? null} hideSignIn socials={false} />}
+        footer={<SiteFooter />}
       >
         {children}
       </AppShell>

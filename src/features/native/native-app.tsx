@@ -10,17 +10,12 @@ import { registerWorker } from "@/features/push/client";
 import { pathForAppLink } from "@/lib/native/app";
 
 /**
- * The first Android build with everything the site now expects from the app:
- * the phone's own keyboard connection (captureInput off, build 9), the
- * permissions plugin (build 10), the new icon and splash (build 11) and the
- * keyboard resizing the page instead of panning it (build 12), files
- * saved into Downloads — samples, report cards, an import's result — with
- * Google sign-in saying why it stopped (build 13), no browser-like stretch
- * at the ends of a page (build 15), the one-colour icon (build 17) and the
- * splash that is the opening's shut book, on the night (build 20). An older
- * one is offered the update.
+ * The first Android build that saves files into Downloads (build 13). An
+ * older one is offered the update only when a download is tapped in it —
+ * the one thing it cannot do. Nothing is said about updates when the app
+ * opens: the site is the app, so every change reaches every build anyway.
  */
-const MIN_APP_BUILD = 20;
+const FILES_BUILD = 13;
 
 /** What Capacitor's bridge puts on window, as far as the diagnostics look. */
 interface CapacitorGlobal {
@@ -79,14 +74,7 @@ export function NativeApp() {
         .then((app) => app?.getInfo())
         .catch(() => undefined);
       const build = Number(info?.build);
-      if (Number.isFinite(build) && build > 0 && build < MIN_APP_BUILD && capacitor?.getPlatform?.() === "android") {
-        setOldBuild(true);
-        try {
-          if (sessionStorage.getItem("app-update-dismissed") !== "1") setOutdated(true);
-        } catch {
-          setOutdated(true);
-        }
-      }
+      if (Number.isFinite(build) && build > 0 && build < FILES_BUILD && capacitor?.getPlatform?.() === "android") setOldBuild(true);
       report("boot", {
         app: info?.version ?? null,
         build: info?.build ?? null,
@@ -210,14 +198,7 @@ export function NativeApp() {
       </a>
       <button
         type="button"
-        onClick={() => {
-          setOutdated(false);
-          try {
-            sessionStorage.setItem("app-update-dismissed", "1");
-          } catch {
-            // Shown again next time, which is fine.
-          }
-        }}
+        onClick={() => setOutdated(false)}
         className="-me-1 shrink-0 rounded-md p-1 text-ink-muted hover:bg-surface-muted"
         aria-label={t("later")}
       >

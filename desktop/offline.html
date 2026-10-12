@@ -64,13 +64,16 @@
     var HOME = "https://mtmuraqami7.vercel.app/dashboard";
     function go() { location.href = HOME; }
     document.getElementById("retry").addEventListener("click", go);
-    // Back by itself the moment the phone is online again, and a gentle check
-    // every few seconds for the networks that never announce it.
+    // Back by itself the moment the connection is: a look at the portal every
+    // few seconds, whatever Windows says. Windows reports "no network" whenever
+    // its own check of Microsoft's test page fails — behind many providers
+    // with the internet working — so its word is not waited for.
     window.addEventListener("online", go);
-    setInterval(function () {
-      if (!navigator.onLine) return;
+    function look() {
       fetch(HOME, { method: "HEAD", mode: "no-cors", cache: "no-store" }).then(go, function () {});
-    }, 6000);
+    }
+    setTimeout(look, 1500);
+    setInterval(look, 4000);
   </script>
 </body>
 </html>

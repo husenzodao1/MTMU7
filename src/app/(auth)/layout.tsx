@@ -48,7 +48,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         />
         <div className="w-full max-w-md">{children}</div>
       </main>
-      <SiteFooter hideSignIn />
+      <SiteFooter />
     </div>
   );
 }

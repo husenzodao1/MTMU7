@@ -58,11 +58,12 @@ const nextConfig: NextConfig = {
     // what was asked for is kept and sent again when it is back, and the
     // offline cover (features/native/offline-cover.tsx) reads it.
     useOffline: true,
-    // A page opened in the last half minute opens again at once, from the
-    // phone's memory, instead of asking the server; anything saved in between
+    // A page opened in the last two minutes opens again at once, from the
+    // phone's memory, instead of asking the server — on a slow line that is
+    // the difference between a tap and a wait; anything saved in between
     // clears it (revalidatePath), so nobody sees their own change missing.
     staleTimes: {
-      dynamic: 30,
+      dynamic: 120,
     },
     serverActions: {
       // Book files are uploaded directly to storage from the browser; action

@@ -16,7 +16,7 @@ export default async function PortalLayout({ children }: { children: React.React
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 focus:outline-none sm:py-12">
           {children}
         </main>
-        <SiteFooter hideSignIn />
+        <SiteFooter />
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default async function PortalLayout({ children }: { children: React.React
         socials={shell.socials}
         locale={shell.locale}
         switchHref={nav.switchHref}
-        footer={<SiteFooter schoolName={shell.school?.name ?? null} hideSignIn socials={false} />}
+        footer={<SiteFooter />}
       >
         {children}
       </AppShell>
