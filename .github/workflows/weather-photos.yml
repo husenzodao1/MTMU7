@@ -25,6 +25,6 @@ jobs:
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/photos/sheets src/features/dashboard/weather-photos 2>/dev/null || git add scripts/photos/sheets
+          for path in scripts/photos/sheets src/features/dashboard/weather-photos; do [ -e "$path" ] && git add "$path"; done
           git commit -m "Weather photos fetched [photos-bot]" || exit 0
           git push
