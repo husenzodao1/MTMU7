@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const FEATURES: FeatureKey[] = ["school", "parents", "chat", "support", "trust"];
 
 /**
- * The front door, in two boxes on a quiet ground.
+ * The front door, in two boxes on the night.
  *
  * The first says what this is — the school portal of Istaravshan — and holds
  * the only two things to do here: start, or take the app. The second is what
@@ -39,12 +39,6 @@ export default async function HomePage() {
     <>
       <OfficialStrip />
       <div className="home-ground">
-        <div aria-hidden className="home-aurora">
-          <span />
-          <span />
-          <span />
-        </div>
-
         <section className="mx-auto max-w-3xl px-4 pb-10 pt-12 sm:pt-16">
           <div className="home-box home-enter px-5 py-9 text-center sm:px-10 sm:py-11">
             <p className="home-kicker">{site("schoolSite")}</p>
@@ -68,7 +62,7 @@ export default async function HomePage() {
           <h2 id="features" className="home-heading">
             {t("featuresTitle")}
           </h2>
-          <div className="home-box home-enter-late px-4 py-6 sm:px-8 sm:py-8">
+          <div className="home-box px-3 py-5 sm:px-7 sm:py-7">
             <FeatureTimeline
               items={FEATURES.map((key) => ({ key, title: t(`features.${key}.title`), body: t(`features.${key}.body`) }))}
             />

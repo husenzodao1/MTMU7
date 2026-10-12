@@ -204,7 +204,7 @@ export function NativeApp() {
           own web view drops a download, and builds before 13 have nothing to
           take one. Capacitor sends any address it does not serve itself — the
           same host over http — to the browser, and the site turns it to https. */}
-      <a href={`http://${typeof location === "undefined" ? "" : location.host}/download/android`} className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
+      <a href={`http://${typeof location === "undefined" ? "" : location.host}/download/android`} className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
         {t("action")}
       </a>
       <button

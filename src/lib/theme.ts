@@ -7,7 +7,8 @@
  * is a block of CSS and a line here.
  *
  * `system` writes no attribute at all, which is what leaves the media query in
- * charge — that is the default, and the one most people should stay on.
+ * charge. The default is `night`: the portal is a dark, calm place by design,
+ * and a light page is a choice a person makes in their settings.
  */
 export const THEMES = ["system", "day", "night", "midnight", "verdant", "ocean", "graphite", "lavender"] as const;
 
@@ -20,7 +21,7 @@ export const ADAPTIVE_THEMES: readonly Theme[] = ["ocean", "graphite", "lavender
 
 export type Theme = (typeof THEMES)[number];
 
-export const DEFAULT_THEME: Theme = "system";
+export const DEFAULT_THEME: Theme = "night";
 
 export function isTheme(value: unknown): value is Theme {
   return typeof value === "string" && (THEMES as readonly string[]).includes(value);

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Bad_Script, Cormorant_Unicase, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
+import { Bad_Script, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
 import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { OfflineCover } from "@/features/native/offline-cover";
@@ -23,8 +23,8 @@ const notoSans = Noto_Sans({
 
 /**
  * For the few lines that are meant to be looked at rather than read through:
- * the front page's title, its section headings, the school's name in the
- * footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
+ * the front page's title, page titles, the dashboard's greeting, the opening,
+ * the school's name in the footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
  * most display faces do not, so the letters that make the language its own do
  * not fall back to a different font mid-word.
  */
@@ -48,19 +48,6 @@ const greeting = Bad_Script({
   display: "swap",
   preload: false,
   variable: "--font-greeting",
-});
-
-/**
- * The school's name on its crest: a unicase, where capitals and small letters
- * share one height, the way a name is cut into a seal. Checked for the whole
- * Tajik alphabet for the same reason as above.
- */
-const unicase = Cormorant_Unicase({
-  subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: ["600", "700"],
-  display: "swap",
-  preload: false,
-  variable: "--font-crest",
 });
 
 /**
@@ -95,7 +82,8 @@ export const viewport: Viewport = {
   // The keyboard shrinks the page rather than covering it, so a chat's
   // composer stays above the keyboard on Android as it does on an iPhone.
   interactiveWidget: "resizes-content",
-  themeColor: "#c4861c",
+  // The night canvas, so the browser's and the phone's bars belong to the page.
+  themeColor: "#0a0e17",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -130,7 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page opens with the pupil and the greeting (src/features/intro/):
+  // The first page opens with the school's mark and a greeting (src/features/intro/):
   // on the site once per browser (a year's cookie), in the app on its first
   // start (the page skips it after that), never for robots — and not on the
   // first page after signing in, which has a short welcome of its own.
@@ -148,7 +136,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={isAppUserAgent(userAgent) ? "" : undefined}
-      className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${unicase.variable} ${mark.variable} ${mono.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (

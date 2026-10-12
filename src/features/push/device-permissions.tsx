@@ -366,7 +366,7 @@ function PermissionRow({
           type="button"
           onClick={onAsk}
           disabled={busy}
-          className="shrink-0 rounded-full bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover disabled:opacity-60"
+          className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover disabled:opacity-60"
         >
           {words.allow}
         </button>

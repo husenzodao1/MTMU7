@@ -149,7 +149,7 @@ function DrawerFooter() {
                 ))}
               </tbody>
             </table>
-            <DialogPrimitive.Close className="mt-4 inline-flex h-9 min-w-24 items-center justify-center rounded-full bg-brand-solid px-5 text-xs font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
+            <DialogPrimitive.Close className="mt-4 inline-flex h-9 min-w-24 items-center justify-center rounded-md bg-brand-solid px-5 text-xs font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
               {t("aboutClose")}
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>

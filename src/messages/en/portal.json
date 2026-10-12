@@ -93,6 +93,12 @@
         "news": "News",
         "event": "Event",
         "all": "All"
+      },
+      "primary": {
+        "admin": "Control center",
+        "teacher": "Today’s lessons",
+        "student": "Timetable",
+        "parent": "My children"
       }
     },
     "lessons": {

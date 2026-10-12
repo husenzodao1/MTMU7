@@ -3,7 +3,7 @@
   "appName": "МТМУ №7",
   "webDir": "www",
   "appendUserAgent": "MTMU7App",
-  "backgroundColor": "#17306d",
+  "backgroundColor": "#0a0e17",
   "loggingBehavior": "none",
   "server": {
     "url": "https://mtmuraqami7.vercel.app/dashboard",

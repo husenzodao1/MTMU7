@@ -5,293 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>МТМУ №7</title>
   <style>
+    /* The portal's night canvas and brass (src/styles/globals.css), still. */
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
     body {
       display: grid; place-items: center; text-align: center;
       padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
-      background:
-        radial-gradient(60% 45% at 50% 34%, rgb(255 181 71 / 0.22), transparent 70%),
-        linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
-      color: #f4f6fb; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #0a0e17;
+      color: #eee9df; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
     main { max-width: 320px; }
-    .offline-picture { width: 180px; height: auto; overflow: visible; margin: 0 auto 18px; display: block; }
-    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
-    p { margin: 0 0 4px; color: #c9d3e6; font-size: 14px; }
-    .muted { color: #93a3c2; font-size: 13px; }
+    .icon {
+      display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 20px;
+      border: 1px solid #313c52; border-radius: 999px; color: #d9be8c;
+    }
+    .icon svg { width: 24px; height: 24px; }
+    h1 { margin: 0 0 6px; font-size: 19px; font-weight: 600; }
+    p { margin: 0 0 4px; color: #babec9; font-size: 14px; }
+    .muted { color: #8a93a6; font-size: 13px; }
     button {
-      margin-top: 24px; border: 0; border-radius: 999px; padding: 13px 30px;
-      background: #ffffff; color: #17306d; font: inherit; font-weight: 650; cursor: pointer;
-      box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+      margin-top: 24px; min-height: 44px; padding: 0 24px; border: 1px solid #a58550; border-radius: 8px;
+      background: #c8a46a; color: #15110a; font: inherit; font-weight: 600; cursor: pointer;
     }
-    button:active { transform: scale(0.98); }
-    .waiting { margin-top: 14px; font-size: 12px; color: #93a3c2; }
-    /* The same picture as the portal's offline cover (src/styles/motion.css, "no connection"). */
-    .offline-dim {
-      stroke: rgb(255 255 255 / 0.16);
-    }
-    .offline-lit {
-      stroke: #ffd25a;
-      opacity: 0;
-    }
-    .offline-dot {
-      fill: #fff;
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: offline-dot 5.2s ease-in-out infinite;
-    }
-    .offline-arc-1 .offline-lit {
-      animation: offline-lit-1 5.2s ease infinite;
-    }
-    .offline-arc-2 .offline-lit {
-      animation: offline-lit-2 5.2s ease infinite;
-    }
-    .offline-arc-3 .offline-lit {
-      animation: offline-lit-3 5.2s ease infinite;
-    }
-    @keyframes offline-lit-1 {
-      0%,
-      4% {
-        opacity: 0;
-        stroke: #ffd25a;
-      }
-      8%,
-      29% {
-        opacity: 1;
-        stroke: #ffd25a;
-      }
-      33% {
-        opacity: 1;
-        stroke: #ff6b6b;
-      }
-      42%,
-      100% {
-        opacity: 0;
-        stroke: #ff6b6b;
-      }
-    }
-    @keyframes offline-lit-2 {
-      0%,
-      10% {
-        opacity: 0;
-        stroke: #ffd25a;
-      }
-      14%,
-      29% {
-        opacity: 1;
-        stroke: #ffd25a;
-      }
-      33% {
-        opacity: 1;
-        stroke: #ff6b6b;
-      }
-      42%,
-      100% {
-        opacity: 0;
-        stroke: #ff6b6b;
-      }
-    }
-    @keyframes offline-lit-3 {
-      0%,
-      16% {
-        opacity: 0;
-        stroke: #ffd25a;
-      }
-      20%,
-      29% {
-        opacity: 1;
-        stroke: #ffd25a;
-      }
-      33% {
-        opacity: 1;
-        stroke: #ff6b6b;
-      }
-      42%,
-      100% {
-        opacity: 0;
-        stroke: #ff6b6b;
-      }
-    }
-    
-    .offline-half {
-      transform-box: view-box;
-      transform-origin: 100px 150px;
-    }
-    .offline-half-left {
-      animation: offline-break-left 5.2s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
-    }
-    .offline-half-right {
-      animation: offline-break-right 5.2s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
-    }
-    .offline-arc-2 .offline-half {
-      animation-delay: 0.04s;
-    }
-    .offline-arc-1 .offline-half {
-      animation-delay: 0.08s;
-    }
-    @keyframes offline-break-left {
-      0%,
-      30%,
-      100% {
-        transform: none;
-        opacity: 1;
-      }
-      40%,
-      84% {
-        transform: translate(-6px, 14px) rotate(-16deg);
-        opacity: 0.55;
-      }
-      94% {
-        transform: none;
-        opacity: 1;
-      }
-    }
-    @keyframes offline-break-right {
-      0%,
-      30%,
-      100% {
-        transform: none;
-        opacity: 1;
-      }
-      40%,
-      84% {
-        transform: translate(6px, 18px) rotate(19deg);
-        opacity: 0.55;
-      }
-      94% {
-        transform: none;
-        opacity: 1;
-      }
-    }
-    @keyframes offline-dot {
-      0%,
-      24%,
-      100% {
-        transform: scale(1);
-      }
-      12% {
-        transform: scale(1.25);
-      }
-      31% {
-        transform: translateY(3px) scale(1.2, 0.8);
-      }
-      36% {
-        transform: none;
-      }
-    }
-    .offline-cap {
-      transform-box: view-box;
-      transform-origin: 100px 64px;
-      animation: offline-cap 5.2s infinite;
-    }
-    @keyframes offline-cap {
-      0%,
-      23% {
-        opacity: 0;
-        transform: translateY(-150px) rotate(-24deg);
-        animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
-      }
-      24% {
-        opacity: 1;
-        transform: translateY(-150px) rotate(-24deg);
-        animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
-      }
-      30% {
-        opacity: 1;
-        transform: translateY(6px) rotate(4deg) scale(1.08, 0.86);
-      }
-      34% {
-        transform: translateY(-8px) rotate(-3deg);
-      }
-      38%,
-      80% {
-        opacity: 1;
-        transform: translateY(0) rotate(-2deg);
-      }
-      84% {
-        opacity: 1;
-        transform: translateY(-14px) rotate(-8deg);
-      }
-      92%,
-      100% {
-        opacity: 0;
-        transform: translateY(-40px) rotate(-14deg);
-      }
-    }
-    .offline-crack {
-      stroke: #ff8a8a;
-      stroke-dasharray: 80;
-      stroke-dashoffset: 80;
-      animation: offline-crack 5.2s ease-out infinite;
-    }
-    @keyframes offline-crack {
-      0%,
-      30% {
-        stroke-dashoffset: 80;
-        opacity: 1;
-      }
-      36%,
-      78% {
-        stroke-dashoffset: 0;
-        opacity: 1;
-      }
-      88%,
-      100% {
-        stroke-dashoffset: 0;
-        opacity: 0;
-      }
-    }
-    .offline-dust circle {
-      fill: rgb(255 255 255 / 0.8);
-      opacity: 0;
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: offline-dust 5.2s ease-out infinite;
-    }
-    .offline-dust circle:nth-child(odd) {
-      --dx: -14px;
-    }
-    .offline-dust circle:nth-child(even) {
-      --dx: 14px;
-    }
-    @keyframes offline-dust {
-      0%,
-      29% {
-        opacity: 0;
-        transform: none;
-      }
-      31% {
-        opacity: 1;
-      }
-      44%,
-      100% {
-        opacity: 0;
-        transform: translate(var(--dx), -12px) scale(0.4);
-      }
-    }
-    @media (prefers-reduced-motion: reduce) { .offline-picture * { animation: none !important; } .offline-cap { opacity: 1; } }
+    button:focus-visible { outline: 2px solid #d9be8c; outline-offset: 2px; }
+    .waiting { margin-top: 14px; font-size: 12px; color: #8a93a6; }
   </style>
 </head>
 <body>
   <main>
-      <svg viewBox="0 0 200 190" class="offline-picture" aria-hidden="true">
-        <g fill="none" stroke-width="11" stroke-linecap="round">
-          <g class="offline-arc offline-arc-1"><g class="offline-half offline-half-left"><path class="offline-dim" d="M78.6 132A28 28 0 0 1 100 122"/><path class="offline-lit" d="M78.6 132A28 28 0 0 1 100 122"/></g><g class="offline-half offline-half-right"><path class="offline-dim" d="M100 122A28 28 0 0 1 121.4 132"/><path class="offline-lit" d="M100 122A28 28 0 0 1 121.4 132"/></g></g>
-          <g class="offline-arc offline-arc-2"><g class="offline-half offline-half-left"><path class="offline-dim" d="M60.2 116.6A52 52 0 0 1 100 98"/><path class="offline-lit" d="M60.2 116.6A52 52 0 0 1 100 98"/></g><g class="offline-half offline-half-right"><path class="offline-dim" d="M100 98A52 52 0 0 1 139.8 116.6"/><path class="offline-lit" d="M100 98A52 52 0 0 1 139.8 116.6"/></g></g>
-          <g class="offline-arc offline-arc-3"><g class="offline-half offline-half-left"><path class="offline-dim" d="M41.8 101.1A76 76 0 0 1 100 74"/><path class="offline-lit" d="M41.8 101.1A76 76 0 0 1 100 74"/></g><g class="offline-half offline-half-right"><path class="offline-dim" d="M100 74A76 76 0 0 1 158.2 101.1"/><path class="offline-lit" d="M100 74A76 76 0 0 1 158.2 101.1"/></g></g>
-        </g>
-        <circle class="offline-dot" cx="100" cy="150" r="9"/>
-        <path class="offline-crack" d="M100 70 L94 86 L105 98 L96 114 L104 124" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-        <g class="offline-dust"><circle cx="70" cy="72" r="2.4"/><circle cx="128" cy="70" r="2"/><circle cx="84" cy="62" r="1.6"/><circle cx="118" cy="60" r="1.8"/></g>
-        <g class="offline-cap">
-          <path d="M80 56 L80 68 Q100 78 120 68 L120 56 Z" fill="#26386a"/>
-          <path d="M100 34 L144 49 L100 64 L56 49 Z" fill="#1c2950" stroke="#3a4f8f" stroke-width="1.4"/>
-          <path d="M100 49 L136 52 L137 70" fill="none" stroke="#f5c542" stroke-width="2" stroke-linecap="round"/>
-          <path d="M133.5 68 L140.5 68 L141.5 79 L132.5 79 Z" fill="#f5c542"/>
-          <circle cx="100" cy="49" r="2.8" fill="#f5c542"/>
-        </g>
+    <span class="icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/>
       </svg>
+    </span>
     <h1>Пайвасти интернет нест</h1>
     <p>Пайвастро санҷед — барнома худаш бармегардад.</p>
     <p class="muted">Нет подключения к интернету · No connection</p>

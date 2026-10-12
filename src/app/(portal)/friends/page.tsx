@@ -100,7 +100,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
             <Card as="div"><EmptyState icon={<Users />} title={t("noResults")} /></Card>
           ) : (
             <Card as="div">
-              <ul className="stagger-in divide-y divide-line">
+              <ul className="divide-y divide-line">
                 {found.map((person) => (
                   <li key={person.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                     {personLine(person)}
@@ -125,7 +125,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
       ) : (
         <Card as="div">
           <CardBody className="p-0">
-            <ul className="stagger-in divide-y divide-line">
+            <ul className="divide-y divide-line">
               {list.map((row) => (
                 <li key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   {personLine(row.person)}

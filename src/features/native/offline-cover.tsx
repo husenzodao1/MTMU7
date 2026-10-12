@@ -2,9 +2,8 @@
 
 import { useOffline } from "next/offline";
 import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
+import { Wifi, WifiOff, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { OfflinePicture } from "@/features/native/offline-picture";
 
 /** Sent by the loading screen (route-skeleton.tsx) when a page has been on its way too long. */
 export const SLOW_EVENT = "mtmu7:slow";
@@ -23,10 +22,9 @@ const DEVICE_OFFLINE_MS = 1200;
 const PROBE_MS = 2000;
 
 /**
- * The cover over the page when the internet has really gone: the Wi-Fi sign
- * trying to connect, a graduation cap falling on it and breaking it
- * (offline-picture.tsx), and what is going on in words. It goes away by
- * itself, after a short "connected", when the internet returns.
+ * The cover over the page when the internet has really gone: a still Wi-Fi
+ * sign and what is going on in plain words. It goes away by itself, after a
+ * short "connected", when the internet returns.
  *
  * Next.js notices the connection (experimental.useOffline) and keeps whatever
  * was asked for meanwhile, sending it again once the connection is back.
@@ -139,7 +137,9 @@ export function OfflineCover() {
   return (
     <div className="offline-cover" data-mode={offline ? "offline" : "back"} role="alert" aria-live="assertive">
       <div className="offline-body">
-        <OfflinePicture back={!offline} />
+        <span className="offline-icon" aria-hidden>
+          {offline ? <WifiOff /> : <Wifi />}
+        </span>
         <p className="offline-title">{offline ? t("title") : t("back")}</p>
         {offline ? <p className="offline-text">{t("text")}</p> : null}
         {offline ? (

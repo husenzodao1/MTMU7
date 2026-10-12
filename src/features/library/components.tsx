@@ -1,4 +1,4 @@
-import { BookLink } from "@/features/library/book-link";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,27 +18,17 @@ export interface BookCardItem {
 export async function BookGrid({ items }: { items: BookCardItem[] }) {
   const t = await getTranslations("portal.library");
   return (
-    <ul className="stagger-in grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {items.map((book) => (
         <li key={book.id}>
-          <BookLink href={`/library/${book.id}`} className="book-card group flex h-full flex-col rounded-xl border border-line bg-surface p-3 shadow-xs hover:border-brand-300 focus-visible:border-brand-600">
-            {/* The book itself: pages inside, two leaves to riffle, and the cover over them. */}
-            <div className="book-3d mb-3 aspect-[3/4]">
-              <div className="book-pages" aria-hidden>
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="book-leaf book-leaf-1" aria-hidden />
-              <div className="book-leaf book-leaf-2" aria-hidden />
-              <div className="book-cover flex items-center justify-center overflow-hidden rounded-md bg-surface-muted">
-                {book.cover_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- cover served through a short-lived signed URL
-                  <img src={`/files/covers/${book.id}`} alt="" className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <BookOpen className="size-10 text-ink-muted" aria-hidden />
-                )}
-              </div>
+          <Link href={`/library/${book.id}`} className="group flex h-full flex-col rounded-xl border border-line bg-surface p-3 transition-colors hover:border-line-strong focus-visible:border-brand-solid">
+            <div className="mb-3 flex aspect-[3/4] items-center justify-center overflow-hidden rounded-md bg-surface-muted">
+              {book.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- cover served through a short-lived signed URL
+                <img src={`/files/covers/${book.id}`} alt="" className="h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <BookOpen className="size-10 text-ink-muted" aria-hidden />
+              )}
             </div>
             <p className="line-clamp-2 font-medium leading-snug text-ink group-hover:text-brand-text">{book.title}</p>
             {book.author ? <p className="mt-0.5 line-clamp-1 text-sm text-ink-secondary">{book.author}</p> : null}
@@ -50,7 +40,7 @@ export async function BookGrid({ items }: { items: BookCardItem[] }) {
                 </Badge>
               ) : null}
             </div>
-          </BookLink>
+          </Link>
         </li>
       ))}
     </ul>

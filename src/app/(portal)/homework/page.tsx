@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { NotebookPen } from "lucide-react";
 import { ChildSwitcher } from "@/features/academic/child-switcher";
 import { resolveStudentContext } from "@/features/academic/student-context";
-import { toneFor, WarmCard } from "@/features/academic/warm-card";
+import { WorkCard } from "@/features/academic/work-card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { TabNav } from "@/components/ui/misc";
@@ -96,23 +96,22 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
             {t("journalTitle")}
           </h2>
           <p className="mb-3 text-sm text-ink-muted">{t("journalHint")}</p>
-          <ul className="warm-list stagger-in">
+          <ul className="work-list">
             {journal.map((line) => {
               const subject = pickName(line.class_subjects.subjects, locale);
               return (
-                <WarmCard
+                <WorkCard
                   key={line.id}
-                  tone={toneFor(subject)}
                   eyebrow={
                     <>
-                      <span className="warm-chip">{subject}</span>
+                      <span className="work-chip">{subject}</span>
                       <span className="tabular">{formatDate(line.lesson_date, locale)}</span>
                     </>
                   }
                   title={line.topic}
                 >
                   <p className="whitespace-pre-line">{line.homework}</p>
-                </WarmCard>
+                </WorkCard>
               );
             })}
           </ul>
@@ -123,13 +122,12 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
           <EmptyState icon={<NotebookPen />} title={t("nothingDue")} />
         </Card>
       ) : (
-        <ul className="warm-list stagger-in" aria-label={t("title")}>
+        <ul className="work-list" aria-label={t("title")}>
           {rows.map((r) => (
-            <WarmCard
+            <WorkCard
               key={r.id}
-              tone={toneFor(r.subject)}
               href={`/homework/${r.id}${childQuery}`}
-              eyebrow={<span className="warm-chip">{r.subject}</span>}
+              eyebrow={<span className="work-chip">{r.subject}</span>}
               title={r.title}
               side={<StatusBadge status={r.status} label={ts(r.status)} />}
             >
@@ -141,7 +139,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
               <p className="tabular">
                 {t("dueLabel")}: {r.dueAt ? formatDateTime(r.dueAt, locale) : "—"}
               </p>
-            </WarmCard>
+            </WorkCard>
           ))}
         </ul>
       )}

@@ -8,7 +8,7 @@ import type { StudentOverview } from "@/features/academic/queries";
 import { lessonMoments } from "@/features/academic/lesson-time";
 import { CalendarDays, NotebookPen, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { toneFor, WarmCard } from "@/features/academic/warm-card";
+import { WorkCard } from "@/features/academic/work-card";
 
 /**
  * A pupil's lessons today, each at its bell, with the one under way and the
@@ -58,24 +58,23 @@ export async function HomeworkDueList({ items, hrefBase = "/homework" }: { items
   const tc = await getTranslations("common.status");
   if (items.length === 0) return <EmptyState icon={<NotebookPen />} title={t("nothingDue")} className="py-6" />;
   return (
-    <ul className="warm-list stagger-in">
+    <ul className="work-list">
       {items.map((item) => {
         const overdue = item.due_at ? new Date(item.due_at).getTime() < getRequestTime() : false;
         const subject = pickText({ tg: item.subject_tg, ru: item.subject_ru, en: item.subject_en }, locale);
         return (
-          <WarmCard
+          <WorkCard
             key={item.id}
             compact
-            tone={toneFor(subject)}
             href={`${hrefBase}/${item.id}`}
-            eyebrow={<span className="warm-chip">{subject}</span>}
+            eyebrow={<span className="work-chip">{subject}</span>}
             title={item.title}
             side={item.submission_status ? <StatusBadge status={item.submission_status} label={tc(item.submission_status)} /> : null}
           >
             {item.due_at ? (
-              <p className={cn("tabular", overdue && "warm-overdue")}>{t("due", { date: formatDateTime(item.due_at, locale) })}</p>
+              <p className={cn("tabular", overdue && "work-overdue")}>{t("due", { date: formatDateTime(item.due_at, locale) })}</p>
             ) : null}
-          </WarmCard>
+          </WorkCard>
         );
       })}
     </ul>

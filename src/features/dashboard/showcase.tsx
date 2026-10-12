@@ -83,6 +83,9 @@ function Row({ cards, kind, direction }: { cards: ShowcaseCard[]; kind: Showcase
  */
 export function Showcase({ announcements, news, events }: { announcements: ShowcaseCard[]; news: ShowcaseCard[]; events: ShowcaseCard[] }) {
   const t = useTranslations("portal.dashboard.showcase");
+  // What the school needs read comes first in its row: urgent, then important.
+  const rank = (card: ShowcaseCard) => (card.tone === "critical" ? 0 : card.tone === "important" ? 1 : 2);
+  announcements = [...announcements].sort((a, b) => rank(a) - rank(b));
   return (
     <section className="showcase" aria-labelledby="showcase-title">
       <h2 id="showcase-title" className="showcase-title">
