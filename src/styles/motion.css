@@ -8,376 +8,49 @@
  * (the last section).
  */
 
-/* ------------------------------------------------------------------ the sky */
+/* ------------------------------------------------------- the greeting's sky */
 
 /*
- * sky-scene.tsx. The card (globals.css, .greeting-card) paints the sky's
- * colours for the hour; this draws what is in it. The land is pinned to the
- * card's right and bottom, the stars and the weather cover all of it.
+ * weather-photo.tsx: a photograph of the sky for the hour and the weather,
+ * filling the card. It drifts very slowly closer and back; a shade darkens it
+ * most behind the words, on the left, and towards the foot, and a soft
+ * vignette rounds it off. While the photograph is on its way, the card's own
+ * colours for the hour (globals.css, .greeting-card) show, and Next.js lays
+ * a blurred copy over them first.
  */
-.greeting-card {
-  --sky-sun-glow: #ffd27a;
-  --sky-sun-mid: #ffc24a;
-  --sky-sun-edge: #ff8f3a;
-  --sky-hill-back: #20304f;
-  --sky-hill-front: #16223a;
-  --sky-grass: #2c4058;
-  --sky-cloud: rgb(255 255 255 / 0.2);
-}
-.greeting-card[data-part="morning"] {
-  --sky-sun-glow: #ffcf7d;
-  --sky-sun-mid: #ffb658;
-  --sky-sun-edge: #ff7a45;
-  --sky-hill-back: #33476f;
-  --sky-hill-front: #24395c;
-  --sky-grass: #6aa483;
-}
-.greeting-card[data-part="day"] {
-  --sky-sun-glow: #fff1b8;
-  --sky-sun-mid: #ffd75e;
-  --sky-sun-edge: #ffb53d;
-  --sky-hill-back: #23628a;
-  --sky-hill-front: #1a4d73;
-  --sky-grass: #63b08f;
-  --sky-cloud: rgb(255 255 255 / 0.32);
-}
-.greeting-card[data-part="evening"] {
-  --sky-sun-glow: #ff9a5c;
-  --sky-sun-mid: #ff8a4a;
-  --sky-sun-edge: #e2453a;
-  --sky-hill-back: #4a2b52;
-  --sky-hill-front: #331f3f;
-  --sky-grass: #8f5d80;
-}
-.greeting-card[data-part="night"] {
-  --sky-hill-back: #1b2943;
-  --sky-hill-front: #121d33;
-  --sky-grass: #3a5276;
-  --sky-cloud: rgb(200 210 235 / 0.14);
-}
-
-.sky {
+.photo-sky {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  container-type: size;
+  border-radius: inherit;
 }
-/* The weather greys the sky before anything is drawn in it. */
-.sky::before {
-  content: "";
+.photo-sky-img {
+  object-fit: cover;
+  scale: 1.04;
+  animation: photo-drift 48s ease-in-out infinite alternate;
+}
+@keyframes photo-drift {
+  to {
+    scale: 1.12;
+    translate: -1.5% -1%;
+  }
+}
+.photo-sky-shade {
   position: absolute;
   inset: 0;
-  opacity: 0;
-  background: linear-gradient(180deg, rgb(52 62 82 / 0.62), rgb(26 32 46 / 0.28));
-  transition: opacity 1.2s ease;
+  background:
+    linear-gradient(90deg, rgb(6 9 22 / 0.74) 0%, rgb(6 9 22 / 0.46) 45%, rgb(6 9 22 / 0.2) 100%),
+    linear-gradient(0deg, rgb(6 9 22 / 0.55) 0%, transparent 60%),
+    radial-gradient(130% 110% at 65% 35%, transparent 45%, rgb(0 0 0 / 0.35) 100%);
 }
-.sky:is([data-weather="cloudy"], [data-weather="fog"], [data-weather="drizzle"])::before {
-  opacity: 0.55;
-}
-.sky:is([data-weather="rain"], [data-weather="snow"])::before {
-  opacity: 0.8;
-}
-.sky[data-weather="storm"]::before {
-  opacity: 1;
-}
-
-.sky-stars,
-.sky-land {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-/* The land stays to the right, under the text's empty side. */
-.sky-land {
-  left: auto;
-  width: min(100%, 34rem);
-}
-
-.sky-star {
-  fill: #fff;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.sky-star-1 {
-  animation: sky-twinkle 2.8s ease-in-out infinite;
-}
-.sky-star-2 {
-  animation: sky-twinkle 4.1s ease-in-out infinite;
+/* Night photographs are dark already; the shade lightens its hand. */
+.photo-sky:is([data-photo="clear-night"], [data-photo="night-clouds"], [data-photo="rain-night"], [data-photo="snow-night"], [data-photo="storm"]) .photo-sky-shade {
   opacity: 0.7;
 }
-.sky-star-3 {
-  animation: sky-twinkle 5.6s ease-in-out infinite;
-  opacity: 0.45;
-}
-[data-part="evening"] .sky-star {
-  fill: #ffe9d6;
-}
-[data-part="evening"] .sky-stars {
-  opacity: 0.45;
-  mask-image: linear-gradient(180deg, #000 0%, transparent 55%);
-}
-@keyframes sky-twinkle {
-  0%,
-  100% {
-    opacity: 0.18;
-    transform: scale(0.7);
-  }
-  45% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  60% {
-    opacity: 0.8;
-    transform: scale(1);
-  }
-}
-.sky-falling {
-  opacity: 0;
-  transform-box: fill-box;
-  animation: sky-fall 9s ease-in infinite 2.5s;
-}
-@keyframes sky-fall {
-  0%,
-  88% {
-    opacity: 0;
-    transform: translate(250px, 18px) rotate(-24deg);
-  }
-  90% {
-    opacity: 1;
-  }
-  97% {
-    opacity: 0;
-    transform: translate(150px, 62px) rotate(-24deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(150px, 62px) rotate(-24deg);
-  }
-}
 
-/* The sun: a glow that breathes, rays that turn, a disc. */
-.sky-sun-glow {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-breathe 5s ease-in-out infinite;
-}
-.sky-sun-rays {
-  /* The rays stand evenly round the disc, so their box is centred on it. */
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-turn 48s linear infinite;
-}
-@keyframes sky-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes sky-breathe {
-  0%,
-  100% {
-    transform: scale(0.94);
-    opacity: 0.85;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-}
-/* In the morning it climbs out from behind the hills as the card appears. */
-[data-part="morning"] .sky-sun {
-  animation: sky-sunrise 3.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-@keyframes sky-sunrise {
-  from {
-    transform: translateY(52px);
-  }
-}
-/* In the evening it is sinking, slowly. */
-[data-part="evening"] .sky-sun {
-  animation: sky-sunset 40s ease-in-out infinite alternate;
-}
-@keyframes sky-sunset {
-  to {
-    transform: translateY(10px);
-  }
-}
-[data-part="evening"] .sky-sun-rays {
-  opacity: 0.5;
-}
-/* Under clouds the sun is only a paler disc. */
-.sky:is([data-weather="cloudy"], [data-weather="rain"], [data-weather="storm"], [data-weather="snow"], [data-weather="fog"], [data-weather="drizzle"]) :is(.sky-sun, .sky-moon) {
-  opacity: 0.38;
-}
-.sky:is([data-weather="cloudy"], [data-weather="rain"], [data-weather="storm"], [data-weather="snow"], [data-weather="fog"], [data-weather="drizzle"]) .sky-sun-rays {
-  display: none;
-}
-
-.sky-moon-halo {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-breathe 6s ease-in-out infinite;
-}
-
-.sky-hill-back {
-  fill: var(--sky-hill-back);
-  stroke: rgb(255 255 255 / 0.07);
-  stroke-width: 1;
-}
-.sky-hill-front {
-  fill: var(--sky-hill-front);
-  stroke: rgb(255 255 255 / 0.1);
-  stroke-width: 1;
-}
-.sky-blade {
-  stroke: var(--sky-grass);
-  stroke-width: 1.7;
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: sky-sway var(--sway, 2.6s) ease-in-out infinite alternate;
-}
-@keyframes sky-sway {
-  from {
-    transform: rotate(-5deg);
-  }
-  to {
-    transform: rotate(9deg);
-  }
-}
-.sky-tulip {
-  stroke: none;
-}
-.sky-tulip-stem {
-  fill: none;
-  stroke: var(--sky-grass);
-  stroke-width: 1.3;
-}
-.sky-tulip-red {
-  fill: #ef5b5b;
-}
-.sky-tulip-gold {
-  fill: #f5c542;
-}
-[data-part="evening"] :is(.sky-tulip-red, .sky-tulip-gold) {
-  fill-opacity: 0.6;
-}
-/* The morning breeze pushes the grass over in waves; a strong wind, harder. */
-[data-part="morning"] .sky-blade {
-  animation-name: sky-push;
-}
-.sky[data-windy] .sky-blade {
-  animation-name: sky-gale;
-  animation-duration: calc(var(--sway, 2.6s) * 0.55);
-}
-@keyframes sky-push {
-  0% {
-    transform: rotate(-3deg);
-  }
-  55% {
-    transform: rotate(16deg);
-  }
-  100% {
-    transform: rotate(2deg);
-  }
-}
-@keyframes sky-gale {
-  from {
-    transform: rotate(8deg);
-  }
-  to {
-    transform: rotate(26deg);
-  }
-}
-
-.sky-wind path {
-  stroke: rgb(255 255 255 / 0.55);
-  stroke-width: 1.3;
-  stroke-dasharray: 34 160;
-  stroke-dashoffset: 200;
-  opacity: 0;
-  animation: sky-gust 4.8s ease-in-out infinite;
-}
-.sky[data-windy] .sky-wind path {
-  animation-duration: 2.6s;
-}
-@keyframes sky-gust {
-  0% {
-    stroke-dashoffset: 200;
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.9;
-  }
-  70% {
-    opacity: 0.6;
-  }
-  100% {
-    stroke-dashoffset: -60;
-    opacity: 0;
-  }
-}
-
-.sky-flock {
-  color: rgb(255 255 255 / 0.75);
-}
-[data-part="evening"] .sky-flock {
-  color: rgb(30 18 36 / 0.85);
-}
-.sky-birds {
-  animation: sky-flight 22s linear infinite;
-}
-@keyframes sky-flight {
-  from {
-    transform: translate(160px, 6px);
-  }
-  to {
-    transform: translate(-300px, -18px);
-  }
-}
-.sky-bird {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-flap 0.62s ease-in-out infinite alternate;
-}
-@keyframes sky-flap {
-  to {
-    transform: scaleY(-0.55);
-  }
-}
-
-/* Clouds drift right to left across the whole card, each at its own height and pace. */
-.sky-clouds {
-  position: absolute;
-  inset: 0;
-}
-.sky-cloud {
-  position: absolute;
-  top: var(--top);
-  left: 100%;
-  width: 7.5rem;
-  fill: var(--sky-cloud);
-  scale: var(--scale);
-  animation: sky-drift var(--dur) linear infinite;
-}
-.sky:is([data-weather="rain"], [data-weather="storm"], [data-weather="drizzle"]) .sky-cloud {
-  fill: rgb(150 162 182 / 0.5);
-}
-.sky[data-weather="cloudy"] .sky-cloud {
-  fill: rgb(214 222 236 / 0.34);
-}
-.sky[data-windy] .sky-cloud {
-  animation-duration: calc(var(--dur) * 0.4);
-}
-@keyframes sky-drift {
-  to {
-    transform: translateX(calc(-100cqw - 9rem));
-  }
-}
-
-/* Rain in two depths: near drops longer and quicker than far ones. */
-.sky-rain,
+/* Snow keeps falling over its photograph, fog drifts, a storm flashes now and then. */
 .sky-snow,
 .sky-fog,
 .sky-storm {
@@ -385,37 +58,15 @@
   inset: 0;
   overflow: hidden;
 }
-.sky-rain i,
+/* Over a photograph the flakes keep to a whisper, so the greeting stays clear. */
+.sky-snow {
+  opacity: 0.5;
+}
 .sky-snow i {
   position: absolute;
   inset: -120px -40px 0 -40px;
   background-repeat: repeat;
 }
-.sky-rain i:nth-child(1) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='60'%3E%3Cg stroke='%23dbe7ff' stroke-opacity='0.55' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M10 4 l-4 14'/%3E%3Cpath d='M34 30 l-4 14'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 48px 60px;
-  animation: sky-rain-near 0.55s linear infinite;
-}
-.sky-rain i:nth-child(2) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='50'%3E%3Cg stroke='%23c9d8f5' stroke-opacity='0.35' stroke-width='1' stroke-linecap='round'%3E%3Cpath d='M22 6 l-2.5 9'/%3E%3Cpath d='M6 30 l-2.5 9'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 40px 50px;
-  animation: sky-rain-far 0.85s linear infinite;
-}
-.sky-rain[data-light] i:nth-child(1) {
-  opacity: 0.5;
-  animation-duration: 0.9s;
-}
-@keyframes sky-rain-near {
-  to {
-    transform: translate3d(-16px, 60px, 0);
-  }
-}
-@keyframes sky-rain-far {
-  to {
-    transform: translate3d(-10px, 50px, 0);
-  }
-}
-
 .sky-snow i:nth-child(1) {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='12' cy='10' r='2.2' fill-opacity='0.9'/%3E%3Ccircle cx='48' cy='34' r='1.7' fill-opacity='0.8'/%3E%3Ccircle cx='26' cy='58' r='2.4' fill-opacity='0.85'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 70px 70px;
@@ -474,7 +125,6 @@
   }
 }
 
-/* A storm: the card lights up now and then, and a bolt shows for a blink. */
 .sky-storm {
   animation: sky-flash 7s linear infinite;
 }
@@ -488,35 +138,12 @@
   }
   87%,
   90.5% {
-    background: rgb(220 232 255 / 0.32);
-  }
-}
-.sky-bolt {
-  position: absolute;
-  top: 6%;
-  right: 22%;
-  width: 1.6rem;
-  fill: #fff4c2;
-  opacity: 0;
-  filter: drop-shadow(0 0 6px rgb(255 240 180 / 0.9));
-  animation: sky-bolt 7s linear infinite;
-}
-@keyframes sky-bolt {
-  0%,
-  86.5%,
-  89.5%,
-  100% {
-    opacity: 0;
-  }
-  87%,
-  89% {
-    opacity: 1;
+    background: rgb(220 232 255 / 0.28);
   }
 }
 
 /* Nothing moves while the card is out of sight. */
-.greeting-card:not([data-on-screen]) .sky *,
-.greeting-card:not([data-on-screen]) .sky::before {
+.greeting-card:not([data-on-screen]) .photo-sky * {
   animation-play-state: paused;
 }
 
@@ -561,13 +188,13 @@
   align-items: baseline;
   overflow: hidden;
   white-space: nowrap;
-  font-size: 30px;
-  line-height: 1.3;
+  font-size: 28px;
+  line-height: 1.4;
 }
 @media (min-width: 640px) {
   .greeting-line {
-    font-size: 44px;
-    line-height: 1.25;
+    font-size: 38px;
+    line-height: 1.35;
   }
 }
 .greeting-line > * {
@@ -1009,8 +636,8 @@ body:has(.school-wall) .app-social {
 
 /*
  * The opening of the site and the welcome after every sign-in
- * (mascot-scene.tsx, intro.tsx, welcome-transition.tsx), about two and a half
- * seconds; the timeline is written out at the top of mascot-scene.tsx.
+ * (book-scene.tsx, intro.tsx, welcome-transition.tsx), about three seconds;
+ * the timeline is written out at the top of book-scene.tsx.
  *
  * The overlay is drawn by the server with the page, so it covers it from the
  * first frame; until data-play is set (intro-script.ts, or React for the
@@ -1077,411 +704,320 @@ body:has(.school-wall) .app-social {
   color: rgb(255 255 255 / 0.74);
 }
 
-.mascot-stage {
+/*
+ * The book (book-scene.tsx). --w is a cover's width; the book stands in the
+ * right half of a box two covers wide and is drawn back by half a cover while
+ * shut, so it is centred shut and open. Pages and cover turn on their left
+ * edge, each in its own perspective; which one lies on top changes half-way
+ * through its turn (z-index in the keyframes), so a turning page is never
+ * hidden by the pages already turned.
+ */
+.book-stage {
+  --w: clamp(5.75rem, 26vw, 7.25rem);
+  --h: calc(var(--w) * 1.34);
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
   padding: 1rem;
 }
-.mascot-wall {
+.book-scene {
+  position: relative;
+  width: calc(var(--w) * 2);
+  height: var(--h);
+  animation: book-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.book-glow {
   position: absolute;
-  inset: -320px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate%2852 58%29 rotate%28-8%29 scale%281.15%29'%3E%3Cpath d='M-14 -9h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H-14z M14 -9H4a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3C/g%3E%3Cg transform='translate%28236 84%29 rotate%2812%29 scale%281%29'%3E%3Ccircle r='2.5'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2830%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%28-30%29'/%3E%3Cellipse rx='18' ry='7' transform='rotate%2890%29'/%3E%3C/g%3E%3Cg transform='translate%2872 232%29 rotate%286%29 scale%281.15%29'%3E%3Cpath d='M-17 -4l17-7 17 7-17 7z M-9 0v8c6 4 12 4 18 0v-8 M17 -4v9'/%3E%3C/g%3E%3Cg transform='translate%28214 236%29 rotate%280%29 scale%281.1%29'%3E%3Cpath d='M-13 13l3-9 17-17 6 6-17 17z M3 -9l6 6'/%3E%3C/g%3E%3Cg transform='translate%28150 158%29 rotate%2810%29 scale%280.9%29'%3E%3Cpath d='M0 -10l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  background-size: 320px 320px;
-  opacity: 0.07;
-  animation: wall-flow-near 150s linear infinite;
+  left: 50%;
+  top: 46%;
+  width: calc(var(--w) * 4.4);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 214 130 / 0.55), rgb(255 170 80 / 0.16) 55%, transparent);
+  opacity: 0.25;
+  scale: 0.6;
+  animation: book-glow 0.9s ease-out 0.9s forwards;
 }
-.mascot-figure {
-  position: relative;
-  width: min(74vw, 17.5rem);
-  aspect-ratio: 240 / 290;
-  animation:
-    mascot-enter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both,
-    mascot-hop 0.32s ease-out 0.9s,
-    mascot-approach 0.5s cubic-bezier(0.34, 1.3, 0.64, 1) 1.62s forwards;
+.book {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--w);
+  translate: calc(var(--w) / -2) 0;
+  animation: book-centre 0.7s cubic-bezier(0.45, 0, 0.2, 1) 0.45s forwards;
 }
-.mascot {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-@keyframes mascot-enter {
-  from {
-    opacity: 0;
-    translate: 0 40px;
-    scale: 0.7;
-  }
-  60% {
-    opacity: 1;
-    translate: 0 -6px;
-    scale: 1.04;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-    scale: 1;
-  }
-}
-@keyframes mascot-hop {
-  40% {
-    translate: 0 -12px;
-  }
-}
-@keyframes mascot-approach {
-  to {
-    scale: 1.1;
-  }
-}
-/* Coming straight from the wait while the password was checked: they are already here. */
-[data-signin-veil] .intro-welcome:not(.intro-veil) .mascot-figure {
-  animation:
-    mascot-hop 0.32s ease-out 0.9s,
-    mascot-approach 0.5s cubic-bezier(0.34, 1.3, 0.64, 1) 1.62s forwards;
-}
-
-.mascot-shadow {
-  fill: rgb(0 0 0 / 0.22);
-}
-
-/* Looking about, then at you. */
-.mascot-head {
-  transform-box: view-box;
-  transform-origin: 120px 150px;
-  animation: mascot-look 0.62s ease-in-out 0.3s both;
-}
-.mascot-pupils {
-  animation: mascot-glance 0.62s ease-in-out 0.3s both;
-}
-@keyframes mascot-look {
-  0%,
-  12% {
-    transform: rotate(0);
-  }
-  22%,
-  38% {
-    transform: rotate(-10deg);
-  }
-  52%,
-  68% {
-    transform: rotate(10deg);
-  }
-  80%,
-  100% {
-    transform: rotate(0);
-  }
-}
-@keyframes mascot-glance {
-  0%,
-  12% {
-    translate: 0 0;
-  }
-  22%,
-  38% {
-    translate: -5px 1px;
-  }
-  52%,
-  68% {
-    translate: 5px 1px;
-  }
-  80%,
-  100% {
-    translate: 0 0;
-  }
-}
-.mascot-eyes ellipse,
-.mascot-pupils circle {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-.mascot-eyes ellipse {
-  animation: mascot-wide 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 0.92s forwards;
-}
-.mascot-pupils circle {
-  animation: mascot-wide-pupil 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 0.92s forwards;
-}
-@keyframes mascot-wide {
-  to {
-    scale: 1.14;
-  }
-}
-@keyframes mascot-wide-pupil {
-  to {
-    scale: 1.2;
-  }
-}
-.mascot-brows {
-  animation: mascot-brows 0.9s ease-out 0.92s forwards;
-}
-@keyframes mascot-brows {
-  20%,
-  65% {
-    translate: 0 -6px;
-  }
-  100% {
-    translate: 0 -2px;
-  }
-}
-.mascot-lid {
-  transform-box: fill-box;
-  transform-origin: center top;
-  transform: scaleY(0);
-  animation: mascot-blink 0.22s ease-in-out 2.28s;
-}
-@keyframes mascot-blink {
-  50% {
-    transform: scaleY(1);
-  }
-}
-.mascot-spark {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center bottom;
-  animation: mascot-spark 0.62s ease-out 0.93s forwards;
-}
-@keyframes mascot-spark {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) rotate(-20deg);
-  }
-  25% {
-    opacity: 1;
-    transform: scale(1.25) rotate(8deg);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1) rotate(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.9);
-  }
-}
-.mascot-tassel {
-  transform-box: view-box;
-  transform-origin: 166px 53px;
-  animation: mascot-tassel 1.3s ease-in-out infinite alternate;
-}
-@keyframes mascot-tassel {
-  from {
-    transform: rotate(-6deg);
-  }
-  to {
-    transform: rotate(9deg);
-  }
-}
-.mascot-laugh {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center top;
-  animation: mascot-laugh 0.3s cubic-bezier(0.34, 1.6, 0.64, 1) 1.66s forwards;
-}
-.mascot-smile {
-  animation: mascot-unsmile 0.1s linear 1.66s forwards;
-}
-@keyframes mascot-laugh {
-  from {
-    opacity: 1;
-    transform: scaleY(0.2);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-@keyframes mascot-unsmile {
-  to {
-    opacity: 0;
-  }
-}
-
-/* The book: lifted towards you and opened, a sun out of it, two pages turned. */
-.mascot-book {
-  transform: translate(88px, 200px);
-  animation: mascot-lift 0.38s cubic-bezier(0.3, 0.8, 0.3, 1) 1.02s forwards;
-}
-@keyframes mascot-lift {
-  to {
-    transform: translate(120px, 205px) scale(1.25);
-  }
-}
-.mascot-cover {
-  transform-box: fill-box;
-  transform-origin: left center;
-  animation: mascot-shut-away 0.16s ease-in 1.08s forwards;
-}
-@keyframes mascot-shut-away {
-  to {
-    transform: scaleX(0);
-  }
-}
-.mascot-inside {
-  transform-box: fill-box;
-  transform-origin: right center;
-  transform: scaleX(0);
-  animation: mascot-unfold 0.18s ease-out 1.22s forwards;
-}
-@keyframes mascot-unfold {
-  to {
-    transform: scaleX(1);
-  }
-}
-.mascot-hand:not(.mascot-hand-right) {
-  animation: mascot-hand-out 0.3s cubic-bezier(0.3, 0.8, 0.3, 1) 1.1s forwards;
-}
-@keyframes mascot-hand-out {
-  to {
-    translate: -64px 0;
-  }
-}
-.mascot-leaf {
-  opacity: 0;
-  transform-box: fill-box;
+.book-block,
+.book-leaf,
+.book-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px 7px 7px 2px;
   transform-origin: left center;
 }
-.mascot-leaf-1 {
-  animation: mascot-turn 0.34s ease-in-out 1.46s forwards;
+.book-block {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 calc(var(--h) / 11 - 1px), rgb(120 100 70 / 0.12) calc(var(--h) / 11 - 1px) calc(var(--h) / 11)) 22% 18% / 62% 64% no-repeat,
+    linear-gradient(90deg, #e9dfc8, #fdf8ee 14%, #fbf5e6);
+  box-shadow:
+    1.5px 1.5px 0 #efe6d2,
+    3px 3px 0 #e2d7bd,
+    0 22px 44px rgb(0 0 0 / 0.4);
 }
-.mascot-leaf-2 {
-  animation: mascot-turn 0.34s ease-in-out 1.64s forwards;
+.book-leaf {
+  z-index: var(--from);
+  background: linear-gradient(90deg, #ece2cb, #fdf8ee 16%, #fcf7ea);
+  transform: perspective(1100px) rotateY(0deg);
+  animation: book-leaf 0.62s cubic-bezier(0.45, 0, 0.3, 1) calc(0.85s + var(--i) * 0.17s) forwards;
 }
-@keyframes mascot-turn {
-  0% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-  95% {
-    opacity: 1;
-    transform: scaleX(-1);
-  }
-  100% {
-    opacity: 0;
-    transform: scaleX(-1);
-  }
+.book-cover {
+  z-index: 10;
+  transform-style: preserve-3d;
+  transform: perspective(1100px) rotateY(0deg);
+  animation: book-cover 0.75s cubic-bezier(0.45, 0, 0.2, 1) 0.45s forwards;
 }
-.mascot-sunrise {
+.book-cover-front,
+.book-cover-inside {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+}
+.book-cover-front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--w) * 0.06);
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.18), transparent 9%),
+    linear-gradient(160deg, rgb(255 255 255 / 0.16), transparent 45%),
+    #ff5a1f;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.book-cover-inside {
+  transform: rotateY(180deg);
+  background: linear-gradient(270deg, #e9dfc8, #fdf8ee 16%, #fbf5e6);
+}
+.book-mark {
+  width: 46%;
+  fill: #fff;
+  stroke: #fff;
+  stroke-width: 48;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.book-mark path {
+  fill: none;
+}
+.book-number {
+  color: rgb(255 255 255 / 0.85);
+  font-size: calc(var(--w) * 0.1);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+.book-motes {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+}
+.book-motes i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffe2a0;
+  box-shadow: 0 0 8px 2px rgb(255 214 130 / 0.6);
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: translateY(118px) scale(0.12);
-  animation: mascot-sunrise 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) 1.28s forwards;
+  animation: book-mote 1.6s ease-out calc(1.1s + var(--d)) forwards;
 }
-@keyframes mascot-sunrise {
-  30% {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.book-words {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.4rem;
 }
-.mascot-sun-rays {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-turn 16s linear infinite;
-}
-.mascot-sun-glow {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: sky-breathe 1.6s ease-in-out infinite;
-}
-.mascot-sparkle {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: mascot-sparkle 0.75s ease-out 1.42s forwards;
-}
-@keyframes mascot-sparkle {
-  0% {
-    opacity: 0;
-    transform: translate(0, -20px) scale(0.2);
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--x), calc(var(--y) - 20px)) rotate(var(--r)) scale(1.1);
-  }
-}
-
-/* "Салом, Фарангис!" — letter by letter, each with a small hop. */
-.mascot-hello {
-  position: relative;
+.book-hello {
   max-width: 92vw;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding: 0.2em 0.3em 0.35em;
+  padding: 0 0.35em;
   font-family: var(--font-greeting), var(--font-display);
-  font-size: clamp(2rem, 9.5vw, 3.25rem);
-  line-height: 1.25;
-  color: #ffffff;
-  text-shadow: 0 3px 22px rgb(0 0 0 / 0.35);
+  font-size: clamp(2rem, 9vw, 3rem);
+  line-height: 1.35;
+  color: #fff;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.3);
+  /* Written left to right: a soft edge sweeps across and leaves the words behind it. */
+  -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+  mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+  -webkit-mask-size: 220% 100%;
+  mask-size: 220% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  animation: book-write 1s cubic-bezier(0.4, 0.1, 0.5, 0.95) 1.25s forwards;
 }
-.mascot-name {
+.book-name {
   color: #f5c542;
-  -webkit-text-stroke: 0.6px #f5c542;
-  paint-order: stroke fill;
 }
-.mascot-letter {
-  display: inline-block;
-  white-space: pre;
+.book-flourish {
+  width: min(70vw, 15rem);
+  margin-top: 0.15rem;
+  overflow: visible;
+}
+.book-flourish path {
+  fill: none;
+  stroke: #f5c542;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  /* Hidden until drawn: a round cap would show as a dot at the start. */
   opacity: 0;
-  animation: mascot-letter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) var(--at) forwards;
+  animation: book-draw 0.85s cubic-bezier(0.5, 0, 0.3, 1) 1.6s forwards;
 }
-@keyframes mascot-letter {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.5) rotate(-8deg);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.book-flourish .book-flourish-gem {
+  fill: #f5c542;
+  stroke: none;
+  stroke-dasharray: none;
+  opacity: 0;
+  scale: 0.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: book-gem 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 2.35s forwards;
 }
 
-/* Waiting for the password to be checked: the book stays shut, they look about. */
-.mascot-stage[data-waiting] .mascot-figure {
-  animation: mascot-enter 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-.mascot-stage[data-waiting] .mascot-head {
-  animation: mascot-look 2.6s ease-in-out infinite;
-}
-.mascot-stage[data-waiting] .mascot-pupils {
-  animation: mascot-glance 2.6s ease-in-out infinite;
-}
-.mascot-stage[data-waiting] .mascot-lid {
-  animation: mascot-blink-often 3.4s ease-in-out 1.3s infinite;
-}
-@keyframes mascot-blink-often {
-  0%,
-  93%,
-  100% {
-    transform: scaleY(0);
+/* Waiting while a sign-in is checked: the book shut, floating, breathing light. */
+.book-stage[data-waiting] {
+  .book-scene {
+    animation: book-float 2.4s ease-in-out infinite alternate;
   }
-  96% {
-    transform: scaleY(1);
+  .book-glow {
+    animation: book-breathe 2.4s ease-in-out infinite alternate;
+  }
+  .book,
+  .book-cover,
+  .book-leaf,
+  .book-motes i {
+    animation: none;
   }
 }
-.mascot-stage[data-waiting] :is(.mascot-eyes ellipse, .mascot-pupils circle, .mascot-brows, .mascot-spark, .mascot-laugh, .mascot-smile, .mascot-book, .mascot-cover, .mascot-inside, .mascot-hand, .mascot-leaf, .mascot-sunrise, .mascot-sparkle) {
+/* Coming straight from that wait: the book is already there and opens at once. */
+[data-signin-veil] .intro-welcome:not(.intro-veil) .book-scene {
   animation: none;
+}
+
+@keyframes book-rise {
+  from {
+    opacity: 0;
+    translate: 0 22px;
+    scale: 0.92;
+  }
+}
+@keyframes book-centre {
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes book-cover {
+  0%,
+  49% {
+    z-index: 10;
+  }
+  51%,
+  100% {
+    z-index: 1;
+  }
+  to {
+    transform: perspective(1100px) rotateY(-180deg);
+  }
+}
+@keyframes book-leaf {
+  0%,
+  49% {
+    z-index: var(--from);
+  }
+  51%,
+  100% {
+    z-index: var(--to);
+  }
+  to {
+    transform: perspective(1100px) rotateY(-179deg);
+  }
+}
+@keyframes book-glow {
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes book-breathe {
+  from {
+    opacity: 0.18;
+    scale: 0.55;
+  }
+  to {
+    opacity: 0.4;
+    scale: 0.68;
+  }
+}
+@keyframes book-float {
+  from {
+    translate: 0 -4px;
+  }
+  to {
+    translate: 0 5px;
+  }
+}
+@keyframes book-mote {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--x) -70px;
+  }
+}
+@keyframes book-write {
+  to {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+@keyframes book-draw {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0.9;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes book-gem {
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }
 
 /* ------------------------------------------------------------- less motion */
 
 /*
  * For whoever asks for less motion: nothing drifts, sways, flips or flies;
- * each picture is drawn in its finished state — the sky still, the wall
+ * each picture is drawn in its finished state — the photograph still, the wall
  * still, the bar's light simply in its place, and the welcome already
  * saying hello over the open book.
  */
 @media (prefers-reduced-motion: reduce) {
-  .sky *,
-  .sky::before,
+  .photo-sky *,
   .school-wall i,
   .bar *,
   .intro *,
@@ -1493,31 +1029,29 @@ body:has(.school-wall) .app-social {
   .bar-pill {
     transition-duration: 0s !important;
   }
-  .mascot-stage:not([data-waiting]) {
-    .mascot-cover {
-      transform: scaleX(0);
+  .book-stage:not([data-waiting]) {
+    .book {
+      translate: 0 0;
     }
-    .mascot-inside {
-      transform: none;
+    .book-cover {
+      z-index: 1;
+      transform: perspective(1100px) rotateY(-180deg);
     }
-    .mascot-book {
-      transform: translate(120px, 205px) scale(1.25);
-    }
-    .mascot-sunrise {
+    .book-glow {
       opacity: 1;
-      transform: none;
+      scale: 1;
     }
-    .mascot-laugh {
+    .book-hello {
+      -webkit-mask-position: 0 0;
+      mask-position: 0 0;
+    }
+    .book-flourish path {
+      opacity: 0.9;
+      stroke-dashoffset: 0;
+    }
+    .book-flourish .book-flourish-gem {
       opacity: 1;
-    }
-    .mascot-smile {
-      opacity: 0;
-    }
-    .mascot-letter {
-      opacity: 1;
-    }
-    .mascot-hand:not(.mascot-hand-right) {
-      translate: -64px 0;
+      scale: 1;
     }
   }
 }
@@ -1544,9 +1078,6 @@ body:has(.school-wall) .app-social {
   color: #fff;
   text-align: center;
   animation: intro-fade 0.3s ease both;
-}
-.offline-cover[data-mode="slow"] {
-  background: linear-gradient(162deg, rgb(34 25 90 / 0.9), rgb(23 48 109 / 0.9) 52%, rgb(10 109 114 / 0.9));
 }
 .offline-body {
   display: flex;
@@ -1585,10 +1116,98 @@ body:has(.school-wall) .app-social {
 .offline-button:active {
   transform: scale(0.96);
 }
-.offline-button-quiet {
-  background: rgb(255 255 255 / 0.12);
+
+/*
+ * A page that is only slow to come: a small note at the foot of the screen,
+ * above the phone's bottom bar, with the Wi-Fi sign's waves filling one after
+ * another. Nothing is covered; the page keeps loading under it.
+ */
+.slow-note {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 4.75rem);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.5rem 0.6rem 0.9rem;
+  border-radius: 1rem;
+  background: rgb(20 26 48 / 0.92);
   color: #fff;
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  backdrop-filter: blur(8px);
+  translate: -50% 0;
+  animation: slow-note-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 1024px) {
+  .slow-note {
+    bottom: 1.5rem;
+  }
+}
+.slow-note-waves {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: none;
+  stroke: #ffd25a;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.slow-note-waves circle {
+  fill: #ffd25a;
+  stroke: none;
+}
+.slow-note-waves path {
+  animation: slow-note-wave 1.8s ease-in-out infinite;
+}
+.slow-note-waves path:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.slow-note-waves path:nth-child(3) {
+  animation-delay: 0.5s;
+}
+.slow-note-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.7);
+}
+.slow-note-close:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+.slow-note-close svg {
+  width: 1rem;
+  height: 1rem;
+}
+@keyframes slow-note-in {
+  from {
+    opacity: 0;
+    translate: -50% 12px;
+  }
+}
+@keyframes slow-note-wave {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40%,
+  60% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slow-note,
+  .slow-note-waves path {
+    animation: none;
+  }
 }
 @keyframes offline-say {
   from {
@@ -1878,88 +1497,49 @@ body:has(.school-wall) .app-social {
 /* --------------------------------------------------------------- searching */
 
 /*
- * searching.tsx: a magnifying glass sweeping over faint pages on a path of
- * half-circles (offset-path), tilting as it turns; each page it passes lights
- * up for a moment. Whatever the search box belongs to dims what comes after
- * it until the glass is done.
+ * searching.tsx: a small magnifying glass of two thin strokes gliding along a
+ * path of half-circles (offset-path), leaning as it turns. One round takes as
+ * long as the glass is kept at least (MIN_MS). Whatever the search box
+ * belongs to dims what comes after it until the glass is done.
  */
 .searching {
   flex-basis: 100%;
   display: flex;
   justify-content: center;
-  padding: 0.75rem 0 0.25rem;
-  animation: offline-say 0.35s ease both;
+  padding: 0.5rem 0 0.25rem;
+  animation: searching-in 0.3s ease both;
 }
 .searching-field {
   position: relative;
-  width: 11rem;
-  height: 6rem;
-}
-.searching-pages {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.searching-page rect {
-  fill: var(--color-surface);
-  stroke: var(--color-line-strong);
-  stroke-width: 1.4;
-}
-.searching-page path {
-  fill: none;
-  stroke: var(--color-line-strong);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
-.searching-page {
-  animation: searching-found 1.4s ease-in-out infinite;
-}
-@keyframes searching-found {
-  0%,
-  70%,
-  100% {
-    opacity: 0.55;
-  }
-  35% {
-    opacity: 1;
-  }
+  width: 9.25rem;
+  height: 3.75rem;
 }
 .searching-lens {
   position: absolute;
   left: 0;
   top: 0;
-  width: 3rem;
-  height: 3rem;
-  margin: -1.2rem 0 0 -1.2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   offset-rotate: 0deg;
-  offset-anchor: 40% 40%;
+  offset-anchor: 42% 42%;
   animation:
-    searching-sweep 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite,
-    searching-tilt 0.65s ease-in-out infinite alternate;
+    searching-sweep 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite,
+    searching-tilt 0.8s ease-in-out infinite alternate;
 }
 .searching-lens svg {
   width: 100%;
   height: 100%;
   overflow: visible;
-  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.18));
-}
-.searching-glass {
-  fill: color-mix(in oklab, var(--color-brand-solid) 12%, rgb(255 255 255 / 0.55));
-  stroke: var(--color-brand-solid);
-  stroke-width: 3.4;
-}
-.searching-shine {
   fill: none;
-  stroke: #fff;
-  stroke-width: 2;
+  stroke: var(--color-ink-secondary);
+  stroke-width: 1.6;
   stroke-linecap: round;
-  opacity: 0.9;
 }
-.searching-handle {
-  stroke: var(--color-brand-solid);
-  stroke-width: 5;
-  stroke-linecap: round;
+@keyframes searching-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
 }
 @keyframes searching-sweep {
   from {
@@ -1971,10 +1551,10 @@ body:has(.school-wall) .app-social {
 }
 @keyframes searching-tilt {
   from {
-    rotate: -12deg;
+    rotate: -10deg;
   }
   to {
-    rotate: 14deg;
+    rotate: 12deg;
   }
 }
 .filter-bar[data-searching] ~ * {
@@ -2085,7 +1665,6 @@ body:has(.school-wall) .app-social {
 }
 @media (prefers-reduced-motion: reduce) {
   .searching-lens,
-  .searching-page,
   .stagger-in > *,
   .book-card .book-cover {
     animation: none !important;

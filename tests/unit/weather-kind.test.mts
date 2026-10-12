@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { isWeatherKind, kindFromCode, weatherFromForecast } from "../../src/features/dashboard/weather-kind.ts";
+import { WEATHER_PHOTOS, isWeatherKind, kindFromCode, photoFor, weatherFromForecast, WEATHER_KINDS } from "../../src/features/dashboard/weather-kind.ts";
 
 describe("the sky over Istaravshan, from Open-Meteo", () => {
   it("reads every WMO code as a kind the card can draw", () => {
@@ -52,5 +52,28 @@ describe("the sky over Istaravshan, from Open-Meteo", () => {
     assert.equal(isWeatherKind("rain"), true);
     assert.equal(isWeatherKind("hail"), false);
     assert.equal(isWeatherKind(3), false);
+  });
+});
+
+describe("the greeting card's photograph", () => {
+  it("is the hour's clear sky without the weather", () => {
+    assert.equal(photoFor("morning", null), "clear-morning");
+    assert.equal(photoFor("night", null), "clear-night");
+  });
+
+  it("follows the weather, and the dark", () => {
+    assert.equal(photoFor("day", "partly"), "partly-day");
+    assert.equal(photoFor("evening", "partly"), "clear-evening");
+    assert.equal(photoFor("night", "cloudy"), "night-clouds");
+    assert.equal(photoFor("day", "rain"), "rain-day");
+    assert.equal(photoFor("evening", "drizzle"), "rain-night");
+    assert.equal(photoFor("night", "snow"), "snow-night");
+    assert.equal(photoFor("morning", "storm"), "storm");
+  });
+
+  it("always names a photograph there is", () => {
+    for (const part of ["morning", "day", "evening", "night"] as const) {
+      for (const kind of [null, ...WEATHER_KINDS]) assert.ok((WEATHER_PHOTOS as readonly string[]).includes(photoFor(part, kind)), `${part} ${kind}`);
+    }
   });
 });

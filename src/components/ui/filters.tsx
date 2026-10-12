@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useId, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
-import { SearchingPanel, useLingering } from "@/components/ui/searching";
+import { SearchingPanel, useSearchSweep } from "@/components/ui/searching";
 
 export interface FilterDefinition {
   name: string;
@@ -25,7 +25,7 @@ function useFilterState(filters: FilterDefinition[]) {
   const [pending, startTransition] = useTransition();
   // A search typed and sent shows the magnifying glass; a filter changed does not.
   const [bySearch, setBySearch] = useState(false);
-  const searching = useLingering(pending && bySearch);
+  const { searching, start: sweep, round } = useSearchSweep(pending && bySearch);
 
   const navigate = (patch: Record<string, string | null>, fromSearch = false) => {
     setBySearch(fromSearch);
@@ -41,6 +41,7 @@ function useFilterState(filters: FilterDefinition[]) {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
+    sweep();
     navigate({ q: query.trim() || null }, true);
   };
 
@@ -49,7 +50,7 @@ function useFilterState(filters: FilterDefinition[]) {
     navigate(Object.fromEntries([["q", null], ...filters.map((f) => [f.name, null])]));
   };
 
-  return { params, query, setQuery, pending, searching, navigate, onSubmit, clear };
+  return { params, query, setQuery, pending, searching, round, navigate, onSubmit, clear };
 }
 
 /**
@@ -76,7 +77,7 @@ export function FilterBar({
 
 function OpenFilterBar({ searchLabel, filters, searchPlaceholder }: { searchLabel?: string; filters: FilterDefinition[]; searchPlaceholder?: string }) {
   const t = useTranslations("common");
-  const { params, query, setQuery, pending, searching, navigate, onSubmit, clear } = useFilterState(filters);
+  const { params, query, setQuery, pending, searching, round, navigate, onSubmit, clear } = useFilterState(filters);
   const active = Boolean(params.get("q")) || filters.some((f) => params.get(f.name));
 
   return (
@@ -116,7 +117,7 @@ function OpenFilterBar({ searchLabel, filters, searchPlaceholder }: { searchLabe
           {t("clearFilters")}
         </Button>
       ) : null}
-      {searching ? <SearchingPanel label={t("searching")} /> : null}
+      {searching ? <SearchingPanel key={round} label={t("searching")} /> : null}
     </div>
   );
 }
@@ -132,7 +133,7 @@ function FoldedFilterBar({ searchLabel, filters: all, searchPlaceholder }: { sea
   const t = useTranslations("common");
   // A filter with nothing to choose from (a library without categories yet) is left out.
   const filters = all.filter((filter) => filter.options.length > 0);
-  const { params, query, setQuery, pending, searching, navigate, onSubmit, clear } = useFilterState(filters);
+  const { params, query, setQuery, pending, searching, round, navigate, onSubmit, clear } = useFilterState(filters);
   const [open, setOpen] = useState(false);
   const id = useId();
   const panelId = `${id}-filters`;
@@ -218,7 +219,7 @@ function FoldedFilterBar({ searchLabel, filters: all, searchPlaceholder }: { sea
           </div>
         </div>
       ) : null}
-      {searching ? <SearchingPanel label={t("searching")} /> : null}
+      {searching ? <SearchingPanel key={round} label={t("searching")} /> : null}
     </div>
   );
 }

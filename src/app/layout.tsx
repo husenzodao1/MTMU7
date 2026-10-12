@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Cormorant_Unicase, JetBrains_Mono, Noto_Sans, Noto_Serif, Pacifico, Unbounded } from "next/font/google";
+import { Bad_Script, Cormorant_Unicase, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
 import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { OfflineCover } from "@/features/native/offline-cover";
@@ -36,13 +36,13 @@ const notoSerif = Noto_Serif({
 });
 
 /**
- * The greeting's face. A brush script is the least institutional thing on the
- * portal, which is the point of the one line addressed to the reader — and
- * Pacifico is one of the few that carries ғ ҷ қ ӣ ӯ ҳ, so "Рӯз ба хайр" does
- * not change font half-way through a word. Not preloaded: it is used on one
- * page, and the browser fetches the few glyphs it needs when that page draws.
+ * The greeting's face: a light, slanted hand, thin as a pen line — the
+ * dashboard's "Субҳ ба хайр", the welcome's "Салом" and the first opening's
+ * "Хуш омадед". Bad Script is one of the few hands that carries ғ ҷ қ ӣ ӯ ҳ,
+ * so a greeting or a name never changes font half-way through a word. Not
+ * preloaded: the browser fetches the few glyphs it needs when a greeting draws.
  */
-const pacifico = Pacifico({
+const greeting = Bad_Script({
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
   weight: "400",
   display: "swap",
@@ -148,7 +148,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={isAppUserAgent(userAgent) ? "" : undefined}
-      className={`${notoSans.variable} ${notoSerif.variable} ${pacifico.variable} ${unicase.variable} ${mark.variable} ${mono.variable}`}
+      className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${unicase.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
         {opening ? (

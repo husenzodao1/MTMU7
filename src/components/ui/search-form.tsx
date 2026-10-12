@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/fields";
-import { SearchingPanel, useLingering } from "@/components/ui/searching";
+import { SearchingPanel, useSearchSweep } from "@/components/ui/searching";
 
 /**
  * A search box that sends ?q= to its own page without leaving it: the
@@ -29,10 +29,11 @@ export function SearchForm({
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
-  const searching = useLingering(pending);
+  const { searching, start: sweep, round } = useSearchSweep(pending);
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    sweep();
     const query = String(new FormData(event.currentTarget).get("q") ?? "").trim();
     startTransition(() => router.push(query ? `${pathname}?q=${encodeURIComponent(query)}` : pathname));
   };
@@ -43,7 +44,7 @@ export function SearchForm({
         <TextField name="q" label={label} defaultValue={defaultValue} maxLength={100} autoFocus={autoFocus} placeholder={placeholder} className="min-w-64 flex-1" />
         <Button type="submit">{submitLabel}</Button>
       </form>
-      {searching ? <SearchingPanel label={searchingLabel} /> : null}
+      {searching ? <SearchingPanel key={round} label={searchingLabel} /> : null}
     </div>
   );
 }

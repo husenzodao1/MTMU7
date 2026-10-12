@@ -9,9 +9,11 @@ import { Bell, ChevronDown, CircleAlert, LogOut, Search, Settings, ShieldCheck, 
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
 import { BarIcon } from "@/components/shell/bar-icons";
+import { useInstantNavigation } from "@/components/shell/instant-nav";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
+import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
@@ -304,6 +306,9 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   }
   const [filter, setFilter] = useState("");
   const [notifications, setNotifications] = useState(unreadNotifications);
+  // The page a tap is going to, drawn at once as its loading screen.
+  const closeMenu = useCallback(() => setDrawerOpen(false), []);
+  const goingTo = useInstantNavigation(pathname, closeMenu);
 
   const [prevCount, setPrevCount] = useState(unreadNotifications);
   if (prevCount !== unreadNotifications) {
@@ -531,7 +536,10 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
           </header>
 
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7">
-            {children}
+            {goingTo ? <RouteSkeleton pathname={goingTo} /> : null}
+            <div hidden={Boolean(goingTo)} className="contents">
+              {children}
+            </div>
           </main>
           {footer}
         </div>

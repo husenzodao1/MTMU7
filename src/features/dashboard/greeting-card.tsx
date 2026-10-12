@@ -3,14 +3,14 @@
 import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Suspense, use, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { SkyScene } from "@/features/dashboard/sky-scene";
+import { WeatherPhoto } from "@/features/dashboard/weather-photo";
 import type { Weather, WeatherKind } from "@/features/dashboard/weather-kind";
 import { dayPart, type DayPart } from "@/lib/i18n/format";
 
 /**
  * "Шом ба хайр, Фарангис!" — the one line on the portal addressed to the
- * person reading it, over a small living sky (sky-scene.tsx): the hour draws
- * it, the weather in Istaravshan dresses it.
+ * person reading it, in a light hand, over a photograph of the sky as it is
+ * in Istaravshan at this hour (weather-photo.tsx).
  *
  * The line never breaks: the greeting, the name and the "!" stay on one row,
  * the letters getting smaller for a long name (down to a floor), and only past
@@ -20,8 +20,8 @@ import { dayPart, type DayPart } from "@/lib/i18n/format";
  * The server chooses the first greeting from the school's clock. A page left
  * open across six o'clock should not go on wishing a good afternoon, so the
  * card looks at the clock again every minute. The weather comes as a promise
- * the page does not wait for: the card is drawn at once, and the clouds or
- * the rain arrive when the answer does.
+ * the page does not wait for: the card is drawn at once, and the photograph
+ * comes in when the answer does.
  */
 
 const WEATHER_ICON: Record<WeatherKind, LucideIcon> = {
@@ -35,8 +35,8 @@ const WEATHER_ICON: Record<WeatherKind, LucideIcon> = {
   storm: CloudLightning,
 };
 
-/** The largest and smallest size of the greeting line, in px. */
-const FIT = { phone: [30, 19], wide: [44, 24] } as const;
+/** The largest and smallest size of the greeting line, in px: a light hand, never shouting. */
+const FIT = { phone: [28, 18], wide: [38, 22] } as const;
 
 /** Shrinks the line until it fits its row, within FIT. */
 function useOneLine(text: string) {
@@ -75,7 +75,7 @@ function useOneLine(text: string) {
   return ref;
 }
 
-/** The sky stops moving while nobody can see it. */
+/** The photograph stops drifting while nobody can see it. */
 function useOnScreen() {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -94,11 +94,11 @@ function useOnScreen() {
 function WeatherSky({ part, weather }: { part: DayPart; weather: Promise<Weather | null> }) {
   const t = useTranslations("portal.dashboard.weather");
   const now = use(weather);
-  if (!now) return <SkyScene part={part} weather={null} />;
+  if (!now) return <WeatherPhoto part={part} kind={null} />;
   const Icon = part === "night" || part === "evening" ? (now.kind === "clear" ? Moon : now.kind === "partly" ? CloudMoon : WEATHER_ICON[now.kind]) : WEATHER_ICON[now.kind];
   return (
     <>
-      <SkyScene part={part} weather={now.kind} windy={now.windy} />
+      <WeatherPhoto part={part} kind={now.kind} />
       <p className="sky-chip" title={t(`kinds.${now.kind}`)}>
         <Icon className="size-3.5" aria-hidden />
         <span className="tabular">{now.temperature > 0 ? "+" : ""}{now.temperature}°</span>
@@ -154,12 +154,13 @@ export function GreetingCard({
       data-on-screen=""
       aria-labelledby="greeting-title"
     >
+      {/* Until the weather is known, the hour's colours alone: one photograph, not two. */}
       {weather ? (
-        <Suspense fallback={<SkyScene part={part} weather={null} />}>
+        <Suspense fallback={<div className="photo-sky" aria-hidden />}>
           <WeatherSky part={part} weather={weather} />
         </Suspense>
       ) : (
-        <SkyScene part={part} weather={null} />
+        <WeatherPhoto part={part} kind={null} />
       )}
       <div className="relative min-w-0">
         {dateLine ? <p className="greeting-date text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/75">{dateLine}</p> : null}

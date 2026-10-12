@@ -708,14 +708,18 @@ const SHAPES: Record<RouteShape, () => ReactNode> = {
   ),
 };
 
-/** The loading screen for whichever page is on its way. */
 /** How long a page may take before the connection is called slow (offline-cover.tsx). */
 const SLOW_AFTER_MS = 8000;
 
-export function RouteSkeleton() {
-  const pathname = usePathname();
+/**
+ * The loading screen for whichever page is on its way: the one being opened
+ * (loading.tsx), or `pathname` when the shell draws it the moment a link is
+ * tapped (instant-nav.ts).
+ */
+export function RouteSkeleton({ pathname: to }: { pathname?: string } = {}) {
+  const current = usePathname();
   const t = useTranslations("common");
-  const Shape = SHAPES[routeShape(pathname)];
+  const Shape = SHAPES[routeShape(to ?? current)];
 
   // Still loading after eight seconds: the connection is slow, and the page
   // says so. Gone again the moment the page arrives.

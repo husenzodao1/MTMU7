@@ -16,8 +16,8 @@ export const INTRO_MS = 3200;
 /** The same with reduced motion: nothing moves, the greeting already there, a short look and gone. */
 export const INTRO_QUICK_MS = 1400;
 /**
- * The greeting after a sign-in (mascot-scene.tsx): the pupil sees you, opens
- * the book and says hello by name. The portal loads underneath meanwhile, so
+ * The greeting after a sign-in (book-scene.tsx): the book opens and "Салом"
+ * writes itself with the name. The portal loads underneath meanwhile, so
  * this is time the page needed anyway, and a tap ends it.
  */
 export const WELCOME_MS = 3000;

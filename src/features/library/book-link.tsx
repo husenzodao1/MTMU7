@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { NAVIGATE_EVENT } from "@/components/shell/instant-nav";
 
 /** How long the book takes to riffle and open before its page is shown. */
 const OPENING_MS = 460;
@@ -20,15 +21,22 @@ export function BookLink({ href, className, children }: { href: string; classNam
     <Link
       href={href}
       className={className}
+      // The book opens first; the page is gone to after it (below).
+      data-instant="off"
       onClick={(event) => {
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          window.dispatchEvent(new CustomEvent(NAVIGATE_EVENT, { detail: href }));
+          return;
+        }
         event.preventDefault();
         const card = event.currentTarget;
         if (card.hasAttribute("data-opening")) return;
         card.setAttribute("data-opening", "");
         router.prefetch(href);
         window.setTimeout(() => {
+          // Open: now the page it leads to is drawn at once, as any other tap's.
+          window.dispatchEvent(new CustomEvent(NAVIGATE_EVENT, { detail: href }));
           router.push(href);
           // If the page is slow, the book closes again rather than hanging open.
           window.setTimeout(() => card.removeAttribute("data-opening"), 1200);

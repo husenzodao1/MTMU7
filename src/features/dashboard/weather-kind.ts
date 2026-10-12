@@ -1,9 +1,13 @@
 /**
  * What the sky over Istaravshan is doing, in the few kinds the greeting card
- * can draw (sky-scene.tsx), read from an Open-Meteo answer.
+ * shows (weather-photo.tsx), read from an Open-Meteo answer, and which of the
+ * card's photographs fits it at which hour.
  *
  * Pure, so it is tested without the network.
  */
+
+/** Where the hour stands, as the greeting has it (lib/i18n/format.ts). */
+type Part = "morning" | "day" | "evening" | "night";
 
 export type WeatherKind = "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "snow" | "storm";
 
@@ -55,4 +59,49 @@ export const WEATHER_KINDS: readonly WeatherKind[] = ["clear", "partly", "cloudy
 
 export function isWeatherKind(value: unknown): value is WeatherKind {
   return typeof value === "string" && (WEATHER_KINDS as readonly string[]).includes(value);
+}
+
+/** The greeting card's photographs (src/features/dashboard/weather-photos/). */
+export const WEATHER_PHOTOS = [
+  "clear-morning",
+  "clear-day",
+  "clear-evening",
+  "clear-night",
+  "partly-day",
+  "night-clouds",
+  "cloudy-day",
+  "fog",
+  "rain-day",
+  "rain-night",
+  "snow-day",
+  "snow-night",
+  "storm",
+] as const;
+export type WeatherPhotoName = (typeof WEATHER_PHOTOS)[number];
+
+/**
+ * The photograph for this hour and this sky. Without the weather (not come
+ * yet, or the forecast failed) the hour's clear sky. A sunrise or a sunset
+ * stays one under a few clouds; after dark any cloud is the moon behind them.
+ */
+export function photoFor(part: Part, kind: WeatherKind | null): WeatherPhotoName {
+  const dark = part === "night";
+  const dusk = part === "evening" || dark;
+  switch (kind ?? "clear") {
+    case "clear":
+      return `clear-${part}`;
+    case "partly":
+      return dark ? "night-clouds" : part === "day" ? "partly-day" : `clear-${part}`;
+    case "cloudy":
+      return dark ? "night-clouds" : "cloudy-day";
+    case "fog":
+      return "fog";
+    case "drizzle":
+    case "rain":
+      return dusk ? "rain-night" : "rain-day";
+    case "snow":
+      return dusk ? "snow-night" : "snow-day";
+    case "storm":
+      return "storm";
+  }
 }

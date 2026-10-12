@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
-import { MascotScene } from "@/features/intro/mascot-scene";
+import { BookScene } from "@/features/intro/book-scene";
 import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * The opening over the first page: the pupil with the book who sees you and
- * says "Хуш омадед" (mascot-scene.tsx) — once per browser, for a year, and on
- * the app's first start only.
+ * The opening over the first page: the book opens, a light comes up out of
+ * it and "Хуш омадед" writes itself under it (book-scene.tsx) — once per
+ * browser, for a year, and on the app's first start only.
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it
@@ -56,7 +56,7 @@ export function Intro({ words }: { words: string }) {
       suppressHydrationWarning
       onClick={() => setPhase("out")}
     >
-      <MascotScene hello={words} />
+      <BookScene hello={words} />
     </div>
   );
 }
