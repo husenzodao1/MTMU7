@@ -19,11 +19,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm i --no-save --no-package-lock sharp@0.33.5
+      # Only sharp, beside the script: the portal's own dependencies are not needed.
+      - run: echo '{"private":true}' > scripts/photos/package.json && npm i --prefix scripts/photos --no-package-lock sharp@0.33.5
       - run: node scripts/photos/fetch.mjs
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/photos public/weather 2>/dev/null || git add scripts/photos
+          git add scripts/photos/sheets public/weather 2>/dev/null || git add scripts/photos/sheets
           git commit -m "Weather photos fetched [photos-bot]" || exit 0
           git push
