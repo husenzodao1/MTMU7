@@ -2,7 +2,8 @@
  * Temporary: run by .github/workflows/weather-photos.yml, where the internet
  * is open. Without chosen.json it downloads every candidate and draws one
  * contact sheet per weather for choosing; with it, it downloads the chosen
- * ones and writes them as the greeting card's photos (2560 px wide, WebP).
+ * ones and writes them as the greeting card's photos (2560 px wide, WebP,
+ * src/features/dashboard/weather-photos/).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import sharp from "sharp";
@@ -12,8 +13,9 @@ const candidates = JSON.parse(readFileSync(new URL("candidates.json", here), "ut
 const chosenFile = new URL("chosen.json", here);
 const ua = { "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36" };
 
-async function download(slug) {
-  const response = await fetch(`https://unsplash.com/photos/${slug}/download?force=true`, { headers: ua, redirect: "follow" });
+/** A Pexels photo by its number (free to use, no credit needed: pexels.com/license). */
+async function download(id, width = 1200) {
+  const response = await fetch(`https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`, { headers: ua, redirect: "follow" });
   const type = response.headers.get("content-type") ?? "";
   if (!response.ok || !type.startsWith("image/")) throw new Error(`${response.status} ${type} ${response.url}`);
   return Buffer.from(await response.arrayBuffer());
@@ -21,10 +23,10 @@ async function download(slug) {
 
 if (existsSync(chosenFile)) {
   const chosen = JSON.parse(readFileSync(chosenFile, "utf8"));
-  const out = new URL("../../public/weather/", here);
+  const out = new URL("../../src/features/dashboard/weather-photos/", here);
   mkdirSync(out, { recursive: true });
   for (const [name, slug] of Object.entries(chosen)) {
-    const original = await download(slug);
+    const original = await download(slug, 3000);
     const meta = await sharp(original).metadata();
     await sharp(original).rotate().resize({ width: 2560, withoutEnlargement: true }).webp({ quality: 74, effort: 6 }).toFile(new URL(`${name}.webp`, out).pathname);
     console.log(name, slug, `${meta.width}x${meta.height}`);
