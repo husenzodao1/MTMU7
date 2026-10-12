@@ -4,16 +4,19 @@ import type { CSSProperties } from "react";
  * The opening's picture and the welcome after a sign-in (motion.css, "the
  * welcome"): one book, nothing else.
  *
- *   0.00  the shut book rises into the light, the school's orange with its
- *         white mark on the cover
+ *   0.00  the shut book in the dark, the school's orange with the app's white
+ *         mark on its cover — in the app, the phone's own splash has just
+ *         shown the same book (res/drawable/splash_book.xml), so it is simply
+ *         there; on the site it rises into view
  *   0.45  the cover swings open and the book settles in the middle
  *   0.85  three pages turn, one after another; a warm light comes up out of
  *         the pages and a few motes of it drift away
  *   1.25  the greeting writes itself under it in a light hand, left to right
  *         — "Салом, Фарангис!" after a sign-in, "Хуш омадед" on the first
  *         opening of the site
- *   1.60  a thin ornament draws itself under the words from both ends at
- *         once, and they meet at a small diamond in the middle
+ *   1.55  under the words a small star opens in the middle, a thin swash
+ *         runs out of it to either side, thinning to a hair, and ends in a
+ *         curl; a last dot settles beyond each curl
  *
  * Markup only, no state: the first opening (intro.tsx), the welcome and the
  * wait while a sign-in is checked (welcome-transition.tsx) all draw it.
@@ -57,7 +60,6 @@ export function BookScene({ hello, name, waiting = false }: { hello: string; nam
           <div className="book-cover">
             <div className="book-cover-front">
               <Mark />
-              <span className="book-number">№ 7</span>
             </div>
             <div className="book-cover-inside" />
           </div>
@@ -76,10 +78,20 @@ export function BookScene({ hello, name, waiting = false }: { hello: string; nam
               {name ? <span className="book-name">{name}!</span> : null}
             </span>
           </p>
-          <svg viewBox="0 0 240 28" className="book-flourish" aria-hidden>
-            <path pathLength={1} d="M4 14 C 10 7, 19 7, 24 13 C 28 18, 34 19, 39 15 C 52 6, 76 7, 94 12 C 101 14, 106 14, 111 14" />
-            <path pathLength={1} d="M236 14 C 230 7, 221 7, 216 13 C 212 18, 206 19, 201 15 C 188 6, 164 7, 146 12 C 139 14, 134 14, 129 14" />
-            <path className="book-flourish-gem" d="M120 9 L125 14 L120 19 L115 14 Z" />
+          <svg viewBox="0 0 240 32" className="book-flourish" aria-hidden>
+            {/* One half; the other is its mirror. A swash that thins from the
+                middle to a hair, and a small curl where it ends. */}
+            {[0, 1].map((side) => (
+              <g key={side} transform={side ? "matrix(-1 0 0 1 240 0)" : undefined}>
+                <path
+                  className="book-swash"
+                  d="M111 15.1 C 95 12.4, 77 12.9, 60 15.5 C 48 17.3, 38.5 17.2, 31 14.7 C 38.5 16.5, 48 16.6, 60 16.3 C 77 14.1, 95 13.9, 111 16.9 Z"
+                />
+                <path className="book-curl" pathLength={1} d="M31 14.7 C 25 12.2, 20.4 15.2, 22.6 18.1 C 24.6 20.6, 28.6 19.3, 27.9 16.6 C 27.4 14.8, 25.3 14.6, 24.8 16.1" />
+                <circle className="book-dot" cx="14.5" cy="16" r="1.1" />
+              </g>
+            ))}
+            <path className="book-star" d="M120 8.5 C 120.9 13.2, 122.6 15, 127.5 16 C 122.6 17, 120.9 18.8, 120 23.5 C 119.1 18.8, 117.4 17, 112.5 16 C 117.4 15, 119.1 13.2, 120 8.5 Z" />
           </svg>
         </div>
       )}

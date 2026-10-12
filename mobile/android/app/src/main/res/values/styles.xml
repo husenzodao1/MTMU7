@@ -16,7 +16,12 @@
     </style>
 
 
+    <!-- The splash is the opening's first frame: the shut book on the night
+         (Android 12 and later draw it from these; older ones show the image). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_night</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_book</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

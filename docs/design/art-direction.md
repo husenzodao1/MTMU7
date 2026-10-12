@@ -55,12 +55,16 @@ There is one language (`--ease-*` and `--duration-*` tokens):
 After the calm pass the school asked for these to return, and they are the
 rule now where they differ from the lists below (`src/styles/motion.css`):
 
-- **The opening and the welcome are a book** (`book-scene.tsx`, about 3 s):
-  the school's orange book with its white mark rises, opens, three pages
-  turn and a warm light comes out of it; "Хуш омадед", or "Салом, <name>!"
-  after a sign-in, writes itself under it in the hand, and a thin ornament
-  draws itself from both ends to a small diamond instead of a hairline.
-  While a password is checked, the book floats shut.
+- **The opening and the welcome are a book** (`book-scene.tsx`, about 3 s),
+  every time the app is opened and once per visit to the site, and after
+  every sign-in: the school's orange book with only the app's white mark on
+  its cover opens, three pages turn and a warm light comes out of it;
+  "Хуш омадед", or "Салом, <name>!" after a sign-in, writes itself under it
+  in the hand. Under the words a small star opens and a thin swash runs out
+  of it to either side, thinning to a hair and ending in a curl and a dot.
+  In the app the phone's own splash is that shut book on the night
+  (`res/drawable/splash_book.xml`), so the opening carries straight on from
+  it. While a password is checked, the book floats shut.
 - **The greeting card is a photograph of the sky** for the hour and the
   weather in Istaravshan (`weather-photo.tsx`, thirteen photographs from
   Pexels, free and uncredited), darkened behind the words and drifting very

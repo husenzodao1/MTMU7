@@ -56,12 +56,13 @@ an update. Give the keystore before handing the APK out widely.
   flat orange `#ff5a1f`. No gradients, no second colour, nothing small.
   `mobile/scripts/make-assets.mjs` renders every size from it for Android,
   iPhone, Windows and the web (`npm run assets` in `mobile/`).
-- Opening: the phone's splash is the white mark on the orange; the moment it
-  goes, the site's opening plays (`src/features/intro/`, about 3 s, a tap ends
-  it): a pupil in a graduation cap looks about, sees you, opens a book, a sun
-  rises out of it and "Салом!" appears. Once per start of the app; the site
-  shows it once per visit. After signing in the same pupil says "Салом" with
-  the person's name.
+- Opening: the phone's splash is the shut book on the night — on Android 12
+  and later `res/drawable/splash_book.xml`, before that the splash images
+  drawn from `public/brand/splash-book.svg` — and the site's opening
+  (`src/features/intro/`, about 3 s, a tap ends it) carries straight on from
+  it: the book opens, a light comes out of it and "Хуш омадед" writes itself.
+  Every time the app is opened; the site shows it once per visit. After
+  signing in the same book says "Салом" with the person's name.
 
 ## Building
 

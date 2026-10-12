@@ -27,7 +27,7 @@
       "launchShowDuration": 4000,
       "launchAutoHide": true,
       "launchFadeOutDuration": 200,
-      "backgroundColor": "#ff5a1f",
+      "backgroundColor": "#0a0e17",
       "showSpinner": false,
       "androidScaleType": "CENTER_CROP",
       "splashFullScreen": false,

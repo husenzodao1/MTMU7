@@ -22,6 +22,7 @@ mkdirSync(out, { recursive: true });
 const icon = join(brand, "app-icon.svg");
 const mark = join(brand, "mark.svg");
 const background = join(brand, "app-background.svg");
+const splashBook = join(brand, "splash-book.svg");
 
 const render = (svg, size) =>
   sharp(svg, { density: Math.ceil((size / 512) * 72 * 1.5) })
@@ -76,7 +77,12 @@ await render(icon, 1024).toFile(join(out, "icon-only.png"));
 // mark keeps well inside the circle every launcher leaves whole.
 await (await markOn(1024, 0.9)).toFile(join(out, "icon-foreground.png"));
 await render(background, 1024).toFile(join(out, "icon-background.png"));
-const splash = await markOn(2732, 0.26, background);
+// The splash before Android 12 (later ones draw res/drawable/splash_book.xml):
+// the opening's first frame, the shut book on the night. Cropped to a phone,
+// the book comes out about the size the opening draws it.
+const night = { r: 10, g: 14, b: 23, alpha: 1 };
+const book = await render(splashBook, 1478).toBuffer();
+const splash = sharp({ create: { width: 2732, height: 2732, channels: 4, background: night } }).composite([{ input: book, gravity: "center" }]).png();
 await splash.clone().toFile(join(out, "splash.png"));
 await splash.clone().toFile(join(out, "splash-dark.png"));
 

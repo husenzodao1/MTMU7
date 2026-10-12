@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Bad_Script, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
-import { INTRO_COOKIE, INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
+import { INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
@@ -118,15 +118,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
-  // The first page opens with the school's mark and a greeting (src/features/intro/):
-  // on the site once per browser (a year's cookie), in the app on its first
-  // start (the page skips it after that), never for robots — and not on the
-  // first page after signing in, which has a short welcome of its own.
+  // The first page opens with the book and a greeting (src/features/intro/):
+  // every time the app is opened and once per visit to the site (the page
+  // itself skips it after that, INTRO_SCRIPT), never for robots — and not on
+  // the first page after signing in, which has the book's welcome of its own.
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
-  const opening =
-    !(await isWelcome()) &&
-    (isAppUserAgent(userAgent) || ((await cookies()).get(INTRO_COOKIE)?.value !== "1" && !isRobot(userAgent)));
+  const opening = !(await isWelcome()) && (isAppUserAgent(userAgent) || !isRobot(userAgent));
 
   return (
     <html

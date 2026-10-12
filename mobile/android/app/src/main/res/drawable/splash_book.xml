@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The splash on Android 12 and later: the opening's first frame, the shut
+     book with the app's mark on its orange cover (public/brand/splash-book.svg
+     is the same drawing), so the opening simply carries on from it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:fillColor="#E2D7BD"
+        android:pathData="M103,85.5 h85 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-85 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" />
+    <path
+        android:fillColor="#EFE6D2"
+        android:pathData="M101.5,84 h85 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-85 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" />
+    <path
+        android:fillColor="#FF5A1F"
+        android:pathData="M100,82.5 h83 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-83 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" />
+    <path android:pathData="M100,82.5 h83 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-83 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="98"
+                android:startY="0"
+                android:endX="104.4"
+                android:endY="0"
+                android:startColor="#29000000"
+                android:endColor="#00000000" />
+        </aapt:attr>
+    </path>
+    <group
+        android:scaleX="0.082656"
+        android:scaleY="0.082656"
+        android:translateX="122.84"
+        android:translateY="122.84">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M256,112 A52,52 0 1,1 256,216 A52,52 0 1,1 256,112 Z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="48"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M256,362 C230,312 178,282 110,270 M256,362 C282,312 334,282 402,270" />
+    </group>
+</vector>
