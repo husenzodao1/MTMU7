@@ -5,7 +5,7 @@ name: Weather photos
 on:
   push:
     branches: [ccr-79d6bc56-dvv8i0]
-    paths: ["scripts/photos/**"]
+    paths: ["scripts/photos/**", ".github/workflows/weather-photos.yml"]
 
 permissions:
   contents: write
