@@ -99,11 +99,14 @@ function WeatherSky({ part, weather }: { part: DayPart; weather: Promise<Weather
   return (
     <>
       <WeatherPhoto part={part} kind={now.kind} />
-      <p className="sky-chip" title={t(`kinds.${now.kind}`)}>
-        <Icon className="size-3.5" aria-hidden />
-        <span className="tabular">{now.temperature > 0 ? "+" : ""}{now.temperature}°</span>
-        <span className="sky-chip-town">{t("town")}</span>
-        <span className="sr-only">{t(`kinds.${now.kind}`)}</span>
+      {/* Just the sky's sign and the town, no box; the degrees are in its title. */}
+      <p className="sky-chip" title={`${t(`kinds.${now.kind}`)}, ${now.temperature > 0 ? "+" : ""}${now.temperature}°`}>
+        <Icon strokeWidth={1.5} aria-hidden />
+        <span>{t("town")}</span>
+        <span className="sr-only">
+          {t(`kinds.${now.kind}`)}, {now.temperature > 0 ? "+" : ""}
+          {now.temperature}°
+        </span>
       </p>
     </>
   );
