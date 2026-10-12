@@ -42,4 +42,10 @@ describe("push for a message", () => {
     assert.equal(push.body, "Мадина Каримова: 📷 Сурат");
     assert.equal(push.url, "/messages/c1");
   });
+
+  it("titles a channel by its own name, with no person before its words", () => {
+    const push = messagePush({ ...base, conversation_type: "channel", conversation_name: "Синфи 1А", preview: "Фардо экскурсия" }, "u2", "tg");
+    assert.equal(push.title, "📣 Синфи 1А");
+    assert.equal(push.body, "Фардо экскурсия");
+  });
 });

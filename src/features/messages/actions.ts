@@ -216,3 +216,100 @@ export async function removeGroupMemberAction(conversationId: string, userId: st
   if (userId === access.userId) redirect("/messages");
   return success("portal.messages.memberRemoved");
 }
+
+// ---------------------------------------------------------------- channels
+
+export interface ChannelSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  owner_first_name: string | null;
+  owner_last_name: string | null;
+  owner_avatar_url: string | null;
+  followers: number;
+  is_member: boolean;
+  is_admin: boolean;
+  last_post_at: string | null;
+}
+
+export async function listChannelsAction(query: string): Promise<ActionResult<ChannelSummary[]>> {
+  if (!(await requireMessaging())) return failure("errors.not_authenticated");
+  const term = z.string().trim().max(60).safeParse(query);
+  if (!term.success) return success(undefined, []);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_school_channels", { p_query: term.data || undefined, p_limit: 60 });
+  if (error) return mapDbError(error);
+  return success(
+    undefined,
+    (data ?? []).map((c) => ({
+      id: c.id ?? "",
+      name: c.name ?? "",
+      description: c.description,
+      owner_first_name: c.owner_first_name,
+      owner_last_name: c.owner_last_name,
+      owner_avatar_url: c.owner_avatar_url,
+      followers: Number(c.followers),
+      is_member: Boolean(c.is_member),
+      is_admin: Boolean(c.is_admin),
+      last_post_at: c.last_post_at,
+    }))
+  );
+}
+
+export async function createChannelAction(name: string, description: string): Promise<ActionResult> {
+  if (!(await requireMessaging())) return failure("errors.not_authenticated");
+  const parsed = z
+    .object({ name: z.string().trim().min(1).max(100), description: z.string().trim().max(500) })
+    .safeParse({ name, description });
+  if (!parsed.success) return failure("errors.invalid_channel_name");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_channel", { p_name: parsed.data.name, p_description: parsed.data.description || undefined });
+  if (error || !data) return mapDbError(error);
+  revalidatePath("/messages", "layout");
+  redirect(`/messages/${data}`);
+}
+
+export async function joinChannelAction(conversationId: string): Promise<ActionResult> {
+  if (!(await requireMessaging())) return failure("errors.not_authenticated");
+  if (!uuid.safeParse(conversationId).success) return failure("errors.invalid");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("join_channel", { p_conversation_id: conversationId });
+  if (error) return mapDbError(error);
+  revalidatePath("/messages", "layout");
+  redirect(`/messages/${conversationId}`);
+}
+
+export async function closeChannelAction(conversationId: string): Promise<ActionResult> {
+  if (!(await requireMessaging())) return failure("errors.not_authenticated");
+  if (!uuid.safeParse(conversationId).success) return failure("errors.invalid");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("close_channel", { p_conversation_id: conversationId });
+  if (error) return mapDbError(error);
+  revalidatePath("/messages", "layout");
+  redirect("/messages");
+}
+
+// ----------------------------------------------------------------- stories
+
+/**
+ * An answer to somebody's story, sent to them as an ordinary message in the
+ * conversation the two already have (or a new one), the way a reply to a
+ * story arrives in any messenger. Stays on the story; does not navigate.
+ */
+export async function replyToStoryAction(authorId: string, text: string, quote: string): Promise<ActionResult> {
+  const access = await requireMessaging();
+  if (!access) return failure("errors.not_authenticated");
+  const parsed = z
+    .object({ authorId: uuid, text: z.string().trim().min(1).max(1000), quote: z.string().trim().max(80) })
+    .safeParse({ authorId, text, quote });
+  if (!parsed.success || parsed.data.authorId === access.userId) return failure("errors.invalid");
+  const supabase = await createClient();
+  const { data: conversationId, error } = await supabase.rpc("create_direct_conversation", { p_target_user_id: parsed.data.authorId });
+  if (error || !conversationId) return mapDbError(error);
+  const content = parsed.data.quote ? `↪ «${parsed.data.quote}»\n${parsed.data.text}` : parsed.data.text;
+  const { error: sendError } = await supabase
+    .from("messages")
+    .insert({ conversation_id: conversationId, sender_id: access.userId, school_id: access.school!.id, content, type: "text" });
+  if (sendError) return mapDbError(sendError);
+  return success("portal.messages.stories.replySent");
+}

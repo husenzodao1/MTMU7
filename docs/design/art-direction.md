@@ -81,6 +81,24 @@ rule now where they differ from the lists below (`src/styles/motion.css`):
   a link is tapped (`instant-nav.ts`).
 - **The offline cover** comes only for an outage that lasts (four seconds, or
   the phone saying it has no network); a slow page gets a small note instead.
+- **The networks live in the menu**: the school's four marks as bare hairline
+  glyphs (`social-lines.tsx`), centred at the foot of the menu above the line
+  over "About the app" — on the phone's drawer and the computer's sidebar.
+- **The footer is a colophon**: a short brass hairline fading at both ends,
+  the flag and the school's name in small spaced capitals, the links divided
+  by dots and the year in fine print, centred on the page's own ground; the
+  networks join it only where there is no menu (the public and sign-in pages).
+- **Messages read like a messenger** (`styles/messenger.css`): a large title,
+  a rounded search, a row of stories, chips (all, unread, groups, channels),
+  airy rows with round faces, the time in the school's orange while something
+  is unread, ticks before one's own last message, a round orange button in the
+  corner. Ticks: a clock, one tick (the server has it), two grey (it has
+  reached them), two blue (read). Under a one-to-one's name: "online" or
+  when they were last here.
+- **Stories** are rings in the school's orange running into brass, a hairline
+  once seen; the viewer is full screen with a thin bar per story. **Channels**
+  carry a megaphone on a pale orange disc; their posts have no names and no
+  ticks.
 
 ## Removed as noise
 

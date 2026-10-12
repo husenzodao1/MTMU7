@@ -7,9 +7,7 @@ import {
   BellOff,
   Camera,
   Check,
-  CheckCheck,
   ChevronDown,
-  Clock,
   Copy,
   CornerUpLeft,
   Download,
@@ -22,6 +20,7 @@ import {
   LogOut,
   MapPin,
   Maximize2,
+  Megaphone,
   Mic,
   Minimize2,
   Palette,
@@ -47,6 +46,7 @@ import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import {
+  closeChannelAction,
   deleteMessageAction,
   editMessageAction,
   fetchMessageAction,
@@ -64,12 +64,13 @@ import { MessageGestures } from "@/features/messages/gestures";
 import { GroupMembersDialog } from "@/features/messages/group-members";
 import { downloadLink, mediaPath, prepareImage, removeMedia, uploadImage, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
 import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/member-card";
+import { Ticks, tickState } from "@/features/messages/ticks";
 import { PhotoViewer, type ViewedPhoto } from "@/features/messages/photo-viewer";
 import { canRecord, useVoiceRecorder, type Recording } from "@/features/messages/recorder";
 import { useWallpaper, WallpaperDialog, WALLPAPERS, type Wallpaper } from "@/features/messages/wallpaper";
 import { announceMessage } from "@/features/push/client";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
-import { EDIT_WINDOW_MS, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
+import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
 import { dayKey, formatClock, formatDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -84,6 +85,8 @@ export interface ThreadConversation {
   createdBy?: string | null;
   /** A line under the title: the desk's promise, a group's size. */
   subtitle?: string;
+  /** When the other side of a one-to-one last had the portal open. */
+  lastSeenAt?: string | null;
 }
 
 /**
@@ -268,9 +271,19 @@ export function Thread({
   // parent is a render loop waiting to happen; a lookup merged at read time
   // cannot fall behind because there is nothing to fall behind.
   const [readSince, setReadSince] = useState<Record<string, string | null>>({});
+  const [deliveredSince, setDeliveredSince] = useState<Record<string, string | null>>({});
   const members = useMemo(
-    () => initialMembers.map((m) => (m.user_id in readSince ? { ...m, last_read_at: readSince[m.user_id] } : m)),
-    [initialMembers, readSince]
+    () =>
+      initialMembers.map((m) =>
+        m.user_id in readSince || m.user_id in deliveredSince
+          ? {
+              ...m,
+              last_read_at: m.user_id in readSince ? readSince[m.user_id] : m.last_read_at,
+              last_delivered_at: m.user_id in deliveredSince ? deliveredSince[m.user_id] : m.last_delivered_at,
+            }
+          : m
+      ),
+    [initialMembers, readSince, deliveredSince]
   );
   const memberMap = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
   // The realtime handlers read the members through this, so a read receipt —
@@ -291,30 +304,48 @@ export function Thread({
   // read once anybody at the desk has read them; the desk has been read once
   // the person who asked has.
   const isSupport = conversation.type === "support";
+  // A channel's posts come from the channel: no names over them, no ticks
+  // after them (a tick for a few hundred followers would mean nothing).
+  const isChannel = conversation.type === "channel";
+  const broadcast = isBroadcast(conversation.type);
   const requesterId = conversation.createdBy ?? null;
-  const othersReadAt = useMemo(() => {
-    const others = members.filter((m) => m.user_id !== currentUserId);
-    if (others.length === 0) return null;
-    const times = (list: ConversationMember[]) =>
-      list.map((m) => (m.last_read_at ? new Date(m.last_read_at).getTime() : null));
-    if (isSupport && requesterId) {
-      if (currentUserId === requesterId) {
-        const read = times(others).filter((v): v is number => v !== null);
-        return read.length > 0 ? Math.max(...read) : null;
+  //
+  // "Delivered" is worked out the same way from when each of the others last
+  // had everything reach them — reading counts as having it.
+  const caughtUp = useCallback(
+    (at: (m: ConversationMember) => number | null) => {
+      const others = members.filter((m) => m.user_id !== currentUserId);
+      if (others.length === 0) return null;
+      if (isSupport && requesterId) {
+        if (currentUserId === requesterId) {
+          const times = others.map(at).filter((v): v is number => v !== null);
+          return times.length > 0 ? Math.max(...times) : null;
+        }
+        const requester = others.find((m) => m.user_id === requesterId);
+        return requester ? at(requester) : null;
       }
-      const requester = others.find((m) => m.user_id === requesterId);
-      return requester?.last_read_at ? new Date(requester.last_read_at).getTime() : null;
-    }
-    let earliest = Infinity;
-    for (const time of times(others)) {
-      if (time === null) return null;
-      earliest = Math.min(earliest, time);
-    }
-    return Number.isFinite(earliest) ? earliest : null;
-  }, [members, currentUserId, isSupport, requesterId]);
+      let earliest = Infinity;
+      for (const time of others.map(at)) {
+        if (time === null) return null;
+        earliest = Math.min(earliest, time);
+      }
+      return Number.isFinite(earliest) ? earliest : null;
+    },
+    [members, currentUserId, isSupport, requesterId]
+  );
+  const othersReadAt = useMemo(() => caughtUp((m) => (m.last_read_at ? new Date(m.last_read_at).getTime() : null)), [caughtUp]);
+  const othersDeliveredAt = useMemo(
+    () =>
+      caughtUp((m) => {
+        const read = m.last_read_at ? new Date(m.last_read_at).getTime() : null;
+        const delivered = m.last_delivered_at ? new Date(m.last_delivered_at).getTime() : null;
+        return read === null ? delivered : delivered === null ? read : Math.max(read, delivered);
+      }),
+    [caughtUp]
+  );
 
   const receiptLabels = useMemo(
-    () => ({ sending: t("receipt.sending"), sent: t("receipt.sent"), seen: t("receipt.seen"), failed: t("receipt.failed") }),
+    () => ({ sending: t("receipt.sending"), sent: t("receipt.sent"), delivered: t("receipt.delivered"), seen: t("receipt.seen"), failed: t("receipt.failed") }),
     [t]
   );
 
@@ -525,10 +556,21 @@ export function Thread({
 
   // A private channel per conversation, which only its members may join
   // (00071). Nothing said on it is stored.
+  //
+  // In a one-to-one the same channel says who is here: "here" when the
+  // conversation opens (asking the other side to answer in kind), again every
+  // twenty-five seconds while it is on screen, "gone" when it is left. The
+  // other side is "online" while it has been heard from in the last
+  // forty-five seconds, and "last seen" from the moment it said "gone".
   const typingChannel = useRef<RealtimeChannel | null>(null);
   const lastTypingSent = useRef(0);
+  const [heardAt, setHeardAt] = useState<Record<string, number>>({});
+  const [leftAt, setLeftAt] = useState<string | null>(null);
+  const tracksPresence = conversation.type === "direct";
   useEffect(() => {
     const supabase = getBrowserClient();
+    const say = (payload: { ask?: boolean; gone?: boolean }) =>
+      void channel.send({ type: "broadcast", event: "here", payload: { user_id: currentUserId, ...payload } });
     const channel = supabase
       .channel(`chat:${conversation.id}`, { config: { private: true, broadcast: { self: false } } })
       .on("broadcast", { event: "typing" }, ({ payload }) => {
@@ -537,22 +579,59 @@ export function Thread({
         const who = said.user_id;
         const kind = said.kind === "recording" ? "recording" : "typing";
         setTypingNow((current) => ({ ...current, [who]: { kind, until: Date.now() + 5000 } }));
+        setHeardAt((current) => ({ ...current, [who]: Date.now() }));
       })
-      .subscribe();
+      .on("broadcast", { event: "here" }, ({ payload }) => {
+        if (!tracksPresence) return;
+        const said = payload as { user_id?: unknown; ask?: unknown; gone?: unknown };
+        if (typeof said.user_id !== "string" || said.user_id === currentUserId) return;
+        const who = said.user_id;
+        if (said.gone === true) {
+          setHeardAt((current) => {
+            const next = { ...current };
+            delete next[who];
+            return next;
+          });
+          setLeftAt(new Date().toISOString());
+          return;
+        }
+        setHeardAt((current) => ({ ...current, [who]: Date.now() }));
+        if (said.ask === true && document.visibilityState === "visible") say({});
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && tracksPresence && document.visibilityState === "visible") say({ ask: true });
+      });
     typingChannel.current = channel;
     const sweep = window.setInterval(() => {
+      const at = Date.now();
       setTypingNow((current) => {
-        const at = Date.now();
         const live = Object.entries(current).filter(([, value]) => value.until > at);
         return live.length === Object.keys(current).length ? current : Object.fromEntries(live);
       });
+      setHeardAt((current) => {
+        const live = Object.entries(current).filter(([, heard]) => at - heard < 45_000);
+        return live.length === Object.keys(current).length ? current : Object.fromEntries(live);
+      });
     }, 1000);
+    const heartbeat = tracksPresence
+      ? window.setInterval(() => {
+          if (document.visibilityState === "visible") say({});
+        }, 25_000)
+      : undefined;
+    const onVisibility = () => {
+      if (!tracksPresence) return;
+      say(document.visibilityState === "visible" ? { ask: true } : { gone: true });
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.clearInterval(sweep);
+      if (heartbeat) window.clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (tracksPresence) say({ gone: true });
       typingChannel.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [conversation.id, currentUserId]);
+  }, [conversation.id, currentUserId, tracksPresence]);
 
   const announceTyping = useCallback(
     (kind: "typing" | "recording") => {
@@ -818,8 +897,12 @@ export function Thread({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversation_members", filter: `conversation_id=eq.${conversation.id}` },
         (payload) => {
-          const row = payload.new as { user_id: string; last_read_at: string | null };
-          setReadSince((current) => ({ ...current, [row.user_id]: row.last_read_at }));
+          const row = payload.new as { user_id: string; last_read_at: string | null; last_delivered_at?: string | null };
+          setReadSince((current) => (current[row.user_id] === row.last_read_at ? current : { ...current, [row.user_id]: row.last_read_at }));
+          const delivered = row.last_delivered_at;
+          if (delivered !== undefined) {
+            setDeliveredSince((current) => (current[row.user_id] === delivered ? current : { ...current, [row.user_id]: delivered }));
+          }
         }
       )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
@@ -1145,8 +1228,25 @@ export function Thread({
     const name = memberMap.get(userId)?.first_name ?? t("unknownUser");
     return kind === "recording" ? t("recordingName", { name }) : t("typingName", { name });
   })();
+  const otherOnline = Boolean(other && heardAt[other.user_id]);
+  const lastSeen = leftAt ?? conversation.lastSeenAt ?? null;
+  const presenceLine = !other
+    ? undefined
+    : otherOnline
+      ? t("online")
+      : lastSeen
+        ? dayKey(lastSeen, timeZone) === dayKey(new Date(), timeZone)
+          ? t("lastSeenToday", { time: formatClock(lastSeen, locale, timeZone) })
+          : t("lastSeenOn", { date: formatDate(lastSeen, locale, timeZone), time: formatClock(lastSeen, locale, timeZone) })
+        : undefined;
   const subtitle =
-    typingLine ?? conversation.subtitle ?? (conversation.type !== "direct" && !isSupport ? t("memberCount", { count: members.length }) : undefined);
+    typingLine ??
+    conversation.subtitle ??
+    (isChannel
+      ? t("followers", { count: members.length })
+      : conversation.type !== "direct" && !isSupport
+        ? t("memberCount", { count: members.length })
+        : presenceLine);
   const wallpaperNames = Object.fromEntries(WALLPAPERS.map((name) => [name, t(`wallpapers.${name}`)])) as Record<Wallpaper, string>;
   const attachedFileKind = attached?.kind === "file" ? kindOf(attached.name, attached.mime) : null;
 
@@ -1185,7 +1285,14 @@ export function Thread({
               <span className="absolute bottom-0 end-0 size-2.5 rounded-full bg-success-600 ring-2 ring-surface" />
             </span>
           ) : conversation.type === "direct" ? (
-            <Avatar name={conversation.title} src={other?.avatar_url} size="md" />
+            <span className="relative shrink-0">
+              <Avatar name={conversation.title} src={other?.avatar_url} size="md" />
+              {otherOnline ? <span className="absolute bottom-0 end-0 size-2.5 rounded-full bg-success-600 ring-2 ring-[var(--chat-bar)]" aria-hidden /> : null}
+            </span>
+          ) : isChannel ? (
+            <span className="chat-channel-mark inline-flex size-10 shrink-0 items-center justify-center rounded-full" aria-hidden>
+              <Megaphone className="size-[1.125rem]" strokeWidth={1.75} />
+            </span>
           ) : (
             <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-ink-secondary" aria-hidden>
               <Users className="size-5" />
@@ -1194,7 +1301,7 @@ export function Thread({
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[0.9375rem] font-semibold leading-tight text-ink">{conversation.title}</h1>
             {subtitle ? (
-              <p className={cn("truncate text-xs", typingLine ? "font-medium text-success-700" : "text-ink-muted")} aria-live="polite">
+              <p className={cn("truncate text-xs", typingLine || otherOnline ? "font-medium text-success-700" : "text-ink-muted")} aria-live="polite">
                 {subtitle}
               </p>
             ) : null}
@@ -1224,7 +1331,7 @@ export function Thread({
               <Palette aria-hidden />
               {t("wallpaper")}
             </Overlay.DropdownMenuItem>
-            {conversation.type !== "direct" && !isSupport ? (
+            {conversation.type !== "direct" && !isSupport && !isChannel ? (
               <Overlay.DropdownMenuItem onSelect={() => setMembersOpen(true)}>
                 <Users aria-hidden />
                 {t("members")}
@@ -1236,12 +1343,25 @@ export function Thread({
                 {iBlockedOther ? t("unblock") : t("block")}
               </Overlay.DropdownMenuItem>
             ) : null}
-            {conversation.type !== "direct" && !isSupport ? (
+            {isChannel && myRole === "admin" ? (
+              <>
+                <Overlay.DropdownMenuSeparator />
+                <Overlay.DropdownMenuItem
+                  tone="danger"
+                  onSelect={() => {
+                    if (window.confirm(t("channel.closeConfirm"))) runAction(() => closeChannelAction(conversation.id));
+                  }}
+                >
+                  <Trash2 aria-hidden />
+                  {t("channel.close")}
+                </Overlay.DropdownMenuItem>
+              </>
+            ) : conversation.type !== "direct" && !isSupport ? (
               <>
                 <Overlay.DropdownMenuSeparator />
                 <Overlay.DropdownMenuItem tone="danger" onSelect={() => runAction(() => removeGroupMemberAction(conversation.id, currentUserId))}>
                   <LogOut aria-hidden />
-                  {t("leave")}
+                  {isChannel ? t("channel.unfollow") : t("leave")}
                 </Overlay.DropdownMenuItem>
               </>
             ) : null}
@@ -1294,7 +1414,7 @@ export function Thread({
             {rows.map(({ message: m, showDay, previousSenderId }) => {
               const mine = m.sender_id === currentUserId;
               const firstOfRun = showDay || previousSenderId !== m.sender_id;
-              const showSender = !mine && conversation.type !== "direct" && firstOfRun;
+              const showSender = !mine && conversation.type !== "direct" && !isChannel && firstOfRun;
               const reply = m.reply_to_id ? byId.get(m.reply_to_id) : undefined;
               const canEdit = mine && !m.is_deleted && m.type === "text" && now - new Date(m.created_at).getTime() < EDIT_WINDOW_MS;
               const canPin = !m.is_deleted && (conversation.type === "direct" || myRole === "admin");
@@ -1321,7 +1441,9 @@ export function Thread({
                   {m.is_favorite ? <Star className="size-3 fill-current" aria-label={t("favorite")} /> : null}
                   {m.is_edited && !m.is_deleted ? <span>{t("edited")}</span> : null}
                   <time dateTime={m.created_at}>{formatClock(m.created_at, locale, timeZone)}</time>
-                  {mine && !m.is_deleted ? <Receipt message={m} seenAt={othersReadAt} labels={receiptLabels} onRetry={retry} /> : null}
+                  {mine && !m.is_deleted && !broadcast ? (
+                    <Receipt message={m} readAt={othersReadAt} deliveredAt={othersDeliveredAt} labels={receiptLabels} onRetry={retry} />
+                  ) : null}
                 </span>
               );
 
@@ -1543,6 +1665,17 @@ export function Thread({
             <Button variant="secondary" size="sm" onClick={() => other && runAction(() => setBlockedAction(other.user_id, false), () => router.refresh())}>
               {t("unblock")}
             </Button>
+          </div>
+        ) : !canPost && isChannel ? (
+          <div className="flex justify-center py-0.5">
+            <button
+              type="button"
+              onClick={() => runAction(() => setMutedAction(conversation.id, !conversation.isMuted), () => router.refresh())}
+              className="chat-channel-mute inline-flex h-10 items-center gap-2 rounded-full px-5 text-sm font-semibold"
+            >
+              {conversation.isMuted ? <Bell className="size-4" aria-hidden /> : <BellOff className="size-4" aria-hidden />}
+              {conversation.isMuted ? t("unmute") : t("mute")}
+            </button>
           </div>
         ) : !canPost ? (
           <p className="px-2 py-1 text-sm text-ink-muted">{t("readOnlyChannel")}</p>
@@ -1972,26 +2105,27 @@ function ComposerAction({
 }
 
 /**
- * One tick, two ticks.
+ * The mark after one's own message (ticks.tsx): a clock while it is on its
+ * way, one tick once the server has it, two once it has reached the others,
+ * two blue ones once they have read it — everyone else in a group, the other
+ * side of a support conversation. A message that did not make it is marked in
+ * red, and tapping the mark sends it again.
  *
- * A clock while the message is still on its way, one tick once the server has
- * it, two blue ones once it has been read — by everyone else in a group, by
- * the other side of a support conversation. A message that did not make it is
- * marked in red, and tapping the mark sends it again.
- *
- * `seenAt` is a single moment worked out once per conversation, so the
- * comparison is one number against one number however many people are in the
- * room.
+ * `readAt` and `deliveredAt` are single moments worked out once per
+ * conversation, so the comparison is one number against one number however
+ * many people are in the room.
  */
 function Receipt({
   message,
-  seenAt,
+  readAt,
+  deliveredAt,
   labels,
   onRetry,
 }: {
   message: ThreadMessage;
-  seenAt: number | null;
-  labels: { sending: string; sent: string; seen: string; failed: string };
+  readAt: number | null;
+  deliveredAt: number | null;
+  labels: { sending: string; sent: string; delivered: string; seen: string; failed: string };
   onRetry: (message: ThreadMessage) => void;
 }) {
   if (message.failed) {
@@ -2001,19 +2135,9 @@ function Receipt({
       </button>
     );
   }
-  if (message.pending) {
-    return (
-      <span title={labels.sending}>
-        <Clock className="size-3" aria-label={labels.sending} />
-      </span>
-    );
-  }
-  const seen = seenAt !== null && seenAt >= new Date(message.created_at).getTime();
-  return (
-    <span title={seen ? labels.seen : labels.sent} className={seen ? "chat-seen" : undefined}>
-      {seen ? <CheckCheck className="size-4" strokeWidth={2.25} aria-label={labels.seen} /> : <Check className="size-4" strokeWidth={2.25} aria-label={labels.sent} />}
-    </span>
-  );
+  if (message.pending) return <Ticks state="sending" label={labels.sending} />;
+  const state = tickState(message.created_at, deliveredAt, readAt);
+  return <Ticks state={state} label={state === "read" ? labels.seen : state === "delivered" ? labels.delivered : labels.sent} />;
 }
 
 /**

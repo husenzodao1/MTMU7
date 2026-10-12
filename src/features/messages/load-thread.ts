@@ -2,7 +2,7 @@ import "server-only";
 import type { ComponentProps } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Thread } from "@/features/messages/thread";
-import { conversationTitle, type ConversationMember, type ThreadMessage } from "@/features/messages/types";
+import { conversationTitle, isBroadcast, type ConversationMember, type ThreadMessage } from "@/features/messages/types";
 import { can, type Access } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +18,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
   const t = await getTranslations("portal.messages");
   const supabase = await createClient();
 
-  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }] = await Promise.all([
+  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }, , delivered] = await Promise.all([
     supabase.from("conversations").select("id, type, name, is_active, created_by").eq("id", id).maybeSingle(),
     supabase
       .from("conversation_members")
@@ -39,7 +39,11 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
     // them: it touches only the caller's own membership row, so for somebody
     // who is not a member it changes nothing.
     supabase.rpc("mark_conversation_read", { p_conversation_id: id }),
+    // Asked apart from the members, so a database that has not had 00094 yet
+    // still opens the thread — just without the second tick.
+    supabase.from("conversation_members").select("user_id, last_delivered_at").eq("conversation_id", id),
   ]);
+  const deliveredAt = new Map((delivered.error ? [] : delivered.data ?? []).map((row) => [row.user_id, row.last_delivered_at]));
   if (!conversation || !conversation.is_active) return null;
   const me = (memberRows ?? []).find((m) => m.user_id === access.userId);
   if (!me) return null;
@@ -53,6 +57,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
       last_name: user?.last_name ?? null,
       avatar_url: user?.avatar_url ?? null,
       last_read_at: row.last_read_at,
+      last_delivered_at: deliveredAt.get(row.user_id) ?? null,
     };
   });
   const myRole = me.role === "admin" ? "admin" : "member";
@@ -66,7 +71,13 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
   const title = askedByMe
     ? t("supportTitle")
     : conversationTitle({ type: conversation.type, name: conversation.name, members }, access.userId, t("unknownUser"));
-  const canPost = isSupport || (can(access, "messages.use") && (conversation.type !== "announcement" || myRole === "admin"));
+  const canPost = isSupport || (can(access, "messages.use") && (!isBroadcast(conversation.type) || myRole === "admin"));
+  // When the other side of a one-to-one last had the portal open, for the
+  // line under their name. Nothing, rather than an error, before 00094.
+  const other = conversation.type === "direct" ? members.find((m) => m.user_id !== access.userId) : undefined;
+  const presence = other
+    ? await supabase.from("user_presence").select("last_seen_at").eq("user_id", other.user_id).maybeSingle()
+    : null;
 
   return {
     conversation: {
@@ -76,6 +87,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
       isMuted: me.is_muted,
       createdBy: conversation.created_by,
       subtitle: isSupport ? (askedByMe ? t("supportSubtitle") : t("supportDeskSubtitle")) : undefined,
+      lastSeenAt: presence && !presence.error ? presence.data?.last_seen_at ?? null : null,
     },
     members,
     myRole,

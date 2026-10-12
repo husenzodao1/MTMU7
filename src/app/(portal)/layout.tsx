@@ -35,9 +35,10 @@ export default async function PortalLayout({ children }: { children: React.React
         mobileBar={nav.mobileBar}
         unreadNotifications={shell.unreadNotifications}
         unreadMessages={shell.unreadMessages}
+        socials={shell.socials}
         locale={shell.locale}
         switchHref={nav.switchHref}
-        footer={<SiteFooter schoolName={shell.school?.name ?? null} hideSignIn />}
+        footer={<SiteFooter schoolName={shell.school?.name ?? null} hideSignIn socials={false} />}
       >
         {children}
       </AppShell>

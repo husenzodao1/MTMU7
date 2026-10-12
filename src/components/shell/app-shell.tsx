@@ -14,6 +14,7 @@ import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
+import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
@@ -26,6 +27,12 @@ export interface ShellUser {
   name: string;
   avatarUrl: string | null;
   roleLabel: string;
+}
+
+export interface ShellSocial {
+  key: keyof typeof SOCIAL_LINE;
+  href: string;
+  label: string;
 }
 
 export interface ShellSchool {
@@ -45,6 +52,8 @@ interface ShellProps {
   unreadMessages: number;
   locale: string;
   switchHref?: { href: string; label: string } | null;
+  /** The school's networks, at the foot of the menu above "About the app". */
+  socials?: ShellSocial[];
   children: ReactNode;
   /** Rendered under the content — the portal passes the site footer here. */
   footer?: ReactNode;
@@ -107,54 +116,69 @@ const MAKERS = [
 ] as const;
 
 /**
- * The foot of the phone's menu: a small "!" and "About the app". It opens the
- * version of the app and who made it, in a small table set in a typewriter
- * face.
+ * The foot of the menu, on the phone and in the sidebar alike: the school's
+ * four networks as bare hairline marks, a line, and under it a small "!" and
+ * "About the app", which opens the version of the app and who made it, in a
+ * small table set in a typewriter face.
  */
-function DrawerFooter() {
+function MenuFoot({ socials }: { socials: ShellSocial[] }) {
   const t = useTranslations("nav");
   const version = useAppVersion();
   const [aboutOpen, setAboutOpen] = useState(false);
   return (
-    <div className="flex items-center justify-center px-4 py-2.5">
-      <DialogPrimitive.Root open={aboutOpen} onOpenChange={setAboutOpen}>
-        <DialogPrimitive.Trigger asChild>
-          <button type="button" className="shell-about inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink">
-            <CircleAlert className="size-3.5" aria-hidden />
-            {t("about")}
-          </button>
-        </DialogPrimitive.Trigger>
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-ink/40 data-[state=open]:animate-fade" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] max-h-[calc(100dvh-2rem)] w-[min(26rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-surface p-5 text-center shadow-overlay focus:outline-none">
-            {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
-            <img src="/brand/app-icon.svg" alt="" width={48} height={48} className="mx-auto size-12 rounded-xl shadow-sm" />
-            <DialogPrimitive.Title className="mt-3 text-sm font-semibold text-ink">{t("aboutTitle")}</DialogPrimitive.Title>
-            <DialogPrimitive.Description className="mt-1 text-xs text-ink-secondary">{t("aboutBody")}</DialogPrimitive.Description>
-            <p className="mt-2 font-mono text-[0.6875rem] text-ink-muted tabular">{t("appVersion", { version })}</p>
-            <p className="mt-4 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">{t("makers")}</p>
-            <table className="makers mt-2 w-full text-left">
-              <tbody>
-                {MAKERS.map((maker) => (
-                  <tr key={maker.latin}>
-                    <td>
-                      <span className="block font-semibold text-ink">{maker.name}</span>
-                      <span className="block text-ink-muted">{maker.latin}</span>
-                    </td>
-                    <td>
-                      <span className="block text-ink-secondary">{maker.roles}</span>
-                      <span className="makers-level">{maker.level}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <DialogPrimitive.Close className="mt-4 inline-flex h-9 min-w-24 items-center justify-center rounded-md bg-brand-solid px-5 text-xs font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
-              {t("aboutClose")}
-            </DialogPrimitive.Close>
-          </DialogPrimitive.Content>
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
+    <div>
+      {socials.length > 0 ? (
+        <nav className="menu-socials" aria-label={t("socials")}>
+          {socials.map(({ key, href, label }) => {
+            const Icon = SOCIAL_LINE[key];
+            return (
+              <a key={key} href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="menu-social" data-instant="off">
+                <Icon />
+              </a>
+            );
+          })}
+        </nav>
+      ) : null}
+      <div className="flex items-center justify-center border-t border-line px-4 py-2.5">
+        <DialogPrimitive.Root open={aboutOpen} onOpenChange={setAboutOpen}>
+          <DialogPrimitive.Trigger asChild>
+            <button type="button" className="shell-about inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-ink-muted hover:bg-surface-muted hover:text-ink">
+              <CircleAlert className="size-3.5" aria-hidden />
+              {t("about")}
+            </button>
+          </DialogPrimitive.Trigger>
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-ink/40 data-[state=open]:animate-fade" />
+            <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[60] max-h-[calc(100dvh-2rem)] w-[min(26rem,calc(100vw-1.5rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-surface p-5 text-center shadow-overlay focus:outline-none">
+              {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, a small static SVG */}
+              <img src="/brand/app-icon.svg" alt="" width={48} height={48} className="mx-auto size-12 rounded-xl shadow-sm" />
+              <DialogPrimitive.Title className="mt-3 text-sm font-semibold text-ink">{t("aboutTitle")}</DialogPrimitive.Title>
+              <DialogPrimitive.Description className="mt-1 text-xs text-ink-secondary">{t("aboutBody")}</DialogPrimitive.Description>
+              <p className="mt-2 font-mono text-[0.6875rem] text-ink-muted tabular">{t("appVersion", { version })}</p>
+              <p className="mt-4 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">{t("makers")}</p>
+              <table className="makers mt-2 w-full text-left">
+                <tbody>
+                  {MAKERS.map((maker) => (
+                    <tr key={maker.latin}>
+                      <td>
+                        <span className="block font-semibold text-ink">{maker.name}</span>
+                        <span className="block text-ink-muted">{maker.latin}</span>
+                      </td>
+                      <td>
+                        <span className="block text-ink-secondary">{maker.roles}</span>
+                        <span className="makers-level">{maker.level}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <DialogPrimitive.Close className="mt-4 inline-flex h-9 min-w-24 items-center justify-center rounded-md bg-brand-solid px-5 text-xs font-semibold text-brand-on-solid hover:bg-brand-solid-hover">
+                {t("aboutClose")}
+              </DialogPrimitive.Close>
+            </DialogPrimitive.Content>
+          </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
+      </div>
     </div>
   );
 }
@@ -291,7 +315,7 @@ function BottomBar({ items, pathname, messagesUnread }: { items: NavItem[]; path
   );
 }
 
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, children, footer }: ShellProps) {
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -316,19 +340,57 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
     setNotifications(unreadNotifications);
   }
 
+  // "I am here, and what was sent to me has reached me" (00094): the second
+  // tick on the sender's side, and "last seen" under this person's name. Told
+  // when the portal opens, when it comes back to the screen or leaves it, and
+  // when a message arrives — its notification is what this portal hears of
+  // it, wherever in the portal the person is. Folded into one call a second.
+  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchMessenger = useCallback((now = false) => {
+    if (touchTimer.current) clearTimeout(touchTimer.current);
+    const send = () => {
+      touchTimer.current = null;
+      getBrowserClient()
+        .rpc("touch_messenger")
+        .then(
+          () => undefined,
+          () => undefined
+        );
+    };
+    if (now) send();
+    else touchTimer.current = setTimeout(send, 1000);
+  }, []);
+
+  useEffect(() => {
+    touchMessenger(true);
+    const onVisibility = () => touchMessenger(true);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (touchTimer.current) clearTimeout(touchTimer.current);
+    };
+  }, [touchMessenger]);
+
   // Realtime badge: RLS delivers only this user's notification rows.
   useEffect(() => {
     const supabase = getBrowserClient();
     const channel = supabase
       .channel(`notifications:${user.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
         setNotifications((n) => n + 1);
+        if ((payload.new as { type?: string }).type === "message") touchMessenger();
+      })
+      // A burst of messages from one conversation updates its one unread
+      // notification instead of adding another.
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
+        const row = payload.new as { type?: string; is_read?: boolean };
+        if (row.type === "message" && !row.is_read) touchMessenger();
       })
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [user.id]);
+  }, [user.id, touchMessenger]);
 
   // The unread messages on the bar's Messages button. The layout counts them
   // once, and layouts are not rendered again on navigation, so a conversation
@@ -429,6 +491,9 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             </Link>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">{sidebar()}</div>
+          <div className="shrink-0">
+            <MenuFoot socials={socials} />
+          </div>
         </aside>
 
         {/* As tall as the screen at least, so the footer sits at the foot of a
@@ -548,7 +613,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
         {mobileBar && mobileBar.length > 0 ? <BottomBar items={mobileBar} pathname={pathname} messagesUnread={messagesUnread} /> : null}
       </div>
-      <MenuDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label={school.fullName || school.name} appRoot={appRoot} trigger={burger} footer={<DrawerFooter />}>
+      <MenuDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label={school.fullName || school.name} appRoot={appRoot} trigger={burger} footer={<MenuFoot socials={socials} />}>
         {sidebar(() => setDrawerOpen(false))}
       </MenuDrawer>
     </>

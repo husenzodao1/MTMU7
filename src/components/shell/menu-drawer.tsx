@@ -212,7 +212,7 @@ export function MenuDrawer({
         className="menu-drawer-panel safe-top safe-bottom focus:outline-none"
       >
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
-        {footer ? <div className="shrink-0 border-t border-line">{footer}</div> : null}
+        {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>
     </div>,
     document.body

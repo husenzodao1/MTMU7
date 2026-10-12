@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./motion.css";
+@import "./messenger.css";
 
 /*
  * MTMU7 design tokens — "midnight and brass".
@@ -1615,112 +1616,54 @@ html.chat-lock body {
 
 /* --------------------------------------------------------------- the footer */
 /*
- * One quiet band at the foot of every page (official-header.tsx, SiteFooter):
- * the surface, a hairline on top, and behind it the
- * national flag as a soft wash — its red, white and green in 2:3:2, blended
- * at the seams and fading out towards both sides, there to be felt more than
- * seen. Small type, hairline bars between the links, nothing loud.
+ * The foot of every page (official-header.tsx, SiteFooter), set like a
+ * colophon: centred on the page's own ground, no band, no border. A short
+ * hairline in brass that fades at both ends opens it; then the flag and the
+ * school's name in small spaced capitals, the links in small type divided by
+ * dots, the networks as bare hairline marks where there is no menu to hold
+ * them, and the year in fine print.
  */
 .site-footer {
-  --flag-red: rgb(204 0 0 / 0.09);
-  --flag-white: rgb(255 255 255 / 0.5);
-  --flag-green: rgb(0 102 0 / 0.09);
   position: relative;
   z-index: 10;
-  isolation: isolate;
-  overflow: hidden;
   margin-top: auto;
-  border-top: 1px solid var(--color-line);
-  background: var(--color-surface);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.site-footer::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    var(--flag-red) 0%,
-    var(--flag-red) 20%,
-    var(--flag-white) 36%,
-    var(--flag-white) 64%,
-    var(--flag-green) 80%,
-    var(--flag-green) 100%
-  );
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-}
-:root[data-theme="night"] .site-footer,
-:root[data-theme="midnight"] .site-footer {
-  --flag-red: rgb(230 40 40 / 0.11);
-  --flag-white: rgb(255 255 255 / 0.035);
-  --flag-green: rgb(30 150 70 / 0.11);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .site-footer,
-  :root[data-theme="ocean"] .site-footer,
-  :root[data-theme="graphite"] .site-footer,
-  :root[data-theme="lavender"] .site-footer {
-    --flag-red: rgb(230 40 40 / 0.11);
-    --flag-white: rgb(255 255 255 / 0.035);
-    --flag-green: rgb(30 150 70 / 0.11);
-  }
-}
 .footer-inner {
-  margin-inline: auto;
-  max-width: 64rem;
-  padding: 0.75rem 1rem 0.625rem;
-}
-.footer-main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.55rem;
+  margin-inline: auto;
+  max-width: 64rem;
+  padding: 1.75rem 1rem 1.25rem;
+  text-align: center;
 }
-@media (min-width: 768px) {
-  .footer-main {
-    flex-direction: row;
-    justify-content: center;
-    gap: 1.25rem;
-  }
-  /* A faint dot between the three groups on one line. */
-  .footer-main > * + *::before {
-    content: "";
-    display: inline-block;
-    width: 3px;
-    height: 3px;
-    margin-inline-end: 1.25rem;
-    border-radius: 999px;
-    vertical-align: middle;
-    background: color-mix(in oklab, var(--color-ink-muted) 40%, transparent);
-  }
-  .footer-main > * + * {
-    display: flex;
-    align-items: center;
-  }
+.footer-rule {
+  display: block;
+  width: 3rem;
+  height: 1px;
+  margin-bottom: 0.35rem;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, #d9be8c 85%, var(--color-ink-muted)), transparent);
 }
 .footer-brand {
   display: flex;
   min-width: 0;
   max-width: 100%;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-ink-secondary);
 }
 .footer-flag {
   flex-shrink: 0;
-  width: 1.125rem;
-  height: 0.5625rem;
-  border-radius: 1.5px;
-  box-shadow:
-    0 0 0 0.5px rgb(15 23 42 / 0.2),
-    0 1px 2px rgb(15 23 42 / 0.12);
+  width: 1rem;
+  height: 0.5rem;
+  border-radius: 1px;
+  box-shadow: 0 0 0 0.5px rgb(15 23 42 / 0.18);
 }
 .footer-links {
   display: flex;
@@ -1736,20 +1679,21 @@ html.chat-lock body {
   display: inline-flex;
   align-items: center;
 }
-/* The hairline bar before every link but the first: "|", drawn. */
+/* A small dot before every link but the first. */
 .footer-links > li + li::before {
   content: "";
   display: inline-block;
-  width: 1px;
-  height: 0.6rem;
-  margin-inline: 0.65rem;
-  background: color-mix(in oklab, var(--color-ink-muted) 35%, transparent);
+  width: 2px;
+  height: 2px;
+  margin-inline: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-ink-muted) 55%, transparent);
 }
 .footer-link {
   position: relative;
   border-radius: 2px;
   color: var(--color-ink-muted);
-  transition: color 0.2s ease;
+  transition: color var(--duration-fast) var(--ease-standard);
 }
 /* The underline draws out from the middle. */
 .footer-link::after {
@@ -1759,9 +1703,9 @@ html.chat-lock body {
   bottom: -2px;
   height: 1px;
   background: currentColor;
-  opacity: 0.6;
+  opacity: 0.5;
   transform: scaleX(0);
-  transition: transform 0.25s ease;
+  transition: transform 0.25s var(--ease-standard);
 }
 .footer-link:hover {
   color: var(--color-ink);
@@ -1772,24 +1716,25 @@ html.chat-lock body {
 .footer-socials {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.35rem;
 }
 .footer-social {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.375rem;
-  height: 1.375rem;
-  border-radius: 999px;
-  color: color-mix(in oklab, var(--color-ink-muted) 85%, transparent);
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-ink-muted);
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    transform 0.2s ease;
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+.footer-social svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
 }
 .footer-social:hover {
   color: var(--color-ink);
-  background: color-mix(in oklab, var(--color-surface-muted) 80%, transparent);
   transform: translateY(-1px);
 }
 .footer-fine {
@@ -1797,11 +1742,10 @@ html.chat-lock body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin-top: 0.4rem;
   font-size: 0.5625rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--color-ink-muted) 80%, transparent);
+  color: color-mix(in oklab, var(--color-ink-muted) 75%, transparent);
 }
 .footer-dot {
   width: 2px;
@@ -1809,6 +1753,10 @@ html.chat-lock body {
   border-radius: 999px;
   background: currentColor;
   opacity: 0.6;
+}
+/* The phone app is already installed: no "download the app" in it. */
+html[data-app] .footer-download {
+  display: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .footer-link::after,
@@ -1830,41 +1778,40 @@ html.chat-lock body {
 }
 
 /*
- * The foot of a page inside the phone app (official-header.tsx): no footer —
- * an app has none — only the school's four marks, small and centred, the last
- * thing under the content. The site keeps its footer.
+ * The school's networks at the foot of the menu (app-shell.tsx, MenuFoot):
+ * four bare hairline marks in a row, centred over the line above "About the
+ * app" — no disc, no box, only the mark, a little darker under a finger.
  */
-.app-socials {
-  display: none;
-}
-html[data-app] .site-footer {
-  display: none;
-}
-html[data-app] .app-socials {
+.menu-socials {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 0.875rem;
-  padding: 0.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  gap: 1.1rem;
+  padding: 0.5rem 1rem 0.625rem;
 }
-@media (max-width: 1023.98px) {
-  html[data-app] .shell-over-bar > .app-socials {
-    padding-bottom: 1rem;
-  }
-}
-.app-social {
+.menu-social {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 999px;
+  border-radius: var(--radius-md, 0.5rem);
   color: var(--color-ink-muted);
-  border: 1px solid var(--color-line);
-  background: var(--color-surface);
-  transition: color var(--duration-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
-.app-social:hover {
+.menu-social svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.menu-social:hover,
+.menu-social:focus-visible {
   color: var(--color-ink);
+}
+.menu-social:active {
+  transform: scale(0.9);
 }
 
 /*

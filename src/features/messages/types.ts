@@ -58,8 +58,10 @@ export interface ConversationMember {
   last_name: string | null;
   avatar_url: string | null;
   role: "admin" | "member";
-  /** When this member last opened the conversation; drives the second tick. */
+  /** When this member last opened the conversation; turns the ticks blue. */
   last_read_at?: string | null;
+  /** When this member's portal last reported that everything here had reached it; the second tick. */
+  last_delivered_at?: string | null;
 }
 
 export interface ContactResult {
@@ -69,6 +71,9 @@ export interface ContactResult {
   avatar_url: string | null;
   roles: Array<{ slug: string; name_tg: string; name_ru: string | null; name_en: string | null }>;
 }
+
+/** A conversation whose posts only its admins write, which anybody in the school may follow. */
+export const isBroadcast = (type: string) => type === "channel" || type === "announcement";
 
 export const MESSAGE_MAX_LENGTH = 5000;
 export const EDIT_WINDOW_MS = 48 * 60 * 60 * 1000;

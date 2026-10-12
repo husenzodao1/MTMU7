@@ -97,11 +97,11 @@ export function replySigningKey(): Buffer | null {
 /**
  * What a notification needs to be answered where it is shown: a signed note
  * for this reader in this conversation, and the words on its buttons. Nothing
- * for an announcement channel, where readers do not write.
+ * for an announcement channel or a person's channel, where readers do not write.
  */
 function replyExtras(claim: Claim, readerId: string, locale: PushLocale): { reply?: string; labels?: ReturnType<typeof actionLabels> } {
   const key = replySigningKey();
-  if (!key || claim.conversation_type === "announcement") return {};
+  if (!key || claim.conversation_type === "announcement" || claim.conversation_type === "channel") return {};
   return {
     reply: signReplyToken({ userId: readerId, conversationId: claim.conversation_id, expiresAt: Date.now() + REPLY_TOKEN_TTL_MS }, key),
     labels: actionLabels(locale),

@@ -291,6 +291,7 @@
     "version": "{site}",
     "versionInApp": "app {app} · site {site}",
     "about": "About the app",
+    "socials": "Find us on",
     "aboutTitle": "Istaravshan School Portal",
     "aboutBody": "The school’s website and app for pupils, parents and teachers.",
     "aboutClose": "OK",

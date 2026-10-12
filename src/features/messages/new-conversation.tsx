@@ -1,6 +1,6 @@
 "use client";
 
-import { SquarePen, X } from "lucide-react";
+import { MessageSquarePlus, SquarePen, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,19 @@ import { createGroupAction, startDirectConversationAction } from "@/features/mes
 import type { ContactResult } from "@/features/messages/types";
 import { cn } from "@/lib/utils/cn";
 
-export function NewConversationButton({ canCreateGroup, className }: { canCreateGroup: boolean; className?: string }) {
+/**
+ * "New conversation": a person, or a group. `variant="fab"` is the round
+ * button in the corner of the list, as in the messenger everybody knows.
+ */
+export function NewConversationButton({
+  canCreateGroup,
+  className,
+  variant = "button",
+}: {
+  canCreateGroup: boolean;
+  className?: string;
+  variant?: "button" | "fab";
+}) {
   const t = useTranslations("portal.messages");
   const tRoot = useTranslations();
   const toast = useToast();
@@ -55,10 +67,16 @@ export function NewConversationButton({ canCreateGroup, className }: { canCreate
       }}
     >
       <Overlay.DialogTrigger asChild>
-        <Button className={className}>
-          <SquarePen aria-hidden />
-          {t("new")}
-        </Button>
+        {variant === "fab" ? (
+          <button type="button" className={cn("msg-fab", className)} aria-label={t("new")} title={t("new")}>
+            <MessageSquarePlus className="size-6" strokeWidth={1.75} aria-hidden />
+          </button>
+        ) : (
+          <Button className={className}>
+            <SquarePen aria-hidden />
+            {t("new")}
+          </Button>
+        )}
       </Overlay.DialogTrigger>
       <Overlay.DialogContent title={t("new")} closeLabel={tRoot("common.close")}>
         {canCreateGroup ? (

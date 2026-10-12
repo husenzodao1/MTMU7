@@ -911,6 +911,7 @@ export type Database = {
           joined_at: string;
           last_read_at: string | null;
           is_muted: boolean;
+          last_delivered_at: string | null;
         };
         Insert: {
           id?: string;
@@ -921,6 +922,7 @@ export type Database = {
           joined_at?: string;
           last_read_at?: string | null;
           is_muted?: boolean;
+          last_delivered_at?: string | null;
         };
         Update: {
           id?: string;
@@ -931,6 +933,7 @@ export type Database = {
           joined_at?: string;
           last_read_at?: string | null;
           is_muted?: boolean;
+          last_delivered_at?: string | null;
         };
         Relationships: [
           {
@@ -969,6 +972,7 @@ export type Database = {
           deactivated_at: string | null;
           created_at: string;
           updated_at: string;
+          description: string | null;
         };
         Insert: {
           id?: string;
@@ -982,6 +986,7 @@ export type Database = {
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          description?: string | null;
         };
         Update: {
           id?: string;
@@ -995,6 +1000,7 @@ export type Database = {
           deactivated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          description?: string | null;
         };
         Relationships: [
           {
@@ -4588,6 +4594,96 @@ export type Database = {
           },
         ];
       };
+      stories: {
+        Row: {
+          id: string;
+          school_id: string;
+          author_id: string;
+          kind: string;
+          media_path: string | null;
+          media_width: number | null;
+          media_height: number | null;
+          caption: string;
+          background: string | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          author_id: string;
+          kind: string;
+          media_path?: string | null;
+          media_width?: number | null;
+          media_height?: number | null;
+          caption?: string;
+          background?: string | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          author_id?: string;
+          kind?: string;
+          media_path?: string | null;
+          media_width?: number | null;
+          media_height?: number | null;
+          caption?: string;
+          background?: string | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stories_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stories_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      story_views: {
+        Row: {
+          story_id: string;
+          viewer_id: string;
+          viewed_at: string;
+        };
+        Insert: {
+          story_id: string;
+          viewer_id: string;
+          viewed_at?: string;
+        };
+        Update: {
+          story_id?: string;
+          viewer_id?: string;
+          viewed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey";
+            columns: ["story_id"];
+            isOneToOne: false;
+            referencedRelation: "stories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "story_views_viewer_id_fkey";
+            columns: ["viewer_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       student_enrollments: {
         Row: {
           id: string;
@@ -5357,6 +5453,39 @@ export type Database = {
           },
         ];
       };
+      user_presence: {
+        Row: {
+          user_id: string;
+          school_id: string;
+          last_seen_at: string;
+        };
+        Insert: {
+          user_id: string;
+          school_id: string;
+          last_seen_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          school_id?: string;
+          last_seen_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_presence_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_presence_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_roles: {
         Row: {
           id: string;
@@ -5631,7 +5760,9 @@ export type Database = {
       class_substitutions: { Args: { p_class_id: string }; Returns: { substitution_date: string | null; period_number: number | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null; reason: string | null }[] };
       class_teachers: { Args: { p_class_id: string }; Returns: { teacher_name: string | null; subjects_tg: string | null; subjects_ru: string | null; subjects_en: string | null; phone: string | null }[] };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
+      close_channel: { Args: { p_conversation_id: string }; Returns: undefined };
       confirm_account: { Args: { p_user_id: string }; Returns: undefined };
+      create_channel: { Args: { p_name: string; p_description?: string }; Returns: string };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };
       create_group_conversation: { Args: { p_name: string; p_member_ids: string[] }; Returns: string };
       create_school: { Args: { p_short_name: string; p_full_name: string; p_slug: string; p_id_prefix: string; p_admin_email?: string; p_photo_url?: string; p_logo_url?: string; p_address?: string; p_social_links?: Json; p_code?: string; p_region_id?: string; p_district_id?: string }; Returns: Json };
@@ -5640,11 +5771,14 @@ export type Database = {
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
       ensure_school_year: { Args: Record<PropertyKey, never>; Returns: string };
       forget_my_device_token: { Args: { p_token: string }; Returns: undefined };
+      forget_old_stories: { Args: Record<PropertyKey, never>; Returns: string[] };
       get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null; media_name: string | null; media_size: number | null; media_mime: string | null; media_duration: number | null; reactions: Json | null }[] };
       get_member_card: { Args: { p_user_id: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_profile: { Args: Record<PropertyKey, never>; Returns: Json };
       get_registration_options: { Args: { p_school_slug: string }; Returns: Json };
+      get_story_feed: { Args: Record<PropertyKey, never>; Returns: { author_id: string | null; first_name: string | null; last_name: string | null; avatar_url: string | null; is_me: boolean | null; all_seen: boolean | null; latest_at: string | null; stories: Json | null }[] };
+      get_story_viewers: { Args: { p_story_id: string }; Returns: { user_id: string | null; first_name: string | null; last_name: string | null; avatar_url: string | null; viewed_at: string | null }[] };
       get_unread_message_count: { Args: Record<PropertyKey, never>; Returns: number };
       get_user_school_id: { Args: { p_user_id: string }; Returns: string };
       grantable_roles: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; name_tg: string | null; name_ru: string | null; name_en: string | null; level: number | null; permissions: number | null }[] };
@@ -5657,10 +5791,12 @@ export type Database = {
       import_subjects: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       import_timetable: { Args: { p_rows: Json; p_dry_run?: boolean }; Returns: Json };
       issue_parent_codes: { Args: { p_class: string }; Returns: { student_id: string | null; class_name: string | null; full_name: string | null; nickname: string | null; login: string | null; code: string | null }[] };
+      join_channel: { Args: { p_conversation_id: string }; Returns: undefined };
       join_support_conversation: { Args: { p_conversation_id: string }; Returns: undefined };
-      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null; created_by: string | null; last_message_type: string | null }[] };
+      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null; created_by: string | null; last_message_type: string | null; description: string | null; my_role: string | null; member_count: number | null; peer_read_at: string | null; peer_delivered_at: string | null }[] };
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
+      list_school_channels: { Args: { p_query?: string; p_limit?: number }; Returns: { id: string | null; name: string | null; description: string | null; avatar_url: string | null; created_by: string | null; owner_first_name: string | null; owner_last_name: string | null; owner_avatar_url: string | null; followers: number | null; is_member: boolean | null; is_admin: boolean | null; last_post_at: string | null }[] };
       list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
       log_app_diagnostics: { Args: { p_device: string; p_user_agent: string; p_events: Json }; Returns: number };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
@@ -5718,11 +5854,14 @@ export type Database = {
       submit_support_request: { Args: { p_school_id: string; p_name: string; p_contact: string; p_message: string }; Returns: string };
       teacher_today: { Args: { p_date?: string }; Returns: Json };
       toggle_news_like: { Args: { p_article: string }; Returns: Json };
+      touch_messenger: { Args: Record<PropertyKey, never>; Returns: number };
       transfer_student_class: { Args: { p_student_id: string; p_to_class_id: string; p_reason?: string }; Returns: string };
+      update_channel: { Args: { p_conversation_id: string; p_name: string; p_description?: string }; Returns: undefined };
       update_conversation: { Args: { p_conversation_id: string; p_name: string }; Returns: undefined };
       update_school_identity: { Args: { p_school_id: string; p_photo_url?: string; p_logo_url?: string; p_social_links?: Json; p_admin_email?: string }; Returns: undefined };
       user_by_nickname: { Args: { p_nickname: string }; Returns: string };
       user_has_role_in_school: { Args: { p_user_id: string; p_school_id: string; p_role_slugs: string[] }; Returns: boolean };
+      view_story: { Args: { p_story_id: string }; Returns: undefined };
       write_audit_log: { Args: { p_action: string; p_entity_type: string; p_entity_id?: string; p_old?: Json; p_new?: Json; p_metadata?: Json }; Returns: undefined };
     };
     Enums: {

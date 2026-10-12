@@ -111,6 +111,10 @@ export function messagePush(source: MessagePushSource, readerId: string, locale:
   if (source.conversation_type === "direct") {
     return { title: sender, body, url, tag };
   }
+  // A channel speaks in its own name: no person before its words.
+  if (source.conversation_type === "channel") {
+    return { title: `📣 ${source.conversation_name?.trim() || sender}`, body, url, tag };
+  }
   return { title: source.conversation_name?.trim() || sender, body: `${sender}: ${body}`, url, tag };
 }
 

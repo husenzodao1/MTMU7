@@ -5,7 +5,9 @@ import { pickText, type Locale } from "@/lib/i18n/text";
 import { createClient } from "@/lib/supabase/server";
 import { adminNavigation, portalNavigation, showAdminLink, type NavGroup, type NavItem } from "@/components/shell/navigation";
 import { myHomeroomClasses } from "@/features/accounts/queries";
-import type { ShellSchool, ShellUser } from "@/components/shell/app-shell";
+import type { ShellSchool, ShellSocial, ShellUser } from "@/components/shell/app-shell";
+import { getAuthSchool } from "@/lib/site/auth-school";
+import { resolveContacts } from "@/lib/site/contacts";
 
 export interface ShellData {
   locale: Locale;
@@ -13,18 +15,25 @@ export interface ShellData {
   user: ShellUser;
   unreadNotifications: number;
   unreadMessages: number;
+  /** The school's four networks, at the foot of the menu. */
+  socials: ShellSocial[];
 }
+
+const SOCIAL_KEYS = ["telegram", "instagram", "whatsapp", "x"] as const;
 
 export async function loadShellData(access: Access): Promise<ShellData> {
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
 
-  const [notifications, messages] = await Promise.all([
+  const [notifications, messages, publicSchool, tFooter] = await Promise.all([
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", access.userId).eq("is_read", false),
     hasModule(access, "messages") && can(access, "messages.use")
       ? supabase.rpc("get_unread_message_count")
       : Promise.resolve({ data: 0, error: null }),
+    getAuthSchool(),
+    getTranslations("site.footer"),
   ]);
+  const links = resolveContacts(publicSchool?.socialLinks);
 
   const primaryRole = access.roles[0];
   return {
@@ -42,6 +51,7 @@ export async function loadShellData(access: Access): Promise<ShellData> {
     },
     unreadNotifications: notifications.count ?? 0,
     unreadMessages: Number(messages.data ?? 0),
+    socials: SOCIAL_KEYS.map((key) => ({ key, href: links[key], label: tFooter(key) })),
   };
 }
 

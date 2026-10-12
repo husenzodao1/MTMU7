@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { DownloadApp } from "@/components/site/download-app";
 import { getDownloadMenu } from "@/components/site/download-labels";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
-import { SOCIAL_ICON } from "@/components/site/social-icons";
+import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { getPlatformIdentity } from "@/lib/site/identity";
 import { getAuthSchool } from "@/lib/site/auth-school";
 import { pickText, type Locale } from "@/lib/i18n/text";
@@ -50,17 +50,30 @@ export async function OfficialStrip() {
 const SOCIAL_KEYS = ["telegram", "instagram", "whatsapp", "x"] as const;
 
 /**
- * The foot of every page: one quiet band over a soft wash of the national
- * flag. On a phone it reads down the middle — the flag and the name, the
- * links set off by hairline bars, the four marks, the small print; from a
- * tablet up the first three share one line.
+ * The foot of every page, as quiet as a colophon: a short hairline that fades
+ * at both ends, the flag and the school's name in small spaced capitals, a
+ * row of small links divided by dots, and the year in fine print — centred,
+ * on the page's own ground, no band and no box.
+ *
+ * Where there is no menu — the public pages and the sign-in pages — the
+ * school's four networks follow the links as bare hairline marks; inside the
+ * portal they live at the foot of the menu instead (app-shell.tsx), so
+ * `socials={false}` leaves them out here.
  *
  * Links appear only where the owner has supplied a destination; nothing here is
  * invented. `hideSignIn` drops the sign-in link where it makes no sense: on a
  * page reached with a session, and on the sign-in pages themselves. The
  * portal's own sections are not repeated here: its menu already has them.
  */
-export async function SiteFooter({ schoolName, hideSignIn = false }: { schoolName?: string | null; hideSignIn?: boolean }) {
+export async function SiteFooter({
+  schoolName,
+  hideSignIn = false,
+  socials: withSocials = true,
+}: {
+  schoolName?: string | null;
+  hideSignIn?: boolean;
+  socials?: boolean;
+}) {
   const locale = (await getLocale()) as Locale;
   const identity = await getPlatformIdentity();
   const t = await getTranslations("site.footer");
@@ -68,78 +81,65 @@ export async function SiteFooter({ schoolName, hideSignIn = false }: { schoolNam
   const year = new Date().getFullYear();
   const download = await getDownloadMenu();
 
-  const school = await getAuthSchool();
+  const school = withSocials ? await getAuthSchool() : null;
   const social = resolveContacts(school?.socialLinks);
-
-  const socials = SOCIAL_KEYS.map((key) => ({ key, Icon: SOCIAL_ICON[key], href: social[key], label: t(key) }));
+  const socials = SOCIAL_KEYS.map((key) => ({ key, Icon: SOCIAL_LINE[key], href: social[key], label: t(key) }));
 
   return (
-    <>
-      <footer className="site-footer print:hidden">
-        <div className="footer-inner">
-          <div className="footer-main">
-            <p className="footer-brand">
-              {/* eslint-disable-next-line @next/next/no-img-element -- the national flag, a small static SVG */}
-              <img src="/gov/flag-tj.svg" alt={t("flag")} width={20} height={10} className="footer-flag" />
-              <span className="min-w-0 truncate">{schoolName || t("brand")}</span>
-            </p>
+    <footer className="site-footer print:hidden">
+      <div className="footer-inner">
+        <span className="footer-rule" aria-hidden />
+        <p className="footer-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element -- the national flag, a small static SVG */}
+          <img src="/gov/flag-tj.svg" alt={t("flag")} width={16} height={8} className="footer-flag" />
+          <span className="min-w-0 truncate">{schoolName || t("brand")}</span>
+        </p>
 
-            <nav aria-label={t("siteLinks")}>
-              <ul className="footer-links">
-                <li>
-                  <Link className="footer-link" href="/schools">
-                    {t("schools")}
-                  </Link>
-                </li>
-                {download.offer ? (
-                  <li>
-                    <DownloadApp labels={download.labels} recommended={download.recommended} variant="footer" />
-                  </li>
-                ) : null}
-                <li>
-                  <Link className="footer-link" href="/support">
-                    {t("support")}
-                  </Link>
-                </li>
-                {hideSignIn ? null : (
-                  <li>
-                    <Link className="footer-link" href="/login">
-                      {t("signIn")}
-                    </Link>
-                  </li>
-                )}
-              </ul>
-            </nav>
+        <nav aria-label={t("siteLinks")}>
+          <ul className="footer-links">
+            <li>
+              <Link className="footer-link" href="/schools">
+                {t("schools")}
+              </Link>
+            </li>
+            {download.offer ? (
+              <li className="footer-download">
+                <DownloadApp labels={download.labels} recommended={download.recommended} variant="footer" />
+              </li>
+            ) : null}
+            <li>
+              <Link className="footer-link" href="/support">
+                {t("support")}
+              </Link>
+            </li>
+            {hideSignIn ? null : (
+              <li>
+                <Link className="footer-link" href="/login">
+                  {t("signIn")}
+                </Link>
+              </li>
+            )}
+          </ul>
+        </nav>
 
-            <ul className="footer-socials">
-              {socials.map(({ key, Icon, href, label }) => (
-                <li key={key}>
-                  <a href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="footer-social">
-                    <Icon className="size-3" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {withSocials ? (
+          <ul className="footer-socials">
+            {socials.map(({ key, Icon, href, label }) => (
+              <li key={key}>
+                <a href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="footer-social" data-instant="off">
+                  <Icon />
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-          <p className="footer-fine">
-            <span className="tabular">{copyright || `© ${year}`}</span>
-            <span aria-hidden className="footer-dot" />
-            <span>{t("platform")}</span>
-          </p>
-        </div>
-      </footer>
-      {/* In the phone app the footer is not an app's: only the school's four
-          marks stay, small, at the foot of the page. globals.css shows one or
-          the other from html[data-app], which the server writes, so neither
-          flashes. */}
-      <nav className="app-socials print:hidden" aria-label={t("siteLinks")}>
-        {socials.map(({ key, Icon, href, label }) => (
-          <a key={key} href={href} rel="noopener noreferrer" target="_blank" aria-label={label} title={label} className="app-social" data-network={key}>
-            <Icon className="size-[1.0625rem]" />
-          </a>
-        ))}
-      </nav>
-    </>
+        <p className="footer-fine">
+          <span className="tabular">{copyright || `© ${year}`}</span>
+          <span aria-hidden className="footer-dot" />
+          <span>{t("platform")}</span>
+        </p>
+      </div>
+    </footer>
   );
 }
