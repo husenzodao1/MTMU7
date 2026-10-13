@@ -900,6 +900,27 @@
       "siblingYes": "Yes, my brother or sister",
       "siblingNo": "No",
       "siblingNoHint": "Use another number: one number, one parent."
+    },
+    "search": {
+      "placeholder": "Search everything",
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "hint": "Type a name, a news story, an announcement, a book, a document or a section — 2 letters at least.",
+      "empty": "Nothing found for “{query}”.",
+      "kinds": {
+        "pages": "Sections",
+        "people": "People",
+        "students": "Pupils",
+        "staff": "Staff",
+        "users": "Accounts",
+        "classes": "Classes",
+        "announcements": "Announcements",
+        "news": "News",
+        "events": "Events",
+        "homework": "Homework",
+        "library": "Library",
+        "documents": "Documents"
+      }
     }
   },
   "reportCard": {

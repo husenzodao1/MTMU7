@@ -12,6 +12,7 @@ import { getSchoolFaces } from "@/features/dashboard/faces";
 import { FacesRibbon } from "@/features/dashboard/faces-ribbon";
 import { TeacherLessons } from "@/features/teach/teacher-lessons";
 import { GreetingCard } from "@/features/dashboard/greeting-card";
+import { EverythingSearch } from "@/features/search/everything-search";
 import { getIstaravshanWeather } from "@/features/dashboard/weather";
 import { Showcase, type ShowcaseCard } from "@/features/dashboard/showcase";
 import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements, publicMediaUrl } from "@/features/content/queries";
@@ -138,6 +139,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
+      <EverythingSearch />
       <GreetingCard
         name={access.firstName}
         timeZone={access.school?.timezone}

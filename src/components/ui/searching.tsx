@@ -17,11 +17,11 @@ import { useCallback, useEffect, useState } from "react";
 const MIN_MS = 1600;
 
 /**
- * `start` when a search is sent; `searching` is true from then for MIN_MS at
- * least, and for as long after that as `pending` (the search's own
- * transition) is.
+ * `start` when a search is sent; `searching` is true from then for `minMs`
+ * (MIN_MS unless asked otherwise) at least, and for as long after that as
+ * `pending` (the search's own transition) is.
  */
-export function useSearchSweep(pending: boolean) {
+export function useSearchSweep(pending: boolean, minMs = MIN_MS) {
   const [round, setRound] = useState(0);
   const [held, setHeld] = useState(false);
   const start = useCallback(() => {
@@ -30,9 +30,9 @@ export function useSearchSweep(pending: boolean) {
   }, []);
   useEffect(() => {
     if (round === 0) return;
-    const done = window.setTimeout(() => setHeld(false), MIN_MS);
+    const done = window.setTimeout(() => setHeld(false), minMs);
     return () => window.clearTimeout(done);
-  }, [round]);
+  }, [round, minMs]);
   return { searching: held || (round > 0 && pending), start, round };
 }
 
