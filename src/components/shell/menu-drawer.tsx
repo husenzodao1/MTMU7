@@ -32,6 +32,14 @@ function movesSideways(target: EventTarget | null) {
   return false;
 }
 
+/**
+ * In the messenger a sideways swipe is the messages' own — a message swiped
+ * to answer it, the stories and the filters scrolled — so the menu does not
+ * come out under a finger there at all, wherever the swipe starts; its
+ * button still opens it.
+ */
+const MESSENGER = /^\/(messages|support\/chat)(\/|$)/;
+
 /** Another overlay (a dialog, a menu, a sheet) is open: swipes belong to it. */
 function otherOverlayOpen(panel: HTMLElement | null) {
   return Array.from(document.querySelectorAll('[role="dialog"][data-state="open"], [role="menu"][data-state="open"]')).some((el) => !panel?.contains(el));
@@ -135,7 +143,7 @@ export function MenuDrawer({
       const isOpen = openRef.current;
       if (isOpen) {
         if (!(target instanceof Node) || !root.current?.contains(target)) return;
-      } else if (movesSideways(target) || otherOverlayOpen(panel.current)) {
+      } else if (MESSENGER.test(window.location.pathname) || movesSideways(target) || otherOverlayOpen(panel.current)) {
         return;
       }
       const touch = event.touches[0]!;

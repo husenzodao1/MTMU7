@@ -963,42 +963,6 @@
   color: var(--chat-seen);
 }
 
-/* A drawing of a map rather than a map: no tile server is told where anybody
-   is. Streets, a block or two, a river — enough to read as "a place". */
-.chat-map {
-  background-color: #e8eee3;
-  background-image:
-    linear-gradient(115deg, transparent 46%, #a9cbe6 46.5%, #a9cbe6 53%, transparent 53.5%),
-    linear-gradient(0deg, transparent 47%, #ffffff 47%, #ffffff 53%, transparent 53%),
-    linear-gradient(90deg, transparent 30%, #ffffff 30%, #ffffff 34%, transparent 34%),
-    linear-gradient(90deg, transparent 70%, #ffffff 70%, #ffffff 73%, transparent 73%),
-    repeating-linear-gradient(0deg, #dfe7d8 0 22px, #e8eee3 22px 44px);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .chat-map,
-  :root[data-theme="ocean"] .chat-map,
-  :root[data-theme="graphite"] .chat-map,
-  :root[data-theme="lavender"] .chat-map {
-    background-color: #1d2a24;
-    background-image:
-      linear-gradient(115deg, transparent 46%, #23425b 46.5%, #23425b 53%, transparent 53.5%),
-      linear-gradient(0deg, transparent 47%, #3a4a44 47%, #3a4a44 53%, transparent 53%),
-      linear-gradient(90deg, transparent 30%, #3a4a44 30%, #3a4a44 34%, transparent 34%),
-      linear-gradient(90deg, transparent 70%, #3a4a44 70%, #3a4a44 73%, transparent 73%),
-      repeating-linear-gradient(0deg, #1a2520 0 22px, #1d2a24 22px 44px);
-  }
-}
-:root[data-theme="night"] .chat-map,
-:root[data-theme="midnight"] .chat-map {
-  background-color: #1d2a24;
-  background-image:
-    linear-gradient(115deg, transparent 46%, #23425b 46.5%, #23425b 53%, transparent 53.5%),
-    linear-gradient(0deg, transparent 47%, #3a4a44 47%, #3a4a44 53%, transparent 53%),
-    linear-gradient(90deg, transparent 30%, #3a4a44 30%, #3a4a44 34%, transparent 34%),
-    linear-gradient(90deg, transparent 70%, #3a4a44 70%, #3a4a44 73%, transparent 73%),
-    repeating-linear-gradient(0deg, #1a2520 0 22px, #1d2a24 22px 44px);
-}
-
 /* A photo's box before the photo is in it: the shape, faintly, and nothing
    that moves — a thread of forty photos should not be forty animations. */
 .chat-photo {
@@ -2694,12 +2658,22 @@ a.updates-card:hover {
 
 /* A list's own box (ui/pagination.tsx, ListBox): it scrolls inside itself and
    grows as it is scrolled, so the page around it — and the footer — stay put. */
+/* On a computer a long list scrolls in its own box, and at either end of it
+   the wheel or the finger carries on with the page — a box that kept the
+   scroll to itself left what is under it out of reach. On a phone a box
+   inside the page is a trap for the thumb: the list is simply the page. */
 .list-box {
   max-height: min(78dvh, 56rem);
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   border-radius: 0.75rem;
   scrollbar-width: thin;
+}
+@media (max-width: 1023.98px) {
+  .list-box {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 .list-end {
   margin-top: 0.25rem;

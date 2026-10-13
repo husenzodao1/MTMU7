@@ -11,6 +11,9 @@ export const NAVIGATE_EVENT = "mtmu7:navigate";
  */
 const NOT_A_PAGE = /^\/(api|auth|files|download)(\/|$)|\/export$|^\/admin\/import\/template\/|^\/admin\/parents\/codes|^\/report-cards|\.[a-z0-9]{2,5}$/i;
 
+/** Within the messenger the messenger moves itself, at the tap (messages-frame.tsx). */
+const MESSENGER = /^\/messages(\/|$)/;
+
 /** A tap that led nowhere (a page that never came) is let go of after this long. */
 const GIVE_UP_MS = 25_000;
 
@@ -40,6 +43,7 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
   useEffect(() => {
     const start = (to: string) => {
       if (to === window.location.pathname || NOT_A_PAGE.test(to)) return;
+      if (MESSENGER.test(to) && MESSENGER.test(window.location.pathname)) return;
       setPending(to);
       window.scrollTo({ top: 0, behavior: "instant" });
       onStart?.();

@@ -18,8 +18,9 @@ import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
+import { forgetWebPush } from "@/features/push/client";
 import { appPlugin } from "@/features/native/bridge";
-import { getBrowserClient } from "@/lib/supabase/browser";
+import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
 
 export interface ShellUser {
@@ -374,19 +375,20 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // Realtime badge: RLS delivers only this user's notification rows.
   useEffect(() => {
     const supabase = getBrowserClient();
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
-        setNotifications((n) => n + 1);
-        if ((payload.new as { type?: string }).type === "message") touchMessenger();
-      })
-      // A burst of messages from one conversation updates its one unread
-      // notification instead of adding another.
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
-        const row = payload.new as { type?: string; is_read?: boolean };
-        if (row.type === "message" && !row.is_read) touchMessenger();
-      })
-      .subscribe();
+    const channel = listen(
+      supabase
+        .channel(`notifications:${user.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
+          setNotifications((n) => n + 1);
+          if ((payload.new as { type?: string }).type === "message") touchMessenger();
+        })
+        // A burst of messages from one conversation updates its one unread
+        // notification instead of adding another.
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
+          const row = payload.new as { type?: string; is_read?: boolean };
+          if (row.type === "message" && !row.is_read) touchMessenger();
+        })
+    );
     return () => {
       void supabase.removeChannel(channel);
     };
@@ -418,10 +420,11 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   useEffect(() => {
     if (!tracksMessages) return;
     const supabase = getBrowserClient();
-    const channel = supabase
-      .channel(`unread-messages:${user.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${user.id}` }, recountMessages)
-      .subscribe();
+    const channel = listen(
+      supabase
+        .channel(`unread-messages:${user.id}`)
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${user.id}` }, recountMessages)
+    );
     const onVisible = () => {
       if (document.visibilityState === "visible") recountMessages();
     };
@@ -584,10 +587,9 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                     // At once, whatever the network: the page dims and says it
                     // is on its way out (html[data-leaving], globals.css).
                     document.documentElement.setAttribute("data-leaving", "");
-                    // In the phone app this phone stops getting this person's
-                    // notifications first (a second at most); in a browser it
-                    // returns at once.
-                    await forgetNativeToken();
+                    // This phone or browser stops getting this person's
+                    // notifications first (a second or two at most).
+                    await Promise.all([forgetNativeToken(), forgetWebPush()]);
                     await signOutAction();
                   }}
                 >

@@ -63,6 +63,7 @@ import { checkFile, FILE_ACCEPT, formatBytes, formatDuration, kindOf } from "@/f
 import { MessageGestures } from "@/features/messages/gestures";
 import { GroupMembersDialog } from "@/features/messages/group-members";
 import { downloadLink, mediaPath, prepareImage, removeMedia, uploadImage, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
+import { LocationCard, locate } from "@/features/messages/location";
 import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/member-card";
 import { Ticks, tickState } from "@/features/messages/ticks";
 import { PhotoViewer, type ViewedPhoto } from "@/features/messages/photo-viewer";
@@ -73,7 +74,7 @@ import { dbErrorKey } from "@/lib/actions/db-error-key";
 import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
 import { dayKey, formatClock, formatDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
-import { getBrowserClient } from "@/lib/supabase/browser";
+import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
 
 export interface ThreadConversation {
@@ -597,10 +598,10 @@ export function Thread({
         }
         setHeardAt((current) => ({ ...current, [who]: Date.now() }));
         if (said.ask === true && document.visibilityState === "visible") say({});
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED" && tracksPresence && document.visibilityState === "visible") say({ ask: true });
       });
+    listen(channel, (status) => {
+      if (status === "SUBSCRIBED" && tracksPresence && document.visibilityState === "visible") say({ ask: true });
+    });
     typingChannel.current = channel;
     const sweep = window.setInterval(() => {
       const at = Date.now();
@@ -687,36 +688,39 @@ export function Thread({
   // ------------------------------------------------------------ location
 
   /**
-   * Sends where you are, once, after the browser has asked.
+   * Sends where you are, once, after the phone or the browser has asked
+   * (location.tsx: the app's own prompt first, then a quick and a precise
+   * position together).
    *
    * Nothing is watched and nothing is remembered: this asks for a single
    * position at the moment the button is pressed. A refusal is a refusal — it
    * says so and stops, rather than asking again on the next tap.
    */
-  const shareLocation = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      toast("danger", t("locationUnsupported"));
+  const shareLocation = useCallback(async () => {
+    setLocating(true);
+    const found = await locate();
+    setLocating(false);
+    if ("failure" in found) {
+      toast(
+        "danger",
+        found.failure === "unsupported"
+          ? t("locationUnsupported")
+          : found.failure === "denied"
+            ? t("locationDenied")
+            : found.failure === "off"
+              ? t("locationOff")
+              : t("locationFailed")
+      );
       return;
     }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocating(false);
-        // Rounded here as well as in the column: a browser will happily report
-        // fourteen decimal places, a claim no phone can support.
-        const latitude = Number(position.coords.latitude.toFixed(6));
-        const longitude = Number(position.coords.longitude.toFixed(6));
-        const label = draft.get().trim().slice(0, 200);
-        draft.set("");
-        stickToBottom.current = true;
-        deliver(localMessage({ content: label, type: "location", reply_to_id: null, location_lat: latitude, location_lng: longitude }));
-      },
-      (error) => {
-        setLocating(false);
-        toast("danger", error.code === error.PERMISSION_DENIED ? t("locationDenied") : t("locationFailed"));
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 }
-    );
+    // Rounded here as well as in the column: a browser will happily report
+    // fourteen decimal places, a claim no phone can support.
+    const latitude = Number(found.position.coords.latitude.toFixed(6));
+    const longitude = Number(found.position.coords.longitude.toFixed(6));
+    const label = draft.get().trim().slice(0, 200);
+    draft.set("");
+    stickToBottom.current = true;
+    deliver(localMessage({ content: label, type: "location", reply_to_id: null, location_lat: latitude, location_lng: longitude }));
   }, [draft, t, toast, deliver, localMessage]);
 
   // ---------------------------------------------------------- attachments
@@ -938,8 +942,8 @@ export function Thread({
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "message_reactions", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
         const row = payload.new as { message_id: string; user_id: string; emoji: string | null };
         applyReaction(row.message_id, row.user_id, row.emoji);
-      })
-      .subscribe();
+      });
+    listen(channel);
 
     const onVisible = () => {
       if (document.visibilityState === "visible") markRead(conversation.id);
@@ -1802,7 +1806,7 @@ export function Thread({
                         <span className="chat-attach-icon bg-[#e5484d]"><Camera aria-hidden /></span>
                         {t("attachCamera")}
                       </Overlay.DropdownMenuItem>
-                      <Overlay.DropdownMenuItem onSelect={shareLocation}>
+                      <Overlay.DropdownMenuItem onSelect={() => void shareLocation()}>
                         <span className="chat-attach-icon bg-[#16a34a]"><MapPin aria-hidden /></span>
                         {t("sendLocation")}
                       </Overlay.DropdownMenuItem>
@@ -2138,42 +2142,6 @@ function Receipt({
   if (message.pending) return <Ticks state="sending" label={labels.sending} />;
   const state = tickState(message.created_at, deliveredAt, readAt);
   return <Ticks state={state} label={state === "read" ? labels.seen : state === "delivered" ? labels.delivered : labels.sent} />;
-}
-
-/**
- * A place, drawn rather than described.
- *
- * No map tiles: a tile provider would be a third party watching every location
- * anybody in the school sends, which is a poor trade for a picture. The card
- * shows the coordinates and hands off to whatever map the person already has.
- */
-function LocationCard({ lat, lng, label, openLabel, title }: { lat: number; lng: number; label: string; openLabel: string; title: string }) {
-  const point = `${lat.toFixed(6)},${lng.toFixed(6)}`;
-  return (
-    <span className="block min-w-52">
-      <a
-        href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="chat-map mb-1 flex h-28 items-center justify-center overflow-hidden rounded-lg"
-        aria-label={openLabel}
-      >
-        <span className="flex size-11 items-center justify-center rounded-full bg-danger-600 text-white shadow-md ring-4 ring-white/70">
-          <MapPin className="size-6" aria-hidden />
-        </span>
-      </a>
-      <span className="block text-sm font-medium text-ink">{label || title}</span>
-      <span className="block truncate text-xs text-ink-muted tabular">{point}</span>
-      <a
-        href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1 inline-block text-xs font-semibold text-brand-text hover:underline"
-      >
-        {openLabel}
-      </a>
-    </span>
-  );
 }
 
 /**

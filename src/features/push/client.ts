@@ -124,6 +124,58 @@ export async function syncPush(locale: string, userId: string): Promise<void> {
   }
 }
 
+const within = <T,>(work: Promise<T>, ms: number) => Promise.race([work, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
+
+async function existingSubscription(): Promise<PushSubscription | null> {
+  if (!pushSupported()) return null;
+  try {
+    const worker = await navigator.serviceWorker.getRegistration("/");
+    return (await worker?.pushManager.getSubscription()) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Signing out in a browser: this device stops getting the person's
+ * notifications. Its row comes off their list (a second at most, then the
+ * sign-out goes on), and the browser drops the subscription itself, so
+ * anything still sent to it is refused and pruned (lib/push/send.ts). The
+ * next sign-in subscribes again (syncPush).
+ */
+export async function forgetWebPush(): Promise<void> {
+  try {
+    localStorage.removeItem(SYNC_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+  const subscription = await existingSubscription();
+  if (!subscription) return;
+  await within(
+    Promise.resolve(getBrowserClient().from("push_subscriptions").delete().eq("endpoint", subscription.endpoint)).then(
+      () => undefined,
+      () => undefined
+    ),
+    1000
+  );
+  await subscription.unsubscribe().catch(() => false);
+}
+
+/**
+ * The browser drops its subscription, for a page that finds nobody signed in
+ * (signed-out.tsx): whatever ended the session, this browser gets nobody's
+ * notifications any more. Needs no session.
+ */
+export async function letGoOfWebPush(): Promise<void> {
+  try {
+    localStorage.removeItem(SYNC_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+  const subscription = await existingSubscription();
+  await subscription?.unsubscribe().catch(() => false);
+}
+
 /**
  * Tells the server to push a message the browser has just written. Whether
  * this browser can receive pushes is beside the point — the others' can.

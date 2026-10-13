@@ -171,7 +171,16 @@ export async function nativePush(): Promise<{
   };
 }
 
-/** Signing out on a phone: its notifications stop with the session. */
+const within = <T,>(work: Promise<T>, ms: number) => Promise.race([work, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
+
+/**
+ * Signing out on a phone: its notifications stop with the session. The
+ * token comes off this person's list — asked of the phone when it was not
+ * remembered (saved by an older build, or the storage cleared) — and the
+ * phone lets go of it as well, so anything still sent to it is answered
+ * "unregistered" and pruned (lib/push/send.ts). The next sign-in asks for a
+ * new one. Signing out waits for this a second or two at most.
+ */
 export async function forgetNativeToken(): Promise<void> {
   if (!isInApp()) return;
   let token: string | null = null;
@@ -179,17 +188,37 @@ export async function forgetNativeToken(): Promise<void> {
     token = localStorage.getItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
   } catch {
-    /* nothing stored, nothing to forget */
+    /* nothing stored: asked of the phone below */
   }
-  if (!token) return;
+  const messaging = await messagingPlugin();
+  if (!token && messaging) token = await within(messaging.getToken().then(({ token }) => token, () => null), 1000).then((found) => found ?? null);
+  if (token) {
+    await within(
+      Promise.resolve(getBrowserClient().rpc("forget_my_device_token", { p_token: token })).then(
+        () => undefined,
+        () => undefined
+      ),
+      1000
+    );
+  }
+  await letGoOfNativeToken(messaging);
+}
+
+/**
+ * The phone lets go of its token, for a page that finds nobody signed in
+ * (features/push/signed-out.tsx): whatever ended the session — signing out
+ * elsewhere, a session that ran out — this phone gets no more of anybody's
+ * notifications. Needs no session.
+ */
+export async function letGoOfNativeToken(known?: FirebaseMessaging | null): Promise<void> {
+  if (!isInApp()) return;
   try {
-    // Signing out waits for this, so it gets a second and no more: a phone
-    // left on the list is pruned when its token next fails.
-    const forget = getBrowserClient().rpc("forget_my_device_token", { p_token: token }).then(() => undefined);
-    await Promise.race([forget, new Promise<void>((resolve) => setTimeout(resolve, 1000))]);
+    localStorage.removeItem(TOKEN_KEY);
   } catch {
-    /* the next person to sign in on this phone takes the token over anyway */
+    /* nothing to clear */
   }
+  const messaging = known === undefined ? await messagingPlugin() : known;
+  if (messaging) await within(messaging.deleteToken().catch(() => undefined), 1000);
 }
 
 /** How a Google sign-in from the phone's own accounts ended. */

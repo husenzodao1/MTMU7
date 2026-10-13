@@ -1,5 +1,6 @@
 import { Unbounded } from "next/font/google";
 import { SiteFooter } from "@/components/site/official-header";
+import { SignedOutDevice } from "@/features/push/signed-out";
 import { getAuthSchool, safeImageUrl } from "@/lib/site/auth-school";
 
 /**
@@ -48,6 +49,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         />
         <div className="w-full max-w-md">{children}</div>
       </main>
+      <SignedOutDevice />
       <SiteFooter />
     </div>
   );

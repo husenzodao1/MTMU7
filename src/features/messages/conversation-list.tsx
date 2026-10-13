@@ -10,7 +10,7 @@ import { ChannelsDialog } from "@/features/messages/channels";
 import { NewConversationButton } from "@/features/messages/new-conversation";
 import { StoriesRow, type StoryAuthor } from "@/features/messages/stories";
 import { Ticks, tickState } from "@/features/messages/ticks";
-import { getBrowserClient } from "@/lib/supabase/browser";
+import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { dayKey, formatClock, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { cn } from "@/lib/utils/cn";
@@ -194,7 +194,7 @@ export function ConversationList({
         });
       });
     }
-    channel.subscribe();
+    listen(channel);
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
       void supabase.removeChannel(channel);
@@ -369,6 +369,10 @@ export function ConversationList({
                     aria-current={isActive ? "page" : undefined}
                     className="msg-row"
                     data-unread={unread || undefined}
+                    // What the thread shows at once while its messages come (messages-frame.tsx).
+                    data-title={c.title}
+                    data-kind={c.type === "direct" || c.type === "channel" || c.type === "support" ? c.type : "group"}
+                    data-avatar={c.type === "direct" ? (other?.avatar_url ?? "") : ""}
                   >
                     {c.type === "support" ? (
                       <span className="msg-avatar msg-avatar-support" aria-hidden>

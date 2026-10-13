@@ -37,9 +37,10 @@ export async function Pagination({
 }
 
 /**
- * A list's own box: it scrolls inside itself, so loading more rows never
- * pushes the footer away or shifts the rest of the page. The list and its
- * Pagination go inside.
+ * A list's own box: on a computer it scrolls inside itself, so loading more
+ * rows never pushes the footer away or shifts the rest of the page, and at its
+ * ends the scroll carries on with the page; on a phone the list is simply part
+ * of the page (globals.css, .list-box). The list and its Pagination go inside.
  */
 export function ListBox({ children }: { children: ReactNode }) {
   return <div className="list-box">{children}</div>;
