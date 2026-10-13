@@ -54,20 +54,52 @@ export function parseListParams<S extends string>(
   return { page, pageSize: page * perPage, perPage, offset: 0, query, sort, filters };
 }
 
-/** Escapes a user search term for PostgREST ilike filters. */
-export function ilikePattern(query: string): string {
-  return `%${query.replace(/[\\%_,()]/g, (c) => `\\${c}`)}%`;
+/**
+ * Letters a hurried hand swaps when searching in Tajik — on a Russian
+ * keyboard, or simply in a hurry — and ё for е: each is one letter to a
+ * search, so "Мехровар" finds Меҳровар and "Али" finds Алӣ.
+ */
+const ALIKE: Record<string, string> = {
+  х: "хҳ",
+  ҳ: "хҳ",
+  к: "кқ",
+  қ: "кқ",
+  ч: "чҷ",
+  ҷ: "чҷ",
+  и: "иӣ",
+  ӣ: "иӣ",
+  у: "уӯ",
+  ӯ: "уӯ",
+  г: "гғ",
+  ғ: "гғ",
+  е: "её",
+  ё: "её",
+};
+
+/**
+ * A search term as a PostgreSQL pattern for `imatch` (case-insensitive),
+ * with each letter of a pair above matching either of the two. Characters
+ * that mean anything in a pattern or in PostgREST's `or` grammar are dropped
+ * from the term, so typing can never add conditions. Null when nothing is left.
+ */
+export function searchPattern(query: string): string | null {
+  const term = query
+    .replace(/[\\%_,()"'*:.+?^${}|[\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!term) return null;
+  return [...term.toLocaleLowerCase()].map((c) => (ALIKE[c] ? `[${ALIKE[c]}]` : c)).join("");
 }
 
 /**
- * Builds a multi-column PostgREST `or` ilike filter. Characters that carry
- * meaning in the `or` grammar or in LIKE patterns are removed from the term,
- * so user input can never add conditions.
+ * Builds a multi-column PostgREST `or` filter: any column matching the term
+ * (searchPattern — case and Tajik letter pairs aside). Null when the term is
+ * empty once cleaned.
  */
-export function ilikeAny(columns: readonly string[], query: string): string | null {
-  const term = query.replace(/[\\%_,()"'*:.]/g, " ").replace(/\s+/g, " ").trim();
-  if (!term) return null;
-  return columns.map((column) => `${column}.ilike.%${term}%`).join(",");
+export function matchAny(columns: readonly string[], query: string): string | null {
+  const pattern = searchPattern(query);
+  if (!pattern) return null;
+  return columns.map((column) => `${column}.imatch.${pattern}`).join(",");
 }
 
 export function buildQueryString(base: SearchParams, patch: Record<string, string | number | null | undefined>): string {

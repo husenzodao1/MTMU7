@@ -3,9 +3,9 @@
 import { useOffline } from "next/offline";
 import { useTranslations } from "next-intl";
 import { Wifi, WifiOff, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/** Sent by the loading screen (route-skeleton.tsx) when a page has been on its way too long. */
+/** Sent when a tapped page has been on its way too long (instant-nav.ts). */
 export const SLOW_EVENT = "mtmu7:slow";
 
 /**
@@ -24,9 +24,10 @@ const PROBE_MS = 2500;
 const PROBE_TIMEOUT_MS = 3000;
 
 /**
- * The cover over the page when the internet has really gone: a still Wi-Fi
- * sign and what is going on in plain words. It goes away by itself, after a
- * short "connected", when the internet returns.
+ * A note at the foot of the screen when the internet has really gone: a
+ * still Wi-Fi sign and plain words — the page under it stays in use, from
+ * what is kept on the device. It goes by itself, after a short "connected",
+ * when the internet returns.
  *
  * Next.js notices the connection (experimental.useOffline) and keeps whatever
  * was asked for meanwhile, sending it again once the connection is back.
@@ -45,8 +46,11 @@ export function OfflineCover() {
 
   // Every word from the device — online or offline — is checked at once.
   const [nudge, setNudge] = useState(0);
+  /** The device itself said "offline" during this outage (and so will say "online" after it). */
+  const deviceSaid = useRef(false);
   useEffect(() => {
     const update = () => {
+      if (!navigator.onLine) deviceSaid.current = true;
       setDeviceOffline(!navigator.onLine);
       setNudge((n) => n + 1);
     };
@@ -70,6 +74,30 @@ export function OfflineCover() {
     return () => window.removeEventListener(SLOW_EVENT, onSlow);
   }, []);
 
+  // A phone on a Wi-Fi or a SIM with no internet behind it says "online", and
+  // a portal opened from what the phone keeps (public/sw.js) makes no request
+  // of Next.js that could fail — so the portal itself is asked once as it
+  // opens and each time it comes back to the screen. A request that fails
+  // outright is no line; one still waiting is a slow line, and says nothing.
+  const [unreachable, setUnreachable] = useState(false);
+  useEffect(() => {
+    const ask = () => {
+      fetch("/manifest.webmanifest", { method: "HEAD", cache: "no-store" }).then(
+        () => setUnreachable(false),
+        () => setUnreachable(true)
+      );
+    };
+    const first = window.setTimeout(ask, 1500);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") ask();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearTimeout(first);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
   // Neither Next.js nor the device is believed on its word. Windows tells
   // the browser "no network" whenever its own check of Microsoft's test page
   // fails — behind many providers, all the time, with the internet working —
@@ -79,7 +107,7 @@ export function OfflineCover() {
   // answer is the connection, whatever anybody said; a request that fails at
   // once is no connection; one that is still out after a few seconds went out
   // and is waiting — a slow line, not a lost one.
-  const suspected = flagged || deviceOffline;
+  const suspected = flagged || deviceOffline || unreachable;
   const [reached, setReached] = useState<boolean | null>(null);
   useEffect(() => {
     if (!suspected) {
@@ -93,7 +121,9 @@ export function OfflineCover() {
       fetch("/manifest.webmanifest", { method: "HEAD", cache: "no-store", signal: controller.signal })
         .then(
           () => {
-            if (!stopped) setReached(true);
+            if (stopped) return;
+            setReached(true);
+            setUnreachable(false);
           },
           (error: unknown) => {
             if (!stopped) setReached(error instanceof DOMException && error.name === "AbortError");
@@ -112,7 +142,7 @@ export function OfflineCover() {
   // Offline only once it has lasted; back online the moment it is over, with
   // a short "connected" — and only if the cover was up at all. The device's
   // own word counts only once the portal has failed to answer too.
-  const suspect = flagged ? reached !== true : deviceOffline && reached === false;
+  const suspect = flagged ? reached !== true : (deviceOffline || unreachable) && reached === false;
   useEffect(() => {
     if (suspect && !offline) {
       // Device and portal agree there is nothing: said soon. Only Next.js
@@ -124,6 +154,11 @@ export function OfflineCover() {
       const over = window.setTimeout(() => {
         setOffline(false);
         setBack(true);
+        // The device never said it had lost the line, so it will not say it is
+        // back: what waits for the line (messages on their way, reads, the
+        // page's freshness) is told here instead.
+        if (!deviceSaid.current) window.dispatchEvent(new Event("online"));
+        deviceSaid.current = false;
       }, 0);
       return () => window.clearTimeout(over);
     }
@@ -155,21 +190,19 @@ export function OfflineCover() {
     );
   }
 
+  // No cover over the page: what is on the device is still there to use —
+  // the pages kept and the last of everything (public/sw.js) — so the foot of
+  // the screen says so, and goes when the line is back.
   if (!offline && !back) return null;
   return (
-    <div className="offline-cover" data-mode={offline ? "offline" : "back"} role="alert" aria-live="assertive">
-      <div className="offline-body">
-        <span className="offline-icon" aria-hidden>
-          {offline ? <WifiOff /> : <Wifi />}
-        </span>
-        <p className="offline-title">{offline ? t("title") : t("back")}</p>
-        {offline ? <p className="offline-text">{t("text")}</p> : null}
-        {offline ? (
-          <button type="button" className="offline-button" onClick={() => window.location.reload()}>
-            {t("retry")}
-          </button>
-        ) : null}
-      </div>
+    <div className="slow-note net-note" data-mode={offline ? "offline" : "back"} role={offline ? "alert" : "status"} aria-live="polite">
+      <span className="net-note-icon" aria-hidden>
+        {offline ? <WifiOff /> : <Wifi />}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold">{offline ? t("title") : t("back")}</span>
+        {offline ? <span className="block opacity-75">{t("cached")}</span> : null}
+      </span>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
-import { ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatBytes } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 import { DOCUMENT_CATEGORIES } from "@/features/content/constants";
@@ -38,7 +38,8 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
     .eq("status", "published")
     .order("published_at", { ascending: false })
     .range(list.offset, list.offset + list.pageSize - 1);
-  if (list.query) query = query.ilike("title", ilikePattern(list.query));
+  const pattern = list.query ? searchPattern(list.query) : null;
+  if (pattern) query = query.filter("title", "imatch", pattern);
   if (list.filters.category) query = query.eq("category", list.filters.category);
   const { data, count } = await query;
 

@@ -18,7 +18,7 @@ import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime, formatNumber } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
-import { buildQueryString, firstValue, ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { buildQueryString, firstValue, searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -94,7 +94,8 @@ export default async function AdminNewsPage({ searchParams }: { searchParams: Pr
   if (view === "scheduled") query = query.eq("status", "published").gt("publish_at", now);
   else if (view === "published") query = query.eq("status", "published").or(`publish_at.is.null,publish_at.lte.${now}`);
   else if (view !== "all") query = query.eq("status", view);
-  if (list.query) query = query.ilike("title", ilikePattern(list.query));
+  const pattern = list.query ? searchPattern(list.query) : null;
+  if (pattern) query = query.filter("title", "imatch", pattern);
   if (list.filters.category) query = query.eq("category_id", list.filters.category);
   const { data, count } = await query;
 

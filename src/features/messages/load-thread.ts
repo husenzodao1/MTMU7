@@ -18,7 +18,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
   const t = await getTranslations("portal.messages");
   const supabase = await createClient();
 
-  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }, , delivered] = await Promise.all([
+  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }, delivered] = await Promise.all([
     supabase.from("conversations").select("id, type, name, is_active, created_by").eq("id", id).maybeSingle(),
     supabase
       .from("conversation_members")
@@ -35,10 +35,6 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
       .order("created_at")
       .limit(20),
     supabase.from("user_blocks").select("blocked_id").eq("blocker_id", access.userId),
-    // Opening the thread is reading it. Alongside the reads rather than after
-    // them: it touches only the caller's own membership row, so for somebody
-    // who is not a member it changes nothing.
-    supabase.rpc("mark_conversation_read", { p_conversation_id: id }),
     // Asked apart from the members, so a database that has not had 00094 yet
     // still opens the thread — just without the second tick.
     supabase.from("conversation_members").select("user_id, last_delivered_at").eq("conversation_id", id),

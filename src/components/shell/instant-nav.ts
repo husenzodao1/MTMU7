@@ -1,6 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { warmPage } from "@/components/shell/warm-pages";
+import { SLOW_EVENT } from "@/features/native/offline-cover";
 
 /** Sent by whatever moves on later than its tap (book-link.tsx): `detail` is the path it is going to. */
 export const NAVIGATE_EVENT = "mtmu7:navigate";
@@ -16,22 +19,33 @@ const MESSENGER = /^\/messages(\/|$)/;
 
 /** A tap that led nowhere (a page that never came) is let go of after this long. */
 const GIVE_UP_MS = 25_000;
+/** A page still on its way after this long is a slow line, and the foot of the screen says so. */
+const SLOW_MS = 6000;
+
+function pageLink(target: EventTarget | null): URL | null {
+  const anchor = (target as Element | null)?.closest?.("a[href]");
+  if (!(anchor instanceof HTMLAnchorElement)) return null;
+  if ((anchor.target && anchor.target !== "_self") || anchor.hasAttribute("download") || anchor.dataset.instant === "off") return null;
+  const url = new URL(anchor.href, window.location.href);
+  if (url.origin !== window.location.origin || NOT_A_PAGE.test(url.pathname)) return null;
+  return url;
+}
 
 /**
  * Where the portal is going, from the moment a link is tapped — before the
  * network has been asked anything.
  *
- * A web page stays where it is until the next one answers; an app moves at
- * once and fills the new screen as it arrives. So a tap on any link to another
- * page of the portal is taken at its word: the shell shows that page's loading
- * screen straight away (route-skeleton.tsx, in the shape of the page to come)
- * and scrolls to the top, and Next.js's own loading screen and then the page
- * take over as they come. A link to the page already open, to a file, a link
- * with a modifier key or into a new tab, is left alone.
+ * The page in front stays where it is, as an app's screen does, with a thin
+ * line running along the top until the next one is there; most pages are
+ * already kept on the device (warm-pages.ts) and come at once. A finger
+ * coming down on a link starts fetching its page before the finger has
+ * lifted. A link to the page already open, to a file, a link with a modifier
+ * key or into a new tab, is left alone.
  *
  * Returns the path being gone to, or null when nothing is on its way.
  */
 export function useInstantNavigation(pathname: string, onStart?: () => void) {
+  const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   // Arrived — or gone somewhere else, by the back button say: the tap is done.
   const [seenPath, setSeenPath] = useState(pathname);
@@ -45,17 +59,17 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
       if (to === window.location.pathname || NOT_A_PAGE.test(to)) return;
       if (MESSENGER.test(to) && MESSENGER.test(window.location.pathname)) return;
       setPending(to);
-      window.scrollTo({ top: 0, behavior: "instant" });
       onStart?.();
     };
     const onClick = (event: MouseEvent) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const anchor = (event.target as Element | null)?.closest?.("a[href]");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
-      if ((anchor.target && anchor.target !== "_self") || anchor.hasAttribute("download") || anchor.dataset.instant === "off") return;
-      const url = new URL(anchor.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      start(url.pathname);
+      const url = pageLink(event.target);
+      if (url) start(url.pathname);
+    };
+    // The finger is down: the page is asked for now, not when it lifts.
+    const onPress = (event: Event) => {
+      const url = pageLink(event.target);
+      if (url && url.pathname !== window.location.pathname) warmPage(router, `${url.pathname}${url.search}`);
     };
     const onNavigate = (event: Event) => {
       const to = (event as CustomEvent<string>).detail;
@@ -63,17 +77,24 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
     };
     // Capture: seen before any handler below can stop the click.
     document.addEventListener("click", onClick, true);
+    document.addEventListener("pointerdown", onPress, { capture: true, passive: true });
     window.addEventListener(NAVIGATE_EVENT, onNavigate);
     return () => {
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("pointerdown", onPress, true);
       window.removeEventListener(NAVIGATE_EVENT, onNavigate);
     };
-  }, [onStart]);
+  }, [onStart, router]);
 
   useEffect(() => {
     if (!pending) return;
+    const slow = window.setTimeout(() => window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: true })), SLOW_MS);
     const giveUp = window.setTimeout(() => setPending(null), GIVE_UP_MS);
-    return () => window.clearTimeout(giveUp);
+    return () => {
+      window.clearTimeout(slow);
+      window.clearTimeout(giveUp);
+      window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: false }));
+    };
   }, [pending]);
 
   return pending;

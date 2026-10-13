@@ -1,7 +1,7 @@
 import "server-only";
 import { can, type Access } from "@/lib/auth/access";
 import type { Permission } from "@/lib/auth/permissions";
-import { ilikeAny } from "@/lib/list-params";
+import { matchAny } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export interface SearchHit {
@@ -40,9 +40,9 @@ export async function searchAdmin(access: Access, rawQuery: string): Promise<Sea
     return hits.length ? { key, hits: hits.slice(0, PER_SECTION), more: hits.length > PER_SECTION } : null;
   };
 
-  // ilikeAny strips the characters PostgREST's `or` grammar reserves; a query
+  // matchAny strips the characters PostgREST's `or` grammar reserves; a query
   // made only of those characters leaves nothing to match on.
-  const byName = (columns: string[]) => ilikeAny(columns, query) ?? "id.is.null";
+  const byName = (columns: string[]) => matchAny(columns, query) ?? "id.is.null";
   const fullName = (row: { last_name: string | null; first_name: string | null; middle_name?: string | null }) =>
     [row.last_name, row.first_name, row.middle_name].filter(Boolean).join(" ");
 

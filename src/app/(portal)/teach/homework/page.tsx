@@ -12,7 +12,7 @@ import { Breadcrumb, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
-import { ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,7 +45,8 @@ export default async function TeachHomeworkPage({ searchParams }: { searchParams
       .in("class_subject_id", classSubjects.map((cs) => cs.id))
       .order("due_at", { ascending: false, nullsFirst: true })
       .range(list.offset, list.offset + list.pageSize - 1);
-    if (list.query) query = query.ilike("title", ilikePattern(list.query));
+    const pattern = list.query ? searchPattern(list.query) : null;
+    if (pattern) query = query.filter("title", "imatch", pattern);
     if (list.filters.classSubject) query = query.eq("class_subject_id", list.filters.classSubject);
     query = list.filters.status ? query.eq("status", list.filters.status) : query.neq("status", "archived");
     const { data, count } = await query;

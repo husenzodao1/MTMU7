@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
 import { adminShellNav, loadShellData } from "@/components/shell/shell-data";
 import { SiteFooter } from "@/components/site/official-header";
+import { renderedAt } from "@/lib/rendered-at";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { requireAdminArea } from "@/lib/auth/guards";
 import { isWelcome } from "@/lib/auth/welcome";
@@ -45,6 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         locale={shell.locale}
         switchHref={nav.switchHref}
         footer={<SiteFooter />}
+        renderedAt={renderedAt()}
       >
         {children}
       </AppShell>

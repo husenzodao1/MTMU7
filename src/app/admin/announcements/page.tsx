@@ -13,7 +13,7 @@ import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
-import { firstValue, ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { firstValue, searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,7 +45,8 @@ export default async function AdminAnnouncementsPage({ searchParams }: { searchP
   if (!canPublish) query = query.eq("created_by", access.userId);
   if (list.filters.status) query = query.eq("status", list.filters.status);
   if (list.filters.priority) query = query.eq("priority", list.filters.priority);
-  if (list.query) query = query.ilike("title", ilikePattern(list.query));
+  const pattern = list.query ? searchPattern(list.query) : null;
+  if (pattern) query = query.filter("title", "imatch", pattern);
   const { data, count } = await query;
   const now = new Date().toISOString();
 

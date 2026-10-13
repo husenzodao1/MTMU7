@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildQueryString, ilikeAny, ilikePattern, parseListParams } from "../../src/lib/list-params.ts";
+import { buildQueryString, matchAny, parseListParams, searchPattern } from "../../src/lib/list-params.ts";
 
 describe("parseListParams", () => {
   it("clamps pages and restricts sorts and filters to allow-lists", () => {
@@ -29,16 +29,38 @@ describe("parseListParams", () => {
 });
 
 describe("search filters", () => {
-  it("escapes LIKE wildcards in single-column patterns", () => {
-    assert.equal(ilikePattern("50%_off"), "%50\\%\\_off%");
+  it("drops pattern characters from single-column patterns", () => {
+    assert.equal(searchPattern("50%_off"), "50 off");
+    assert.equal(searchPattern(" .*() "), null);
+  });
+
+  it("matches the Tajik letters a hurried hand swaps", () => {
+    // Мехровар finds Меҳровар, Али finds Алӣ, whichever was typed.
+    assert.equal(searchPattern("Мехровар"), "м[её][хҳ]ровар");
+    assert.equal(searchPattern("Алӣ"), "ал[иӣ]");
+    for (const [typed, name] of [
+      ["Мехровар", "Меҳровар"],
+      ["Меҳровар", "Мехровар"],
+      ["кодир", "Қодир"],
+      ["чамшед", "Ҷамшед"],
+      ["Ёкуб", "Яқуб"],
+      ["гаффор", "Ғаффор"],
+      ["Умед", "Ӯмед"],
+    ] as const) {
+      const pattern = searchPattern(typed)!;
+      const matches = new RegExp(pattern, "iu").test(name);
+      if (typed === "Ёкуб") assert.equal(matches, false, `${typed} is not ${name}`);
+      else assert.ok(matches, `${typed} → ${pattern} should find ${name}`);
+    }
   });
 
   it("cannot inject extra PostgREST or-conditions", () => {
-    const filter = ilikeAny(["title", "author"], "x%,status.eq.draft),(id.neq.0");
+    const filter = matchAny(["title", "author"], "x%,status.eq.draft),(id.neq.0");
     assert.ok(filter);
     assert.equal(filter.split(",").length, 2, filter);
     assert.doesNotMatch(filter, /[()]/);
-    assert.equal(ilikeAny(["title"], " ,.() "), null);
+    assert.equal(matchAny(["title"], " ,.() "), null);
+    assert.equal(matchAny(["first_name", "last_name"], "Ҳасан"), "first_name.imatch.[хҳ]асан,last_name.imatch.[хҳ]асан");
   });
 });
 

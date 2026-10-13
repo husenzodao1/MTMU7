@@ -18,7 +18,7 @@ import { can, canAny } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatNumber } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
-import { firstValue, ilikeAny, parseListParams, type SearchParams } from "@/lib/list-params";
+import { firstValue, matchAny, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -87,7 +87,7 @@ export default async function AdminLibraryPage({ searchParams }: { searchParams:
     .eq("school_id", schoolId)
     .order("updated_at", { ascending: false })
     .range(list.offset, list.offset + list.pageSize - 1);
-  const search = ilikeAny(["title", "author", "isbn"], list.query);
+  const search = matchAny(["title", "author", "isbn"], list.query);
   if (search) query = query.or(search);
   if (list.filters.status) query = query.eq("status", list.filters.status);
   if (list.filters.category) query = query.eq("category_id", list.filters.category);

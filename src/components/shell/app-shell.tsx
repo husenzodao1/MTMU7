@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -10,18 +10,23 @@ import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
 import { BarIcon } from "@/components/shell/bar-icons";
 import { useInstantNavigation } from "@/components/shell/instant-nav";
+import { PullToRefresh } from "@/components/shell/pull-to-refresh";
+import { useWarmPages } from "@/components/shell/warm-pages";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
-import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
 import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
 import { forgetWebPush } from "@/features/push/client";
+import { UNREAD_TOTAL_EVENT } from "@/features/messages/events";
+import { flushOutbox, forgetOutbox } from "@/features/messages/outbox";
 import { appPlugin } from "@/features/native/bridge";
+import { forgetKeptPages } from "@/lib/kept-pages";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
+import { fold } from "@/lib/search/fold";
 
 export interface ShellUser {
   id: string;
@@ -44,6 +49,8 @@ export interface ShellSchool {
 }
 
 interface ShellProps {
+  /** When the server drew this page (rendered-at.ts). */
+  renderedAt?: number;
   variant: "portal" | "admin";
   school: ShellSchool;
   user: ShellUser;
@@ -207,9 +214,9 @@ function useAppVersion(): string {
 
 function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[]; pathname: string; onNavigate?: () => void; filter: string }) {
   const t = useTranslations();
-  const normalized = filter.trim().toLowerCase();
+  const normalized = fold(filter.trim());
   const visibleGroups = groups
-    .map((group) => ({ ...group, items: group.items.filter((item) => !normalized || t(item.labelKey).toLowerCase().includes(normalized)) }))
+    .map((group) => ({ ...group, items: group.items.filter((item) => !normalized || fold(t(item.labelKey)).includes(normalized)) }))
     .filter((group) => group.items.length > 0);
 
   return (
@@ -263,12 +270,13 @@ function CountBadge({ count, label }: { count: number; label: string }) {
  * each icon plays its own small act as it is chosen (bar-icons.tsx). Nothing
  * moves on the first paint: only a choice moves things.
  */
-function BottomBar({ items, pathname, messagesUnread }: { items: NavItem[]; pathname: string; messagesUnread: number }) {
+function BottomBar({ items, pathname, goingTo, messagesUnread }: { items: NavItem[]; pathname: string; goingTo: string | null; messagesUnread: number }) {
   const t = useTranslations();
   const current = items.findIndex((item) => isActive(pathname, item.href));
-  const [tapped, setTapped] = useState<{ index: number; from: string } | null>(null);
-  // A tap is believed until the page it asked for arrives (or another does).
-  const active = tapped && tapped.from === pathname ? tapped.index : current;
+  // A tap is believed while its page is on its way, and only then: a page
+  // that never came leaves the light where the page in front is.
+  const going = goingTo ? items.findIndex((item) => isActive(goingTo, item.href)) : -1;
+  const active = going >= 0 ? going : current;
   const [moves, setMoves] = useState(0);
   const [lastActive, setLastActive] = useState(active);
   if (lastActive !== active) {
@@ -297,7 +305,6 @@ function BottomBar({ items, pathname, messagesUnread }: { items: NavItem[]; path
               <Link
                 href={item.href}
                 aria-current={on ? "page" : undefined}
-                onClick={() => setTapped({ index, from: pathname })}
                 className={cn("bar-item flex min-h-14 flex-col items-center justify-start gap-0.5 px-1 pb-1 pt-1.5 text-xs", on ? "font-semibold text-brand-text" : "text-ink-muted")}
               >
                 <span className="flex h-8 w-[3.75rem] items-center justify-center">
@@ -316,9 +323,51 @@ function BottomBar({ items, pathname, messagesUnread }: { items: NavItem[]; path
   );
 }
 
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer }: ShellProps) {
+/** A page drawn longer ago than this was opened from the device, and is refreshed behind itself. */
+const KEPT_COPY_MS = 15_000;
+/** Back in the app after this long away, the page in front is refreshed. */
+const AWAY_MS = 5 * 60_000;
+
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer, renderedAt }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Opened from what the device kept (public/sw.js): on screen at once, and
+  // fresh a moment later — as soon as there is a line to ask on.
+  useEffect(() => {
+    if (!renderedAt || Date.now() - renderedAt < KEPT_COPY_MS) return;
+    const refresh = () => router.refresh();
+    if (navigator.onLine) {
+      const timer = window.setTimeout(refresh, 300);
+      return () => window.clearTimeout(timer);
+    }
+    window.addEventListener("online", refresh, { once: true });
+    return () => window.removeEventListener("online", refresh);
+    // Once, as the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Messages written with no line go out by themselves once there is one,
+  // whichever page is open (outbox.ts).
+  useEffect(() => {
+    const flush = () => void flushOutbox();
+    const first = window.setTimeout(flush, 2500);
+    window.addEventListener("online", flush);
+    return () => {
+      window.clearTimeout(first);
+      window.removeEventListener("online", flush);
+    };
+  }, []);
+  // Back after a while away: the page in front is asked for again.
+  useEffect(() => {
+    let hiddenAt = 0;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt > AWAY_MS && navigator.onLine) router.refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [router]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const appRoot = useRef<HTMLDivElement>(null);
   const burger = useRef<HTMLButtonElement>(null);
@@ -334,6 +383,10 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // The page a tap is going to, drawn at once as its loading screen.
   const closeMenu = useCallback(() => setDrawerOpen(false), []);
   const goingTo = useInstantNavigation(pathname, closeMenu);
+  // Every section of the menu and the bar kept on the device, ready before
+  // it is tapped (warm-pages.ts).
+  const warm = [...(mobileBar ?? []).map((item) => item.href), ...groups.flatMap((group) => group.items.map((item) => item.href))].slice(0, 18);
+  useWarmPages(warm, pathname);
 
   const [prevCount, setPrevCount] = useState(unreadNotifications);
   if (prevCount !== unreadNotifications) {
@@ -435,6 +488,12 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       void supabase.removeChannel(channel);
     };
   }, [tracksMessages, user.id, recountMessages]);
+  // In the messenger the list knows best, and knows at once (events.ts).
+  useEffect(() => {
+    const onTotal = (event: Event) => setMessagesUnread(Number((event as CustomEvent<number>).detail) || 0);
+    window.addEventListener(UNREAD_TOTAL_EVENT, onTotal);
+    return () => window.removeEventListener(UNREAD_TOTAL_EVENT, onTotal);
+  }, []);
   const inMessages = pathname.startsWith("/messages");
   const wasInMessages = useRef(inMessages);
   useEffect(() => {
@@ -589,7 +648,8 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                     document.documentElement.setAttribute("data-leaving", "");
                     // This phone or browser stops getting this person's
                     // notifications first (a second or two at most).
-                    await Promise.all([forgetNativeToken(), forgetWebPush()]);
+                    forgetOutbox();
+                    await Promise.all([forgetNativeToken(), forgetWebPush(), forgetKeptPages()]);
                     await signOutAction();
                   }}
                 >
@@ -602,18 +662,18 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             </Overlay.DropdownMenu>
           </header>
 
-          <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7">
-            {goingTo ? <RouteSkeleton pathname={goingTo} /> : null}
-            <div hidden={Boolean(goingTo)} className="contents">
-              {children}
-            </div>
+          {/* The page on its way: a thin line along the top, the page in front still there. */}
+          <div className="nav-progress" data-on={goingTo ? "" : undefined} aria-hidden />
+          <PullToRefresh disabled={pathname.startsWith("/messages")} />
+          <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7" aria-busy={goingTo ? true : undefined}>
+            {children}
           </main>
           {footer}
         </div>
 
         <DevicePermissions locale={locale} userId={user.id} />
 
-        {mobileBar && mobileBar.length > 0 ? <BottomBar items={mobileBar} pathname={pathname} messagesUnread={messagesUnread} /> : null}
+        {mobileBar && mobileBar.length > 0 ? <BottomBar items={mobileBar} pathname={pathname} goingTo={goingTo} messagesUnread={messagesUnread} /> : null}
       </div>
       <MenuDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label={school.fullName || school.name} appRoot={appRoot} trigger={burger} footer={<MenuFoot socials={socials} />}>
         {sidebar(() => setDrawerOpen(false))}

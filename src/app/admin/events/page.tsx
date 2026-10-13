@@ -19,7 +19,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { isoToLocalInput } from "@/lib/i18n/zoned";
-import { firstValue, ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { firstValue, searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -50,7 +50,8 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
   query = view === "upcoming" ? query.gte("starts_at", now).order("starts_at") : query.lt("starts_at", now).order("starts_at", { ascending: false });
   if (list.filters.status) query = query.eq("status", list.filters.status);
   if (list.filters.category) query = query.eq("category", list.filters.category);
-  if (list.query) query = query.ilike("title", ilikePattern(list.query));
+  const pattern = list.query ? searchPattern(list.query) : null;
+  if (pattern) query = query.filter("title", "imatch", pattern);
   const { data, count } = await query;
 
   const fields = (e?: NonNullable<typeof data>[number]) => (

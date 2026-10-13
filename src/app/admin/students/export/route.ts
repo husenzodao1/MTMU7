@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { can, getAccess } from "@/lib/auth/access";
 import { toCsv } from "@/lib/export/csv";
-import { ilikeAny } from "@/lib/list-params";
+import { matchAny } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 const STATUSES = ["active", "inactive", "transferred", "graduated", "archived"];
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   else if (classFilter && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classFilter)) {
     query = query.eq("enrollments.class_id", classFilter);
   }
-  const search = ilikeAny(["last_name", "first_name", "middle_name", "student_number"], (params.get("q") ?? "").slice(0, 100));
+  const search = matchAny(["last_name", "first_name", "middle_name", "student_number"], (params.get("q") ?? "").slice(0, 100));
   if (search) query = query.or(search);
   const { data, error } = await query;
   if (error) return new NextResponse(null, { status: 500 });

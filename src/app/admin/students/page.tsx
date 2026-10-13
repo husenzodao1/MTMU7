@@ -13,7 +13,7 @@ import { ListBox, Pagination } from "@/components/ui/pagination";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
-import { buildQueryString, ilikeAny, parseListParams, type SearchParams } from "@/lib/list-params";
+import { buildQueryString, matchAny, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,7 +45,7 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
     .eq("school_id", schoolId)
     .eq("enrollments.status", "active")
     .range(list.offset, list.offset + list.pageSize - 1);
-  const search = ilikeAny(["last_name", "first_name", "middle_name", "student_number"], list.query);
+  const search = matchAny(["last_name", "first_name", "middle_name", "student_number"], list.query);
   if (search) query = query.or(search);
   query = list.filters.status ? query.eq("status", list.filters.status) : query.neq("status", "archived");
   if (list.filters.gender) query = query.eq("gender", list.filters.gender);

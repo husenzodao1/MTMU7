@@ -257,7 +257,8 @@
       "slowTitle": "Slow internet",
       "slowText": "The page is still loading — just a moment.",
       "hide": "Hide",
-      "back": "Connected!"
+      "back": "Connected!",
+      "cached": "Showing what was saved last — anything you send goes out by itself when the connection is back."
     }
   },
   "nav": {

@@ -58,12 +58,16 @@ const nextConfig: NextConfig = {
     // what was asked for is kept and sent again when it is back, and the
     // offline cover (features/native/offline-cover.tsx) reads it.
     useOffline: true,
-    // A page opened in the last two minutes opens again at once, from the
-    // phone's memory, instead of asking the server — on a slow line that is
-    // the difference between a tap and a wait; anything saved in between
-    // clears it (revalidatePath), so nobody sees their own change missing.
+    // Pages are kept in the phone's memory and opened from there at once:
+    // the menu's and the bar's sections are fetched whole ahead of any tap
+    // and kept a quarter of an hour (static — fetched again as soon as they
+    // grow old, components/shell/warm-pages.ts), any other page five minutes
+    // after it was opened (dynamic). A page shown from an older copy is
+    // refreshed behind it at once, and anything saved clears what it changed
+    // (revalidatePath), so nobody sees their own change missing.
     staleTimes: {
-      dynamic: 120,
+      dynamic: 300,
+      static: 900,
     },
     serverActions: {
       // Book files are uploaded directly to storage from the browser; action

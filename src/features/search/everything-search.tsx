@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTran
 import { createPortal } from "react-dom";
 import { NotFoundNote, SearchingPanel, useSearchSweep } from "@/components/ui/searching";
 import { searchEverythingAction, type EverythingKind, type EverythingSection } from "@/features/search/actions";
+import { fold } from "@/lib/search/fold";
 
 /** However quick the answer, the note stays this long: long enough to be read. */
 const SWEEP_MS = 3000;
@@ -262,8 +263,8 @@ function EverythingOverlay({ onClose }: { onClose: () => void }) {
 
 /** The title with the words that were searched for picked out. */
 function Marked({ text, words }: { text: string; words: string }) {
-  const needle = words.trim().toLocaleLowerCase();
-  const at = needle ? text.toLocaleLowerCase().indexOf(needle) : -1;
+  const needle = fold(words.trim());
+  const at = needle ? fold(text).indexOf(needle) : -1;
   if (at < 0) return <>{text}</>;
   return (
     <>

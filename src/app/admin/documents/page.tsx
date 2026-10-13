@@ -20,7 +20,7 @@ import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
-import { ilikePattern, parseListParams, type SearchParams } from "@/lib/list-params";
+import { searchPattern, parseListParams, type SearchParams } from "@/lib/list-params";
 import { formatBytes } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,7 +52,8 @@ export default async function AdminDocumentsPage({ searchParams }: { searchParam
   else query = query.neq("status", "archived");
   if (list.filters.category) query = query.eq("category", list.filters.category);
   if (list.filters.folder) query = query.eq("folder_id", list.filters.folder);
-  if (list.query) query = query.ilike("title", ilikePattern(list.query));
+  const pattern = list.query ? searchPattern(list.query) : null;
+  if (pattern) query = query.filter("title", "imatch", pattern);
   const [{ data, count }, { data: folders }, roles] = await Promise.all([
     query,
     supabase.from("document_folders").select("id, name").eq("school_id", schoolId).order("name"),

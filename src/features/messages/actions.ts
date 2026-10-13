@@ -8,6 +8,7 @@ import { mapDbError } from "@/lib/actions/errors";
 import { failure, success, type ActionResult } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
+import { searchContacts } from "@/features/messages/contact-search";
 import { MESSAGE_MAX_LENGTH, REPORT_REASONS, type ContactResult, type ThreadMessage } from "@/features/messages/types";
 
 
@@ -22,7 +23,7 @@ export async function searchContactsAction(query: string): Promise<ActionResult<
   const term = z.string().trim().min(2).max(60).safeParse(query);
   if (!term.success) return success(undefined, []);
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("search_message_contacts", { p_query: term.data, p_limit: 20 });
+  const { data, error } = await searchContacts(supabase, term.data, 20);
   if (error) return mapDbError(error);
   return success(undefined, (data ?? []) as unknown as ContactResult[]);
 }

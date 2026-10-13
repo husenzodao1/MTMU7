@@ -10,11 +10,14 @@ import { ChannelsDialog } from "@/features/messages/channels";
 import { NewConversationButton } from "@/features/messages/new-conversation";
 import { StoriesRow, type StoryAuthor } from "@/features/messages/stories";
 import { Ticks, tickState } from "@/features/messages/ticks";
+import { warmPage } from "@/components/shell/warm-pages";
+import { READ_EVENT, UNREAD_TOTAL_EVENT } from "@/features/messages/events";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { dayKey, formatClock, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { cn } from "@/lib/utils/cn";
 import { conversationTitle, isBroadcast, type ConversationMember } from "@/features/messages/types";
+import { fold } from "@/lib/search/fold";
 
 export interface ConversationSummary {
   id: string;
@@ -201,6 +204,21 @@ export function ConversationList({
     };
   }, [currentUserId, router, idFilter, directFilter]);
 
+  // Read on this device (thread.tsx): cleared here at once, whatever the
+  // line — the server's own word comes through realtime when it can.
+  useEffect(() => {
+    const onRead = (event: Event) => {
+      const { conversationId, at } = (event as CustomEvent<{ conversationId: string; at: string }>).detail;
+      setReadAt((current) => ({ ...current, [conversationId]: at }));
+      setLive((current) => {
+        const l = current[conversationId];
+        return l && l.unread > 0 ? { ...current, [conversationId]: { ...l, unread: 0 } } : current;
+      });
+    };
+    window.addEventListener(READ_EVENT, onRead);
+    return () => window.removeEventListener(READ_EVENT, onRead);
+  }, []);
+
   const today = dayKey(new Date(), timeZone);
   const merged = useMemo(
     () =>
@@ -234,11 +252,42 @@ export function ConversationList({
   );
 
   const unreadCount = merged.filter((c) => c.unread_count > 0 && c.id !== activeId).length;
+  // The conversations at the top are fetched ahead, whole, so a tap opens
+  // them at once from the device (warm-pages.ts) — the newest first.
+  const warmHrefs = merged
+    .filter((c) => !c.askedByMe)
+    .slice(0, 6)
+    .map((c) => `/messages/${c.id}`)
+    .join("|");
+  useEffect(() => {
+    let live = true;
+    const list = warmHrefs.split("|").filter(Boolean);
+    let index = 0;
+    let timer = 0;
+    const next = () => {
+      if (!live || index >= list.length) return;
+      warmPage(router, list[index++]!, () => live);
+      timer = window.setTimeout(next, 500);
+    };
+    const begin = window.setTimeout(next, 1200);
+    return () => {
+      live = false;
+      window.clearTimeout(begin);
+      window.clearTimeout(timer);
+    };
+  }, [warmHrefs, router]);
+
+  // The bar's badge adds up what this list does (app-shell.tsx), so it is
+  // right the moment a conversation is read, online or not.
+  const unreadTotal = merged.reduce((sum, c) => (c.is_muted || c.id === activeId ? sum : sum + c.unread_count), 0);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(UNREAD_TOTAL_EVENT, { detail: unreadTotal }));
+  }, [unreadTotal]);
   const hasChannels = merged.some((c) => c.type === "channel");
   const items = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = fold(query.trim());
     return merged
-      .filter((c) => !normalized || c.title.toLowerCase().includes(normalized))
+      .filter((c) => !normalized || fold(c.title).includes(normalized))
       .filter((c) =>
         filter === "unread"
           ? c.unread_count > 0 && c.id !== activeId

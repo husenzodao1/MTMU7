@@ -13,7 +13,7 @@ import { FilterBar } from "@/components/ui/filters";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { requirePermission } from "@/lib/auth/guards";
 import { pickName, type Locale } from "@/lib/i18n/text";
-import { firstValue, ilikeAny, type SearchParams } from "@/lib/list-params";
+import { firstValue, matchAny, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,7 +37,7 @@ export default async function AdminSubjectsPage({ searchParams }: { searchParams
     .eq("school_id", access.school!.id)
     .eq("is_active", !archived)
     .order("name_tg");
-  const search = ilikeAny(["name_tg", "name_ru", "name_en", "code"], query);
+  const search = matchAny(["name_tg", "name_ru", "name_en", "code"], query);
   if (search) request = request.or(search);
   const { data } = await request;
 

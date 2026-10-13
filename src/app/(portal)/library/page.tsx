@@ -12,7 +12,7 @@ import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can, canAny } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
 import { pickName, type Locale } from "@/lib/i18n/text";
-import { buildQueryString, firstValue, ilikeAny, parseListParams, type SearchParams } from "@/lib/list-params";
+import { buildQueryString, firstValue, matchAny, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 const BOOK_COLUMNS = "id, title, author, cover_url, file_type, publication_year, is_featured, available_quantity, quantity";
@@ -59,7 +59,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
       .eq("school_id", schoolId)
       .eq("status", "published")
       .range(list.offset, list.offset + list.pageSize - 1);
-    const search = ilikeAny(["title", "author", "isbn"], list.query);
+    const search = matchAny(["title", "author", "isbn"], list.query);
     if (search) query = query.or(search);
     if (list.filters.category) query = query.eq("category_id", list.filters.category);
     if (list.filters.language) query = query.eq("language", list.filters.language);

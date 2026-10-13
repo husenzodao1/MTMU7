@@ -8,7 +8,7 @@ import { FilterBar } from "@/components/ui/filters";
 import { Avatar, TabNav } from "@/components/ui/misc";
 import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/surface";
 import { requireModule } from "@/lib/auth/guards";
-import { firstValue, ilikeAny, type SearchParams } from "@/lib/list-params";
+import { firstValue, matchAny, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 const VIEWS = ["friends", "incoming", "outgoing", "find"] as const;
@@ -53,7 +53,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
 
   let found: Person[] = [];
   if (view === "find") {
-    const search = ilikeAny(["first_name", "last_name"], query);
+    const search = matchAny(["first_name", "last_name"], query);
     if (search && query.length >= 2) {
       const { data } = await supabase
         .from("users")

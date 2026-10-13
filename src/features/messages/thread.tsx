@@ -60,7 +60,9 @@ import {
 } from "@/features/messages/actions";
 import { FileCard, MessageText, ReactionBar, ReactionsPill, VoiceNote } from "@/features/messages/bubbles";
 import { checkFile, FILE_ACCEPT, formatBytes, formatDuration, kindOf } from "@/features/messages/files";
+import { READ_EVENT } from "@/features/messages/events";
 import { MessageGestures } from "@/features/messages/gestures";
+import { dropOutgoing, keepOutgoing, outgoingFor, sendRow, waitForLine, type OutgoingRow } from "@/features/messages/outbox";
 import { GroupMembersDialog } from "@/features/messages/group-members";
 import { downloadLink, mediaPath, prepareImage, removeMedia, uploadImage, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
 import { LocationCard, locate } from "@/features/messages/location";
@@ -102,17 +104,34 @@ export interface ThreadConversation {
  * fold into one more at the end.
  */
 const readCooldown = new Map<string, { timer: ReturnType<typeof setTimeout>; again: boolean }>();
+/** Conversations read while the line was down, told to the server once it is back. */
+const unsentReads = new Set<string>();
 function sendRead(conversationId: string) {
-  // A supabase-js query runs when something asks for its result, so it is
-  // asked for here even though nothing is done with it.
   getBrowserClient()
     .rpc("mark_conversation_read", { p_conversation_id: conversationId })
     .then(
-      () => undefined,
-      () => undefined
+      ({ error }) => {
+        if (error && !error.code) keepRead(conversationId);
+      },
+      () => keepRead(conversationId)
     );
 }
+function keepRead(conversationId: string) {
+  if (unsentReads.size === 0) window.addEventListener("online", sendKeptReads, { once: true });
+  unsentReads.add(conversationId);
+}
+function sendKeptReads() {
+  const kept = [...unsentReads];
+  unsentReads.clear();
+  for (const id of kept) sendRead(id);
+}
+/**
+ * Read, on this device at once — the list and the bar's count clear before
+ * the server has heard (READ_EVENT, events.ts) — and on the server as soon as
+ * it can be told: offline, it is kept and sent when the line is back.
+ */
 function markRead(conversationId: string) {
+  window.dispatchEvent(new CustomEvent(READ_EVENT, { detail: { conversationId, at: new Date().toISOString() } }));
   const cooling = readCooldown.get(conversationId);
   if (cooling) {
     cooling.again = true;
@@ -413,56 +432,70 @@ export function Thread({
             ? uploadMedia(local.media_path, blob.blob, blob.mime)
             : null
         : null;
+      const id = local.id.startsWith("local:") ? local.id.slice(6) : crypto.randomUUID();
+      const row: OutgoingRow = {
+        id,
+        conversation_id: local.conversation_id,
+        sender_id: currentUserId,
+        school_id: schoolId,
+        content: local.content,
+        type: local.type,
+        reply_to_id: local.reply_to_id,
+        location_lat: local.location_lat,
+        location_lng: local.location_lng,
+        media_path: local.media_path,
+        media_width: local.media_width,
+        media_height: local.media_height,
+        media_name: local.media_name ?? null,
+        media_size: local.media_size ?? null,
+        media_mime: local.media_mime ?? null,
+        media_duration: local.media_duration ?? null,
+        created_at: local.created_at,
+      };
+      // Kept on the device until the server has it (outbox.ts).
+      keepOutgoing(row);
+      const failed = (key: string) => {
+        dropOutgoing(id);
+        setMessages((current) => current.map((m) => (m.id === local.id ? { ...m, pending: false, failed: true } : m)));
+        fail(key);
+      };
       queue.current = queue.current.then(async () => {
-        if (local.media_path && !(await uploaded)) {
-          setMessages((current) => current.map((m) => (m.id === local.id ? { ...m, pending: false, failed: true } : m)));
-          fail(local.type === "audio" ? "portal.messages.voiceFailed" : local.type === "file" ? "portal.messages.fileFailed" : "portal.messages.photoFailed");
-          return;
+        // A photo, file or recording that could not go up is tried again as
+        // the line allows, a few times, before it is marked.
+        let upload = uploaded;
+        for (let tries = 0; local.media_path && !(await upload); tries += 1) {
+          if (tries >= 6) {
+            failed(local.type === "audio" ? "portal.messages.voiceFailed" : local.type === "file" ? "portal.messages.fileFailed" : "portal.messages.photoFailed");
+            return;
+          }
+          await waitForLine(Math.min(30_000, 2000 * 2 ** tries));
+          upload = photo ? uploadImage(local.media_path, photo) : blob ? uploadMedia(local.media_path, blob.blob, blob.mime) : Promise.resolve(false);
         }
-        const { data, error } = await getBrowserClient()
-          .from("messages")
-          .insert({
-            conversation_id: local.conversation_id,
-            sender_id: currentUserId,
-            school_id: schoolId,
-            content: local.content,
-            type: local.type,
-            reply_to_id: local.reply_to_id,
-            location_lat: local.location_lat,
-            location_lng: local.location_lng,
-            media_path: local.media_path,
-            media_width: local.media_width,
-            media_height: local.media_height,
-            media_name: local.media_name ?? null,
-            media_size: local.media_size ?? null,
-            media_mime: local.media_mime ?? null,
-            media_duration: local.media_duration ?? null,
-          })
-          .select("id")
-          // A request that never answers would hold every later message
-          // behind it; after twenty seconds it is failed, and one tap resends.
-          .abortSignal(AbortSignal.timeout(20_000))
-          .single();
-        if (error || !data) {
-          // Kept on screen, marked, and one tap from being sent again — never
-          // silently swallowed.
-          setMessages((current) => current.map((m) => (m.id === local.id ? { ...m, pending: false, failed: true } : m)));
-          fail((error && dbErrorKey(error)) ?? "errors.unexpected");
-          return;
+        // No line, or a line too slow to answer: the clock stays and the
+        // message goes again — when the line is back, or after a growing
+        // pause — and the ones after it wait their turn behind it.
+        for (let tries = 0; ; tries += 1) {
+          const result = await sendRow(row);
+          if ("sent" in result) break;
+          if ("failed" in result) {
+            failed(result.failed);
+            return;
+          }
+          await waitForLine(Math.min(30_000, 1500 * 2 ** Math.min(tries, 5)));
         }
-        const serverId = data.id;
+        dropOutgoing(id);
         photos.current.delete(local.id);
         blobs.current.delete(local.id);
         setMessages((current) => {
           // Realtime may have delivered the real row already; if so the local
           // one simply goes, rather than appearing twice.
-          const arrived = current.some((m) => m.id === serverId);
+          const arrived = current.some((m) => m.id === id);
           const next = arrived
             ? current.filter((m) => m.id !== local.id)
-            : current.map((m) => (m.id === local.id ? { ...m, id: serverId, pending: false } : m));
+            : current.map((m) => (m.id === local.id ? { ...m, id, pending: false } : m));
           return sortAsc(next);
         });
-        announceMessage(serverId);
+        announceMessage(id);
       });
     },
     [currentUserId, schoolId, upsert, fail]
@@ -517,6 +550,28 @@ export function Thread({
     },
     [members, currentUserId, conversation.id]
   );
+
+  // Words left waiting on this device (outbox.ts) — the app closed, or the
+  // line went — come back with their clocks and go, unless they already have.
+  const restored = useRef(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (restored.current) return;
+      restored.current = true;
+      for (const row of outgoingFor(conversation.id, currentUserId)) {
+        if (initialMessages.some((m) => m.id === row.id)) {
+          dropOutgoing(row.id);
+          continue;
+        }
+        deliver({
+          ...localMessage({ content: row.content, type: row.type, reply_to_id: row.reply_to_id, location_lat: row.location_lat, location_lng: row.location_lng }),
+          id: `local:${row.id}`,
+          created_at: row.created_at ?? new Date().toISOString(),
+        });
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [conversation.id, currentUserId, initialMessages, deliver, localMessage]);
 
   const retry = useCallback(
     (failed: ThreadMessage) => {
@@ -948,6 +1003,9 @@ export function Thread({
     const onVisible = () => {
       if (document.visibilityState === "visible") markRead(conversation.id);
     };
+    // Opening the thread is reading it (no longer done while the page is
+    // rendered: pages are fetched ahead of any tap, warm-pages.ts).
+    onVisible();
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);

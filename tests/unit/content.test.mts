@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { markdownToPlainText, parseInline, parseMarkdown, safeHref } from "../../src/lib/content/markdown.ts";
 import { escapeCsvCell, parseCsv, toCsv } from "../../src/lib/export/csv.ts";
 import { checkFile, contentMatchesType, isValidStoragePath, newStoragePath } from "../../src/lib/storage/files.ts";
-import { buildQueryString, ilikePattern, parseListParams } from "../../src/lib/list-params.ts";
+import { buildQueryString, parseListParams, searchPattern } from "../../src/lib/list-params.ts";
 
 describe("safe markdown", () => {
   it("parses headings, lists, quotes and inline formatting", () => {
@@ -98,7 +98,7 @@ describe("list parameters", () => {
   });
 
   it("escapes PostgREST pattern characters", () => {
-    assert.equal(ilikePattern("50%_a,b()"), "%50\\%\\_a\\,b\\(\\)%");
+    assert.equal(searchPattern("50%_a,b()"), "50 a b");
     assert.equal(buildQueryString({ q: "x", page: "3" }, { page: null, sort: "name" }), "?q=x&sort=name");
   });
 });

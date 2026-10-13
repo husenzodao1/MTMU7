@@ -17,7 +17,7 @@ import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { AccountsTabs } from "@/features/accounts/accounts-tabs";
-import { ilikeAny, parseListParams, type SearchParams } from "@/lib/list-params";
+import { matchAny, parseListParams, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,7 +61,7 @@ export default async function AdminGuardiansPage({ searchParams }: { searchParam
     .order("last_name")
     .order("first_name")
     .range(list.offset, list.offset + list.pageSize - 1);
-  const search = ilikeAny(["last_name", "first_name", "middle_name", "phone", "email"], list.query);
+  const search = matchAny(["last_name", "first_name", "middle_name", "phone", "email"], list.query);
   if (search) query = query.or(search);
   if (list.filters.account === "linked") query = query.not("user_id", "is", null);
   if (list.filters.account === "none") query = query.is("user_id", null);

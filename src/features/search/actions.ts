@@ -4,10 +4,12 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { portalNavigation } from "@/components/shell/navigation";
 import { searchAdmin } from "@/features/admin/search/query";
+import { searchContacts } from "@/features/messages/contact-search";
 import { failure, success, type ActionResult } from "@/lib/actions/result";
 import { can, canEnterAdmin, getAccess, hasModule, type Access } from "@/lib/auth/access";
-import { ilikeAny } from "@/lib/list-params";
+import { matchAny } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
+import { fold } from "@/lib/search/fold";
 
 /** What kind of thing a hit is: it picks the icon and the section it is listed in. */
 export type EverythingKind =
@@ -56,9 +58,9 @@ export async function searchEverythingAction(raw: string): Promise<ActionResult<
   const school = access.school.id;
   const supabase = await createClient();
   const now = new Date().toISOString();
-  // ilikeAny strips what PostgREST's `or` grammar reserves; a query made only
+  // matchAny strips what PostgREST's `or` grammar reserves; a query made only
   // of those characters matches nothing rather than everything.
-  const match = (columns: string[]) => ilikeAny(columns, query) ?? "id.is.null";
+  const match = (columns: string[]) => matchAny(columns, query) ?? "id.is.null";
   const section = async (kind: EverythingKind, allowed: boolean, run: () => Promise<EverythingHit[]>): Promise<EverythingSection | null> => {
     if (!allowed) return null;
     try {
@@ -73,7 +75,7 @@ export async function searchEverythingAction(raw: string): Promise<ActionResult<
   const [pages, people, admin, announcements, news, events, homework, library, documents] = await Promise.all([
     section("pages", true, () => matchPages(access, query)),
     section("people", can(access, "messages.use") && hasModule(access, "messages"), async () => {
-      const { data } = await supabase.rpc("search_message_contacts", { p_query: query, p_limit: PER_SECTION });
+      const { data } = await searchContacts(supabase, query, PER_SECTION);
       return (data ?? []).filter((person) => person.id).map((person) => ({
         id: person.id!,
         title: `${person.last_name ?? ""} ${person.first_name ?? ""}`.trim(),
@@ -166,10 +168,10 @@ export async function searchEverythingAction(raw: string): Promise<ActionResult<
 /** The portal's own sections whose name has the words in it: "ҷадвал" finds the timetable. */
 async function matchPages(access: Access, query: string): Promise<EverythingHit[]> {
   const t = await getTranslations();
-  const needle = query.toLocaleLowerCase();
+  const needle = fold(query);
   const items = portalNavigation(access);
   const office = canEnterAdmin(access) ? [{ key: "admin", href: "/admin", labelKey: "nav.adminCenter" }] : [];
   return [...items, ...office]
     .map((item) => ({ id: item.key, title: t(item.labelKey), href: item.href }))
-    .filter((item) => item.title.toLocaleLowerCase().includes(needle));
+    .filter((item) => fold(item.title).includes(needle));
 }
