@@ -125,6 +125,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/** Marks the page as an app when the device says it is one, whatever the User-Agent. */
+const APP_MARK_SCRIPT =
+  "(function(){try{var d=document.documentElement;if(d.hasAttribute('data-app'))return;" +
+  "if(window.Capacitor||navigator.standalone||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches)" +
+  "d.setAttribute('data-app','')}catch(e){}})()";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
@@ -155,9 +161,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={isAppUserAgent(userAgent) ? "" : undefined}
+      // APP_MARK_SCRIPT may add data-app before React sees the page.
+      suppressHydrationWarning
       className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${mark.variable} ${mono.variable}`}
     >
       <body className="min-h-dvh">
+        {/* An app the User-Agent does not name — a build from before it was
+            marked, or the site installed on the home screen — is an app all
+            the same: no foot with "install the app" inside it. */}
+        <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: APP_MARK_SCRIPT }} />
         {opening ? (
           <>
             <Intro words={t("welcome.opening")} />

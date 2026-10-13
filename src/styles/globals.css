@@ -1646,6 +1646,12 @@ html.chat-lock body {
 html[data-app] .site-footer {
   display: none;
 }
+/* The site installed on the home screen is an app too, even before any script. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .site-footer {
+    display: none;
+  }
+}
 
 /* In the portal on a phone the bottom bar is fixed over the foot of the
    screen: the column ends where the bar begins, so the footer sits above it —
