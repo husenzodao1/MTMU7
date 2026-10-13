@@ -13,7 +13,7 @@ import { isAppUserAgent } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
 import { ViewportGuard } from "@/components/ui/viewport-guard";
 import { publicEnv } from "@/lib/env";
-import { DEFAULT_THEME, isTheme, THEME_COOKIE } from "@/lib/theme";
+import { DEFAULT_THEME, isTheme, THEME_COOKIE, themeIsDark } from "@/lib/theme";
 import "@/styles/globals.css";
 
 const notoSans = Noto_Sans({
@@ -72,20 +72,36 @@ const mono = JetBrains_Mono({
   variable: "--font-mono-ui",
 });
 
+/** The canvas by day and by night: the browser's and the phone's bars take it, so they belong to the page. */
+const LIGHT_BARS = "#f4f2ec";
+const DARK_BARS = "#0a0e17";
+
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  // Zoom in as much as you like; never out. A phone zooms a page out on its
-  // own when anything stands past the right edge, and then it stays shrunk.
-  minimumScale: 1,
-  viewportFit: "cover",
-  // The keyboard shrinks the page rather than covering it, so a chat's
-  // composer stays above the keyboard on Android as it does on an iPhone.
-  interactiveWidget: "resizes-content",
-  // The night canvas, so the browser's and the phone's bars belong to the page.
-  themeColor: "#0a0e17",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
+  const dark = themeIsDark(isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME);
+  return {
+    width: "device-width",
+    initialScale: 1,
+    // Zoom in as much as you like; never out. A phone zooms a page out on its
+    // own when anything stands past the right edge, and then it stays shrunk.
+    minimumScale: 1,
+    viewportFit: "cover",
+    // The keyboard shrinks the page rather than covering it, so a chat's
+    // composer stays above the keyboard on Android as it does on an iPhone.
+    interactiveWidget: "resizes-content",
+    // A theme that follows the device leaves the colour to the device too.
+    themeColor:
+      dark === null
+        ? [
+            { media: "(prefers-color-scheme: light)", color: LIGHT_BARS },
+            { media: "(prefers-color-scheme: dark)", color: DARK_BARS },
+          ]
+        : dark
+          ? DARK_BARS
+          : LIGHT_BARS,
+  };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("common");
