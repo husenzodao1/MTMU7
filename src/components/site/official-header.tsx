@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { FooterInstall } from "@/components/site/footer-install";
 import { LocaleSwitcher } from "@/components/site/locale-switcher";
 import { getPlatformIdentity } from "@/lib/site/identity";
 import { pickText, type Locale } from "@/lib/i18n/text";
@@ -42,17 +43,18 @@ export async function OfficialStrip() {
 }
 
 /**
- * The foot of the site: one line, "© 2026 Портали мактаб", small and quiet,
- * centred under the page. Nothing else — the menu holds the sections and the
- * school's networks. The phone and Windows apps have no foot at all
- * (globals.css hides it under html[data-app]): an app ends where its content
- * does.
+ * The foot of the site: a small "install the app" button and under it one
+ * line, "© 2026 Портали мактаб", small and quiet, centred under the page.
+ * Nothing else — the menu holds the sections and the school's networks. The
+ * phone and Windows apps have no foot at all (globals.css hides it under
+ * html[data-app]): an app ends where its content does, and is installed.
  */
 export async function SiteFooter() {
   const t = await getTranslations("site.footer");
   const year = new Date().getFullYear();
   return (
     <footer className="site-footer print:hidden">
+      <FooterInstall label={t("install")} />
       <p className="footer-line">
         <span className="tabular">© {year}</span> {t("portal")}
       </p>

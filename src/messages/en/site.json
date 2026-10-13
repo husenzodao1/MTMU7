@@ -13,7 +13,8 @@
       "x": "X",
       "flag": "The national flag of the Republic of Tajikistan",
       "brand": "Istaravshan school portal",
-      "portal": "School portal"
+      "portal": "School portal",
+      "install": "Install the app"
     },
     "public": {
       "directoryTitle": "Schools",

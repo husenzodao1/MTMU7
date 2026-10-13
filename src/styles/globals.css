@@ -1624,9 +1624,54 @@ html.chat-lock body {
 .site-footer {
   position: relative;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: auto;
   padding: 1.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
+}
+/* "Install the app": a small pill, a hairline round it, the arrow and the
+   words in the line's own quiet ink — a little darker under a finger. */
+.footer-install {
+  display: inline-flex;
+  height: 1.875rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem 0 0.625rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-ink-secondary);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform 0.2s var(--ease-standard);
+}
+.footer-install:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+.footer-install:active {
+  transform: scale(0.96);
+}
+.footer-install:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.footer-install svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .footer-line {
   font-size: 0.75rem;
@@ -1639,14 +1684,15 @@ html[data-app] .site-footer {
 }
 
 /* In the portal on a phone the bottom bar is fixed over the foot of the
-   screen: the column ends where the bar begins, so the footer sits above it,
-   and the bar already keeps clear of the home indicator. */
+   screen: the column ends where the bar begins, so the footer sits above it —
+   with room under the line, so it does not seem to rest on the bar — and the
+   bar already keeps clear of the home indicator. */
 @media (max-width: 1023.98px) {
   .shell-over-bar {
     padding-bottom: calc(3.5rem + 1px + env(safe-area-inset-bottom, 0px));
   }
   .shell-over-bar > .site-footer {
-    padding-bottom: 0;
+    padding-bottom: 1.25rem;
   }
 }
 
