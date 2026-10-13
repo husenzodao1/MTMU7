@@ -95,7 +95,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
         <>
           <FilterBar searchLabel={t("search")} />
           {query.length < 2 ? (
-            <Card as="div"><EmptyState icon={<Users />} title={t("searchHint")} /></Card>
+            <Card as="div"><EmptyState icon={<Users />} title={t("searchHint")} hint /></Card>
           ) : found.length === 0 ? (
             <Card as="div"><EmptyState icon={<Users />} title={t("noResults")} /></Card>
           ) : (

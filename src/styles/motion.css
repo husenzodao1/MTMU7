@@ -1117,64 +1117,47 @@ html[data-app] #intro .book-scene {
 /* --------------------------------------------------------------- searching */
 
 /*
- * searching.tsx: a small magnifying glass of two thin strokes gliding along a
- * path of half-circles (offset-path), leaning as it turns. One round takes as
- * long as the glass is kept at least (MIN_MS). Whatever the search box
- * belongs to dims what comes after it until the glass is done.
+ * searching.tsx: a short handwritten line with a glass going along it — while
+ * a search looks (.searching) and when it found nothing (.lens-empty). Both
+ * are drawn on one canvas that sizes itself to the room it has; the line is
+ * written in the element's `color`. Whatever the search box belongs to dims
+ * what comes after it until the glass is done.
  */
 .searching {
   flex-basis: 100%;
   display: flex;
   justify-content: center;
-  padding: 0.5rem 0 0.25rem;
-  animation: searching-in 0.3s ease both;
+  padding: 0.25rem 0 0;
+  color: var(--color-ink-secondary);
 }
-.searching-field {
-  position: relative;
-  width: 9.25rem;
-  height: 3.75rem;
-}
-.searching-lens {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  offset-rotate: 0deg;
-  offset-anchor: 42% 42%;
-  animation:
-    searching-sweep 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite,
-    searching-tilt 0.8s ease-in-out infinite alternate;
-}
-.searching-lens svg {
+.lens-empty {
+  display: flex;
   width: 100%;
-  height: 100%;
-  overflow: visible;
-  fill: none;
-  stroke: var(--color-ink-secondary);
-  stroke-width: 1.6;
-  stroke-linecap: round;
+  justify-content: center;
+  color: var(--color-ink-secondary);
+}
+.lens-line {
+  display: block;
+  flex: none;
+  animation: lens-line-in 0.4s ease both;
+}
+/* A box that holds only "nothing found" (surface.tsx's EmptyState) gives up
+   its border, its ground and its shadow: the line and its glass stand on the
+   page itself. */
+:has(> .empty-nothing) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+@keyframes lens-line-in {
+  from {
+    opacity: 0;
+  }
 }
 @keyframes searching-in {
   from {
     opacity: 0;
     translate: 0 4px;
-  }
-}
-@keyframes searching-sweep {
-  from {
-    offset-distance: 0%;
-  }
-  to {
-    offset-distance: 100%;
-  }
-}
-@keyframes searching-tilt {
-  from {
-    rotate: -10deg;
-  }
-  to {
-    rotate: 12deg;
   }
 }
 .filter-bar[data-searching] ~ * {
@@ -1184,8 +1167,7 @@ html[data-app] #intro .book-scene {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .searching-lens {
+  .lens-line {
     animation: none;
-    offset-distance: 30%;
   }
 }

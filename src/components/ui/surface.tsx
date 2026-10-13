@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide-react";
+import { EmptyOrNotFound, NotFoundNote } from "@/components/ui/searching";
 import { cn } from "@/lib/utils/cn";
 
 export function Card({ children, className, as: Tag = "section" }: { children: ReactNode; className?: string; as?: "section" | "div" | "article" }) {
@@ -124,8 +125,29 @@ export function Alert({
   );
 }
 
-export function EmptyState({ icon, title, description, action, className }: { icon?: ReactNode; title: ReactNode; description?: ReactNode; action?: ReactNode; className?: string }) {
-  return (
+/**
+ * An empty list's message. Where the list is empty because a search (?q=)
+ * found nothing, "nothing found" is written out instead, a glass going along
+ * it (searching.tsx), and the box it sits in steps back (motion.css); `hint`
+ * keeps the message as it is — for one that asks for a search rather than
+ * answers one.
+ */
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className,
+  hint = false,
+}: {
+  icon?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  hint?: boolean;
+}) {
+  const plain = (
     <div className={cn("flex flex-col items-center px-6 py-10 text-center", className)}>
       {icon ? <div className="mb-3 text-ink-muted [&_svg]:size-8" aria-hidden>{icon}</div> : null}
       <p className="text-base font-semibold text-ink">{title}</p>
@@ -133,6 +155,14 @@ export function EmptyState({ icon, title, description, action, className }: { ic
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
+  if (hint) return plain;
+  const nothing = (
+    <div className={cn("empty-nothing flex flex-col items-center px-4 py-8", className)}>
+      <NotFoundNote label={title} />
+      {action ? <div className="mt-2">{action}</div> : null}
+    </div>
+  );
+  return <EmptyOrNotFound plain={plain} nothing={nothing} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {

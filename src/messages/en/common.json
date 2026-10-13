@@ -27,6 +27,8 @@
     "continue": "Continue",
     "search": "Search",
     "searching": "Searching…",
+    "searchingNote": "Searching...",
+    "notFoundNote": "Nothing found!",
     "filter": "Filter",
     "clearFilters": "Clear filters",
     "all": "All",

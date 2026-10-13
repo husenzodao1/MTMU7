@@ -27,6 +27,8 @@
     "continue": "Продолжить",
     "search": "Найти",
     "searching": "Идёт поиск…",
+    "searchingNote": "Поиск данных...",
+    "notFoundNote": "Ничего не найдено!",
     "filter": "Фильтр",
     "clearFilters": "Сбросить фильтры",
     "all": "Все",

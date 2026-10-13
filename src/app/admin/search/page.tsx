@@ -29,7 +29,7 @@ export default async function AdminSearchPage({ searchParams }: { searchParams: 
       <SearchForm label={t("field")} defaultValue={query} autoFocus placeholder={t("placeholder")} submitLabel={t("submit")} searchingLabel={tc("searching")} />
 
       {query.trim().length < 2 ? (
-        <Card as="div"><EmptyState icon={<SearchIcon />} title={t("hint")} /></Card>
+        <Card as="div"><EmptyState icon={<SearchIcon />} title={t("hint")} hint /></Card>
       ) : total === 0 ? (
         <Card as="div"><EmptyState icon={<SearchIcon />} title={t("empty", { query })} /></Card>
       ) : (

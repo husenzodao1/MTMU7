@@ -20,11 +20,11 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { SearchingPanel, useSearchSweep } from "@/components/ui/searching";
+import { NotFoundNote, SearchingPanel, useSearchSweep } from "@/components/ui/searching";
 import { searchEverythingAction, type EverythingKind, type EverythingSection } from "@/features/search/actions";
 
-/** However quick the answer, the glass makes its rounds for this long. */
-const SWEEP_MS = 2400;
+/** However quick the answer, the note stays this long: long enough to be read. */
+const SWEEP_MS = 3000;
 /** A pause in typing this long sends the search; Enter sends it at once. */
 const TYPING_MS = 450;
 
@@ -54,7 +54,7 @@ const noSubscribe = () => () => undefined;
  * The search runs as the typing pauses (or at Enter) across everything the
  * person may see (actions.ts): the portal's sections, people, announcements,
  * news, events, homework, the library, documents, and in the office the
- * school's records. The glass sweeps for at least two and a half seconds
+ * school's records. The note and its glass stay for at least three seconds
  * whatever the speed of the answer, and the results come in under it as it
  * leaves.
  */
@@ -219,7 +219,7 @@ function EverythingOverlay({ onClose }: { onClose: () => void }) {
           ) : failed ? (
             <p className="everything-hint">{tRoot("errors.unexpected")}</p>
           ) : total === 0 ? (
-            <p className="everything-hint">{t("empty", { query: sent })}</p>
+            <NotFoundNote label={t("empty", { query: sent })} />
           ) : (
             <div className="everything-results">
               {sections.map((section) => {
