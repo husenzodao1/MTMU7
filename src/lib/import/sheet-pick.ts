@@ -12,6 +12,21 @@ export interface ColumnMatch {
   key: string;
   header: string;
   required?: boolean;
+  /** Keys of the columns that may stand in for this required one, all together. */
+  or?: string[];
+}
+
+/**
+ * The required columns a set of headings lacks: those whose heading is not
+ * there and whose stand-ins (`or`) are not all there either.
+ */
+export function missingRequired(headings: ReadonlySet<string>, columns: readonly ColumnMatch[]): ColumnMatch[] {
+  const headingOf = (key: string) => columns.find((column) => column.key === key)?.header;
+  return columns.filter((column) => {
+    if (!column.required || headings.has(normalizeHeader(column.header))) return false;
+    const stand = column.or?.map(headingOf);
+    return !(stand && stand.length > 0 && stand.every((header) => header != null && headings.has(normalizeHeader(header))));
+  });
 }
 
 export interface NamedSheet {
@@ -21,10 +36,9 @@ export interface NamedSheet {
 
 /** Whether a row carries every heading the template cannot do without. */
 export function hasRequiredHeadings(row: readonly unknown[], columns: readonly ColumnMatch[]): boolean {
-  const required = columns.filter((column) => column.required).map((column) => normalizeHeader(column.header));
-  if (required.length === 0) return false;
+  if (!columns.some((column) => column.required)) return false;
   const cells = new Set(row.map((cell) => normalizeHeader(cellText(cell))));
-  return required.every((heading) => cells.has(heading));
+  return missingRequired(cells, columns).length === 0;
 }
 
 /**

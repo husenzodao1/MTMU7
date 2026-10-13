@@ -49,6 +49,10 @@ const timetable = (data: Array<Record<string, string>>, dryRun: boolean) =>
 
 const problems = (outcome: Outcome) => outcome.errors.map((e) => `${e.row}:${e.field}:${e.code}`);
 
+/** The accounts behind the logins an import handed back. */
+const importedPupils = async (logins: string[]) =>
+  (await rows<{ id: string }>(db, `SELECT id FROM public.users WHERE public_id = ANY ($1::text[])`, [logins])).map((r) => r.id);
+
 before(async () => {
   db = await createDatabase();
   t = await seedTenants(db);
@@ -70,12 +74,24 @@ describe("the example workbooks, imported in the order the office is given", () 
     assert.deepEqual(phones!.r, [], "no number in the example is in it twice");
     assert.deepEqual(preview.newClasses, [], "1А, 5А and 5Б are among the classes that are always there");
 
-    const done = await people("students", data, false) as Outcome & { parents?: Array<{ password: string | null }> };
+    const done = await people("students", data, false) as Outcome & { parents?: Array<{ password: string | null }>; logins?: Array<{ login: string }> };
     assert.equal(done.created, data.length);
-    // Eleven parents are written beside the pupils, but the Ҳакимов brother
-    // and sister share theirs: nine accounts, each issued once.
-    assert.equal(done.parents?.length, 11);
-    assert.equal(done.parents?.filter((p) => p.password).length, 9);
+    // Eleven parents are written beside the seven pupils, and one of each
+    // pupil's parents gets the login (00096) — the father where there is
+    // one. The Ҳакимов brother and sister share their father: six accounts,
+    // each issued once.
+    assert.equal(done.parents?.length, 7);
+    assert.equal(done.parents?.filter((p) => p.password).length, 6);
+    const parents = await rows<{ n: number; accounts: number }>(
+      db,
+      `SELECT count(DISTINCT g.id)::int AS n, count(DISTINCT g.user_id)::int AS accounts
+       FROM public.guardians g
+       JOIN public.student_guardians sg ON sg.guardian_id = g.id
+       JOIN public.students s ON s.id = sg.student_id
+       WHERE s.school_id = $1 AND s.user_id = ANY ($2::uuid[])`,
+      [SCHOOL_A, done.logins?.length ? await importedPupils(done.logins.map((l) => l.login)) : []]
+    );
+    assert.deepEqual(parents[0], { n: 9, accounts: 6 }, "every parent is kept on the pupil's card; only one of each pair has a login");
   });
 
   it("pupils: the two children on one family address both get in", async () => {

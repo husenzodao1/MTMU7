@@ -1,8 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { cellText } from "../../src/lib/import/cells.ts";
-import { fromHeadingRow, pickSheet } from "../../src/lib/import/sheet-pick.ts";
-import { normalizeHeader, PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE } from "../../src/features/admin/import/templates.ts";
+import { fromHeadingRow, missingRequired, pickSheet } from "../../src/lib/import/sheet-pick.ts";
+import { normalizeHeader, PEOPLE_TEMPLATES, TIMETABLE_TEMPLATE, withNames, writtenColumns } from "../../src/features/admin/import/templates.ts";
 
 describe("what a spreadsheet hands back", () => {
   it("reads a date cell as the day it says, in any timezone", () => {
@@ -95,10 +95,11 @@ describe("the workbooks themselves", () => {
       assert.ok(issued.every((column) => column.issued), `${template.sheet}: the issued columns come last, drawn grey`);
       assert.deepEqual(issued.slice(0, 2).map((column) => column.key), ["login", "password"], template.sheet);
     }
-    // The parents' logins and passwords are handed back beside the pupil's.
+    // One parent's login and password is handed back beside the pupil's
+    // (00096); the old template's four columns are only read.
     assert.deepEqual(
-      PEOPLE_TEMPLATES.students.columns.filter((column) => column.issued).map((column) => column.key),
-      ["login", "password", "father_login", "father_password", "mother_login", "mother_password"]
+      writtenColumns(PEOPLE_TEMPLATES.students).filter((column) => column.issued).map((column) => column.key),
+      ["login", "password", "parent_login", "parent_password"]
     );
   });
 
@@ -114,7 +115,36 @@ describe("the workbooks themselves", () => {
       PEOPLE_TEMPLATES[kind].columns.filter((column) => column.required).map((column) => column.key).sort();
     // An address is asked of nobody (00092): without one the account signs
     // in with the login the import issues.
-    assert.deepEqual(required("students"), ["class_name", "date_of_birth", "first_name", "last_name"]);
+    // The name is one cell, «Насаб, ном ва номи падар» (00096).
+    assert.deepEqual(required("students"), ["class_name", "date_of_birth", "full_name"]);
     assert.deepEqual(required("staff"), ["employee_number", "first_name", "last_name"]);
+  });
+});
+
+describe("the pupil's name in one cell", () => {
+  it("is read surname, name, then the father's name — which may be two words", () => {
+    assert.deepEqual(withNames({ full_name: "  Каримов  Алӣ Раҳимович " }), {
+      full_name: "Каримов Алӣ Раҳимович",
+      last_name: "Каримов",
+      first_name: "Алӣ",
+      middle_name: "Раҳимович",
+    });
+    assert.equal(withNames({ full_name: "Қодирова Мавзуна Раҳим қизи" }).middle_name, "Раҳим қизи");
+    assert.equal(withNames({ full_name: "Каримов" }).first_name, "", "one word: the database names what is missing");
+  });
+
+  it("is made from the three columns of an old file, which stay as they were", () => {
+    const row = withNames({ full_name: "", last_name: "Абдулло Зода", first_name: "Сино", middle_name: "" });
+    assert.equal(row.full_name, "Абдулло Зода Сино");
+    assert.equal(row.last_name, "Абдулло Зода");
+  });
+
+  it("is required, unless the old template's surname and name are there instead", () => {
+    const columns = PEOPLE_TEMPLATES.students.columns;
+    const heads = (...headers: string[]) => new Set(headers.map(normalizeHeader));
+    const missing = (...headers: string[]) => missingRequired(heads(...headers), columns).map((column) => column.key);
+    assert.deepEqual(missing("Синф", "Насаб, ном ва номи падар", "Санаи таваллуд"), []);
+    assert.deepEqual(missing("Синф", "Насаб", "Ном", "Санаи таваллуд"), []);
+    assert.deepEqual(missing("Синф", "Насаб", "Санаи таваллуд"), ["full_name"]);
   });
 });

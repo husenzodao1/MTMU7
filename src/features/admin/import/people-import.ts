@@ -1,7 +1,7 @@
 import "server-only";
 import { failure, type ActionResult } from "@/lib/actions/result";
 import { ColumnsMissingError, readSheetRows, SheetMissingError } from "@/lib/import/xlsx";
-import { PEOPLE_TEMPLATES, type PeopleKind } from "@/features/admin/import/templates";
+import { PEOPLE_TEMPLATES, withNames, type PeopleKind } from "@/features/admin/import/templates";
 
 /** What import_people answers with, on both the preview and the real run. */
 export interface PeopleOutcome {
@@ -11,7 +11,7 @@ export interface PeopleOutcome {
   created: number;
   updated: number;
   credentials: Array<{ row: number; login: string; password: string }>;
-  /** The parents written beside each pupil: their login, and a password only when it was just issued. */
+  /** The parent of each pupil who holds the login (one a pupil, 00096), and a password only when it was just issued. */
   parents?: Array<{ row: number; relation: "father" | "mother"; login: string; password: string | null }>;
   /** Every row's login, issued now or long ago. */
   logins?: Array<{ row: number; login: string }>;
@@ -50,7 +50,7 @@ export async function readPeopleSheet(kind: PeopleKind, file: unknown): Promise<
     const buffer = Buffer.from(await file.arrayBuffer());
     const read = await readSheetRows(buffer, template.sheet, template.columns, template.maxRows);
     if (read.rows.length === 0) return { ok: false, result: failure("errors.empty_import") };
-    return { ok: true, rows: read.rows, extras: read.extras };
+    return { ok: true, rows: kind === "students" ? read.rows.map(withNames) : read.rows, extras: read.extras };
   } catch (error) {
     if (error instanceof SheetMissingError) {
       return { ok: false, result: failure("admin.import.errors.sheetMissing", { file: [error.sheet] }) };

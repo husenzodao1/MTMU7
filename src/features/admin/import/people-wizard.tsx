@@ -281,6 +281,11 @@ export function PeopleImportWizard({
               {outcome.valid ? tRoot("common.cancel") : t("chooseAnother")}
             </Button>
           </div>
+          {pending && kind === "students" ? (
+            <p className="text-sm text-ink-muted" role="status">
+              {t("workbook.importing")}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

@@ -2,7 +2,7 @@ import "server-only";
 import { readSheet, SheetNotFoundError } from "read-excel-file/node";
 import { cellText } from "@/lib/import/cells";
 import { normalizeHeader } from "@/features/admin/import/templates";
-import { fromHeadingRow, pickSheet, type ColumnMatch, type NamedSheet } from "@/lib/import/sheet-pick";
+import { fromHeadingRow, missingRequired, pickSheet, type ColumnMatch, type NamedSheet } from "@/lib/import/sheet-pick";
 
 export type { ColumnMatch } from "@/lib/import/sheet-pick";
 
@@ -118,9 +118,7 @@ export async function readSheetRows(
     if (key && !position.has(key)) position.set(key, index);
   }
 
-  const missing = columns
-    .filter((column) => column.required && !position.has(normalizeHeader(column.header)))
-    .map((column) => column.header);
+  const missing = missingRequired(new Set(position.keys()), columns).map((column) => column.header);
   if (missing.length > 0) throw new ColumnsMissingError(missing);
 
   const known = new Set(columns.map((column) => normalizeHeader(column.header)));

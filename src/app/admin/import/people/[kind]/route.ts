@@ -15,11 +15,11 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 /**
- * Rows per call. A pupil's row makes up to three accounts (the pupil and the
- * two parents) and each password hash takes tens of milliseconds, so a pupil
- * chunk is kept small enough to finish well inside one call's time limit.
+ * Rows per call. A pupil's row makes up to two accounts (the pupil, hashed
+ * light, and one parent, hashed at full cost — 00096): about 80 ms a row, so
+ * a chunk finishes in seconds, well inside one call's time limit.
  */
-const CHUNK = { students: 40, staff: 100 } as const;
+const CHUNK = { students: 100, staff: 200 } as const;
 /** One call may take this long: far beyond a chunk, far short of the function's limit. */
 const CALL_TIMEOUT_MS = 120_000;
 /**
@@ -66,9 +66,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     return NextResponse.json({ ok: false, message: "errors.validation", data: { errors: clashes } }, { status: 400 });
   }
   const credentials = new Map<number, { login: string; password: string }>();
-  // Every row's login, new or long issued, and each parent's beside it.
+  // Every row's login, new or long issued, and the parent's beside it (one a
+  // pupil: the father, or else the mother — 00096).
   const logins = new Map<number, string>();
-  const parents = new Map<string, { login: string; password: string | null }>();
+  const parents = new Map<number, { login: string; password: string | null }>();
   let created = 0;
   let updated = 0;
   let newClasses: string[] = [];
@@ -110,7 +111,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     }
     for (const entry of outcome.logins ?? []) logins.set(entry.row, entry.login);
     for (const parent of outcome.parents ?? []) {
-      parents.set(`${parent.row}:${parent.relation}`, { login: parent.login, password: parent.password });
+      if (parent.login) parents.set(parent.row, { login: parent.login, password: parent.password });
     }
   }
 
@@ -134,19 +135,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ kin
     columns,
     rows: sheet.rows.map((row, index) => {
       const issued = credentials.get(index + 1);
-      const parent = (relation: string) => parents.get(`${index + 1}:${relation}`);
+      const parent = parents.get(index + 1);
       const skipped = stoppedAt !== null && index + 1 >= stoppedAt;
       return [
         ...written.map((column) => {
           if (skipped && (column.key === "login" || column.key === "password")) return t("notImported");
           if (column.key === "login") return issued?.login ?? logins.get(index + 1) ?? row.login ?? "";
           if (column.key === "password") return issued?.password ?? t("alreadyIssued");
-          const match = /^(father|mother)_(login|password)$/.exec(column.key);
-          if (match) {
-            const who = parent(match[1]!);
-            if (!who) return "";
-            return match[2] === "login" ? who.login : who.password ?? t("alreadyIssued");
-          }
+          if (column.key === "parent_login") return parent?.login ?? "";
+          if (column.key === "parent_password") return parent ? parent.password ?? t("alreadyIssued") : "";
           return row[column.key] ?? "";
         }),
         ...sheet.extras.map((extra) => extra.values[index] ?? ""),

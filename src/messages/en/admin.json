@@ -476,7 +476,8 @@
         "not_your_class": "not your class — import only the pupils of your own class",
         "no_bell": "this shift has no such lesson (five lessons)",
         "invalid_shift": "the shift is 1 or 2",
-        "guardian_name": "write the surname and the first name"
+        "guardian_name": "write the surname and the first name",
+        "full_name_parts": "write the surname and the name: Karimov Ali Rahimovich"
       },
       "workbook": {
         "instructions": "Download the workbook, fill it in with Excel and send it back. The check tells you what is wrong; the import then returns the same file with the logins and passwords filled in.",
@@ -508,7 +509,8 @@
         "notifyParents": "Send new pupils' logins and passwords in grades 1–{grade} to their parents on Telegram",
         "telegramSent": "{count} messages sent to parents on Telegram.",
         "parentsSummary": "Parents: {issued} new logins out of {total}; the rest had already been issued.",
-        "parentsIssued": "{count} parents were given a new login and password — they are in the same file."
+        "parentsIssued": "{count} parents were given a new login and password — they are in the same file.",
+        "importing": "Importing — about 10 seconds for every hundred pupils. Keep this page open."
       },
       "errors": {
         "noFile": "No file was chosen.",
@@ -520,6 +522,7 @@
       },
       "fields": {
         "class_name": "Class",
+        "full_name": "Surname, name and father's name",
         "last_name": "Surname",
         "first_name": "First name",
         "middle_name": "Patronymic",

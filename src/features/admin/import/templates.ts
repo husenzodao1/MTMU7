@@ -16,6 +16,11 @@ export interface ColumnSpec {
   /** The heading as it is printed, in Tajik. */
   header: string;
   required?: boolean;
+  /**
+   * A required column that a file may do without when it has these columns
+   * instead (by key): the name in one cell, or in an old template's three.
+   */
+  or?: string[];
   width?: number;
   /** Filled in by the portal, not by the office: Логин and Парол. */
   issued?: boolean;
@@ -74,9 +79,18 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
     maxRows: 2000,
     columns: [
       { key: "class_name", header: "Синф", required: true, width: 10, hint: "Масалан 5А." },
-      { key: "last_name", header: "Насаб", required: true, width: 22 },
-      { key: "first_name", header: "Ном", required: true, width: 20 },
-      { key: "middle_name", header: "Номи падар", width: 22 },
+      {
+        key: "full_name",
+        header: "Насаб, ном ва номи падар",
+        required: true,
+        // A file from the old template, with the name in three columns.
+        or: ["last_name", "first_name"],
+        width: 34,
+        hint: "Каримов Алӣ Раҳимович",
+      },
+      { key: "last_name", header: "Насаб", legacy: true },
+      { key: "first_name", header: "Ном", legacy: true },
+      { key: "middle_name", header: "Номи падар", legacy: true },
       { key: "date_of_birth", header: "Санаи таваллуд", required: true, width: 18, hint: "СССС-ММ-РР" },
       { key: "gender", header: "Ҷинс", width: 12, hint: "писар ё духтар" },
       { key: "email", header: "Почтаи электронӣ", width: 30, hint: "Ихтиёрӣ: бе почта бо логин ворид мешавад." },
@@ -84,16 +98,20 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
       ...parentColumns("father", "Падар"),
       ...parentColumns("mother", "Модар"),
       ...ISSUED,
-      { key: "father_login", header: "Логини падар", issued: true, width: 14, hint: "Система пур мекунад." },
-      { key: "father_password", header: "Пароли падар", issued: true, width: 14, hint: "Система пур мекунад." },
-      { key: "mother_login", header: "Логини модар", issued: true, width: 14, hint: "Система пур мекунад." },
-      { key: "mother_password", header: "Пароли модар", issued: true, width: 14, hint: "Система пур мекунад." },
+      { key: "parent_login", header: "Логини волид", issued: true, width: 14, hint: "Система пур мекунад." },
+      { key: "parent_password", header: "Пароли волид", issued: true, width: 14, hint: "Система пур мекунад." },
+      // The old template gave each parent their own login.
+      { key: "father_login", header: "Логини падар", issued: true, legacy: true },
+      { key: "father_password", header: "Пароли падар", issued: true, legacy: true },
+      { key: "mother_login", header: "Логини модар", issued: true, legacy: true },
+      { key: "mother_password", header: "Пароли модар", issued: true, legacy: true },
     ],
     instructions: [
       "Ҳар сатр як хонанда. Хонандагонро аз рӯи синф паси ҳам нависед.",
+      "Насаб, ном ва номи падари хонандаро дар як катак, бо ҳамин тартиб нависед: Каримов Алӣ Раҳимович.",
       "Падар ва модарро дар ҳамин сатр нависед: ному насаб, ҷои кор, телефон ва почта (агар бошад). Волидайн танҳо аз ҳамин файл муайян мешаванд.",
-      "Ба ҳар падару модар система логин ва пароли кӯтоҳ медиҳад (ду ҳарф ва шаш рақам) ва онҳоро дар ҳамин файл бармегардонад. Бо онҳо волидайн ба сомона ва ба боти Telegram ворид мешаванд.",
-      "Бародару хоҳарон, ки падар ё модарашон бо як рақами телефон навишта шудааст, як падару модар доранд — логини дуюм дода намешавад.",
+      "Ба волидайни ҳар хонанда як логин ва пароли кӯтоҳ (ду ҳарф ва шаш рақам) дода мешавад — ба падар, агар навишта шуда бошад, вагарна ба модар. Система онҳоро дар ҳамин файл бармегардонад; бо онҳо волидайн ба сомона ва ба боти Telegram ворид мешаванд.",
+      "Бародару хоҳарон, ки падар ё модарашон бо як рақами телефон навишта шудааст, як волид доранд — логини дуюм дода намешавад.",
       "Барои синфҳои 1–4 ақаллан яке аз волидайн (ном ва телефон) ҳатмист. Хонандагони синфҳои 1–5 бе почта ворид мешаванд: онҳо бо логин ворид мешаванд.",
       ...SHARED_INSTRUCTIONS,
       "Хонандаи аллакай воридшуда аз рӯи насаб, ном ва санаи таваллуд шинохта мешавад — ҳатто агар синфаш иваз шуда бошад. Барои ӯ ҳисоби нав сохта намешавад.",
@@ -124,6 +142,24 @@ export const PEOPLE_TEMPLATES: Record<PeopleKind, SheetSpec> = {
     ],
   },
 };
+
+/**
+ * A pupil's row with the name both ways: the one cell the template has now
+ * («Каримов Алӣ Раҳимович» — surname, name, then the father's name, which may
+ * be more than one word) and the three cells the database and the telephone
+ * check compare by. A file of the old template, with three columns, gets its
+ * one cell from them, so the workbook handed back has it filled in.
+ * The database reads the name the same way (app.register_names, 00096).
+ */
+export function withNames(row: Record<string, string>): Record<string, string> {
+  const full = (row.full_name ?? "").replace(/\s+/g, " ").trim();
+  if (full) {
+    const [last = "", first = "", ...middle] = full.split(" ");
+    return { ...row, full_name: full, last_name: last, first_name: first, middle_name: middle.join(" ") };
+  }
+  const parts = [row.last_name, row.first_name, row.middle_name].map((part) => (part ?? "").trim()).filter(Boolean);
+  return parts.length > 0 ? { ...row, full_name: parts.join(" ") } : row;
+}
 
 export type SheetKind = PeopleKind | "timetable" | "subjects";
 
