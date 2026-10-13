@@ -64,18 +64,21 @@ export function EverythingSearch() {
   const mounted = useSyncExternalStore(noSubscribe, () => true, () => false);
 
   // The box stays under the header while the page scrolls (search.css); once
-  // it has left its own place it is marked, and its shadow deepens a little,
-  // as anything lifted over a page would cast one.
-  const box = useRef<HTMLButtonElement>(null);
+  // it has left its own place it is marked: its shadow deepens, and what
+  // scrolls up under it fades into the page before it reaches it.
+  const dock = useRef<HTMLDivElement>(null);
   const place = useRef<HTMLSpanElement>(null);
   const [stuck, setStuck] = useState(false);
   useEffect(() => {
     let frame = 0;
     const check = () => {
       frame = 0;
-      const b = box.current?.getBoundingClientRect();
-      const p = place.current?.getBoundingClientRect();
-      if (b && p) setStuck(p.top < b.top - 1);
+      if (!dock.current || !place.current) return;
+      const d = dock.current.getBoundingClientRect();
+      const p = place.current.getBoundingClientRect();
+      // At rest the dock sits its (negative) top margin from its place.
+      const rest = parseFloat(getComputedStyle(dock.current).marginTop) || 0;
+      setStuck(p.top + rest < d.top - 1);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(check);
@@ -93,13 +96,15 @@ export function EverythingSearch() {
   return (
     <>
       <span ref={place} className="everything-place" aria-hidden />
-      <button ref={box} type="button" className="everything-box" data-stuck={stuck || undefined} onClick={() => setOpen(true)} aria-haspopup="dialog">
-        <svg viewBox="0 0 24 24" className="everything-glass" aria-hidden>
-          <circle cx="10.5" cy="10.5" r="6.25" />
-          <path d="M15.2 15.2 L20 20" />
-        </svg>
-        <span>{t("placeholder")}</span>
-      </button>
+      <div ref={dock} className="everything-dock" data-stuck={stuck || undefined}>
+        <button type="button" className="everything-box" onClick={() => setOpen(true)} aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" className="everything-glass" aria-hidden>
+            <circle cx="10.5" cy="10.5" r="6.25" />
+            <path d="M15.2 15.2 L20 20" />
+          </svg>
+          <span>{t("placeholder")}</span>
+        </button>
+      </div>
       {open && mounted ? createPortal(<EverythingOverlay onClose={() => setOpen(false)} />, document.body) : null}
     </>
   );

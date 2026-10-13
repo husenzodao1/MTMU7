@@ -15,20 +15,65 @@
   display: block;
   height: 0;
 }
-/* It stays under the portal's header as the page scrolls, with a soft
-   shadow under it — small at rest, a little deeper once it is held over the
-   page — and a solid ground, so what passes beneath never shows through. */
-.everything-box {
+/*
+ * The box stays under the portal's header as the page scrolls. Once it has
+ * left its place a veil of the page's own colour opens down from the header
+ * behind it — solid as far as the box, then thinning out a little below it —
+ * so what scrolls up fades into the page before it passes under the box, and
+ * comes out of it the same way. The veil grows down as the box settles and
+ * draws back up as it leaves.
+ */
+.everything-dock {
   position: sticky;
-  top: calc(3.5rem + var(--strip-h) + 0.5rem);
+  top: calc(3.5rem + var(--strip-h));
   z-index: 20;
+  margin: -0.75rem 0 0.875rem;
+  padding-top: 0.5rem;
+}
+.everything-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0 -1rem -3.25rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--color-canvas) 0%,
+    var(--color-canvas) calc(100% - 3.25rem),
+    color-mix(in oklab, var(--color-canvas) 90%, transparent) calc(100% - 2.6rem),
+    color-mix(in oklab, var(--color-canvas) 66%, transparent) calc(100% - 1.85rem),
+    color-mix(in oklab, var(--color-canvas) 36%, transparent) calc(100% - 1.1rem),
+    color-mix(in oklab, var(--color-canvas) 12%, transparent) calc(100% - 0.45rem),
+    transparent 100%
+  );
+  opacity: 0;
+  transform: scaleY(0.55);
+  transform-origin: top;
+  transition:
+    opacity 0.3s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.everything-dock[data-stuck]::before {
+  opacity: 1;
+  transform: none;
+}
+@media (min-width: 640px) {
+  .everything-dock::before {
+    inset-inline: -1.5rem;
+  }
+}
+/* Small and soft-cornered, a little narrower than the greeting under it, on a
+   solid ground. At rest a small shadow; held over the page a deeper, wider
+   one — black enough to read on the night's canvas too — and a hair of light
+   along its top edge there. */
+.everything-box {
+  position: relative;
   display: flex;
-  width: 100%;
+  width: calc(100% - 1.5rem);
   max-width: 40rem;
   height: 2.625rem;
   align-items: center;
   gap: 0.625rem;
-  margin: -0.25rem auto 0.875rem;
+  margin: 0 auto;
   padding: 0 1rem;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--color-line) 85%, transparent);
@@ -37,6 +82,9 @@
   box-shadow:
     0 1px 2px rgb(20 24 33 / 0.05),
     0 6px 16px -10px rgb(20 24 33 / 0.28);
+  box-shadow:
+    0 1px 2px light-dark(rgb(20 24 33 / 0.05), rgb(0 0 0 / 0.3)),
+    0 6px 16px -10px light-dark(rgb(20 24 33 / 0.28), rgb(0 0 0 / 0.6));
   font-size: 0.875rem;
   letter-spacing: 0.005em;
   color: var(--color-ink-muted);
@@ -44,14 +92,19 @@
   -webkit-tap-highlight-color: transparent;
   transition:
     transform 0.42s cubic-bezier(0.34, 1.45, 0.64, 1),
-    box-shadow 0.25s var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.3s var(--ease-standard),
     color var(--duration-fast) var(--ease-standard);
 }
-.everything-box[data-stuck] {
+.everything-dock[data-stuck] .everything-box {
+  border-color: color-mix(in oklab, var(--color-brand-solid) 16%, var(--color-line));
   box-shadow:
-    0 1px 2px rgb(20 24 33 / 0.06),
-    0 10px 24px -12px rgb(20 24 33 / 0.42);
+    0 2px 4px -1px rgb(20 24 33 / 0.08),
+    0 14px 30px -14px rgb(20 24 33 / 0.45);
+  box-shadow:
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.07)),
+    0 2px 4px -1px light-dark(rgb(20 24 33 / 0.08), rgb(0 0 0 / 0.45)),
+    0 14px 30px -14px light-dark(rgb(20 24 33 / 0.45), rgb(0 0 0 / 0.85));
 }
 .everything-box:hover {
   border-color: var(--color-line-strong);
@@ -265,6 +318,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .everything-dock::before,
   .everything-box,
   .everything-panel,
   .everything-scrim,
