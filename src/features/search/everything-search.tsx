@@ -62,9 +62,38 @@ export function EverythingSearch() {
   const t = useTranslations("portal.search");
   const [open, setOpen] = useState(false);
   const mounted = useSyncExternalStore(noSubscribe, () => true, () => false);
+
+  // The box stays under the header while the page scrolls (search.css); once
+  // it has left its own place it is marked, and its shadow deepens a little,
+  // as anything lifted over a page would cast one.
+  const box = useRef<HTMLButtonElement>(null);
+  const place = useRef<HTMLSpanElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const b = box.current?.getBoundingClientRect();
+      const p = place.current?.getBoundingClientRect();
+      if (b && p) setStuck(p.top < b.top - 1);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   return (
     <>
-      <button type="button" className="everything-box" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <span ref={place} className="everything-place" aria-hidden />
+      <button ref={box} type="button" className="everything-box" data-stuck={stuck || undefined} onClick={() => setOpen(true)} aria-haspopup="dialog">
         <svg viewBox="0 0 24 24" className="everything-glass" aria-hidden>
           <circle cx="10.5" cy="10.5" r="6.25" />
           <path d="M15.2 15.2 L20 20" />

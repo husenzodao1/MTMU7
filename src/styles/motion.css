@@ -227,9 +227,12 @@
 .bar {
   container-type: inline-size;
 }
+/* Its middle is the chosen icon's middle: the icon's box starts 0.375rem
+   down (the item's padding) and the chosen icon rises a pixel, so the light
+   rises with it. Measured, not guessed: e2e checks the two centres agree. */
 .bar-pill {
   position: absolute;
-  top: calc(0.375rem + 1px);
+  top: calc(0.375rem - 1px);
   left: 0;
   width: 3.75rem;
   height: 2rem;
