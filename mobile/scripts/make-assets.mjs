@@ -1,7 +1,7 @@
 /**
  * The app's icon and splash, drawn from the portal's own mark
- * (public/brand/*.svg): a white dot over an open book, on the school's flat
- * orange.
+ * (public/brand/*.svg): a sprout rising from an open book, lit from above,
+ * on deep emerald.
  *
  *   node scripts/make-assets.mjs     → resources/*.png, and the web's icons
  *   npx capacitor-assets generate    → every size both stores ask for
@@ -73,9 +73,11 @@ function ico(images) {
 
 // Capacitor's sources.
 await render(icon, 1024).toFile(join(out, "icon-only.png"));
-// Android's adaptive icon crops the foreground to a circle or a squircle: the
-// mark keeps well inside the circle every launcher leaves whole.
-await (await markOn(1024, 0.9)).toFile(join(out, "icon-foreground.png"));
+// Android's adaptive icon: capacitor-assets insets both layers by a sixth, so
+// each image fills exactly the part a launcher shows, and the mark keeps the
+// margins it was drawn with — its leaf tip, the point furthest from the
+// middle, stays well inside the circle every launcher leaves whole.
+await (await markOn(1024, 1)).toFile(join(out, "icon-foreground.png"));
 await render(background, 1024).toFile(join(out, "icon-background.png"));
 // The splash before Android 12 (later ones draw res/drawable/splash_book.xml):
 // the opening's first frame, the shut book on the night. Cropped to a phone,

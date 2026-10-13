@@ -51,11 +51,12 @@ an update. Give the keystore before handing the APK out widely.
 
 - App id / bundle id: `tj.mtmu7.app` (cannot change once published)
 - Name on the home screen: `МТМУ №7`
-- Icon: `public/brand/app-icon.svg` — one colour and one white mark: a dot
-  over an open book (a pupil reading, the sun over the page) on the school's
-  flat orange `#ff5a1f`. No gradients, no second colour, nothing small.
-  `mobile/scripts/make-assets.mjs` renders every size from it for Android,
-  iPhone, Windows and the web (`npm run assets` in `mobile/`).
+- Icon: `public/brand/app-icon.svg` — "the night sprout", chosen by the
+  school: a sprout rising from an open book, its two leaves shaded so they
+  turn in the light, on deep emerald lit from above. The mark alone is
+  `mark.svg`, its ground `app-background.svg` (Android's two adaptive
+  layers). `mobile/scripts/make-assets.mjs` renders every size from them for
+  Android, iPhone, Windows and the web (`npm run assets` in `mobile/`).
 - Opening: the phone's splash is the shut book on the night — on Android 12
   and later `res/drawable/splash_book.xml`, before that the splash images
   drawn from `public/brand/splash-book.svg` — and the site's opening

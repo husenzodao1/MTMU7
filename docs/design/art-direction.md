@@ -83,8 +83,10 @@ rule now where they differ from the lists below (`src/styles/motion.css`):
   the device saying it has no network *and* the portal not answering — Windows
   says "no network" with the internet working); a slow page gets a small note
   instead.
-- **Icon options** for the next app icon, seven dark and seven light, are in
-  `docs/design/icon-options/` (`preview.png` shows them side by side).
+- **The app icon is the night sprout** (13 October): a sprout rising from an
+  open book on deep emerald, chosen from the options in
+  `docs/design/icon-options/` (`chosen-night-sprout.png`). The opening book
+  keeps its orange cover for now.
 - **The networks live in the menu**: the school's four marks as bare hairline
   glyphs (`social-lines.tsx`), centred at the foot of the menu above the line
   over "About the app" — on the phone's drawer and the computer's sidebar —

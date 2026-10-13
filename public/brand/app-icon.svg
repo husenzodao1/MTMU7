@@ -1,9 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- МТМУ №7 · the app icon. One colour and one white mark: a dot over an
-       open book — a pupil reading, the sun over the page, a child with both
-       arms up — on the school's orange. Nothing else. Square; each platform
-       rounds the corners itself. The mark alone is mark.svg. -->
-  <rect width="512" height="512" fill="#ff5a1f"/>
-  <circle cx="256" cy="164" r="52" fill="#ffffff"/>
-  <path d="M256 362 C 230 312, 178 282, 110 270 M256 362 C 282 312, 334 282, 402 270" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- МТМУ №7 · the app icon: a sprout rising from an open book, lit from above, on deep emerald. Square; each platform rounds the corners itself. The mark alone is mark.svg, the ground alone app-background.svg. -->
+  <defs>
+  <radialGradient id="bg" cx="0.5" cy="0.34" r="0.82">
+    <stop offset="0" stop-color="#1b7253"/>
+    <stop offset="0.55" stop-color="#0b3f2e"/>
+    <stop offset="1" stop-color="#04201a"/>
+  </radialGradient>
+  <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#8ff3c4" stop-opacity="0.42"/>
+    <stop offset="0.6" stop-color="#5fe0a6" stop-opacity="0.12"/>
+    <stop offset="1" stop-color="#5fe0a6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="1" stop-color="#cdf5e2"/>
+  </linearGradient>
+  <linearGradient id="lightR" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#6fe3ad"/>
+    <stop offset="1" stop-color="#d4fde9"/>
+  </linearGradient>
+  <linearGradient id="darkR" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#1e9e69"/>
+    <stop offset="1" stop-color="#5fd9a0"/>
+  </linearGradient>
+  <linearGradient id="lightL" x1="1" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#4fcf92"/>
+    <stop offset="1" stop-color="#b6f5d6"/>
+  </linearGradient>
+  <linearGradient id="darkL" x1="1" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#157f55"/>
+    <stop offset="1" stop-color="#3fbd83"/>
+  </linearGradient>
+  <linearGradient id="stem" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#e9fff4"/>
+    <stop offset="1" stop-color="#8be9bd"/>
+  </linearGradient></defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/><ellipse cx="548" cy="452" rx="330" ry="300" fill="url(#glow)"/><g transform="translate(0 -40)"><path d="M499 752 C 501 684, 508 622, 522 566 L 540 570 C 526 626, 522 688, 527 752 Z" fill="url(#stem)"/>
+  <path d="M250 652 C 372 668, 462 712, 512 794 C 562 712, 652 668, 774 652" fill="none" stroke="#bdf0d7" stroke-opacity="0.34" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M207 598 C 350 618, 456 672, 512 768 C 568 672, 674 618, 817 598" fill="none" stroke="url(#page)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M514 612 C 494 520, 404 440, 288 448 C 372 518, 448 572, 514 612 Z" fill="url(#lightL)"/>
+  <path d="M514 612 C 448 572, 372 518, 288 448 C 312 556, 412 640, 514 612 Z" fill="url(#darkL)"/>
+  <path d="M500 600 C 440 562, 372 512, 304 460" fill="none" stroke="#eafff4" stroke-opacity="0.45" stroke-width="6" stroke-linecap="round"/>
+  <path d="M526 560 C 528 448, 616 322, 776 284 C 690 392, 600 482, 526 560 Z" fill="url(#lightR)"/>
+  <path d="M526 560 C 600 482, 690 392, 776 284 C 770 424, 664 566, 526 560 Z" fill="url(#darkR)"/>
+  <path d="M540 546 C 610 474, 690 392, 760 302" fill="none" stroke="#f2fff8" stroke-opacity="0.55" stroke-width="7" stroke-linecap="round"/><circle cx="690" cy="356" r="9" fill="#ffffff" fill-opacity="0.85"/><circle cx="687" cy="353" r="3.5" fill="#ffffff"/></g>
 </svg>
