@@ -88,6 +88,8 @@ export function MessageGestures({
   return (
     <div
       className={cn("relative touch-pan-y", className)}
+      // The sideways swipe is the reply's, not the menu's (menu-drawer.tsx).
+      data-swipe="own"
       onTouchStart={(event) => {
         const point = event.touches[0];
         if (!point || event.touches.length > 1) return;
