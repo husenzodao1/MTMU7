@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { setMutedAction } from "@/features/messages/actions";
-import { LIST_OPS_EVENT, clearedChats, pendingListOps, queueListOp, setClearedChats, setClearedUpTo, type Cleared, type ListOp } from "@/features/messages/list-ops";
+import { LIST_OPS_EVENT, clearedChats, clearedCutoffs, pendingListOps, queueListOp, setClearedChats, setClearedUpTo, type Cleared, type ListOp } from "@/features/messages/list-ops";
 import { forgetConversation, keepList, keptList, newestKept } from "@/features/messages/local-store";
 import { ChannelsDialog } from "@/features/messages/channels";
 import { NewConversationButton } from "@/features/messages/new-conversation";
@@ -226,8 +226,17 @@ export function ConversationList({
   // catch up, which one row cannot say, and the thread follows it there.
   // Deleted chats are listened to as well: a new message in one brings it back.
   const [cleared, setCleared] = useState<Cleared[]>([]);
+  // Up to when each was deleted, kept after it comes back: an older copy of
+  // the list (the page kept on the phone) cannot show it again with what was deleted.
+  const [cutoffs, setCutoffs] = useState<Record<string, number>>({});
+  const clearedIds = useRef(new Set<string>());
   useEffect(() => {
-    const look = () => setCleared(clearedChats(currentUserId));
+    const look = () => {
+      const chats = clearedChats(currentUserId);
+      clearedIds.current = new Set(chats.map((chat) => chat.id));
+      setCleared(chats);
+      setCutoffs(clearedCutoffs(currentUserId));
+    };
     look();
     window.addEventListener(LIST_OPS_EVENT, look);
     return () => window.removeEventListener(LIST_OPS_EVENT, look);
@@ -311,7 +320,9 @@ export function ConversationList({
       )
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", ...(idFilter ? { filter: idFilter } : {}) }, (payload) => {
         const row = payload.new as { conversation_id: string; content: string; sender_id: string | null; created_at: string; type: string };
-        if (!known.current.has(row.conversation_id)) {
+        // New to the list, or deleted here and back with this: the server's
+        // list is asked for (an older copy of it may still hold the row).
+        if (!known.current.has(row.conversation_id) || clearedIds.current.has(row.conversation_id)) {
           if (refreshTimer.current) clearTimeout(refreshTimer.current);
           refreshTimer.current = setTimeout(() => void refreshList(), 700);
           return;
@@ -472,15 +483,15 @@ export function ConversationList({
         };
       }
       // Deleted here: gone from the list until something newer is said.
-      const clearedAt = cleared.get(c.id);
-      if (clearedAt !== undefined && (!row.last_message_at || time(row.last_message_at) <= clearedAt)) continue;
+      const clearedAt = Math.max(cleared.get(c.id) ?? 0, cutoffs[c.id] ?? 0);
+      if (clearedAt > 0 && (!row.last_message_at || time(row.last_message_at) <= clearedAt)) continue;
       if (pins.has(c.id)) row.pinned_at = pins.get(c.id) ?? null;
       const askedByMe = c.type === "support" && c.created_by === currentUserId;
       const title = askedByMe ? t("supportTitle") : conversationTitle(row, currentUserId, t("unknownUser"));
       result.push({ ...row, title, askedByMe, waiting: Boolean(w?.created_at && !w.failed), failedHere: Boolean(w?.failed), sortAt });
     }
     return result;
-  }, [rows, live, readAt, peer, waiting, newestHere, ops, currentUserId, t]);
+  }, [rows, live, readAt, peer, waiting, newestHere, ops, cutoffs, currentUserId, t]);
 
   // ------------------------------------------------- press and hold a chat
 

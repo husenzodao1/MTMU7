@@ -100,6 +100,16 @@ export function setClearedChats(userId: string, chats: Cleared[]) {
   }
 }
 
+/** Every chat this person deleted for themselves on this device, and up to when. */
+export function clearedCutoffs(userId: string): Record<string, number> {
+  try {
+    const value = JSON.parse(localStorage.getItem(CUTOFFS_KEY) ?? "{}") as Record<string, Record<string, string>>;
+    return Object.fromEntries(Object.entries(value[userId] ?? {}).map(([id, at]) => [id, Date.parse(at) || 0]));
+  } catch {
+    return {};
+  }
+}
+
 /** When this person last deleted a chat for themselves, as a time; 0 if never (here). */
 export function clearedUpTo(userId: string, conversationId: string): number {
   try {
