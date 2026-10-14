@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.CancellationSignal
 import android.location.LocationManager
 import android.media.MediaPlayer
 import android.net.Uri
@@ -619,8 +620,12 @@ private suspend fun sendHere(context: Context, messenger: MessengerRepository, c
     val provider = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { runCatching { manager.isProviderEnabled(it) }.getOrDefault(false) }
     val fix: Location? = provider?.let { p ->
         withTimeoutOrNull(12_000) {
-            suspendCancellableCoroutine { done ->
-                LocationManagerCompat.getCurrentLocation(manager, p, null, ContextCompat.getMainExecutor(context)) { done.resume(it) }
+            suspendCancellableCoroutine<Location?> { done ->
+                val signal = CancellationSignal()
+                done.invokeOnCancellation { signal.cancel() }
+                LocationManagerCompat.getCurrentLocation(manager, p, signal, ContextCompat.getMainExecutor(context)) { location: Location? ->
+                    if (done.isActive) done.resume(location)
+                }
             }
         }
     } ?: listOfNotNull(
