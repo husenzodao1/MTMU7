@@ -563,7 +563,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             bar never covers it. */}
         <div className={cn("flex min-h-dvh min-w-0 flex-col", mobileBar && mobileBar.length > 0 && "shell-over-bar")}>
           {/* The phone's status bar is above it (--strip-h), so it pads itself below. */}
-          <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
+          <header className="shell-header sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
             <button
               ref={burger}
               type="button"

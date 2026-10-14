@@ -1646,6 +1646,12 @@ html.chat-lock body {
 html[data-app] .site-footer {
   display: none;
 }
+/* The native app draws its own header and bottom bar around a page of the
+   site it still shows: the site's own would be a second pair. */
+html[data-native] .shell-header,
+html[data-native] nav.bar {
+  display: none !important;
+}
 /* The site installed on the home screen is an app too, even before any script. */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   .site-footer {

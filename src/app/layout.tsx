@@ -161,6 +161,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={isAppUserAgent(userAgent) ? "" : undefined}
+      // Inside the native Android app, a section it still shows from the site
+      // sits under the app's own bars: the site draws none of its own.
+      data-native={userAgent?.includes("MTMU7Native") ? "" : undefined}
       // APP_MARK_SCRIPT may add data-app before React sees the page.
       suppressHydrationWarning
       className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${mark.variable} ${mono.variable}`}

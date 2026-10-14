@@ -1,0 +1,140 @@
+name: Native app · Android
+
+# Builds the native Android app in native-android/ (Kotlin, Jetpack Compose,
+# SQLite) on every change to it, and on demand.
+#
+# Same application id as the web-view app in mobile/ and the same keys, and a
+# version code above every build of it: a phone that has the old app takes
+# this one as an update, signed in as before only after signing in again.
+#
+# Uses the same optional secrets as mobile-android.yml:
+#   GOOGLE_SERVICES_JSON, ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+#   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Without them the build still runs: no notifications, the kept debug key.
+
+on:
+  push:
+    paths:
+      - "native-android/**"
+      - ".github/workflows/native-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: native-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: native-android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Version
+        run: |
+          # Above every build of the web-view app (its code is its run number).
+          echo "APP_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          echo "APP_VERSION_NAME=2.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Firebase (notifications)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::notice::GOOGLE_SERVICES_JSON is not set: the app builds without notifications."
+            exit 0
+          fi
+          if printf '%s' "$GOOGLE_SERVICES_JSON" | head -c 1 | grep -q '{'; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
+          fi
+
+      - name: Release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::notice::No keystore: the APK is signed with the kept debug key."
+            exit 0
+          fi
+          store="$RUNNER_TEMP/upload.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$store"
+          alias="$ANDROID_KEY_ALIAS"
+          if [ -z "$alias" ] || ! keytool -list -keystore "$store" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$alias" > /dev/null 2>&1; then
+            alias=$(keytool -list -keystore "$store" -storepass "$ANDROID_KEYSTORE_PASSWORD" | awk -F', ' '/PrivateKeyEntry/ { print $1; exit }')
+          fi
+          if [ -z "$alias" ]; then
+            echo "::error::The release keystore could not be read with the password given."
+            exit 1
+          fi
+          {
+            echo "SIGNED_RELEASE=1"
+            echo "ANDROID_KEYSTORE_PATH=$store"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+            echo "ANDROID_KEY_ALIAS=$alias"
+            echo "ANDROID_KEY_PASSWORD=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+          } >> "$GITHUB_ENV"
+
+      # The same kept debug key as the web-view app's builds, so a phone with
+      # either can take this one as an update.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.mtmu7/debug.keystore
+          key: android-debug-keystore-v2
+
+      - name: Debug signing key
+        run: |
+          store="$HOME/.mtmu7/debug.keystore"
+          if [ ! -f "$store" ]; then
+            mkdir -p "$(dirname "$store")"
+            keytool -genkeypair -keystore "$store" -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          keytool -list -v -keystore "$store" -storepass android | grep -m1 "SHA256:"
+          echo "ANDROID_DEBUG_KEYSTORE=$store" >> "$GITHUB_ENV"
+
+      - name: Data layer tests (no database)
+        working-directory: native-android/shared
+        run: ../gradlew --no-daemon --stacktrace test --tests 'tj.mtmu7.shared.PureTest'
+
+      - name: Release APK
+        run: ./gradlew --no-daemon --stacktrace assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mtmu7-native-${{ env.APP_VERSION_NAME }}
+          path: native-android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Publish beside the download link
+        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'main' || github.ref_name == 'claude/friendly-bell-smakfs'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          cp "$apk" "$RUNNER_TEMP/MTMU7-android-native.apk"
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner"
+          "$apksigner" verify --print-certs "$RUNNER_TEMP/MTMU7-android-native.apk" | grep -E "SHA-1|SHA-256" || true
+          gh release view app-latest --repo "$REPO" > /dev/null 2>&1 || \
+            gh release create app-latest --repo "$REPO" --title "МТМУ №7 · apps" \
+              --notes "The latest Android, Windows and iPhone builds of the МТМУ №7 portal. Download from https://mtmuraqami7.vercel.app/app" || true
+          gh release upload app-latest "$RUNNER_TEMP/MTMU7-android-native.apk" --repo "$REPO" --clobber
