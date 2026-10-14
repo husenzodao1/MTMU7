@@ -1,54 +1,205 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { cookies, headers } from "next/headers";
+import { preconnect } from "react-dom";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { Bad_Script, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
+import { Intro } from "@/features/intro/intro";
+import { INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
+import { OfflineCover } from "@/features/native/offline-cover";
+import { NativeApp } from "@/features/native/native-app";
+import { isWelcome } from "@/lib/auth/welcome";
+import { APP_COOKIE, APP_USER_AGENT_MARK, isAppRequest } from "@/lib/native/app";
+import { ToastProvider } from "@/components/ui/toast";
+import { ViewportGuard } from "@/components/ui/viewport-guard";
+import { publicEnv } from "@/lib/env";
+import { BUILD } from "@/lib/build";
+import { DEFAULT_THEME, isTheme, THEME_COOKIE, themeIsDark } from "@/lib/theme";
 import "@/styles/globals.css";
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-  themeColor: "#2563eb",
-};
+const notoSans = Noto_Sans({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  display: "swap",
+  variable: "--font-noto-sans",
+});
 
-export const metadata: Metadata = {
-  title: "МТМУ №7",
-  description: "Мактаби Таълимии Миёнаи Умумии №7 ба номи Мирзие Ҳабибов",
-  icons: {
-    icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
-    shortcut: "/icons/icon-192.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "МТМУ №7",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-};
+/**
+ * For the few lines that are meant to be looked at rather than read through:
+ * the front page's title, page titles, the dashboard's greeting, the opening,
+ * the school's name in the footer. Noto Serif carries the whole Tajik alphabet — ғ ҷ қ ӣ ӯ ҳ — which
+ * most display faces do not, so the letters that make the language its own do
+ * not fall back to a different font mid-word.
+ */
+const notoSerif = Noto_Serif({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  variable: "--font-noto-serif",
+});
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * The greeting's face: a light, slanted hand, thin as a pen line — the
+ * dashboard's "Субҳ ба хайр", the welcome's "Салом" and the first opening's
+ * "Хуш омадед". Bad Script is one of the few hands that carries ғ ҷ қ ӣ ӯ ҳ,
+ * so a greeting or a name never changes font half-way through a word. Not
+ * preloaded: the browser fetches the few glyphs it needs when a greeting draws.
+ */
+const greeting = Bad_Script({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: "400",
+  display: "swap",
+  preload: false,
+  variable: "--font-greeting",
+});
+
+/**
+ * The school's short name in the portal's header, "МТМУ №7": a small, wide,
+ * geometric face whose figures stand on the line with the capitals (the
+ * unicase set the number below them).
+ */
+const mark = Unbounded({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["500", "600"],
+  display: "swap",
+  variable: "--font-mark",
+});
+
+/** The typewriter face of the "about the app" table. Loaded only when it opens. */
+const mono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "600"],
+  display: "swap",
+  preload: false,
+  variable: "--font-mono-ui",
+});
+
+/** The canvas by day and by night: the browser's and the phone's bars take it, so they belong to the page. */
+const LIGHT_BARS = "#f4f2ec";
+const DARK_BARS = "#0a0e17";
+
+// Zoom is never disabled (WCAG 1.4.4, SEC-016).
+export async function generateViewport(): Promise<Viewport> {
+  const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
+  const dark = themeIsDark(isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME);
+  return {
+    width: "device-width",
+    initialScale: 1,
+    // Zoom in as much as you like; never out. A phone zooms a page out on its
+    // own when anything stands past the right edge, and then it stays shrunk.
+    minimumScale: 1,
+    viewportFit: "cover",
+    // The keyboard shrinks the page rather than covering it, so a chat's
+    // composer stays above the keyboard on Android as it does on an iPhone.
+    interactiveWidget: "resizes-content",
+    // A theme that follows the device leaves the colour to the device too.
+    themeColor:
+      dark === null
+        ? [
+            { media: "(prefers-color-scheme: light)", color: LIGHT_BARS },
+            { media: "(prefers-color-scheme: dark)", color: DARK_BARS },
+          ]
+        : dark
+          ? DARK_BARS
+          : LIGHT_BARS,
+  };
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("common");
+  const locale = await getLocale();
+  const base = publicEnv.NEXT_PUBLIC_APP_URL;
+  return {
+    // Absolute URLs for social previews; relative metadata stays relative without it.
+    metadataBase: base ? new URL(base) : null,
+    title: { default: t("platformName"), template: `%s · ${t("platformName")}` },
+    description: t("platformDescription"),
+    applicationName: t("platformName"),
+    formatDetection: { telephone: false },
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      siteName: t("platformName"),
+      title: t("platformName"),
+      description: t("platformDescription"),
+      locale,
+    },
+  };
+}
+
+/** Marks the page as an app when the device says it is one, whatever the User-Agent. */
+const APP_MARK_SCRIPT =
+  "(function(){try{var d=document.documentElement,u=navigator.userAgent||'';" +
+  // The app itself (not a site added to the home screen) leaves its cookie,
+  // so every page the server draws for it afterwards is drawn as the app's.
+  `var app=!!window.Capacitor||u.indexOf('${APP_USER_AGENT_MARK}')>=0;` +
+  `if(app&&document.cookie.indexOf('${APP_COOKIE}=1')<0)document.cookie='${APP_COOKIE}=1; Path=/; Max-Age=31536000; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');` +
+  "if(d.hasAttribute('data-app'))return;" +
+  "if(app||navigator.standalone||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches)" +
+  "d.setAttribute('data-app','')}catch(e){}})()";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const t = await getTranslations("common");
+
+  // Read before a byte of HTML is sent, so the page arrives already painted in
+  // the chosen theme. A theme applied afterwards by a script is a white flash
+  // on every navigation for somebody who chose the dark one.
+  const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
+  // The first page opens with the book and a greeting (src/features/intro/):
+  // every time the app is opened and once per visit to the site (the page
+  // itself skips it after that, INTRO_SCRIPT), never for robots — and not on
+  // the first page after signing in, which has the book's welcome of its own.
+  const requestHeaders = await headers();
+  const userAgent = requestHeaders.get("user-agent");
+  const inApp = isAppRequest(userAgent, (await cookies()).get(APP_COOKIE)?.value);
+  const opening = !(await isWelcome()) && (inApp || !isRobot(userAgent));
+  // The database's address is greeted while the page is still arriving, so
+  // the first live update, photo or chat message does not wait for the
+  // handshake — on a slow line that is the better part of a second.
+  preconnect(publicEnv.NEXT_PUBLIC_SUPABASE_URL, { crossOrigin: "anonymous" });
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className="min-h-screen font-sans">
-        <NextIntlClientProvider messages={messages}>
-          {children}
+    <html
+      lang={locale}
+      // "system" writes nothing at all, which is what leaves the media query
+      // in charge.
+      data-theme={theme === "system" ? undefined : theme}
+      // Inside the phone app: taps are answered as in an app (globals.css).
+      data-app={inApp ? "" : undefined}
+      // Inside the native Android app, a section it still shows from the site
+      // sits under the app's own bars: the site draws none of its own.
+      data-native={userAgent?.includes("MTMU7Native") ? "" : undefined}
+      // Which version of the site drew this page: a pull at the top takes a
+      // newer one when there is one (page-installer.tsx).
+      data-build={BUILD}
+      // APP_MARK_SCRIPT may add data-app before React sees the page.
+      suppressHydrationWarning
+      className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${mark.variable} ${mono.variable}`}
+    >
+      <body className="min-h-dvh">
+        {/* An app the User-Agent does not name — a build from before it was
+            marked, or the site installed on the home screen — is an app all
+            the same: no foot with "install the app" inside it. */}
+        <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: APP_MARK_SCRIPT }} />
+        {opening ? (
+          <>
+            <Intro words={t("welcome.opening")} />
+            {/* The per-request nonce the CSP allows (src/proxy.ts). */}
+            <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
+          </>
+        ) : null}
+        <a href="#main" className="skip-link">
+          {t("skipToContent")}
+        </a>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ToastProvider>
+            {children}
+            <NativeApp />
+            <OfflineCover />
+            <ViewportGuard />
+          </ToastProvider>
         </NextIntlClientProvider>
       </body>
     </html>

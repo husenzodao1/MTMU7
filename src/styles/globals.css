@@ -1,124 +1,666 @@
 @import "tailwindcss";
+@import "./motion.css";
+@import "./messenger.css";
+@import "./search.css";
 
+/*
+ * MTMU7 design tokens — "midnight and brass".
+ *
+ * One environment and one accent. The night is a deep blue-black with
+ * graphite surfaces and blue-grey hairlines; text is a warm white; the single
+ * accent is a muted brass, kept for what is meant to be pressed or is
+ * selected, never for ordinary content. State colours (success, warning,
+ * danger, info) are desaturated so they inform without shouting. Hierarchy
+ * comes from type, space and contrast — not from gradients or glow.
+ *
+ * The values below are the light ("day") theme; the night values — the
+ * default — are the --dk-* set further down. Every text token meets WCAG AA
+ * (4.5:1) on --color-surface in both.
+ */
 @theme {
-  /* Colors - Brand & Accent */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --font-sans: var(--font-noto-sans), "Noto Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  /* Titles and the greeting: a quiet serif with every Tajik letter. */
+  --font-display: var(--font-noto-serif), "Noto Serif", Georgia, "Times New Roman", serif;
 
-  /* Colors - Hero Tint & Fintech Indigo Accent (Inspired by Reference) */
-  --color-accent-hero: #e8eefb;
-  --color-accent-subtle: #f1f5fd;
-  --color-accent-pill: #0f172a;
+  --color-canvas: #f4f2ec;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0ede6;
+  --color-surface-sunken: #e8e4db;
+  --color-line: #e1dcd1;
+  --color-line-strong: #c9c2b4;
 
-  /* Colors - Neutral (Sophisticated cool slate/zinc scale) */
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-400: #94a3b8;
-  --color-neutral-500: #64748b;
-  --color-neutral-600: #475569;
-  --color-neutral-700: #334155;
-  --color-neutral-800: #1e293b;
-  --color-neutral-900: #0f172a;
-  --color-neutral-950: #020617;
+  --color-ink: #141821;
+  --color-ink-secondary: #434a57;
+  --color-ink-muted: #5d6472;
+  --color-ink-inverse: #ffffff;
 
-  /* Colors - Semantic */
-  --color-success-500: #10b981;
-  --color-success-600: #059669;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-error-500: #ef4444;
-  --color-error-600: #dc2626;
-  --color-info-500: #3b82f6;
-  --color-info-600: #2563eb;
+  --color-brand-50: #f8f3ea;
+  --color-brand-100: #f0e6d3;
+  --color-brand-200: #e2cfab;
+  --color-brand-300: #d2b682;
+  --color-brand-500: #b8955a;
+  --color-brand-600: #a07d45;
+  --color-brand-700: #7a5e2e;
+  --color-brand-800: #5f4823;
+  --color-brand-900: #45341a;
 
-  /* Spacing */
-  --spacing-page: 1.5rem;
-  --spacing-section: 2rem;
-  --spacing-card: 1.25rem;
+  /* Interactive roles, apart from the ramp: the fill of a pressed-for button,
+     its own foreground, the focus ring, and accent text. */
+  --color-brand-solid: #c8a46a;
+  --color-brand-solid-hover: #d2b27e;
+  --color-brand-solid-active: #b8955a;
+  --color-brand-on-solid: #15110a;
+  --color-focus-ring: #7a5e2e;
+  --color-brand-text: #7a5e2e;
+  --color-brand-text-strong: #5f4823;
 
-  /* Border Radius - Generous 2030-2035 Pill & Capsule System */
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 1.75rem;
-  --radius-4xl: 2rem;
-  --radius-full: 9999px;
+  --color-success-50: #ebf4ee;
+  --color-success-600: #2f7a52;
+  --color-success-700: #24603f;
+  --color-warning-50: #fbf2e1;
+  --color-warning-600: #8c6118;
+  --color-warning-700: #6f4c12;
+  --color-danger-50: #fbecea;
+  --color-danger-600: #b03a2e;
+  --color-danger-700: #8e2e25;
+  --color-info-50: #edf1f7;
+  --color-info-600: #3b5b86;
 
-  /* Shadows - Ambient & Soft Layered */
-  --shadow-2xs: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
-  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.05), 0 2px 6px -2px rgb(0 0 0 / 0.03);
-  --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.06), 0 4px 12px -4px rgb(0 0 0 / 0.03);
-  --shadow-xl: 0 20px 32px -6px rgb(0 0 0 / 0.08), 0 8px 16px -6px rgb(0 0 0 / 0.04);
-  --shadow-card: 0 2px 14px 0 rgb(0 0 0 / 0.03);
-  --shadow-float: 0 8px 30px -4px rgb(0 0 0 / 0.08), 0 3px 8px -3px rgb(0 0 0 / 0.04);
-  --shadow-hero: 0 24px 48px -8px rgb(0 0 0 / 0.10), 0 8px 20px -6px rgb(0 0 0 / 0.05);
-  --shadow-ambient: 0 2px 8px 0 rgb(0 0 0 / 0.03), 0 0 0 1px rgb(0 0 0 / 0.015);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
 
-  /* Animation */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 350ms;
-  --duration-extra-slow: 500ms;
-  --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --shadow-xs: 0 1px 1px rgb(20 24 33 / 0.04);
+  --shadow-sm: 0 1px 2px rgb(20 24 33 / 0.06), 0 1px 1px rgb(20 24 33 / 0.03);
+  --shadow-overlay: 0 24px 48px -16px rgb(20 24 33 / 0.22), 0 0 0 1px rgb(20 24 33 / 0.04);
 
-  /* Font */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.35rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.6rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.35rem;
+
+  /*
+   * One motion language. Short for what is touched often (colour and press:
+   * fast), a little longer for what appears (menus, dialogs: base), longest
+   * only for page-level moments (slow). Things decelerate in and accelerate
+   * out; nothing overshoots or bounces. Reduced motion turns movement off and
+   * keeps a brief fade.
+   */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --default-transition-duration: 140ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-fade: fade 220ms cubic-bezier(0.05, 0.7, 0.1, 1);
+  --animate-rise: rise 280ms cubic-bezier(0.05, 0.7, 0.1, 1) both;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* An element arriving: six pixels and a fade, never more. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * The night — the default for everyone who has not chosen otherwise. Written
+ * once as --dk-*; the device saying dark and a person choosing night both use
+ * it, so the palette cannot drift between them.
+ */
+:root {
+  --dk-canvas: #0a0e17;
+  --dk-surface: #111723;
+  --dk-surface-muted: #161d2b;
+  --dk-surface-sunken: #0d121c;
+  --dk-line: #222b3c;
+  --dk-line-strong: #313c52;
+  --dk-ink: #eee9df;
+  --dk-ink-secondary: #babec9;
+  --dk-ink-muted: #8a93a6;
+  --dk-ink-inverse: #0a0e17;
+  --dk-brand-50: #1b1a17;
+  --dk-brand-100: #24211b;
+  --dk-brand-200: #3a3223;
+  --dk-brand-300: #5c4c33;
+  --dk-brand-500: #a88a57;
+  --dk-brand-600: #c8a46a;
+  --dk-brand-700: #d9be8c;
+  --dk-brand-800: #e8d3ac;
+  --dk-brand-900: #f3e7cf;
+  --dk-brand-solid: #c8a46a;
+  --dk-brand-solid-hover: #d4b47f;
+  --dk-brand-solid-active: #bd965a;
+  --dk-brand-on-solid: #15110a;
+  --dk-focus-ring: #d9be8c;
+  --dk-brand-text: #d9be8c;
+  --dk-brand-text-strong: #e8d3ac;
+  --dk-success-50: #12221b;
+  --dk-success-600: #7dbb98;
+  --dk-success-700: #a0cfb3;
+  --dk-warning-50: #221c12;
+  --dk-warning-600: #d6a75e;
+  --dk-warning-700: #e5c48f;
+  --dk-danger-50: #261618;
+  --dk-danger-600: #e08a7f;
+  --dk-danger-700: #edaaa1;
+  --dk-info-50: #131b2a;
+  --dk-info-600: #8faad0;
+  --dk-shadow-xs: 0 1px 1px rgb(0 0 0 / 0.25);
+  --dk-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.015);
+  --dk-shadow-overlay: 0 28px 56px -18px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]),
+  :root[data-theme="ocean"],
+  :root[data-theme="graphite"],
+  :root[data-theme="lavender"] {
+    --color-canvas: var(--dk-canvas);
+    --color-surface: var(--dk-surface);
+    --color-surface-muted: var(--dk-surface-muted);
+    --color-surface-sunken: var(--dk-surface-sunken);
+    --color-line: var(--dk-line);
+    --color-line-strong: var(--dk-line-strong);
+    --color-ink: var(--dk-ink);
+    --color-ink-secondary: var(--dk-ink-secondary);
+    --color-ink-muted: var(--dk-ink-muted);
+    --color-ink-inverse: var(--dk-ink-inverse);
+    --color-brand-50: var(--dk-brand-50);
+    --color-brand-100: var(--dk-brand-100);
+    --color-brand-200: var(--dk-brand-200);
+    --color-brand-300: var(--dk-brand-300);
+    --color-brand-500: var(--dk-brand-500);
+    --color-brand-600: var(--dk-brand-600);
+    --color-brand-700: var(--dk-brand-700);
+    --color-brand-800: var(--dk-brand-800);
+    --color-brand-900: var(--dk-brand-900);
+    --color-brand-solid: var(--dk-brand-solid);
+    --color-brand-solid-hover: var(--dk-brand-solid-hover);
+    --color-brand-solid-active: var(--dk-brand-solid-active);
+    --color-brand-on-solid: var(--dk-brand-on-solid);
+    --color-focus-ring: var(--dk-focus-ring);
+    --color-brand-text: var(--dk-brand-text);
+    --color-brand-text-strong: var(--dk-brand-text-strong);
+    --color-success-50: var(--dk-success-50);
+    --color-success-600: var(--dk-success-600);
+    --color-success-700: var(--dk-success-700);
+    --color-warning-50: var(--dk-warning-50);
+    --color-warning-600: var(--dk-warning-600);
+    --color-warning-700: var(--dk-warning-700);
+    --color-danger-50: var(--dk-danger-50);
+    --color-danger-600: var(--dk-danger-600);
+    --color-danger-700: var(--dk-danger-700);
+    --color-info-50: var(--dk-info-50);
+    --color-info-600: var(--dk-info-600);
+    --shadow-xs: var(--dk-shadow-xs);
+    --shadow-sm: var(--dk-shadow-sm);
+    --shadow-overlay: var(--dk-shadow-overlay);
+  }
+}
+
+:root[data-theme="night"] {
+  --color-canvas: var(--dk-canvas);
+  --color-surface: var(--dk-surface);
+  --color-surface-muted: var(--dk-surface-muted);
+  --color-surface-sunken: var(--dk-surface-sunken);
+  --color-line: var(--dk-line);
+  --color-line-strong: var(--dk-line-strong);
+  --color-ink: var(--dk-ink);
+  --color-ink-secondary: var(--dk-ink-secondary);
+  --color-ink-muted: var(--dk-ink-muted);
+  --color-ink-inverse: var(--dk-ink-inverse);
+  --color-brand-50: var(--dk-brand-50);
+  --color-brand-100: var(--dk-brand-100);
+  --color-brand-200: var(--dk-brand-200);
+  --color-brand-300: var(--dk-brand-300);
+  --color-brand-500: var(--dk-brand-500);
+  --color-brand-600: var(--dk-brand-600);
+  --color-brand-700: var(--dk-brand-700);
+  --color-brand-800: var(--dk-brand-800);
+  --color-brand-900: var(--dk-brand-900);
+  --color-brand-solid: var(--dk-brand-solid);
+  --color-brand-solid-hover: var(--dk-brand-solid-hover);
+  --color-brand-solid-active: var(--dk-brand-solid-active);
+  --color-brand-on-solid: var(--dk-brand-on-solid);
+  --color-focus-ring: var(--dk-focus-ring);
+  --color-brand-text: var(--dk-brand-text);
+  --color-brand-text-strong: var(--dk-brand-text-strong);
+  --color-success-50: var(--dk-success-50);
+  --color-success-600: var(--dk-success-600);
+  --color-success-700: var(--dk-success-700);
+  --color-warning-50: var(--dk-warning-50);
+  --color-warning-600: var(--dk-warning-600);
+  --color-warning-700: var(--dk-warning-700);
+  --color-danger-50: var(--dk-danger-50);
+  --color-danger-600: var(--dk-danger-600);
+  --color-danger-700: var(--dk-danger-700);
+  --color-info-50: var(--dk-info-50);
+  --color-info-600: var(--dk-info-600);
+  --shadow-xs: var(--dk-shadow-xs);
+  --shadow-sm: var(--dk-shadow-sm);
+  --shadow-overlay: var(--dk-shadow-overlay);
+}
+
+/*
+ * Midnight: the night theme with the contrast taken down and the blue taken
+ * out. For reading marks at eleven at night on a phone in a dark room, where
+ * the night theme's near-white on near-black is a torch. Everything else is
+ * inherited from night, so only what differs is written.
+ */
+:root[data-theme="midnight"] {
+  --color-canvas: #0a0a0c;
+  --color-surface: #131316;
+  --color-surface-muted: #1a1a1e;
+  --color-surface-sunken: #202027;
+  --color-line: #2a2a31;
+  --color-line-strong: #3a3a44;
+
+  --color-ink: #d7d4cd;
+  --color-ink-secondary: #a8a49c;
+  --color-ink-muted: #837f78;
+  --color-ink-inverse: #0a0a0c;
+
+  --color-brand-50: #241b0c;
+  --color-brand-100: #2f2411;
+  --color-brand-200: #443318;
+  --color-brand-300: #664c24;
+  --color-brand-500: #a8741c;
+  --color-brand-600: #bd8526;
+  --color-brand-700: #d09b3c;
+  --color-brand-800: #dcae59;
+  --color-brand-900: #e8c684;
+
+  --color-brand-solid: #bd8526;
+  --color-brand-solid-hover: #cd9330;
+  --color-brand-solid-active: #dca63f;
+  --color-brand-on-solid: #0f0c07;
+  --color-focus-ring: #dcae59;
+  --color-brand-text: #dcae59;
+  --color-brand-text-strong: #e8c684;
+
+  --color-success-50: #0e2117;
+  --color-success-600: #3f9d6f;
+  --color-success-700: #5cb388;
+  --color-warning-50: #241d0e;
+  --color-warning-600: #bb8f38;
+  --color-warning-700: #cfa964;
+  --color-danger-50: #271311;
+  --color-danger-600: #c9675c;
+  --color-danger-700: #d78b80;
+  --color-info-50: #131f2e;
+  --color-info-600: #6d99c8;
+
+  --shadow-xs: var(--dk-shadow-xs);
+  --shadow-sm: var(--dk-shadow-sm);
+  --shadow-overlay: var(--dk-shadow-overlay);
+}
+
+/*
+ * Verdant: the light theme with the flag's green in place of the gold. The
+ * greys are the same, because the palette's job is to stay out of the way —
+ * only what is meant to be pressed changes colour.
+ */
+:root[data-theme="verdant"] {
+  --color-brand-50: #eef7f0;
+  --color-brand-100: #d7ecdc;
+  --color-brand-200: #a9d6b5;
+  --color-brand-300: #74bb88;
+  --color-brand-500: #2f9450;
+  --color-brand-600: #1f7a3e;
+  --color-brand-700: #145c2d;
+  --color-brand-800: #0f4723;
+  --color-brand-900: #0a341a;
+
+  --color-brand-solid: #1f7a3e;
+  --color-brand-solid-hover: #1a6c36;
+  --color-brand-solid-active: #145c2d;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #145c2d;
+  --color-brand-text: #145c2d;
+  --color-brand-text-strong: #0f4723;
+}
+
+/*
+ * Three accents that follow the device. By day each is the light theme with
+ * its own colour on what is pressed; by night the same accent, lifted for a
+ * dark page, over the shared dark neutrals (which the block above gives them).
+ * Minimal on purpose: one colour changes, everything else stays out of the way.
+ */
+:root[data-theme="ocean"] {
+  --color-brand-50: #eef5fd;
+  --color-brand-100: #d6e8fb;
+  --color-brand-200: #aecff5;
+  --color-brand-300: #7bb0ec;
+  --color-brand-500: #2f7fd8;
+  --color-brand-600: #1f68be;
+  --color-brand-700: #174f93;
+  --color-brand-800: #123f75;
+  --color-brand-900: #0d2f58;
+  --color-brand-solid: #1f68be;
+  --color-brand-solid-hover: #1a5aa6;
+  --color-brand-solid-active: #174f93;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #174f93;
+  --color-brand-text: #174f93;
+  --color-brand-text-strong: #123f75;
+}
+
+:root[data-theme="graphite"] {
+  --color-brand-50: #f2f3f5;
+  --color-brand-100: #e4e6ea;
+  --color-brand-200: #c9cdd4;
+  --color-brand-300: #a3aab4;
+  --color-brand-500: #4b5563;
+  --color-brand-600: #2b323b;
+  --color-brand-700: #1f252c;
+  --color-brand-800: #161a1f;
+  --color-brand-900: #0d1013;
+  --color-brand-solid: #1f252c;
+  --color-brand-solid-hover: #2b323b;
+  --color-brand-solid-active: #0d1013;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #1f252c;
+  --color-brand-text: #1f252c;
+  --color-brand-text-strong: #0d1013;
+}
+
+:root[data-theme="lavender"] {
+  --color-brand-50: #f5f2fd;
+  --color-brand-100: #ebe4fb;
+  --color-brand-200: #d6c8f6;
+  --color-brand-300: #b9a0ee;
+  --color-brand-500: #7c5cd6;
+  --color-brand-600: #6545c0;
+  --color-brand-700: #4f3499;
+  --color-brand-800: #3e2979;
+  --color-brand-900: #2e1f5a;
+  --color-brand-solid: #6545c0;
+  --color-brand-solid-hover: #5a3cb0;
+  --color-brand-solid-active: #4f3499;
+  --color-brand-on-solid: #ffffff;
+  --color-focus-ring: #4f3499;
+  --color-brand-text: #4f3499;
+  --color-brand-text-strong: #3e2979;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="ocean"] {
+    --color-brand-50: #0f1f33;
+    --color-brand-100: #132a45;
+    --color-brand-200: #1b3a5f;
+    --color-brand-300: #28548a;
+    --color-brand-500: #3b82d6;
+    --color-brand-600: #4a93e6;
+    --color-brand-700: #7ab3f0;
+    --color-brand-800: #98c5f4;
+    --color-brand-900: #bcd9f8;
+    --color-brand-solid: #4a93e6;
+    --color-brand-solid-hover: #5da1ec;
+    --color-brand-solid-active: #72aff0;
+    --color-brand-on-solid: #06121f;
+    --color-focus-ring: #98c5f4;
+    --color-brand-text: #98c5f4;
+    --color-brand-text-strong: #bcd9f8;
+  }
+
+  :root[data-theme="graphite"] {
+    --color-brand-50: #1d2227;
+    --color-brand-100: #252b31;
+    --color-brand-200: #333a42;
+    --color-brand-300: #4a535d;
+    --color-brand-500: #9aa3ad;
+    --color-brand-600: #c9d0d7;
+    --color-brand-700: #e3e7eb;
+    --color-brand-800: #eef1f4;
+    --color-brand-900: #f8f9fa;
+    --color-brand-solid: #e3e7eb;
+    --color-brand-solid-hover: #f3f5f7;
+    --color-brand-solid-active: #ffffff;
+    --color-brand-on-solid: #0e1317;
+    --color-focus-ring: #eef1f4;
+    --color-brand-text: #e3e7eb;
+    --color-brand-text-strong: #f8f9fa;
+  }
+
+  :root[data-theme="lavender"] {
+    --color-brand-50: #1d1733;
+    --color-brand-100: #261e44;
+    --color-brand-200: #352a5e;
+    --color-brand-300: #4c3c86;
+    --color-brand-500: #8b6fe0;
+    --color-brand-600: #9d84ea;
+    --color-brand-700: #b9a6f1;
+    --color-brand-800: #cbbdf5;
+    --color-brand-900: #ded4f9;
+    --color-brand-solid: #9d84ea;
+    --color-brand-solid-hover: #ab94ee;
+    --color-brand-solid-active: #b9a6f1;
+    --color-brand-on-solid: #120c24;
+    --color-focus-ring: #cbbdf5;
+    --color-brand-text: #cbbdf5;
+    --color-brand-text-strong: #ded4f9;
+  }
+}
+
+/*
+ * The chat's own palette, after the messenger everybody's parents already
+ * use: a warm paper wall with a faint pattern, green for what you sent, white
+ * for what you received, blue ticks once it has been read. It sits on top of
+ * whichever theme is chosen, and turns to the same messenger's night colours
+ * wherever the page is dark.
+ */
+:root {
+  --chat-wall: #efeae2;
+  --chat-wall-dot: rgb(84 69 44 / 0.07);
+  --chat-bar: #f0f2f5;
+  --chat-mine: #d9fdd3;
+  --chat-theirs: #ffffff;
+  --chat-meta: #667781;
+  --chat-seen: #1d9bd1;
+  --chat-notice: #ffffffe8;
+  --chat-quote: rgb(11 20 26 / 0.05);
+  --chat-shadow: 0 1px 0.5px rgb(11 20 26 / 0.13);
+  --chat-link: #027eb5;
+  --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%236b5a3a' stroke-opacity='0.16' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
+  /* Google's own light button. */
+  --google-bg: #ffffff;
+  --google-bg-hover: #f7f8f8;
+  --google-line: #747775;
+  --google-ink: #1f1f1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]),
+  :root[data-theme="ocean"],
+  :root[data-theme="graphite"],
+  :root[data-theme="lavender"] {
+    --chat-wall: #0b141a;
+    --chat-wall-dot: rgb(255 255 255 / 0.035);
+    --chat-bar: #1f2c34;
+    --chat-mine: #005c4b;
+    --chat-theirs: #202c33;
+    --chat-meta: #8fa1ab;
+    --chat-seen: #53bdeb;
+    --chat-notice: #182229f0;
+    --chat-quote: rgb(255 255 255 / 0.06);
+    --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+    --chat-link: #53bdeb;
+    --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
+    --google-bg: #131314;
+    --google-bg-hover: #1f1f20;
+    --google-line: #8e918f;
+    --google-ink: #e3e3e3;
+  }
+}
+
+:root[data-theme="night"],
+:root[data-theme="midnight"] {
+  --chat-wall: #0b141a;
+  --chat-wall-dot: rgb(255 255 255 / 0.035);
+  --chat-bar: #1f2c34;
+  --chat-mine: #005c4b;
+  --chat-theirs: #202c33;
+  --chat-meta: #8fa1ab;
+  --chat-seen: #53bdeb;
+  --chat-notice: #182229f0;
+  --chat-quote: rgb(255 255 255 / 0.06);
+  --chat-shadow: 0 1px 0.5px rgb(0 0 0 / 0.35);
+  --chat-link: #53bdeb;
+  --chat-doodle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 30h10a4 4 0 0 1 4 4v15a3 3 0 0 0-3-3H18z'/%3E%3Cpath d='M46 30H36a4 4 0 0 0-4 4v15a3 3 0 0 1 3-3h11z'/%3E%3Cpath d='M118 58l3-9 17-17 6 6-17 17z'/%3E%3Cpath d='M134 36l6 6'/%3E%3Cpath d='M205 20l3.2 6.4 7 1-5.1 5 1.2 7-6.3-3.3-6.3 3.3 1.2-7-5.1-5 7-1z'/%3E%3Cpath d='M52 112l32-12-10 30-7-11z'/%3E%3Cpath d='M67 119l17-19'/%3E%3Cpath d='M170 124s-12-7-12-15a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 8-12 15-12 15z'/%3E%3Cpath d='M18 180l17-7 17 7-17 7z'/%3E%3Cpath d='M26 184v8c6 4 12 4 18 0v-8'/%3E%3Cpath d='M52 180v9'/%3E%3Cpath d='M104 204h18c-2-2-3-4-3-8v-5a6 6 0 0 0-12 0v5c0 4-1 6-3 8z'/%3E%3Cpath d='M111 208a2 2 0 0 0 4 0'/%3E%3Cpath d='M84 64l5 5 10-11'/%3E%3Cpath d='M196 180l22 22-6 6-22-22z'/%3E%3Cpath d='M200 188l3-3'/%3E%3Cpath d='M205 193l3-3'/%3E%3Cpath d='M210 198l3-3'/%3E%3Cpath d='M230 100v-18l12-3v18'/%3E%3Cpath d='M230 100a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M242 97a3 3 0 1 1-3-3 3 3 0 0 1 3 3z'/%3E%3Cpath d='M112 150h22a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-14l-6 5v-5h-2a4 4 0 0 1-4-4v-10a4 4 0 0 1 4-4z'/%3E%3Cpath d='M20 110l6-16 6 16'/%3E%3Cpath d='M22 105h8'/%3E%3Cpath d='M160 20v8'/%3E%3Cpath d='M156 24h8'/%3E%3Cpath d='M60 200v6'/%3E%3Cpath d='M57 203h6'/%3E%3Cpath d='M236 150v6'/%3E%3Cpath d='M233 153h6'/%3E%3Ccircle cx='150' cy='80' r='9'/%3E%3Ccircle cx='150' cy='80' r='2.5'/%3E%3Ccircle cx='84' cy='170' r='1.8'/%3E%3Ccircle cx='22' cy='150' r='1.8'/%3E%3Ccircle cx='240' cy='36' r='1.8'/%3E%3Ccircle cx='100' cy='26' r='1.8'/%3E%3Ccircle cx='200' cy='240' r='1.8'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%2830 150 80%29'/%3E%3Cellipse cx='150' cy='80' rx='18' ry='7' transform='rotate%28-30 150 80%29'/%3E%3C/g%3E%3C/svg%3E");
+  /* Google's own dark button. */
+  --google-bg: #131314;
+  --google-bg-hover: #1f1f20;
+  --google-line: #8e918f;
+  --google-ink: #e3e3e3;
+}
+
+:root[data-theme="midnight"] {
+  --chat-wall: #07090b;
+  --chat-mine: #0b3d33;
+  --chat-theirs: #16191d;
+  --chat-bar: #111418;
 }
 
 @layer base {
-  * {
-    @apply border-neutral-200/70;
+  /*
+   * Small type throughout: every size and space on the portal is set in rem,
+   * so the root sets the scale — 15px, and 14.5px on a phone — as a share of
+   * whatever the reader's browser starts from, never a fixed pixel size.
+   */
+  html {
+    color-scheme: light dark;
+    font-size: 93.75%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
-
-  :focus-visible {
-    outline: 2px solid rgba(15, 23, 42, 0.25);
-    outline-offset: 2px;
-    border-radius: var(--radius-sm);
+  @media (max-width: 640px) {
+    html {
+      font-size: 90.625%;
+    }
+  }
+  /* iOS zooms the page into any field set smaller than 16px. */
+  @supports (-webkit-touch-callout: none) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: max(16px, 1rem);
+    }
   }
 
   body {
-    @apply bg-[#F6F8FC] text-neutral-900 antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "rlig" 1, "calt" 1;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom Smooth Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  @media (max-width: 640px) {
+    body {
+      font-size: 1rem;
+    }
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+
+  /*
+   * Nothing widens the page. A grid item's minimum width is its content's by
+   * default, so one wide table inside a card made the whole column — and the
+   * page with it — as wide as the table: on a phone the timetable pushed the
+   * page sideways and showed every day at once. With the minimum at zero the
+   * card keeps the screen's width and the table scrolls inside its own box,
+   * by swipe. Clipping the page's own sideways overflow is the last line: if
+   * something still sticks out, the page does not slide.
+   */
+  .grid > * {
+    min-width: 0;
   }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.35);
-    border-radius: 9999px;
+
+  /*
+   * And nothing at all may make the page wider than the screen. On its own,
+   * `overflow-x: clip` on the body was handed up to the viewport, which only
+   * stops sideways scrolling: a phone still measured the page by its widest
+   * content and zoomed out to fit it after a dialog or the keyboard closed —
+   * the page shrank to the left with an empty strip on the right. The culprit
+   * was the hidden "Actions" label in a table header: absolutely positioned,
+   * it escaped the table's own scrolling box and stood past the right edge.
+   *
+   * With the root clipped too, the body keeps its clip for itself, and as the
+   * containing block of everything absolutely positioned it cuts all of it off
+   * at the screen's edge. `clip`, not `hidden`, so neither becomes a scroller
+   * and sticky headers still stick. The viewport's minimum-scale of 1
+   * (app/layout.tsx) is the second lock: the page can be zoomed in, never out.
+   */
+  html {
+    overflow-x: clip;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 116, 139, 0.5);
+  body {
+    position: relative;
+    overflow-x: clip;
+    /* A long link or word in a card breaks where it must, not past the edge. */
+    overflow-wrap: break-word;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-line);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: var(--color-ink);
+  }
+
+  a {
+    color: inherit;
+  }
+
+  ::selection {
+    background: var(--color-brand-100);
   }
 
   @media (prefers-reduced-motion: reduce) {
     *,
-    *::before,
-    *::after {
+    ::before,
+    ::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -128,102 +670,2099 @@
 }
 
 @layer utilities {
-  .animate-in {
-    animation: animate-in var(--duration-normal) var(--ease-out) forwards;
+  /* The dropdown indicator. It lived in an arbitrary Tailwind background-image
+     value, where the quoting in the data URI did not survive compilation and
+     every select rendered without an arrow. Written here, the encoding holds. */
+  .select-chevron {
+    /* A mid grey that reads on the paper and on the night alike. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 16px;
   }
 
-  .animate-out {
-    animation: animate-out var(--duration-fast) var(--ease-in) forwards;
+  /* The one fill for what is meant to be pressed: flat brass, no gradient and
+     no glow. Dark text on it is 7.9:1; the border keeps the button's edge at
+     3:1 on a white card (WCAG 1.4.11). */
+  .brand-fill {
+    background-color: var(--color-brand-solid);
+    border: 1px solid color-mix(in oklab, var(--color-brand-solid) 82%, #000000);
+    color: var(--color-brand-on-solid);
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
+  }
+  .brand-fill:hover {
+    background-color: var(--color-brand-solid-hover);
+  }
+  .brand-fill:active {
+    background-color: var(--color-brand-solid-active);
   }
 
-  .animate-fade-in {
-    animation: fade-in var(--duration-normal) var(--ease-out) forwards;
+  .skip-link {
+    position: absolute;
+    left: 0.75rem;
+    top: -3rem;
+    z-index: 100;
+    border-radius: var(--radius-md);
+    background: var(--color-brand-solid);
+    color: var(--color-brand-on-solid);
+    padding: 0.5rem 0.875rem;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    top: 0.75rem;
   }
 
-  .animate-slide-up {
-    animation: slide-up var(--duration-slow) var(--ease-out) forwards;
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
 
-  .animate-slide-down {
-    animation: slide-down var(--duration-slow) var(--ease-in) forwards;
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
-  .animate-scale-in {
-    animation: scale-in var(--duration-normal) var(--ease-spring) forwards;
-  }
-
-  .animate-shimmer {
-    animation: shimmer 2s linear infinite;
-    background: linear-gradient(
-      90deg,
-      var(--color-neutral-200) 0%,
-      var(--color-neutral-100) 50%,
-      var(--color-neutral-200) 100%
-    );
-    background-size: 200% 100%;
-  }
-
-  .animate-list-item {
-    animation: list-item-in var(--duration-fast) var(--ease-out) both;
-  }
-
-  .press-scale {
-    transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-default);
-  }
-  .press-scale:active {
-    transform: scale(0.98);
-  }
-
-  .glass-card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(226, 232, 240, 0.7);
-  }
-
-  .glass-header {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  .prose-official p + p,
+  .prose-official ul,
+  .prose-official ol,
+  .prose-official blockquote,
+  .prose-official h2,
+  .prose-official h3 {
+    margin-top: 0.875rem;
   }
 }
 
-@keyframes animate-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+/*
+ * Printing an administrative page (a report, a register) must produce a plain
+ * paper document: light surfaces whatever the screen theme, no chrome, and no
+ * row split across two pages.
+ */
+@media print {
+  :root {
+    --color-canvas: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-muted: #ffffff;
+    --color-surface-sunken: #ffffff;
+    --color-line: #b9c0c8;
+    --color-ink: #000000;
+    --color-ink-secondary: #1f2933;
+    --color-ink-muted: #3d4a56;
+    --color-brand-text: #6b4509;
+    --shadow-xs: none;
+    --shadow-sm: none;
+    --shadow-overlay: none;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  tr,
+  li,
+  figure {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  a[href^="/"]::after,
+  a[href^="#"]::after {
+    content: "";
+  }
 }
 
-@keyframes animate-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(6px) scale(0.99); }
+/*
+ * Tells the browser which way round its own furniture goes — scrollbars, form
+ * controls, the space behind a dialog. Without it a chosen dark theme gets
+ * light scrollbars, which is the one part of the page the theme cannot paint.
+ */
+:root[data-theme="day"],
+:root[data-theme="verdant"] {
+  color-scheme: light;
 }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+:root[data-theme="night"],
+:root[data-theme="midnight"] {
+  color-scheme: dark;
 }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+/* The app page's hero: one quiet surface of the night, the icon its only colour. */
+.app-hero {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
 }
 
-@keyframes slide-down {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(16px); }
+/* ---------------------------------------------------------- broken photos */
+
+/*
+ * A photo that could not come is never the browser's broken picture: it is
+ * hidden, and what is under it shows — an avatar's initials, a card's own
+ * colour — until it is asked for again and comes (photo-retry.ts).
+ */
+img[data-broken] {
+  visibility: hidden;
 }
 
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+/* ------------------------------------------------------------ avatar rings */
+
+/*
+ * A thin ring around every face, with a hairline of the page between ring and
+ * photo so the photo never touches it: neutral everywhere, brass only on the
+ * one large portrait of a profile.
+ */
+.avatar-ring {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  padding: 1px;
+  background: var(--color-line-strong);
+}
+.avatar-ring > * {
+  box-shadow: 0 0 0 2px var(--color-surface);
+  margin: 2px;
+}
+.avatar-ring-lg {
+  padding: 1.5px;
+  background: var(--color-brand-solid);
+}
+.avatar-ring-lg > * {
+  box-shadow: 0 0 0 3px var(--color-surface);
+  margin: 3px;
 }
 
-@keyframes list-item-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ------------------------------------------------------- the top strip */
+
+/* The ministry strip is sticky on every page and always this tall, so
+   everything else that sticks — the portal's header, its sidebar, a chat that
+   fills the screen — can start exactly below it. */
+/* Only the front page has the strip now. Everywhere else --strip-h is just
+   the phone's status bar, which the portal's header pads itself below. */
+:root {
+  --strip-h: env(safe-area-inset-top, 0px);
+}
+.official-strip {
+  height: calc(3rem + env(safe-area-inset-top, 0px));
+}
+/* The photograph comes darkened; a touch of light and colour brings the flag
+   forward, softly, behind the lighter scrim. */
+.official-flag {
+  filter: brightness(1.18) saturate(1.1);
+}
+@media print {
+  :root {
+    --strip-h: 0px;
+  }
 }
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+/* ------------------------------------------------------------------ chat */
+
+/*
+ * The wall behind the conversation, and the wallpapers that can replace it
+ * (chosen per device, features/messages/wallpaper.tsx). The default is the
+ * messenger's own idea — faint drawings on paper — drawn from a school's
+ * things: a book, a pencil, a cap, a bell, a ruler. Every other one is a tint
+ * over the chat's own wall colour, so all of them work by day and by night.
+ */
+.chat-wall {
+  background-color: var(--chat-wall);
+  background-image: var(--chat-doodle);
+  background-size: 260px 260px;
+}
+.chat-wall[data-wallpaper="plain"] {
+  background-image: none;
+}
+.chat-wall[data-wallpaper="dots"] {
+  background-image: radial-gradient(var(--chat-wall-dot) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+.chat-wall[data-wallpaper="mint"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(37 211 102 / 0.16), rgb(18 140 126 / 0.2));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="sky"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(56 189 248 / 0.18), rgb(59 130 246 / 0.2));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="peach"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(251 146 60 / 0.16), rgb(244 114 182 / 0.16));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="lavender"] {
+  background-image: var(--chat-doodle), linear-gradient(165deg, rgb(167 139 250 / 0.2), rgb(236 72 153 / 0.12));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="brand"] {
+  background-image:
+    var(--chat-doodle),
+    linear-gradient(165deg, color-mix(in oklab, var(--color-brand-solid) 26%, transparent), color-mix(in oklab, var(--color-brand-solid) 8%, transparent));
+  background-size: 260px 260px, auto;
+}
+.chat-wall[data-wallpaper="graphite"] {
+  background-color: #2b3238;
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+
+.chat-header,
+.chat-composer {
+  background: var(--chat-bar);
+}
+.chat-header {
+  border-bottom: 1px solid var(--color-line);
+}
+.chat-composer {
+  border-top: 1px solid var(--color-line);
+}
+
+/* flow-root holds the floated time in, so it sits at the end of the last line
+   when there is room and drops below the text when there is not. */
+.chat-bubble {
+  position: relative;
+  display: flow-root;
+  border-radius: 0.6rem;
+  box-shadow: var(--chat-shadow);
+  overflow-wrap: anywhere;
+  /* The size chosen on this device (text-size.tsx); quotes and names follow it in em. */
+  font-size: var(--chat-text, 16px);
+  line-height: 1.4;
+}
+.chat-bubble-mine {
+  background: var(--chat-mine);
+}
+.chat-bubble-theirs {
+  background: var(--chat-theirs);
+}
+
+/* The little flag the first bubble of a run hangs from. */
+.chat-tail-mine {
+  border-start-end-radius: 0;
+}
+.chat-tail-theirs {
+  border-start-start-radius: 0;
+}
+.chat-tail-mine::before,
+.chat-tail-theirs::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+}
+.chat-tail-mine::before {
+  inset-inline-end: -7px;
+  background: var(--chat-mine);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.chat-tail-theirs::before {
+  inset-inline-start: -7px;
+  background: var(--chat-theirs);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+:dir(rtl) .chat-tail-mine::before {
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+:dir(rtl) .chat-tail-theirs::before {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.chat-meta {
+  color: var(--chat-meta);
+}
+.chat-seen {
+  color: var(--chat-seen);
+}
+
+/* A photo's box before the photo is in it: the shape, faintly, and nothing
+   that moves — a thread of forty photos should not be forty animations. */
+.chat-photo {
+  background: linear-gradient(135deg, var(--chat-quote), transparent 70%), var(--chat-quote);
+}
+
+/* ------------------------------------------------ the chat as a messenger */
+
+/*
+ * On a phone the conversation takes the whole screen, above the portal's
+ * bars, and is exactly as tall as what the keyboard leaves visible (--vvh and
+ * --vvt come from the visual viewport, set by the thread). On a computer the
+ * same, when asked for. Below the menus and dialogs (z-50), above the bars.
+ */
+@media (max-width: 1023.98px) {
+  .chat-screen {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--vvt, 0px);
+    height: var(--vvh, 100dvh);
+    z-index: 45;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--chat-bar);
+  }
+}
+.chat-screen.chat-expanded {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--vvt, 0px);
+  height: var(--vvh, 100dvh);
+  z-index: 45;
+  background: var(--chat-bar);
+}
+@media (min-width: 1024px) {
+  .chat-screen.chat-expanded .chat-wall {
+    padding-inline: max(6%, calc((100% - 62rem) / 2));
+  }
+}
+html.chat-lock,
+html.chat-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* A bubble is held, not selected, on a touch screen: the hold opens its menu,
+   so the menu's button steps aside there (it stays for the keyboard, and as
+   the point the menu opens from). */
+@media (pointer: coarse) {
+  .chat-row .chat-bubble {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .chat-row .chat-more:not(:focus-visible) {
+    width: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    overflow: hidden;
+  }
+}
+
+.chat-link {
+  color: var(--chat-link);
+}
+
+/* The quoted message: a tap takes you there, and it lights up for a moment. */
+.chat-quote:hover {
+  background: color-mix(in oklab, var(--chat-quote) 100%, var(--color-brand-solid) 8%);
+}
+.chat-flash {
+  animation: chat-flash 1.6s ease-out;
+}
+@keyframes chat-flash {
+  0%,
+  35% {
+    background: color-mix(in oklab, var(--color-brand-solid) 22%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.chat-swipe-arrow {
+  background: var(--chat-notice);
+  color: var(--color-ink-secondary);
+  box-shadow: var(--chat-shadow);
+}
+
+.chat-jump {
+  background: var(--chat-theirs);
+  color: var(--color-ink-secondary);
+  box-shadow: var(--chat-shadow), 0 2px 10px rgb(0 0 0 / 0.12);
+}
+
+/* Files and voice notes, tinted from the bubble they sit in. */
+.chat-file {
+  background: var(--chat-quote);
+}
+.chat-file:not(:disabled):hover {
+  background: color-mix(in oklab, var(--chat-quote) 100%, var(--color-ink) 6%);
+}
+.chat-file-action {
+  color: var(--chat-meta);
+  border: 1.5px solid color-mix(in oklab, var(--chat-meta) 45%, transparent);
+}
+.chat-voice-play {
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+}
+.chat-voice-bar {
+  background: color-mix(in oklab, var(--chat-meta) 45%, transparent);
+  transition: background-color 120ms linear;
+}
+.chat-voice-bar.is-played {
+  background: var(--chat-seen);
+}
+.chat-voice-speed {
+  background: color-mix(in oklab, var(--chat-meta) 22%, transparent);
+  color: var(--color-ink-secondary);
+}
+
+.chat-reactions {
+  background: var(--chat-theirs);
+  box-shadow: var(--chat-shadow), 0 0 0 2px var(--chat-wall);
+}
+.chat-reactions.is-mine {
+  background: color-mix(in oklab, var(--chat-theirs) 80%, var(--chat-seen) 20%);
+}
+
+.chat-attach-icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #fff;
+}
+.chat-attach-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* Recording: a slow red pulse and a live-looking wave. */
+.chat-rec-dot {
+  animation: chat-rec 1.2s ease-in-out infinite;
+}
+@keyframes chat-rec {
+  50% {
+    opacity: 0.25;
+  }
+}
+.chat-rec-wave span {
+  display: block;
+  width: 3px;
+  flex-shrink: 0;
+  height: 30%;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-danger-600) 70%, transparent);
+  animation: chat-wave 0.9s ease-in-out infinite alternate;
+}
+@keyframes chat-wave {
+  to {
+    height: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-flash,
+  .chat-rec-dot,
+  .chat-rec-wave span {
+    animation: none;
+  }
+}
+
+/* The full-screen photo: the bars fade into the black rather than sit on it. */
+.photo-viewer-bar {
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.6), transparent);
+}
+.photo-viewer-bar:last-child {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent);
+}
+
+/* ------------------------------------------------------ the member card */
+
+/*
+ * A flat band of the accent, quietened into the surface, a face that breaks
+ * out of it inside a thin ring of the accent itself, and chips tinted from it.
+ * Every colour here is the theme's, so the card follows whatever is chosen.
+ */
+.member-card-cover {
+  background: color-mix(in oklab, var(--color-brand-solid) 22%, var(--color-surface-muted));
+  border-bottom: 1px solid var(--color-line);
+}
+.member-card-ring {
+  background: var(--color-brand-solid);
+}
+.member-card-initials {
+  background: var(--color-surface-muted);
+  color: var(--color-brand-text-strong);
+}
+.member-card-chip {
+  background: color-mix(in oklab, var(--color-brand-solid) 14%, transparent);
+  color: var(--color-brand-text-strong);
+}
+
+/* ------------------------------------------------------- the code boxes */
+
+/*
+ * Six boxes and one field lying over them. The field's own text and caret are
+ * made invisible rather than the field itself: a field at opacity 0 is one
+ * some password managers and phones decline to fill.
+ */
+.otp-input {
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font-size: 16px; /* anything smaller and iOS zooms the page on focus */
+  letter-spacing: 1.5em;
+  -webkit-text-fill-color: transparent;
+}
+.otp-input::selection {
+  background: transparent;
+}
+.otp-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(2.5rem, 12.5vw, 3.35rem);
+  height: clamp(3.1rem, 15vw, 4rem);
+  border-radius: 1rem;
+  border: 1.5px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-code), var(--font-noto-sans), ui-monospace, monospace;
+  font-size: clamp(1.35rem, 6.2vw, 1.8rem);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+.otp-box-filled {
+  border-color: color-mix(in oklab, var(--color-brand-solid) 60%, var(--color-line-strong));
+  background: color-mix(in oklab, var(--color-brand-solid) 8%, var(--color-surface));
+}
+.otp-box-active {
+  border-color: var(--color-brand-solid);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-brand-solid) 24%, transparent);
+  transform: translateY(-1px);
+}
+/* The caret, drawn in the box where the next digit goes. */
+.otp-box-active::after {
+  content: "";
+  width: 2px;
+  height: 42%;
+  border-radius: 1px;
+  background: var(--color-brand-text);
+  animation: otp-caret 1.05s steps(1, end) infinite;
+}
+.otp-complete .otp-box {
+  border-color: var(--color-brand-solid);
+}
+.otp[data-invalid] .otp-box {
+  border-color: var(--color-danger-600);
+  background: color-mix(in oklab, var(--color-danger-600) 6%, var(--color-surface));
+}
+.otp-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: none;
+  border-radius: 9999px;
+  background: var(--color-line-strong);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .otp-digit {
+    display: inline-block;
+    animation: otp-pop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  }
+  .otp[data-invalid] {
+    animation: otp-shake 0.36s ease;
+  }
+}
+@keyframes otp-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes otp-pop {
+  from {
+    transform: translateY(35%) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes otp-shake {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* ------------------------------------------------------------ the greeting */
+
+/*
+ * The dashboard's first card (greeting-card.tsx): a photograph of the sky in
+ * Istaravshan for the hour and the weather (weather-photo.tsx, motion.css),
+ * the greeting in a light hand in warm white, the name in brass, one action.
+ * The card is dark in every theme, so its text never depends on the theme
+ * for contrast.
+ */
+.greeting-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-2xl);
+  border: 1px solid #222b3c;
+  background: #0a0e17;
+  color: #eee9df;
+}
+.greeting-date {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(238 233 223 / 0.62);
+}
+.greeting-name {
+  font-family: var(--font-greeting), var(--font-display);
+  color: #d9be8c;
+}
+/* The card's actions: brass for the one that matters, an outline for the rest. */
+.greeting-action,
+.greeting-action-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+.greeting-action {
+  background: #c8a46a;
+  color: #15110a;
+}
+.greeting-action:hover {
+  background: #d4b47f;
+}
+.greeting-action-quiet {
+  border: 1px solid rgb(238 233 223 / 0.24);
+  color: #eee9df;
+}
+.greeting-action-quiet:hover {
+  border-color: rgb(238 233 223 / 0.45);
+  background: rgb(238 233 223 / 0.06);
+}
+.greeting-action:focus-visible,
+.greeting-action-quiet:focus-visible {
+  outline: 2px solid #d9be8c;
+  outline-offset: 2px;
+}
+
+.google-button {
+  background: var(--google-bg);
+  border-color: var(--google-line);
+  color: var(--google-ink);
+}
+.google-button:hover {
+  background: var(--google-bg-hover);
+}
+
+/* The school's official name at the top of the phone's menu. */
+.drawer-school {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+
+/* --------------------------------------------------------------- the front page */
+/*
+ * (public)/page.tsx: two quiet boxes on the night. No moving washes and no
+ * coloured gradients: one faint light from above, so the page has depth, and
+ * brass only where something is meant to be pressed or named.
+ */
+.home-ground {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  overflow: hidden;
+  padding-bottom: 2.5rem;
+  background: radial-gradient(70rem 32rem at 50% -8rem, color-mix(in oklab, var(--color-brand-solid) 7%, transparent), transparent 70%);
+}
+.home-box {
+  position: relative;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+.home-kicker {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.home-title {
+  margin-top: 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 5.4vw, 2rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+/* The city in the kicker's own letters, in brass: the one coloured word on the page. */
+.home-city {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.6em;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  vertical-align: 0.12em;
+  color: var(--color-brand-text);
+}
+.home-lead {
+  max-width: 34rem;
+  margin: 0.8rem auto 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--color-ink-secondary);
+  text-wrap: pretty;
+}
+.home-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 10.5rem;
+  height: 2.375rem;
+  padding: 0 1.15rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-brand-on-solid);
+  background: var(--color-brand-solid);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.home-button:hover {
+  background: var(--color-brand-solid-hover);
+}
+.home-button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.home-button-quiet {
+  color: var(--color-ink);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.home-button-quiet:hover,
+.home-button-quiet[data-state="open"] {
+  background: var(--color-surface-muted);
+}
+.home-heading {
+  margin-bottom: 0.85rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+/* The first box settles once on load; the rest is simply there. */
+.home-enter {
+  animation: var(--animate-rise);
+}
+
+/* The thread of features: a mark, a hairline to the next, a card beside it. */
+.feature-line {
+  display: grid;
+  gap: 0.75rem;
+}
+.feature-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.85rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+.feature-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: calc(0.925rem - 0.5px);
+  top: 2.05rem;
+  bottom: -0.75rem;
+  width: 1px;
+  background: var(--color-line);
+}
+.feature-dot {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  color: var(--color-ink-secondary);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+.feature-step:has(.feature-card-open) .feature-dot {
+  color: var(--color-brand-text);
+  box-shadow: inset 0 0 0 1px var(--color-brand-300);
+}
+.feature-dot svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+.feature-card {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.8rem 0.65rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+.feature-card:hover,
+.feature-card-open {
+  border-color: var(--color-line);
+  background: var(--color-surface-muted);
+}
+.feature-title {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+/* Two lines of the text, fading out; the whole of it once opened. */
+.feature-body {
+  display: block;
+  max-height: 2.5rem;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  transition: max-height var(--duration-slow) var(--ease-standard);
+}
+.feature-card-open .feature-body {
+  max-height: 20rem;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* The makers' name, outside every box. */
+.home-signature {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 1.5rem 1rem 0.5rem;
+  text-align: center;
+}
+.home-brand {
+  font-family: var(--font-mark), var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  color: var(--color-ink-secondary);
+}
+.home-motto {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-ink-muted);
+}
+
+/* --------------------------------------------------------------- the footer */
+/*
+ * The foot of the site (official-header.tsx, SiteFooter): one quiet line,
+ * "© 2026 Портали мактаб", centred on the page's own ground. The apps have
+ * none: an app ends where its content does.
+ */
+.site-footer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding: 1.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+}
+/* "Install the app": a small pill, a hairline round it, the arrow and the
+   words in the line's own quiet ink — a little darker under a finger. */
+.footer-install {
+  display: inline-flex;
+  height: 1.875rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem 0 0.625rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-ink-secondary);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform 0.2s var(--ease-standard);
+}
+.footer-install:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+.footer-install:active {
+  transform: scale(0.96);
+}
+.footer-install:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.footer-install svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.footer-line {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: color-mix(in oklab, var(--color-ink-muted) 85%, transparent);
+}
+html[data-app] .site-footer {
+  display: none;
+}
+/* The native app draws its own header and bottom bar around a page of the
+   site it still shows: the site's own would be a second pair. */
+html[data-native] .shell-header,
+html[data-native] nav.bar {
+  display: none !important;
+}
+/* The site installed on the home screen is an app too, even before any script. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .site-footer {
+    display: none;
+  }
+}
+
+/* In the portal on a phone the bottom bar is fixed over the foot of the
+   screen: the column ends where the bar begins, so the footer sits above it —
+   with room under the line, so it does not seem to rest on the bar — and the
+   bar already keeps clear of the home indicator. */
+@media (max-width: 1023.98px) {
+  .shell-over-bar {
+    padding-bottom: calc(3.5rem + 1px + env(safe-area-inset-bottom, 0px));
+  }
+  .shell-over-bar > .site-footer {
+    padding-bottom: 1.25rem;
+  }
+}
+
+/*
+ * The school's networks at the foot of the menu (app-shell.tsx, MenuFoot):
+ * four bare hairline marks in a row, centred over the line above "About the
+ * app" — no disc, no box, only the mark, a little darker under a finger.
+ */
+.menu-socials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 0.5rem 1rem 0.625rem;
+}
+.menu-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md, 0.5rem);
+  color: var(--color-ink-muted);
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+.menu-social svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.menu-social:hover,
+.menu-social:focus-visible {
+  color: var(--color-ink);
+}
+.menu-social:active {
+  transform: scale(0.9);
+}
+
+/*
+ * A search with its filters folded away (filters.tsx, FoldedFilterBar): one
+ * rounded field and a round filter button beside it. The button's three lines
+ * narrow downwards like a funnel; open, they turn the other way up, and the
+ * panel under the field lifts in with every filter as a row of choices.
+ */
+.filter-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    scale var(--duration-fast) var(--ease-standard);
+}
+.filter-toggle:hover {
+  border-color: var(--color-ink-muted);
+}
+.filter-toggle:active {
+  scale: 0.92;
+}
+.filter-toggle:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+.filter-toggle[data-open] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+.filter-glyph {
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.filter-glyph path {
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale var(--duration-base) var(--ease-standard);
+}
+.filter-toggle[data-open] .filter-glyph path:nth-child(1) {
+  scale: 0.25 1;
+}
+.filter-toggle[data-open] .filter-glyph path:nth-child(3) {
+  scale: 4 1;
+}
+.filter-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+  box-shadow: 0 0 0 2px var(--color-canvas);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2rem;
+  text-align: center;
+}
+.filter-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-base) var(--ease-standard);
+}
+.filter-panel[data-open] {
+  grid-template-rows: 1fr;
+}
+.filter-panel-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.filter-panel-body {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.625rem;
+  padding: 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  opacity: 0;
+  translate: 0 -8px;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    translate var(--duration-base) var(--ease-standard);
+}
+.filter-panel[data-open] .filter-panel-body {
+  opacity: 1;
+  translate: 0 0;
+}
+.filter-group {
+  display: grid;
+  gap: 0.5rem;
+}
+.filter-group-label {
+  color: var(--color-ink-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.filter-chip {
+  height: 2rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    scale var(--duration-fast) var(--ease-standard);
+}
+.filter-chip:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+.filter-chip:active {
+  scale: 0.95;
+}
+.filter-chip:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+.filter-chip[aria-pressed="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-surface);
+}
+.filter-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.35rem;
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.filter-clear:hover {
+  color: var(--color-ink);
+}
+.filter-clear svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .filter-panel,
+  .filter-panel-body,
+  .filter-glyph path {
+    transition: none;
+    animation: none;
+  }
+}
+
+/*
+ * The phone's menu (menu-drawer.tsx). --p is how far out it is, 0 to 1: the
+ * finger sets it directly while it drags (no transition), and letting go
+ * finishes the way at the finger's speed (--dur) on one easing. Shut, the
+ * panel is hidden as well as moved away, so nothing in it can be reached.
+ */
+.menu-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.menu-drawer-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 14 23 / 0.5);
+  opacity: var(--p);
+  transition: opacity var(--dur) var(--ease);
+}
+.menu-drawer-panel {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, calc(100vw - 3rem));
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-line);
+  transform: translate3d(calc((var(--p) - 1) * 100%), 0, 0);
+  transition: transform var(--dur) var(--ease);
+  will-change: transform;
+}
+.menu-drawer:not([data-state="closed"]) {
+  pointer-events: auto;
+}
+.menu-drawer[data-state="dragging"] .menu-drawer-scrim,
+.menu-drawer[data-state="dragging"] .menu-drawer-panel {
+  transition: none;
+}
+.menu-drawer[data-state="closed"] .menu-drawer-panel {
+  visibility: hidden;
+  transition:
+    transform var(--dur) var(--ease),
+    visibility 0s linear var(--dur);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-drawer-scrim,
+  .menu-drawer-panel {
+    transition-duration: 0s !important;
+  }
+}
+
+/* ------------------------------------------------------- the portal header */
+/* "МТМУ №7" beside the emblem (app-shell.tsx, SchoolMark). */
+.shell-mark {
+  font-family: var(--font-mark), var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums;
+  color: var(--color-ink);
+}
+/* One box for the menu button, the bell and the avatar, so their centres line up. */
+.shell-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  color: var(--color-ink-secondary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.shell-icon:hover {
+  color: var(--color-ink);
+  background: var(--color-surface-muted);
+}
+/* This rule sits outside Tailwind's layers, so it outranks the utilities: the
+   menu button's lg:hidden lost to display: inline-flex and the button stayed
+   on a computer, beside the sidebar it would open again. */
+@media (min-width: 64rem) {
+  .shell-icon.lg\:hidden {
+    display: none;
+  }
+}
+/* Three lines that turn into a cross while the menu is open. */
+.burger {
+  position: relative;
+  display: block;
+  width: 1.1rem;
+  height: 0.8rem;
+}
+.burger > span {
+  position: absolute;
+  left: 0;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    width 0.3s ease;
+}
+.burger > span:nth-child(1) {
+  top: 0;
+  width: 100%;
+}
+.burger > span:nth-child(2) {
+  top: calc(50% - 0.75px);
+  width: 70%;
+}
+.burger > span:nth-child(3) {
+  bottom: 0;
+  width: 85%;
+}
+.burger[data-open] > span:nth-child(1) {
+  width: 100%;
+  transform: translateY(calc(0.4rem - 0.75px)) rotate(45deg);
+}
+.burger[data-open] > span:nth-child(2) {
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.burger[data-open] > span:nth-child(3) {
+  width: 100%;
+  transform: translateY(calc(-0.4rem + 0.75px)) rotate(-45deg);
+}
+.shell-about {
+  font-family: var(--font-mark), var(--font-sans);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+/* Who made it: a small table in a typewriter face. */
+.makers {
+  border-collapse: collapse;
+  font-family: var(--font-mono-ui), ui-monospace, "Cascadia Mono", Menlo, monospace;
+  font-size: 0.625rem;
+  line-height: 1.45;
+}
+.makers td {
+  padding: 0.5rem 0.4rem;
+  vertical-align: top;
+  border-top: 1px solid var(--color-line);
+}
+.makers tr:last-child td {
+  border-bottom: 1px solid var(--color-line);
+}
+.makers td:first-child {
+  width: 38%;
+  padding-left: 0;
+}
+.makers td:last-child {
+  padding-right: 0;
+}
+.makers-level {
+  display: inline-block;
+  margin-top: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--color-brand-text-strong);
+  background: var(--color-brand-50);
+  box-shadow: inset 0 0 0 1px var(--color-brand-200);
+}
+
+/* The terms of use: numbered rules, each in its own small block. */
+.terms-list {
+  display: grid;
+  gap: 0.5rem;
+  counter-reset: rule;
+}
+.terms-list > li {
+  position: relative;
+  padding: 0.55rem 0.7rem 0.55rem 2.2rem;
+  border-radius: 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--color-ink-secondary);
+  background: var(--color-surface-muted);
+  counter-increment: rule;
+}
+.terms-list > li::before {
+  content: counter(rule);
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-brand-on-solid);
+  background: var(--color-brand-solid);
+}
+/* Sign-in: the login's hint tucked right under its field, very small. */
+.login-field > p[id$="-hint"] {
+  margin-top: 0.2rem;
+  font-size: 0.625rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+/* ---------------------------------------------------- sideways rails */
+/*
+ * A row that stands still and scrolls sideways (the notice board, the faces):
+ * native scrolling with snap points, so a finger, a trackpad and the keyboard
+ * all work, and no scrollbar painted over the cards.
+ */
+.showcase-rail,
+.faces-rail {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+  list-style: none;
+}
+.showcase-rail::-webkit-scrollbar,
+.faces-rail::-webkit-scrollbar {
+  display: none;
+}
+.showcase-rail > li,
+.faces-rail > li {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+/* ---------------------------------------------------------- drifting rows */
+/* drift-row.tsx: the track is moved by script; the finger pans the page up
+   and down as usual and the row sideways. */
+.drift-row {
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+}
+.drift-row:active {
+  cursor: grabbing;
+}
+.drift-row a,
+.drift-row img {
+  -webkit-user-drag: none;
+}
+.drift-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.drift-set {
+  display: flex;
+}
+
+/* -------------------------------------------------------- dashboard notices */
+/*
+ * The moving notice board (showcase.tsx): no board at all, only the cards.
+ * Announcements drift left, news right, events left, each row set half a card
+ * along from the one above like courses of brick; the rows run the width of
+ * the screen and fade away softly at both ends. The whole card is the link.
+ */
+.showcase {
+  --card-w: min(56vw, 13.5rem);
+  margin: 0 -1rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .showcase {
+    margin-inline: -1.5rem;
+  }
+}
+.showcase-title {
+  margin-bottom: 0.6rem;
+  padding: 0 1rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.showcase-rows {
+  display: grid;
+  gap: 0.6rem;
+}
+/* Soft at both ends: the cards thin away into the page, with room for their shadows. */
+.show-row {
+  padding-block: 0.35rem 0.85rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
+}
+.show-row-news .drift-track {
+  margin-left: calc(var(--card-w) / -2);
+}
+.show-row .drift-set {
+  gap: 0.55rem;
+  padding-right: 0.55rem;
+}
+.show-card {
+  display: flex;
+  flex-direction: column;
+  width: var(--card-w);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: 0 12px 26px -14px rgb(0 0 0 / 0.6);
+  text-decoration: none;
+}
+.show-card[data-tone="critical"] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-danger-600),
+    0 12px 26px -14px rgb(0 0 0 / 0.6);
+}
+.show-card[data-tone="important"] {
+  box-shadow:
+    inset 0 0 0 1.5px var(--color-brand-500),
+    0 12px 26px -14px rgb(0 0 0 / 0.6);
+}
+.show-img {
+  display: block;
+  width: 100%;
+  height: calc(var(--card-w) * 0.46);
+  object-fit: cover;
+  background: var(--color-surface-muted);
+}
+.show-img-empty {
+  display: grid;
+  place-items: center;
+  color: var(--color-brand-text);
+  background: var(--color-surface-sunken);
+}
+.show-row-news .show-img-empty,
+.show-row-event .show-img-empty {
+  color: var(--color-ink-muted);
+}
+.show-img-empty svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  opacity: 0.75;
+}
+.show-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.65rem 0.6rem;
+}
+.show-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.45rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand-text);
+}
+.show-row-news .show-kicker {
+  color: color-mix(in srgb, #0f8a8d 70%, var(--color-ink));
+}
+.show-row-event .show-kicker {
+  color: color-mix(in srgb, #6d4bd8 70%, var(--color-ink));
+}
+.show-kicker span + span {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--color-ink-muted);
+}
+.show-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.show-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--color-ink-secondary);
+  overflow-wrap: anywhere;
+}
+.showcase-foot {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.15rem;
+}
+.showcase-all {
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-brand-text);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.showcase-all:hover {
+  background: var(--color-surface-muted);
+}
+@media (min-width: 640px) {
+  .face {
+    width: 3.9rem;
+  }
+  .face-img {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+  .faces-title {
+    font-size: 0.625rem;
+  }
+}
+
+/* --------------------------------------------------------- dashboard faces */
+/* faces-ribbon.tsx: at the foot of the dashboard, a quiet row per group. */
+.faces {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-line);
+}
+@media (min-width: 64rem) {
+  .faces {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+.faces-row {
+  min-width: 0;
+}
+.faces-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.faces-rail {
+  gap: 0.25rem;
+}
+.face {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  width: 4rem;
+  gap: 0.375rem;
+  padding: 0.25rem 0;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+.face-img {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface-muted);
+}
+.face-initials {
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-ink-secondary);
+}
+.face-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  color: var(--color-ink-secondary);
+}
+a.face:hover .face-img {
+  border-color: var(--color-brand-solid);
+}
+a.face:hover .face-name {
+  color: var(--color-ink);
+}
+
+/* ---------------------------------------------------------- work cards */
+/* work-card.tsx: a pupil's homework and the register's topics. */
+.work-list {
+  display: grid;
+  gap: 0.625rem;
+  list-style: none;
+}
+.work-card {
+  position: relative;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.work-card:has(.work-link):hover {
+  border-color: var(--color-line-strong);
+}
+.work-card-compact {
+  padding: 0.75rem 0.875rem;
+}
+.work-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.625rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+.work-chip {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-brand-text);
+}
+.work-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+/* The whole card is the link. */
+.work-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.work-link:focus-visible {
+  outline: none;
+}
+.work-card:has(.work-link:focus-visible) {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.work-meta {
+  display: grid;
+  gap: 0.125rem;
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+}
+.work-overdue {
+  color: var(--color-danger-600);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- announcements, news, events */
+/* updates/page.tsx: filters as small chips, the items in columns like bricks. */
+.updates-filters {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  margin: 0.75rem 0 1rem;
+}
+.updates-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+}
+.updates-chip {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-ink-secondary);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+.updates-chip:hover {
+  color: var(--color-ink);
+}
+.updates-chip-on {
+  font-weight: 600;
+  color: var(--color-brand-on-solid);
+  background: var(--color-brand-solid);
+  box-shadow: none;
+}
+.updates-search {
+  position: relative;
+  width: min(100%, 18rem);
+}
+.updates-search svg {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+}
+.updates-search input {
+  width: 100%;
+  height: 2rem;
+  padding: 0 0.75rem 0 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  font-size: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.updates-search input:focus {
+  outline: none;
+  border-color: var(--color-brand-600);
+}
+.updates-grid {
+  columns: 2 10.5rem;
+  column-gap: 0.6rem;
+}
+@media (min-width: 900px) {
+  .updates-grid {
+    columns: 3 14rem;
+  }
+}
+.updates-item {
+  break-inside: avoid;
+  margin-bottom: 0.6rem;
+}
+.updates-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--color-line) 80%, transparent);
+  background: var(--color-surface);
+  text-decoration: none;
+  color: var(--color-ink);
+  transition: border-color 0.2s ease;
+}
+a.updates-card:hover {
+  border-color: var(--color-brand-300);
+}
+.updates-item[data-tone="critical"] .updates-card {
+  border-color: var(--color-danger-600);
+}
+.updates-item[data-tone="important"] .updates-card {
+  border-color: var(--color-brand-500);
+}
+.updates-img {
+  display: block;
+  width: 100%;
+  max-height: 11rem;
+  object-fit: cover;
+}
+.updates-body {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+}
+.updates-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-brand-text);
+}
+.updates-kicker svg {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+.updates-title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.updates-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--color-ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* A list's own box (ui/pagination.tsx, ListBox): it scrolls inside itself and
+   grows as it is scrolled, so the page around it — and the footer — stay put. */
+/* On a computer a long list scrolls in its own box, and at either end of it
+   the wheel or the finger carries on with the page — a box that kept the
+   scroll to itself left what is under it out of reach. On a phone a box
+   inside the page is a trap for the thumb: the list is simply the page. */
+.list-box {
+  max-height: min(78dvh, 56rem);
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  border-radius: 0.75rem;
+  scrollbar-width: thin;
+}
+@media (max-width: 1023.98px) {
+  .list-box {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+.list-end {
+  margin-top: 0.25rem;
+}
+
+/* Small tables under the timetable: the class's teachers, the bells. */
+.mini-heading {
+  margin-bottom: 0.4rem;
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.mini-table-wrap {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--color-ink-secondary);
+}
+.mini-table caption {
+  padding: 0.4rem 0.6rem 0;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.mini-table th {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  border-bottom: 1px solid var(--color-line);
+}
+.mini-table td {
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  border-top: 1px solid color-mix(in oklab, var(--color-line) 60%, transparent);
+}
+.mini-table tbody tr:first-child td {
+  border-top: none;
+}
+
+/*
+ * Loading shapes (components/ui/skeletons.tsx). Each page's loading screen is
+ * drawn in the shapes of what is about to arrive — round where a photo will
+ * be, a row where a row will be — and one soft light passes over all of them,
+ * the same on every page. Without motion they simply stand still.
+ */
+.bone {
+  background-color: var(--color-surface-sunken);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-surface) 60%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 120% 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bone {
+    animation: bone-shine 1.8s var(--ease-standard) infinite;
+  }
+}
+@keyframes bone-shine {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+/*
+ * Signing out (app-shell.tsx): the page dims and a ring turns from the moment
+ * the button is pressed, until the sign-in page has replaced it.
+ */
+html[data-leaving]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: color-mix(in oklab, var(--color-canvas) 78%, transparent);
+  cursor: progress;
+}
+html[data-leaving]::before {
+  content: "";
+  position: fixed;
+  z-index: 301;
+  top: 50%;
+  left: 50%;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem 0 0 -1rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-brand-solid);
+  border-top-color: transparent;
+  animation: leaving-turn 0.9s linear infinite;
+}
+@keyframes leaving-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Inside the phone app (html[data-app]) a tap is answered the way an app
+ * answers it, not the way a web page does: no blue flash over what was
+ * touched, no words selected by a long press on a button or a menu, no glow
+ * or bounce at the ends of the page, and whatever was pressed dims at once,
+ * before the network has said anything.
+ */
+html[data-app],
+html[data-app] body {
+  -webkit-tap-highlight-color: transparent;
+  /* Android's own stretch at the ends is switched off in the app itself
+     (MainActivity); this keeps the page from chaining a pull past its end. */
+  overscroll-behavior: none;
+}
+html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], label, nav, summary) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], summary):active {
+  opacity: 0.72;
+  transition: opacity 0s;
 }

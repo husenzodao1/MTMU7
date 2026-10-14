@@ -1,0 +1,15 @@
+{
+  "regions": [
+    "fra1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/dispatch-notifications",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/telegram-dispatch",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

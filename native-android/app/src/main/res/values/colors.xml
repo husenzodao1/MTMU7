@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The school's gold, behind the status-bar mark of a notification. -->
+    <color name="notification">#E3A130</color>
+    <color name="canvas">#F4F2EC</color>
+    <color name="canvas_night">#0A0E17</color>
+</resources>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 288">
+  <!-- МТМУ №7 · the app's splash: the opening's first frame, the shut book with
+       the app's mark on its orange cover, centred in a 288 box (the Android 12
+       splash icon's size, in dp) at the size the opening draws it in the app
+       (92 × 123). res/drawable/splash_book.xml is the same drawing. -->
+  <defs>
+    <linearGradient id="spine" x1="98" y1="0" x2="104.4" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="M103,85.5 h85 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-85 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" fill="#e2d7bd"/>
+  <path d="M101.5,84 h85 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-85 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" fill="#efe6d2"/>
+  <path d="M100,82.5 h83 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-83 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" fill="#ff5a1f"/>
+  <path d="M100,82.5 h83 a7,7 0 0 1 7,7 v109 a7,7 0 0 1 -7,7 h-83 a2,2 0 0 1 -2,-2 v-119 a2,2 0 0 1 2,-2 z" fill="url(#spine)"/>
+  <g transform="translate(122.84 122.84) scale(0.082656)">
+    <circle cx="256" cy="164" r="52" fill="#fff"/>
+    <path d="M256 362 C 230 312, 178 282, 110 270 M256 362 C 282 312, 334 282, 402 270" fill="none" stroke="#fff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

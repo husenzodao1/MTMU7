@@ -1,0 +1,65 @@
+name: Desktop app · Windows
+
+# Builds the Windows installer (desktop/, Electron) and publishes it as
+# MTMU7-windows-setup.exe on the `app-latest` release, where the portal's
+# download button points (/download/windows).
+#
+# The installer is not code-signed, so Windows SmartScreen asks once
+# ("More info → Run anyway"). A code-signing certificate removes that; see
+# docs/operations/MOBILE.md.
+
+on:
+  push:
+    paths:
+      - "desktop/**"
+      - "public/brand/**"
+      - ".github/workflows/desktop-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - run: npm ci
+
+      - name: Installer
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --win nsis --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mtmu7-windows-${{ github.run_number }}
+          path: desktop/dist/MTMU7-windows-setup.exe
+          if-no-files-found: error
+
+      - name: Publish to the download link
+        if: github.event_name == 'workflow_dispatch' || github.ref_name == 'main' || github.ref_name == 'claude/friendly-bell-smakfs'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release view app-latest --repo "$REPO" > /dev/null 2>&1 || \
+            gh release create app-latest --repo "$REPO" --title "МТМУ №7 · apps" \
+              --notes "The latest Android, Windows and iPhone builds of the МТМУ №7 portal. Download from https://mtmuraqami7.vercel.app/app" || true
+          gh release upload app-latest dist/MTMU7-windows-setup.exe --repo "$REPO" --clobber

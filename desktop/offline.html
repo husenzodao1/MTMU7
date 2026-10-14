@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="tg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>МТМУ №7</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      display: grid; place-items: center; text-align: center;
+      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(60% 45% at 50% 34%, rgb(255 181 71 / 0.22), transparent 70%),
+        linear-gradient(160deg, #231a5c 0%, #17306d 50%, #0a6d72 100%);
+      color: #f4f6fb; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 320px; }
+    .mark { position: relative; width: 120px; height: 120px; margin: 0 auto 26px; }
+    .mark svg.logo { width: 120px; height: 120px; opacity: 0.55; filter: grayscale(0.4); }
+    .badge {
+      position: absolute; right: -6px; bottom: 2px; width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center; background: #ffffff; box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    .badge svg { width: 24px; height: 24px; stroke: #d64545; }
+    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+    p { margin: 0 0 4px; color: #c9d3e6; font-size: 14px; }
+    .muted { color: #93a3c2; font-size: 13px; }
+    button {
+      margin-top: 24px; border: 0; border-radius: 999px; padding: 13px 30px;
+      background: #ffffff; color: #17306d; font: inherit; font-weight: 650; cursor: pointer;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 0.22);
+    }
+    button:active { transform: scale(0.98); }
+    .waiting { margin-top: 14px; font-size: 12px; color: #93a3c2; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">
+      <svg class="logo" viewBox="0 0 1024 1024">
+        <defs>
+  <radialGradient id="m-bg" cx="0.5" cy="0.34" r="0.82">
+    <stop offset="0" stop-color="#1b7253"/>
+    <stop offset="0.55" stop-color="#0b3f2e"/>
+    <stop offset="1" stop-color="#04201a"/>
+  </radialGradient>
+  <radialGradient id="m-glow" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#8ff3c4" stop-opacity="0.42"/>
+    <stop offset="0.6" stop-color="#5fe0a6" stop-opacity="0.12"/>
+    <stop offset="1" stop-color="#5fe0a6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="m-page" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset="1" stop-color="#cdf5e2"/>
+  </linearGradient>
+  <linearGradient id="m-lightR" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#6fe3ad"/>
+    <stop offset="1" stop-color="#d4fde9"/>
+  </linearGradient>
+  <linearGradient id="m-darkR" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#1e9e69"/>
+    <stop offset="1" stop-color="#5fd9a0"/>
+  </linearGradient>
+  <linearGradient id="m-lightL" x1="1" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#4fcf92"/>
+    <stop offset="1" stop-color="#b6f5d6"/>
+  </linearGradient>
+  <linearGradient id="m-darkL" x1="1" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#157f55"/>
+    <stop offset="1" stop-color="#3fbd83"/>
+  </linearGradient>
+  <linearGradient id="m-stem" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#e9fff4"/>
+    <stop offset="1" stop-color="#8be9bd"/>
+  </linearGradient></defs>
+  <g transform="translate(0 -40)"><path d="M499 752 C 501 684, 508 622, 522 566 L 540 570 C 526 626, 522 688, 527 752 Z" fill="url(#m-stem)"/>
+  <path d="M250 652 C 372 668, 462 712, 512 794 C 562 712, 652 668, 774 652" fill="none" stroke="#bdf0d7" stroke-opacity="0.34" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M207 598 C 350 618, 456 672, 512 768 C 568 672, 674 618, 817 598" fill="none" stroke="url(#m-page)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M514 612 C 494 520, 404 440, 288 448 C 372 518, 448 572, 514 612 Z" fill="url(#m-lightL)"/>
+  <path d="M514 612 C 448 572, 372 518, 288 448 C 312 556, 412 640, 514 612 Z" fill="url(#m-darkL)"/>
+  <path d="M500 600 C 440 562, 372 512, 304 460" fill="none" stroke="#eafff4" stroke-opacity="0.45" stroke-width="6" stroke-linecap="round"/>
+  <path d="M526 560 C 528 448, 616 322, 776 284 C 690 392, 600 482, 526 560 Z" fill="url(#m-lightR)"/>
+  <path d="M526 560 C 600 482, 690 392, 776 284 C 770 424, 664 566, 526 560 Z" fill="url(#m-darkR)"/>
+  <path d="M540 546 C 610 474, 690 392, 760 302" fill="none" stroke="#f2fff8" stroke-opacity="0.55" stroke-width="7" stroke-linecap="round"/><circle cx="690" cy="356" r="9" fill="#ffffff" fill-opacity="0.85"/><circle cx="687" cy="353" r="3.5" fill="#ffffff"/></g>
+      </svg>
+      <span class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/>
+          <path d="M19 12.86a10 10 0 0 0-2-1.39"/><path d="M2 8.82a15 15 0 0 1 4.18-2.64"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/>
+          <path d="m2 2 20 20"/>
+        </svg>
+      </span>
+    </div>
+    <h1>Интернет нест</h1>
+    <p>Пайвастро санҷед — барнома худаш бармегардад.</p>
+    <p class="muted">Нет подключения к интернету · No connection</p>
+    <button type="button" id="retry">Аз нав кӯшиш кардан</button>
+    <p class="waiting" id="waiting">Интизори пайваст…</p>
+  </main>
+  <script>
+    var HOME = "https://mtmuraqami7.vercel.app/dashboard";
+    function go() { location.href = HOME; }
+    document.getElementById("retry").addEventListener("click", go);
+    // Back by itself the moment the connection is: a look at the portal every
+    // few seconds, whatever Windows says. Windows reports "no network" whenever
+    // its own check of Microsoft's test page fails — behind many providers
+    // with the internet working — so its word is not waited for.
+    window.addEventListener("online", go);
+    function look() {
+      fetch(HOME, { method: "HEAD", mode: "no-cors", cache: "no-store" }).then(go, function () {});
+    }
+    setTimeout(look, 1500);
+    setInterval(look, 4000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+-- Small things the app keeps between launches: who is signed in (the access
+-- the server gave), when each list was last fetched, reads not yet told.
+CREATE TABLE kv (
+  key TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+get:
+SELECT value FROM kv WHERE key = ?;
+
+put:
+INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?);
+
+remove:
+DELETE FROM kv WHERE key = ?;
+
+clear:
+DELETE FROM kv;
+
+-- A conversation read with no line: told to the server once it is back.
+CREATE TABLE pending_read (
+  conversation_id TEXT NOT NULL PRIMARY KEY,
+  at INTEGER NOT NULL
+);
+
+pendingReads:
+SELECT * FROM pending_read;
+
+addPendingRead:
+INSERT OR REPLACE INTO pending_read (conversation_id, at) VALUES (?, ?);
+
+dropPendingRead:
+DELETE FROM pending_read WHERE conversation_id = ?;
+
+clearPendingReads:
+DELETE FROM pending_read;
+
+-- Any list the app shows from its own copy: news, announcements, the
+-- timetable… one JSON document per key, with when it was fetched.
+CREATE TABLE cache (
+  key TEXT NOT NULL PRIMARY KEY,
+  json TEXT NOT NULL,
+  fetched_at INTEGER NOT NULL
+);
+
+cached:
+SELECT * FROM cache WHERE key = ?;
+
+putCache:
+INSERT OR REPLACE INTO cache (key, json, fetched_at) VALUES (?, ?, ?);
+
+clearCache:
+DELETE FROM cache;
