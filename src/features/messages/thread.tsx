@@ -1197,6 +1197,8 @@ export function Thread({
       joined = !lastFull || reaches(more);
     }
     const fetched = rows;
+    // On the device at once, as they came (the stretch they make whole is recorded with the screen's, saveKept).
+    void keepMessages(currentUserId, fetched);
     if (fetched.length > 0) {
       const newest = at(fetched[0]!.created_at);
       const oldest = at(fetched[fetched.length - 1]!.created_at);
@@ -1284,6 +1286,7 @@ export function Thread({
             reactions: [],
           };
           setMessages((current) => (current.some((m) => m.id === row.id) ? current : mergeServer(current, [arrived])));
+          void keepMessages(currentUserId, [arrived]);
           return;
         }
         if (row.sender_id) {
@@ -1296,19 +1299,25 @@ export function Thread({
           });
         }
         if (!stickToBottom.current) setUnseen((count) => count + 1);
+        // Kept on the device the moment it arrives, not only when the
+        // conversation is left: the app may be closed straight after.
         if (row.sender_id && !sender) {
           void fetchMessageAction(conversation.id, row.id).then((result) => {
-            if (result.ok && result.data) upsert(result.data);
+            if (!result.ok || !result.data) return;
+            upsert(result.data);
+            void keepMessages(currentUserId, [result.data]);
           });
         } else {
-          upsert({
+          const arrived: ThreadMessage = {
             ...row,
             sender_first_name: sender?.first_name ?? null,
             sender_last_name: sender?.last_name ?? null,
             sender_avatar_url: sender?.avatar_url ?? null,
             is_favorite: false,
             reactions: [],
-          });
+          };
+          upsert(arrived);
+          void keepMessages(currentUserId, [arrived]);
         }
         // Seen if it is on the screen — read once it has been drawn there.
         readSoon();
