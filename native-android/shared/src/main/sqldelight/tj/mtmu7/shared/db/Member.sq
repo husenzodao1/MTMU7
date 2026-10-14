@@ -1,0 +1,29 @@
+-- Who is in each conversation, with how far each has read: the ticks.
+CREATE TABLE member (
+  conversation_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  role TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  avatar_url TEXT,
+  joined_at INTEGER,
+  last_read_at INTEGER,
+  last_delivered_at INTEGER,
+  PRIMARY KEY (conversation_id, user_id)
+);
+
+inConversation:
+SELECT * FROM member WHERE conversation_id = ? ORDER BY joined_at, user_id;
+
+upsert:
+INSERT OR REPLACE INTO member (conversation_id, user_id, role, first_name, last_name, avatar_url, joined_at, last_read_at, last_delivered_at)
+VALUES ?;
+
+setMarks:
+UPDATE member SET last_read_at = ?, last_delivered_at = ? WHERE conversation_id = ? AND user_id = ?;
+
+deleteIn:
+DELETE FROM member WHERE conversation_id = ?;
+
+clear:
+DELETE FROM member;

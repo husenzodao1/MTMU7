@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { isUuid } from "@/lib/validation/uuid";
 import { dispatchMessagePush, isAnyPushConfigured } from "@/lib/push/send";
+import { bearerToken, createAppClient } from "@/lib/supabase/app-client";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic";
  * while it is fresh: a second ask, from anybody, sends nothing.
  *
  * Answers before a single push is sent; the pushes go out after the response.
+ *
+ * The site's browser is known by its cookie; the phone app by its own session,
+ * sent as a bearer token (src/lib/supabase/app-client.ts).
  */
 export async function POST(request: Request) {
   if (!isAnyPushConfigured()) return NextResponse.json({ queued: false }, { status: 202 });
@@ -28,7 +32,8 @@ export async function POST(request: Request) {
   }
   if (!isUuid(id)) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
-  const supabase = await createClient();
+  const token = bearerToken(request);
+  const supabase = token ? createAppClient(token) : await createClient();
   const { data: visible } = await supabase.from("messages").select("id").eq("id", id).maybeSingle();
   if (!visible) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
