@@ -24,6 +24,7 @@ import {
   Mic,
   Minimize2,
   Palette,
+  ALargeSmall,
   Paperclip,
   Pencil,
   Pin,
@@ -62,7 +63,8 @@ import { FileCard, MessageText, ReactionBar, ReactionsPill, VoiceNote } from "@/
 import { checkFile, FILE_ACCEPT, formatBytes, formatDuration, kindOf } from "@/features/messages/files";
 import { DRAFT_PREFIX } from "@/features/messages/forget";
 import { LIST_OPS_EVENT, clearedUpTo } from "@/features/messages/list-ops";
-import { forgetConversation, forgetMessages, keepMessages, keepRun, keptMessages, type KeptRun } from "@/features/messages/local-store";
+import { forgetConversation, forgetMessages, keepMessages, keepPhoto, keepRun, keptMessages, keptPhoto, type KeptRun } from "@/features/messages/local-store";
+import { keptMarks, laterMark, rememberMarks } from "@/features/messages/read-marks";
 import { markReadUpTo } from "@/features/messages/read-queue";
 import { MessageGestures } from "@/features/messages/gestures";
 import {
@@ -86,6 +88,7 @@ import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/membe
 import { Ticks, tickState } from "@/features/messages/ticks";
 import { PhotoViewer, type ViewedPhoto } from "@/features/messages/photo-viewer";
 import { canRecord, useVoiceRecorder, type Recording } from "@/features/messages/recorder";
+import { TextSizeDialog, useChatTextSize } from "@/features/messages/text-size";
 import { useWallpaper, WallpaperDialog, WALLPAPERS, type Wallpaper } from "@/features/messages/wallpaper";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
 import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
@@ -288,6 +291,8 @@ export function Thread({
   const [membersOpen, setMembersOpen] = useState(false);
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [wallpaper] = useWallpaper();
+  const [textSizeOpen, setTextSizeOpen] = useState(false);
+  useChatTextSize();
   // The message whose menu is open: from its button, a long press or a right-click.
   const [menuFor, setMenuFor] = useState<string | null>(null);
   // The message a tap on a quote has just brought into view, lit for a moment.
@@ -363,6 +368,11 @@ export function Thread({
   // keep the two in step, and an effect that sets state on every render of the
   // parent is a render loop waiting to happen; a lookup merged at read time
   // cannot fall behind because there is nothing to fall behind.
+  //
+  // Read and delivered marks only ever move forward, on the server and here:
+  // a page kept on the phone, made before the other side read, can never show
+  // an older mark than one already heard (realtime, a catch-up, the last time
+  // this conversation was open — kept on the device, read-marks.ts).
   const [readSince, setReadSince] = useState<Record<string, string | null>>({});
   const [deliveredSince, setDeliveredSince] = useState<Record<string, string | null>>({});
   const members = useMemo(
@@ -371,13 +381,45 @@ export function Thread({
         m.user_id in readSince || m.user_id in deliveredSince
           ? {
               ...m,
-              last_read_at: m.user_id in readSince ? readSince[m.user_id] : m.last_read_at,
-              last_delivered_at: m.user_id in deliveredSince ? deliveredSince[m.user_id] : m.last_delivered_at,
+              last_read_at: laterMark(m.last_read_at, readSince[m.user_id]),
+              last_delivered_at: laterMark(m.last_delivered_at, deliveredSince[m.user_id]),
             }
           : m
       ),
     [initialMembers, readSince, deliveredSince]
   );
+  /** Marks heard from anywhere: kept only where they move a member forward. */
+  const heardMarks = useCallback(
+    (rows: Array<{ user_id: string; last_read_at?: string | null; last_delivered_at?: string | null }>) => {
+      const forward = (current: Record<string, string | null>, key: "last_read_at" | "last_delivered_at") => {
+        let next = current;
+        for (const row of rows) {
+          const mark = row[key];
+          if (!mark) continue;
+          const was = current[row.user_id];
+          if (laterMark(was, mark) === was) continue;
+          if (next === current) next = { ...current };
+          next[row.user_id] = mark;
+        }
+        return next;
+      };
+      setReadSince((current) => forward(current, "last_read_at"));
+      setDeliveredSince((current) => forward(current, "last_delivered_at"));
+      rememberMarks(currentUserId, conversation.id, rows);
+    },
+    [currentUserId, conversation.id]
+  );
+  // The marks heard the last time this conversation was open, before the page's own.
+  useEffect(() => {
+    let live = true;
+    void Promise.resolve().then(() => {
+      const kept = keptMarks(currentUserId, conversation.id);
+      if (live && kept.length > 0) heardMarks(kept);
+    });
+    return () => {
+      live = false;
+    };
+  }, [currentUserId, conversation.id, heardMarks]);
   const memberMap = useMemo(() => new Map(members.map((m) => [m.user_id, m])), [members]);
   // The realtime handlers read the members through this, so a read receipt —
   // which changes the members — does not tear the subscription down and set it
@@ -525,8 +567,11 @@ export function Thread({
         media_duration: local.media_duration ?? null,
         created_at: local.created_at,
       };
-      // Kept on the device before anything is sent (outbox.ts).
+      // Kept on the device before anything is sent (outbox.ts). A photo is
+      // also kept as the conversation's own, so it shows from the device the
+      // next time the conversation opens, not from a download.
       keepOutgoing(row, bytes);
+      if (local.type === "image" && local.media_path && bytes) void keepPhoto(currentUserId, local.media_path, bytes.blob);
       // A photo, file or recording starts uploading now, alongside whatever
       // is ahead of it in the queue, and its message waits in line only for
       // the insert.
@@ -1086,6 +1131,20 @@ export function Thread({
     };
   }, [conversation.id, currentUserId]);
 
+  /** The others' read and delivered marks, from the server. A channel shows no ticks: none asked for. */
+  const refreshMarks = useCallback(async () => {
+    if (isBroadcast(conversation.type)) return;
+    try {
+      const { data, error } = await getBrowserClient()
+        .from("conversation_members")
+        .select("user_id, last_read_at, last_delivered_at")
+        .eq("conversation_id", conversation.id);
+      if (!error && data) heardMarks(data);
+    } catch {
+      // Asked again at the next catch-up.
+    }
+  }, [conversation.id, conversation.type, heardMarks]);
+
   /**
    * The newest of the conversation from the server, laid over what is on the
    * screen (mergeServer). If more has been said since the newest message
@@ -1106,6 +1165,8 @@ export function Thread({
         return null;
       }
     };
+    // How far the others have read and received: the ticks, whatever realtime missed.
+    void refreshMarks();
     // Deleted for oneself on another device since this page was made: hidden here too.
     void Promise.resolve(
       supabase.from("conversation_members").select("cleared_at").eq("conversation_id", conversation.id).eq("user_id", currentUserId).maybeSingle()
@@ -1156,29 +1217,45 @@ export function Thread({
       }
     }
     readSoon();
-  }, [conversation.id, currentUserId, hideUpTo, readSoon]);
+  }, [conversation.id, currentUserId, hideUpTo, readSoon, refreshMarks]);
 
   // Everything the server has said, kept on the device as it comes — the
   // page's messages, realtime's, the catch-up's, older pages, edits — with
   // the stretch of it that has nothing missing (local-store.ts).
   const keptRef = useRef(new Map<string, ThreadMessage>());
   const keptSpan = useRef("");
+  const saveKept = useCallback(() => {
+    const s = span.current;
+    const changed = messagesRef.current.filter((m) => !isLocal(m) && keptRef.current.get(m.id) !== m);
+    const spanKey = s ? `${s.from}:${s.to}` : "";
+    if (changed.length === 0 && spanKey === keptSpan.current) return;
+    for (const m of changed) keptRef.current.set(m.id, m);
+    keptSpan.current = spanKey;
+    const inSpan = s ? changed.filter((m) => at(m.created_at) >= s.from && at(m.created_at) <= s.to) : [];
+    const inside = new Set(inSpan.map((m) => m.id));
+    const outside = changed.filter((m) => !inside.has(m.id));
+    if (s) void keepRun(currentUserId, conversation.id, inSpan, s.from, s.to);
+    if (outside.length > 0) void keepMessages(currentUserId, outside);
+  }, [currentUserId, conversation.id]);
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const s = span.current;
-      const changed = messages.filter((m) => !isLocal(m) && keptRef.current.get(m.id) !== m);
-      const spanKey = s ? `${s.from}:${s.to}` : "";
-      if (changed.length === 0 && spanKey === keptSpan.current) return;
-      for (const m of changed) keptRef.current.set(m.id, m);
-      keptSpan.current = spanKey;
-      const inSpan = s ? changed.filter((m) => at(m.created_at) >= s.from && at(m.created_at) <= s.to) : [];
-      const inside = new Set(inSpan.map((m) => m.id));
-      const outside = changed.filter((m) => !inside.has(m.id));
-      if (s) void keepRun(currentUserId, conversation.id, inSpan, s.from, s.to);
-      if (outside.length > 0) void keepMessages(currentUserId, outside);
-    }, 400);
+    const timer = window.setTimeout(saveKept, 400);
     return () => window.clearTimeout(timer);
-  }, [messages, currentUserId, conversation.id]);
+  }, [messages, saveKept]);
+  // Leaving the conversation, or the app put aside, keeps what is on the
+  // screen at once: leaving within the pause above used to cancel it, and the
+  // newest messages were not there the next time it opened.
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") saveKept();
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", saveKept);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", saveKept);
+      saveKept();
+    };
+  }, [saveKept]);
 
   // --------------------------------------------------------------- realtime
 
@@ -1243,11 +1320,7 @@ export function Thread({
         { event: "UPDATE", schema: "public", table: "conversation_members", filter: `conversation_id=eq.${conversation.id}` },
         (payload) => {
           const row = payload.new as { user_id: string; last_read_at: string | null; last_delivered_at?: string | null };
-          setReadSince((current) => (current[row.user_id] === row.last_read_at ? current : { ...current, [row.user_id]: row.last_read_at }));
-          const delivered = row.last_delivered_at;
-          if (delivered !== undefined) {
-            setDeliveredSince((current) => (current[row.user_id] === delivered ? current : { ...current, [row.user_id]: delivered }));
-          }
+          heardMarks([row]);
         }
       )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversation.id}` }, (payload) => {
@@ -1300,14 +1373,32 @@ export function Thread({
     // Opening the thread is reading what it shows (never done while a page
     // is only fetched ahead: warm-pages.ts) — what is on the screen, once drawn.
     readSoon();
+    // What was said since the page was made, at once: not only once realtime
+    // has joined, which on a weak line can take seconds.
+    void Promise.resolve().then(catchUp);
+    // Realtime on a phone can stop without a word (the line changed, the app
+    // was put aside). While the conversation is on the screen it also looks
+    // for itself, lightly: the ticks, and whether the newest message is here.
+    const look = window.setInterval(() => {
+      if (document.visibilityState !== "visible" || !navigator.onLine) return;
+      void refreshMarks();
+      void Promise.resolve(supabase.rpc("get_conversation_messages", { p_conversation_id: conversation.id, p_limit: 1 })).then(
+        ({ data, error }) => {
+          const newest = !error && Array.isArray(data) ? (data[0] as { id?: string } | undefined) : undefined;
+          if (newest?.id && !messagesRef.current.some((m) => m.id === newest.id)) void catchUp();
+        },
+        () => undefined
+      );
+    }, 8000);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", onOnline);
     return () => {
+      window.clearInterval(look);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", onOnline);
       void supabase.removeChannel(channel);
     };
-  }, [conversation.id, currentUserId, upsert, applyReaction, catchUp, readSoon]);
+  }, [conversation.id, currentUserId, upsert, applyReaction, catchUp, readSoon, heardMarks, refreshMarks]);
 
   // --------------------------------------------------------- full screen
 
@@ -1699,6 +1790,10 @@ export function Thread({
               <Palette aria-hidden />
               {t("wallpaper")}
             </Overlay.DropdownMenuItem>
+            <Overlay.DropdownMenuItem onSelect={() => setTextSizeOpen(true)}>
+              <ALargeSmall aria-hidden />
+              {t("textSize.title")}
+            </Overlay.DropdownMenuItem>
             {conversation.type !== "direct" && !isSupport && !isChannel ? (
               <Overlay.DropdownMenuItem onSelect={() => setMembersOpen(true)}>
                 <Users aria-hidden />
@@ -1840,7 +1935,7 @@ export function Thread({
                             // A caption wraps to the photo's width, not the other way round.
                             style={isPhoto ? { maxWidth: photoBox(m.media_width, m.media_height).width + 8 } : undefined}
                             className={cn(
-                              "chat-bubble min-w-0 text-sm",
+                              "chat-bubble min-w-0",
                               isPhoto || isFile ? "p-1" : isVoice ? "px-2 pb-1.5 pt-1.5" : "px-2.5 pb-1 pt-1.5",
                               mine ? "chat-bubble-mine" : "chat-bubble-theirs",
                               firstOfRun && (mine ? "chat-tail-mine" : "chat-tail-theirs"),
@@ -1851,7 +1946,7 @@ export function Thread({
                               <button
                                 type="button"
                                 onClick={() => openCard(m.sender_id)}
-                                className={cn("mb-0.5 block max-w-full truncate text-start text-xs font-semibold text-brand-text-strong hover:underline", (isPhoto || isFile) && "px-1.5 pt-0.5")}
+                                className={cn("mb-0.5 block max-w-full truncate text-start text-[0.8em] font-semibold text-brand-text-strong hover:underline", (isPhoto || isFile) && "px-1.5 pt-0.5")}
                               >
                                 {senderName(m)}
                               </button>
@@ -1861,7 +1956,7 @@ export function Thread({
                                 type="button"
                                 onClick={() => m.reply_to_id && void jumpTo(m.reply_to_id)}
                                 className={cn(
-                                  "chat-quote mb-1 block w-full min-w-0 rounded-md border-s-4 border-brand-500 bg-[var(--chat-quote)] px-2 py-1 text-start text-xs transition-colors",
+                                  "chat-quote mb-1 block w-full min-w-0 rounded-md border-s-4 border-brand-500 bg-[var(--chat-quote)] px-2 py-1 text-start text-[0.8em] transition-colors",
                                   (isPhoto || isFile) && "mx-0.5 w-[calc(100%-0.25rem)]"
                                 )}
                               >
@@ -1882,7 +1977,7 @@ export function Thread({
                             ) : m.type === "location" && m.location_lat !== null && m.location_lng !== null ? (
                               <LocationCard lat={Number(m.location_lat)} lng={Number(m.location_lng)} label={m.content} openLabel={t("openMap")} title={t("locationShort")} />
                             ) : isPhoto ? (
-                              <ChatPhoto message={m} label={t("viewPhoto")} onOpen={(src) => openPhoto(m, src)} overlay={m.content ? null : meta(true)} />
+                              <ChatPhoto message={m} owner={currentUserId} label={t("viewPhoto")} onOpen={(src) => openPhoto(m, src)} overlay={m.content ? null : meta(true)} />
                             ) : isFile ? (
                               <FileCard
                                 message={m}
@@ -2245,7 +2340,7 @@ export function Thread({
                   }}
                   maxLength={MESSAGE_MAX_LENGTH}
                   placeholder={attached ? t("photoCaption") : t("composerPlaceholder")}
-                  className="field-sizing-content max-h-36 min-h-11 w-full min-w-0 resize-none bg-transparent px-2 py-2.5 text-[0.9375rem] leading-6 text-ink placeholder:text-ink-muted focus:outline-none"
+                  className="field-sizing-content max-h-36 min-h-11 w-full min-w-0 resize-none bg-transparent px-2 py-2.5 text-[length:var(--chat-text,16px)] leading-[1.45] text-ink placeholder:text-ink-muted focus:outline-none"
                   aria-describedby="message-hint"
                 />
               </div>
@@ -2281,6 +2376,17 @@ export function Thread({
         open={wallpaperOpen}
         onOpenChange={setWallpaperOpen}
         labels={{ title: t("wallpaper"), description: t("wallpaperDescription"), close: tRoot("common.close"), names: wallpaperNames }}
+      />
+      <TextSizeDialog
+        open={textSizeOpen}
+        onOpenChange={setTextSizeOpen}
+        labels={{
+          title: t("textSize.title"),
+          description: t("textSize.description"),
+          close: tRoot("common.close"),
+          sample: t("textSize.sample"),
+          names: { small: t("textSize.small"), medium: t("textSize.medium"), large: t("textSize.large"), xlarge: t("textSize.xlarge") },
+        }}
       />
 
       {conversation.type !== "direct" && !isSupport ? (
@@ -2577,14 +2683,44 @@ function photoBox(width: number | null, height: number | null): { width: number;
  *
  * Its box is the photo's own shape from the moment the bubble appears, so the
  * conversation does not jump when the picture arrives. The copy on this device
- * is shown while the upload is on its way; everybody else gets a signed link,
- * asked for together with every other photo on screen.
+ * is shown while the upload is on its way. After that, the bytes kept on the
+ * device (sent from here, or downloaded once: local-store.ts) come first, with
+ * no line too; only a photo not kept yet asks for a signed link — together
+ * with every other photo on screen — and is kept once it has come. While it
+ * comes, the box says so.
  */
-function ChatPhoto({ message, label, onOpen, overlay }: { message: ThreadMessage; label: string; onOpen: (src: string) => void; overlay: ReactNode }) {
-  const remote = useSignedUrl(message.local_preview ? null : message.media_path);
-  const src = message.local_preview ?? remote;
+function ChatPhoto({ message, owner, label, onOpen, overlay }: { message: ThreadMessage; owner: string; label: string; onOpen: (src: string) => void; overlay: ReactNode }) {
+  const path = message.media_path ?? null;
+  const [kept, setKept] = useState<{ path: string; url: string | null } | null>(null);
+  useEffect(() => {
+    if (message.local_preview || !path) return;
+    let live = true;
+    let url: string | null = null;
+    void keptPhoto(owner, path).then((blob) => {
+      if (!live) return;
+      url = blob ? URL.createObjectURL(blob) : null;
+      setKept({ path, url });
+    });
+    return () => {
+      live = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [owner, path, message.local_preview]);
+  const looked = kept?.path === path;
+  const keptUrl = looked ? kept.url : null;
+  const remote = useSignedUrl(message.local_preview || !looked || keptUrl ? null : path);
+  const src = message.local_preview ?? keptUrl ?? remote;
   const [loaded, setLoaded] = useState<string | null>(null);
   const box = photoBox(message.media_width, message.media_height);
+  // Downloaded: kept, so the next time it is there at once.
+  const keepDownloaded = (url: string) => {
+    if (!path || url !== remote) return;
+    void fetch(url)
+      .then((answer) => (answer.ok ? answer.blob() : null))
+      .then((blob) => (blob && blob.size > 0 ? keepPhoto(owner, path, blob) : undefined))
+      .catch(() => undefined);
+  };
+  const coming = !message.pending && !message.failed && (!src || (loaded !== src && !src.startsWith("blob:")));
   return (
     <button
       type="button"
@@ -2603,11 +2739,22 @@ function ChatPhoto({ message, label, onOpen, overlay }: { message: ThreadMessage
           // A picture already in the cache can finish before React is
           // listening; the ref catches that one, onLoad every other.
           ref={(img) => {
-            if (img?.complete && img.naturalWidth > 0 && loaded !== src) setLoaded(src);
+            if (img?.complete && img.naturalWidth > 0 && loaded !== src) {
+              setLoaded(src);
+              keepDownloaded(src);
+            }
           }}
-          onLoad={() => setLoaded(src)}
+          onLoad={() => {
+            setLoaded(src);
+            keepDownloaded(src);
+          }}
           className={cn("size-full object-cover transition-opacity duration-300", loaded === src || src.startsWith("blob:") ? "opacity-100" : "opacity-0")}
         />
+      ) : null}
+      {coming ? (
+        <span className="absolute inset-0 flex items-center justify-center" data-photo-coming="">
+          <LoaderCircle className="size-7 animate-spin text-ink-muted" aria-hidden />
+        </span>
       ) : null}
       {message.pending ? (
         <span className="absolute inset-0 flex items-center justify-center bg-black/20">

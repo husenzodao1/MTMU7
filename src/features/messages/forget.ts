@@ -3,6 +3,7 @@
 import { forgetListOps } from "@/features/messages/list-ops";
 import { forgetChatStores } from "@/features/messages/local-store";
 import { forgetOutbox } from "@/features/messages/outbox";
+import { forgetMarks } from "@/features/messages/read-marks";
 import { forgetReads } from "@/features/messages/read-queue";
 
 /** Where a conversation's unsent words are kept, per person and conversation (thread.tsx). */
@@ -16,6 +17,7 @@ export const DRAFT_PREFIX = "chat-draft:";
 export async function forgetChat(): Promise<void> {
   forgetOutbox();
   forgetReads();
+  forgetMarks();
   forgetListOps();
   try {
     for (let i = localStorage.length - 1; i >= 0; i -= 1) {

@@ -580,6 +580,15 @@
       "originalNotFound": "The original message wasn't found",
       "wallpaper": "Chat wallpaper",
       "wallpaperDescription": "Saved on this device only.",
+      "textSize": {
+        "title": "Text size",
+        "description": "How large messages are. Saved on this device only.",
+        "sample": "Hello! I've sent the homework.",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "xlarge": "Extra large"
+      },
       "wallpapers": {
         "doodle": "Doodles",
         "plain": "Plain",

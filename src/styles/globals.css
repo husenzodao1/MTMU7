@@ -927,6 +927,9 @@ img[data-broken] {
   border-radius: 0.6rem;
   box-shadow: var(--chat-shadow);
   overflow-wrap: anywhere;
+  /* The size chosen on this device (text-size.tsx); quotes and names follow it in em. */
+  font-size: var(--chat-text, 16px);
+  line-height: 1.4;
 }
 .chat-bubble-mine {
   background: var(--chat-mine);

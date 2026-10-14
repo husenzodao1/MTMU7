@@ -18,7 +18,9 @@ import type { ThreadMessage } from "@/features/messages/types";
  * messenger works as it would with nothing kept.
  */
 
-const VERSION = 1;
+const VERSION = 2;
+/** Photos of conversations kept on the device, newest looked at first; older ones come from the server again. */
+const KEEP_PHOTOS = 400;
 const PREFIX = "mtmu7-chat-";
 /** The databases made on this device, so signing out can empty every one of them. */
 const NAMES_KEY = "mtmu7:chat-stores";
@@ -81,6 +83,7 @@ function open(userId: string): Promise<IDBDatabase | null> {
       }
       if (!db.objectStoreNames.contains("lists")) db.createObjectStore("lists", { keyPath: "key" });
       if (!db.objectStoreNames.contains("blobs")) db.createObjectStore("blobs", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("photos")) db.createObjectStore("photos", { keyPath: "path" }).createIndex("at", "at");
     };
     request.onsuccess = () => {
       const db = request.result;
@@ -420,6 +423,49 @@ export async function dropBlob(userId: string, id: string): Promise<void> {
     await done(tx);
   } catch {
     // Taken next time.
+  }
+}
+
+/**
+ * A photo of a conversation, kept by its storage path: the bytes sent from
+ * here, or those downloaded once. A conversation then shows it at once, with
+ * no line too, instead of asking for a link and the picture again each time.
+ */
+export async function keepPhoto(userId: string, path: string, blob: Blob): Promise<void> {
+  const db = await open(userId);
+  if (!db || !path) return;
+  try {
+    const tx = db.transaction("photos", "readwrite");
+    const store = tx.objectStore("photos");
+    store.put({ path, blob, at: Date.now() });
+    // The oldest go once there are more than the limit.
+    const count = store.count();
+    count.onsuccess = () => {
+      let extra = count.result - KEEP_PHOTOS;
+      if (extra <= 0) return;
+      const cursor = store.index("at").openCursor();
+      cursor.onsuccess = () => {
+        const at = cursor.result;
+        if (!at || extra <= 0) return;
+        at.delete();
+        extra -= 1;
+        at.continue();
+      };
+    };
+    await done(tx);
+  } catch {
+    // Downloaded again next time.
+  }
+}
+
+export async function keptPhoto(userId: string, path: string): Promise<Blob | null> {
+  const db = await open(userId);
+  if (!db || !path) return null;
+  try {
+    const row = (await asked(db.transaction("photos", "readonly").objectStore("photos").get(path))) as { blob?: Blob } | undefined | null;
+    return row?.blob instanceof Blob ? row.blob : null;
+  } catch {
+    return null;
   }
 }
 
