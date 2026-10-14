@@ -1,3 +1,4 @@
+import { MARK_SCALE, onScale } from "../marks.ts";
 
 export interface InlineButton {
   text: string;
@@ -337,7 +338,7 @@ export function number(value: number): string {
 
 /** A mark as it is written on a school form: "5", or "18/20" when not out of five. */
 export function markText(score: number, max: number): string {
-  return max === 5 ? number(score) : `${number(score)}/${number(max)}`;
+  return max === MARK_SCALE ? number(score) : `${number(score)}/${number(max)}`;
 }
 
 function shortStatus(status: string, locale: Loc): string {
@@ -814,9 +815,9 @@ export function reportMessage(
   // mark, and a term mark is a verdict rather than part of the sum.
   const counted = report.grades.filter((g) => !g.final && g.max > 0);
   if (counted.length > 1) {
-    // On the five-point scale every mark is read on: 18 out of 20 counts as
-    // 4.5, not as eighteen.
-    const mean = counted.reduce((sum, g) => sum + (g.max === 5 ? g.score : (g.score / g.max) * 5), 0) / counted.length;
+    // On the school's scale every mark is read on: 18 out of 20 counts as 9,
+    // not as eighteen.
+    const mean = counted.reduce((sum, g) => sum + onScale(g.score, g.max), 0) / counted.length;
     // No rule of its own: the footer draws one directly underneath, and two in
     // a row look like a mistake.
     lines.push("", `${w.average}: <b>${mean.toFixed(1)}</b>`);

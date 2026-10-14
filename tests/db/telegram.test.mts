@@ -204,14 +204,14 @@ describe("what a chat may read", () => {
   it("gives the term so far as one table: each subject's marks, average and absences", async () => {
     await db.query(
       `INSERT INTO public.grades (school_id, student_id, class_subject_id, assessment_type_id, score, max_score)
-       VALUES ($1, $2, $3, $4, 5, 5), ($1, $2, $3, $4, 4, 5)`,
+       VALUES ($1, $2, $3, $4, 9, 10), ($1, $2, $3, $4, 8, 10)`,
       [t.schoolA, a.students.studentA, a.mathA, a.assessmentTest]
     );
     const report = await service<{
       r: { results: Array<{ subject: { tg: string }; marks: Array<{ score: number }>; average: number | null; absences: number }>; term: { name: string | null } };
     }>(`SELECT public.telegram_report($1, $2, 'results', NULL) AS r`, [CHAT.toString(), a.students.studentA]);
     const math = report!.r.results.find((row) => row.subject.tg === "Math")!;
-    assert.deepEqual([math.marks.map((m) => Number(m.score)).sort(), Number(math.average)], [[4, 5], 4.5]);
+    assert.deepEqual([math.marks.map((m) => Number(m.score)).sort(), Number(math.average)], [[8, 9], 8.5]);
     const physics = report!.r.results.find((row) => row.subject.tg === "Physics")!;
     assert.deepEqual([physics.marks.length, physics.average], [0, null], "every subject of the class, even without marks");
     assert.equal(report!.r.term.name, "Q1");

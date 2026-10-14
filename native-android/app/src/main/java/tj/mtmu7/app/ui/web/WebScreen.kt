@@ -67,7 +67,12 @@ fun WebScreen(
         }
     }
 
-    BackHandler(enabled = visible && canGoBack) { view?.goBack() }
+    // Back closes what the page has open first (a menu, a dialog, the register
+    // on the full screen) — the site's own rule for its app (native-app.tsx).
+    BackHandler(enabled = visible && canGoBack) {
+        val page = view ?: return@BackHandler
+        page.evaluateJavascript(CLOSE_OPEN) { closed -> if (closed != "true") page.goBack() }
+    }
 
     Box(modifier.fillMaxSize()) {
         if (ready) {
@@ -138,3 +143,8 @@ private fun create(context: Context, background: Int, url: String): WebView = We
     setDownloadListener { link, _, _, _, _ -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) } }
     loadUrl(url)
 }
+
+/** True when something open on the page took the back press (it is told Escape, as the site's app shell does). */
+private const val CLOSE_OPEN =
+    "(function(){var o=document.querySelector('[role=\"dialog\"][data-state=\"open\"],[role=\"menu\"][data-state=\"open\"],[role=\"listbox\"][data-state=\"open\"]');" +
+        "if(!o)return false;(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',bubbles:true}));return true})()"

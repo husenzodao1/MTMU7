@@ -26,7 +26,7 @@ const school = { name: "МТМУ №7" };
 
 const grade = {
   score: 5,
-  max: 5,
+  max: 10,
   date: "2026-09-25",
   subject: { tg: "Математика", ru: "Математика", en: "Mathematics" },
   work: { tg: "Кори синфӣ", ru: "Работа на уроке", en: "Classwork" },
@@ -212,7 +212,7 @@ describe("reports a parent can read at a glance", () => {
     from: "2026-09-21",
     to: "2026-09-26",
     grades: [
-      { date: "2026-09-22", score: 5, max: 5, subject: S("Забони тоҷикӣ ва адабиёти классикӣ"), work: S("Иншо") },
+      { date: "2026-09-22", score: 9, max: 10, subject: S("Забони тоҷикӣ ва адабиёти классикӣ"), work: S("Иншо") },
       { date: "2026-09-23", score: 18, max: 20, subject: S("Физика & <астрономия>"), work: S("Санҷиш") },
     ],
     attendance: [{ date: "2026-09-24", status: "late", period: 2, subject: S("Химия") }],

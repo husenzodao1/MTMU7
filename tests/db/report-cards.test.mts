@@ -30,12 +30,12 @@ before(async () => {
   const grade = async (code: string, score: number) =>
     db.query(
       `INSERT INTO public.grades (school_id, student_id, class_subject_id, academic_term_id, assessment_type_id, score, max_score, grade_date)
-       VALUES ($1, $2, $3, $4, $5, $6, 5, current_date - 5)`,
+       VALUES ($1, $2, $3, $4, $5, $6, 10, current_date - 5)`,
       [SCHOOL_A, a.students.studentA, a.mathA, a.termCurrent, await type(code), score]
     );
-  await grade("classwork", 5);
-  await grade("test", 4);
-  await grade("term_final", 4);
+  await grade("classwork", 10);
+  await grade("test", 8);
+  await grade("term_final", 8);
   const absent = (days: number, status: string) =>
     db.query(
       `INSERT INTO public.attendance_records (school_id, student_id, class_id, class_subject_id, attendance_date, status)
@@ -56,8 +56,8 @@ describe("a class's report cards", () => {
     assert.deepEqual(
       mine.map((m) => [m.kind, m.mark, m.marks_count]),
       [
-        ["average", "4.3", 2],
-        ["term_final", "4.0", 1],
+        ["average", "8.7", 2],
+        ["term_final", "8.0", 1],
       ]
     );
   });

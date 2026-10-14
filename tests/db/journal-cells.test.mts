@@ -90,12 +90,18 @@ describe("one square, one pen", () => {
     assert.equal(await absenceOf(), undefined);
   });
 
+  it("takes a ten: marks are out of ten (00097)", async () => {
+    const outcome = await save(t.users.teacherA, [cell("10")]);
+    assert.deepEqual(outcome.errors, []);
+    assert.equal(Number((await markOf())!.score), 10);
+  });
+
   it("names a square it cannot read rather than dropping it", async () => {
     // Losing what somebody typed into a register without saying so is how a
     // term's marks go missing.
-    const outcome = await save(t.users.teacherA, [cell("пять"), cell("9"), cell("2.5")]);
+    const outcome = await save(t.users.teacherA, [cell("пять"), cell("11"), cell("2.5")]);
     assert.deepEqual(outcome.errors.map((e) => e.code).sort(), ["invalid", "out_of_range"]);
-    assert.equal(outcome.saved, 1, "2.5 out of 5 is a legitimate mark");
+    assert.equal(outcome.saved, 1, "2.5 out of 10 is a legitimate mark");
   });
 
   it("accepts a comma where a teacher types one", async () => {

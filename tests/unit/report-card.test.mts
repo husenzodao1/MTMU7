@@ -10,9 +10,9 @@ const report: Report = {
   from: "2026-09-21",
   to: "2026-09-27",
   grades: [
-    { date: "2026-09-27", score: 5, max: 5, subject: named("Математика"), work: named("Санҷиш") },
+    { date: "2026-09-27", score: 10, max: 10, subject: named("Математика"), work: named("Санҷиш") },
     { date: "2026-09-26", score: 18, max: 20, subject: named("Забони англисӣ"), work: named("Тест") },
-    { date: "2026-09-25", score: 2, max: 5, subject: named("Химия"), work: named("Шифоҳӣ"), final: true },
+    { date: "2026-09-25", score: 4, max: 10, subject: named("Химия"), work: named("Шифоҳӣ"), final: true },
   ],
   attendance: [{ date: "2026-09-27", status: "excused", period: 3, subject: named("Физика") }],
 };
@@ -29,17 +29,17 @@ describe("the report picture's contents", () => {
     assert.equal(model.dateLine, "27.09.2026");
     const [grades, attendance] = model.sections;
     assert.deepEqual(grades!.rows.map((r) => [r.title, r.value, r.tone]), [
-      ["Математика (ru)", "5", "great"],
+      ["Математика (ru)", "10", "great"],
       ["Забони англисӣ (ru)", "18/20", "great"],
-      ["Химия (ru)", "2", "poor"],
+      ["Химия (ru)", "4", "poor"],
     ]);
     assert.equal(attendance!.rows[0]!.tone, "excused");
     assert.match(attendance!.rows[0]!.detail ?? "", /3/);
   });
 
-  it("averages the marks on five, leaving the term mark out", () => {
+  it("averages the marks on ten, leaving the term mark out", () => {
     const model = reportCardModel("tg", report, "day");
-    assert.equal(model.average?.value, "4.8", "5 and 18/20 (4.5), not the final 2");
+    assert.equal(model.average?.value, "9.5", "10 and 18/20 (9), not the final 4");
   });
 
   it("says there was nothing, and grows with what there is", () => {
@@ -60,17 +60,17 @@ describe("the report picture's contents", () => {
       grades: [],
       attendance: [],
       results: [
-        { subject: named("Математика"), marks: [{ score: 5, max: 5 }, { score: 4, max: 5 }], average: 4.5, absences: 1, late: 0 },
+        { subject: named("Математика"), marks: [{ score: 10, max: 10 }, { score: 8, max: 10 }], average: 9, absences: 1, late: 0 },
         { subject: named("Физика"), marks: [], average: null, absences: 0, late: 0 },
       ],
     };
     const model = reportCardModel("tg", results, "results");
     assert.equal(model.dateLine, "Чоряки 1 · 01.09.2026 – 10.10.2026");
     assert.deepEqual(model.sections[0]!.rows.map((r) => [r.title, r.value, r.tone, r.detail]), [
-      ["Математика", "4.5", "great", "5  4 · ғоиб 1"],
+      ["Математика", "9.0", "great", "10  8 · ғоиб 1"],
       ["Физика", "—", "plain", "—"],
     ]);
-    assert.equal(model.average?.value, "4.5");
+    assert.equal(model.average?.value, "9.0");
     assert.equal(model.empty, null);
   });
 });

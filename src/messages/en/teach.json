@@ -146,7 +146,12 @@
         "h2": "Second half-year",
         "exam": "Exam",
         "year": "Year"
-      }
+      },
+      "fullScreen": "Full screen",
+      "exitFullScreen": "Exit full screen",
+      "fullScreenOpen": "The register is open on the full screen.",
+      "termBoxHint": "A column headed «Quarter I», «Half-year I» or «Year» — for the period marks.",
+      "termBox": "Quarter, half-year and year"
     },
     "homework": {
       "title": "Homework",

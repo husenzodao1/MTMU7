@@ -9,6 +9,7 @@
  * free of the renderer and of the server, so the tests can read it.
  */
 import { dayMonth, markText, pickRaw, statusWord, words, type Loc, type Report, type ReportKind } from "./messages.ts";
+import { MARK_SCALE, onScale } from "../marks.ts";
 
 export type Tone = "great" | "good" | "fair" | "poor" | "late" | "excused" | "absent" | "plain";
 
@@ -100,7 +101,7 @@ export function reportCardModel(
                     .filter(Boolean)
                     .join(" · ") || "—",
                 value: row.average === null ? "—" : Number(row.average).toFixed(1),
-                tone: row.average === null ? "plain" : markTone(Number(row.average), 5),
+                tone: row.average === null ? "plain" : markTone(Number(row.average), MARK_SCALE),
                 shape: "mark",
               })),
               more: Math.max(0, rows.length - MOST_ROWS * 2),
@@ -108,7 +109,7 @@ export function reportCardModel(
           ]
         : [],
       empty: marked.length ? null : w.noResults,
-      average: mean === null ? null : { label: w.average, value: mean.toFixed(1), tone: markTone(mean, 5) },
+      average: mean === null ? null : { label: w.average, value: mean.toFixed(1), tone: markTone(mean, MARK_SCALE) },
     };
   }
 
@@ -171,13 +172,13 @@ export function reportCardModel(
     });
   }
 
-  // The same reading as the text report: on the five-point scale, term marks
+  // The same reading as the text report: on the school's scale, term marks
   // aside, and only when there is more than one mark to average.
   const counted = report.grades.filter((g) => !g.final && g.max > 0);
   let average: CardModel["average"] = null;
   if (counted.length > 1) {
-    const mean = counted.reduce((sum, g) => sum + (g.max === 5 ? g.score : (g.score / g.max) * 5), 0) / counted.length;
-    average = { label: w.average, value: mean.toFixed(1), tone: markTone(mean, 5) };
+    const mean = counted.reduce((sum, g) => sum + onScale(g.score, g.max), 0) / counted.length;
+    average = { label: w.average, value: mean.toFixed(1), tone: markTone(mean, MARK_SCALE) };
   }
 
   return {

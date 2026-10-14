@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Lock } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { SelectField, TextField } from "@/components/ui/fields";
+import { Fold } from "@/components/ui/fold";
 import { JournalGrid, type JournalColumn, type JournalRow } from "@/features/teach/journal-grid";
 import { LessonTopics, type LessonTopic } from "@/features/teach/lesson-topics";
 import { ruleJournalColumnAction } from "@/features/teach/journal-actions";
@@ -231,21 +232,25 @@ export default async function GradebookPage({
 
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_26rem]">
         <Card>
-          <CardHeader title={`${t("journal")} · ${cs.subjectName}`} description={t("journalHint")} />
-          <CardBody>
-            {roster.length === 0 ? (
-              <EmptyState title={t("emptyRoster")} />
-            ) : (
-              <JournalGrid
-                classSubjectId={cs.id}
-                academicTermId={term.id}
-                columns={columns}
-                rows={rows}
-                locked={term.is_locked}
-                readOnly={!mayWrite}
-              />
-            )}
-          </CardBody>
+          {roster.length === 0 ? (
+            <>
+              <CardHeader title={`${t("journal")} · ${cs.subjectName}`} description={t("journalHint")} />
+              <CardBody>
+                <EmptyState title={t("emptyRoster")} />
+              </CardBody>
+            </>
+          ) : (
+            <JournalGrid
+              title={`${t("journal")} · ${cs.subjectName}`}
+              description={t("journalHint")}
+              classSubjectId={cs.id}
+              academicTermId={term.id}
+              columns={columns}
+              rows={rows}
+              locked={term.is_locked}
+              readOnly={!mayWrite}
+            />
+          )}
         </Card>
 
         <div className="space-y-5">
@@ -276,28 +281,6 @@ export default async function GradebookPage({
                   <SubmitButton size="sm">{t("ruleColumn")}</SubmitButton>
                 </ActionForm>
 
-                {/* The last columns of a register are the quarter, half-year and
-                    year marks, headed «Чоряки I» rather than a date, and written
-                    on the day the mark is given: the quarters have no fixed
-                    dates (00086). */}
-                <ActionForm action={ruleJournalColumnAction} className="mt-4 space-y-3 border-t border-line pt-4" resetOnSuccess>
-                  <input type="hidden" name="classSubjectId" value={cs.id} />
-                  <input type="hidden" name="academicTermId" value={term.id} />
-                  <input type="hidden" name="kind" value="term" />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <SelectField
-                      name="label"
-                      label={t("termColumnLabel")}
-                      hint={t("termColumnHint")}
-                      required
-                      options={TERM_HEADINGS.map((heading) => ({ value: heading.value, label: t(`termHeadings.${heading.key}`) }))}
-                    />
-                    <TextField name="date" type="date" label={t("termColumnDate")} defaultValue={defaultDate} min={term.start_date} max={term.end_date} />
-                  </div>
-                  <SubmitButton size="sm" variant="secondary">
-                    {t("ruleTermColumn")}
-                  </SubmitButton>
-                </ActionForm>
               </CardBody>
             </Card>
           ) : null}
@@ -316,6 +299,33 @@ export default async function GradebookPage({
           </Card>
         </div>
       </div>
+
+      {/* The last columns of a register are the quarter, half-year and year
+          marks, headed «Чоряки I» rather than a date, and written on the day
+          the mark is given: the quarters have no fixed dates (00086). Needed a
+          few times a year, so it waits closed at the foot of the page. */}
+      {mayWrite && !term.is_locked && activeTypes.length > 0 ? (
+        <Fold title={t("termBox")} hint={t("termBoxHint")} className="mt-5 max-w-xl">
+          <ActionForm action={ruleJournalColumnAction} className="space-y-3" resetOnSuccess>
+            <input type="hidden" name="classSubjectId" value={cs.id} />
+            <input type="hidden" name="academicTermId" value={term.id} />
+            <input type="hidden" name="kind" value="term" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SelectField
+                name="label"
+                label={t("termColumnLabel")}
+                hint={t("termColumnHint")}
+                required
+                options={TERM_HEADINGS.map((heading) => ({ value: heading.value, label: t(`termHeadings.${heading.key}`) }))}
+              />
+              <TextField name="date" type="date" label={t("termColumnDate")} defaultValue={defaultDate} min={term.start_date} max={term.end_date} />
+            </div>
+            <SubmitButton size="sm" variant="secondary">
+              {t("ruleTermColumn")}
+            </SubmitButton>
+          </ActionForm>
+        </Fold>
+      ) : null}
     </>
   );
 }

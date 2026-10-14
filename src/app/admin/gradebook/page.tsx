@@ -19,6 +19,7 @@ import { formatNumber, formatShortDate } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
 import { firstValue, type SearchParams } from "@/lib/list-params";
 import { createClient } from "@/lib/supabase/server";
+import { MARK_SCALE } from "@/lib/marks";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin.nav");
@@ -67,7 +68,7 @@ export default async function AdminGradebookPage({ searchParams }: { searchParam
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <TextField name="weight" inputMode="decimal" label={t("weight")} hint={t("weightHint")} defaultValue={type ? String(type.weight) : "1"} required />
-          <TextField name="maxScore" inputMode="decimal" label={t("maxScore")} defaultValue={type ? String(type.max_score) : "5"} required />
+          <TextField name="maxScore" inputMode="decimal" label={t("maxScore")} defaultValue={type ? String(type.max_score) : String(MARK_SCALE)} required />
         </div>
         <Checkbox name="isFinal" defaultChecked={type?.is_final} label={t("isFinal")} description={t("isFinalHint")} />
         {type ? <Checkbox name="isActive" defaultChecked={type.is_active} label={t("isActive")} /> : null}
