@@ -14,6 +14,9 @@ name: Native app · Android
 
 on:
   push:
+    # The session branch is pushed together with claude/friendly-bell-smakfs: one build is enough.
+    branches-ignore:
+      - "ccr-*"
     paths:
       - "native-android/**"
       - ".github/workflows/native-android.yml"
@@ -33,6 +36,9 @@ jobs:
     defaults:
       run:
         working-directory: native-android
+    env:
+      # The Gradle client relays the build's output; the default 64 MB is too little.
+      GRADLE_OPTS: -Xmx1g
     steps:
       - uses: actions/checkout@v4
 

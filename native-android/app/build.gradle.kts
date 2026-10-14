@@ -20,7 +20,8 @@ android {
 
     defaultConfig {
         applicationId = "tj.mtmu7.app"
-        minSdk = 24
+        // Android 8 and up: java.time is the phone's own, so nothing is desugared.
+        minSdk = 26
         targetSdk = 35
         // Above every build of the web-view app before it, so phones that have
         // it take this one as an update.
@@ -65,8 +66,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // java.time on Android 7 (the data layer counts days in the school's zone).
-        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -101,8 +100,6 @@ kotlin {
 
 dependencies {
     implementation("tj.mtmu7:shared:1.0")
-
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     val composeBom = platform("androidx.compose:compose-bom:2025.06.01")
     implementation(composeBom)
