@@ -1,11 +1,16 @@
 "use client";
 
-import { BellOff, Headset, Megaphone, Search, Users, X } from "lucide-react";
+import { AlertCircle, Bell, BellOff, Headset, Megaphone, Pin, PinOff, Search, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/misc";
+import * as Overlay from "@/components/ui/overlay";
+import { useToast } from "@/components/ui/toast";
+import { setMutedAction } from "@/features/messages/actions";
+import { LIST_OPS_EVENT, clearedChats, pendingListOps, queueListOp, setClearedChats, setClearedUpTo, type Cleared, type ListOp } from "@/features/messages/list-ops";
+import { forgetConversation, keepList, keptList, newestKept } from "@/features/messages/local-store";
 import { ChannelsDialog } from "@/features/messages/channels";
 import { NewConversationButton } from "@/features/messages/new-conversation";
 import { StoriesRow, type StoryAuthor } from "@/features/messages/stories";
@@ -18,7 +23,7 @@ import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { dayKey, formatClock, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { cn } from "@/lib/utils/cn";
-import { conversationTitle, isBroadcast, type ConversationMember } from "@/features/messages/types";
+import { conversationTitle, isBroadcast, type ConversationMember, type ThreadMessage } from "@/features/messages/types";
 import { fold } from "@/lib/search/fold";
 
 export interface ConversationSummary {
@@ -42,6 +47,8 @@ export interface ConversationSummary {
   member_count?: number | null;
   peer_read_at?: string | null;
   peer_delivered_at?: string | null;
+  /** From 00098 on: pinned to the top by this person, and when. */
+  pinned_at?: string | null;
 }
 
 /** What realtime has said about a conversation since the list was rendered. */
@@ -56,7 +63,7 @@ interface Live {
 type Filter = "all" | "unread" | "groups" | "channels";
 
 /** Timestamps from the server and from realtime are compared as instants, not as text. */
-const time = (value: string) => new Date(value).getTime();
+const time = (value: string) => new Date(value).getTime() || 0;
 const later = (a: string | null | undefined, b: string | null | undefined) => (!a ? b ?? null : !b ? a : time(a) >= time(b) ? a : b);
 
 /**
@@ -114,20 +121,102 @@ export function ConversationList({
   // The newest of one's own messages still on its way, by conversation
   // (outbox.ts): the row shows it, with its clock, until the server has it.
   const [waiting, setWaiting] = useState<Record<string, OutgoingRow>>({});
-  const [base, setBase] = useState(conversations);
-  if (base !== conversations) {
-    // Fresh rows from the server supersede whatever realtime said before them.
-    setBase(conversations);
-    setLive({});
-    setReadAt({});
-    setPeer({});
-  }
+
+  // The list itself. The page brings one, but the page may be an older copy
+  // kept on the device; so the list is also asked of the server directly —
+  // as it opens, when the line or the app comes back, when realtime
+  // reconnects, and every minute while it is on the screen — and that answer,
+  // the newest there is, is what the list shows. It is kept on the device
+  // (local-store.ts), so with no line the list is the last one seen, not the
+  // page's older one. Realtime, messages on their way and messages sent from
+  // here are laid over it, the newest of each winning.
+  const [fresh, setFresh] = useState<ConversationSummary[] | null>(null);
+  const [keptRows, setKeptRows] = useState<ConversationSummary[] | null>(null);
+  const rows = useMemo(() => {
+    if (fresh) return fresh;
+    if (!keptRows) return conversations;
+    const byId = new Map(conversations.map((c) => [c.id, c]));
+    for (const k of keptRows) {
+      const c = byId.get(k.id);
+      if (!c || time(k.last_message_at ?? k.updated_at) > time(c.last_message_at ?? c.updated_at)) byId.set(k.id, k);
+    }
+    return [...byId.values()];
+  }, [fresh, keptRows, conversations]);
+  const listSeq = useRef(0);
+  const refreshList = useCallback(async () => {
+    const seq = ++listSeq.current;
+    let answer: { data: unknown; error: unknown } = { data: null, error: true };
+    try {
+      answer = await getBrowserClient().rpc("list_my_conversations", { p_limit: 200 });
+    } catch {
+      return;
+    }
+    // An answer to an earlier question, overtaken by a later one, is let go.
+    if (answer.error || !Array.isArray(answer.data) || seq !== listSeq.current) return;
+    const next = answer.data as ConversationSummary[];
+    setFresh(next);
+    void keepList(currentUserId, next);
+  }, [currentUserId]);
+  useEffect(() => {
+    let live = true;
+    void keptList<ConversationSummary>(currentUserId).then((kept) => {
+      if (live && kept) setKeptRows(kept.rows);
+    });
+    void refreshList();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshList();
+    };
+    const onOnline = () => void refreshList();
+    const every = window.setInterval(() => {
+      if (document.visibilityState === "visible" && navigator.onLine) void refreshList();
+    }, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
+    return () => {
+      live = false;
+      window.clearInterval(every);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [currentUserId, refreshList]);
+
+  // Pins and deletions made here that the server may not have yet (list-ops.ts).
+  const [ops, setOps] = useState<ListOp[]>([]);
+  useEffect(() => {
+    const look = () => setOps(pendingListOps(currentUserId));
+    look();
+    window.addEventListener(LIST_OPS_EVENT, look);
+    return () => window.removeEventListener(LIST_OPS_EVENT, look);
+  }, [currentUserId]);
+
+  // The newest message this device knows of each conversation (local-store.ts):
+  // one sent from here a moment ago, or read in its thread, is the row's last
+  // message even before the server's list says so, and with no line at all.
+  const [newestHere, setNewestHere] = useState<Record<string, ThreadMessage>>({});
+  const idsKey = rows.map((c) => c.id).join(",");
+  useEffect(() => {
+    let live = true;
+    const look = () =>
+      void newestKept(currentUserId, idsKey ? idsKey.split(",") : []).then((newest) => {
+        if (live) setNewestHere(newest);
+      });
+    look();
+    window.addEventListener(OUTBOX_EVENT, look);
+    return () => {
+      live = false;
+      window.removeEventListener(OUTBOX_EVENT, look);
+    };
+  }, [currentUserId, idsKey]);
+
   const known = useRef(new Set<string>());
   const active = useRef<string | null>(null);
+  const rowsRef = useRef(rows);
+  const seenCleared = useRef(new Map<string, number>());
   useEffect(() => {
-    known.current = new Set(conversations.map((c) => c.id));
+    known.current = new Set(rows.map((c) => c.id));
     active.current = activeId;
-  }, [conversations, activeId]);
+    rowsRef.current = rows;
+  }, [rows, activeId]);
 
   // Realtime checks every change against every subscriber, so the list asks
   // only about its own conversations — up to the hundred a filter can name —
@@ -135,14 +224,37 @@ export function ConversationList({
   // every message sent anywhere in the school. The ticks are followed live
   // for one-to-ones only: in a group the mark is the last of everybody to
   // catch up, which one row cannot say, and the thread follows it there.
+  // Deleted chats are listened to as well: a new message in one brings it back.
+  const [cleared, setCleared] = useState<Cleared[]>([]);
+  useEffect(() => {
+    const look = () => setCleared(clearedChats(currentUserId));
+    look();
+    window.addEventListener(LIST_OPS_EVENT, look);
+    return () => window.removeEventListener(LIST_OPS_EVENT, look);
+  }, [currentUserId]);
+  // Back in the server's list with something said after it was deleted: no longer a deleted chat.
+  useEffect(() => {
+    if (!fresh || cleared.length === 0) return;
+    const said = new Map(fresh.map((c) => [c.id, c.last_message_at ? time(c.last_message_at) : 0]));
+    const still = cleared.filter((chat) => (said.get(chat.id) ?? 0) <= time(chat.at));
+    if (still.length !== cleared.length) {
+      setClearedChats(currentUserId, still);
+      window.dispatchEvent(new Event(LIST_OPS_EVENT));
+    }
+  }, [fresh, cleared, currentUserId]);
+  const clearedKey = cleared.map((chat) => chat.id).join(",");
   const idFilter = useMemo(() => {
-    const ids = conversations.map((c) => c.id);
+    const ids = [...new Set([...(idsKey ? idsKey.split(",") : []), ...(clearedKey ? clearedKey.split(",") : [])])];
     return ids.length > 0 && ids.length <= 100 ? `conversation_id=in.(${ids.join(",")})` : null;
-  }, [conversations]);
+  }, [idsKey, clearedKey]);
+  const directKey = rows
+    .filter((c) => c.type === "direct")
+    .map((c) => c.id)
+    .join(",");
   const directFilter = useMemo(() => {
-    const ids = conversations.filter((c) => c.type === "direct").map((c) => c.id);
+    const ids = directKey ? directKey.split(",") : [];
     return ids.length > 0 && ids.length <= 100 ? `conversation_id=in.(${ids.join(",")})` : null;
-  }, [conversations]);
+  }, [directKey]);
 
   // A burst of messages renews a conversation once, after it settles.
   const renewTimers = useRef(new Map<string, number>());
@@ -167,14 +279,26 @@ export function ConversationList({
         { event: "INSERT", schema: "public", table: "conversation_members", filter: `user_id=eq.${currentUserId}` },
         () => {
           if (refreshTimer.current) clearTimeout(refreshTimer.current);
-          refreshTimer.current = setTimeout(() => router.refresh(), 400);
+          refreshTimer.current = setTimeout(() => void refreshList(), 400);
         }
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${currentUserId}` },
         (payload) => {
-          const row = payload.new as { conversation_id: string; last_read_at: string | null };
+          const row = payload.new as { conversation_id: string; last_read_at: string | null; pinned_at?: string | null; cleared_at?: string | null; is_muted?: boolean };
+          // Pinned, deleted or muted — here or on another of this person's
+          // devices: the list is asked for again (realtime sends only the new row).
+          const was = rowsRef.current.find((c) => c.id === row.conversation_id);
+          const cleared = row.cleared_at ? time(row.cleared_at) : 0;
+          const repinned = row.pinned_at !== undefined && time(row.pinned_at ?? "") !== time(was?.pinned_at ?? "");
+          const remuted = row.is_muted !== undefined && was !== undefined && was.is_muted !== row.is_muted;
+          const recleared = cleared > 0 && seenCleared.current.get(row.conversation_id) !== cleared;
+          if (recleared) seenCleared.current.set(row.conversation_id, cleared);
+          if (repinned || remuted || recleared) {
+            if (refreshTimer.current) clearTimeout(refreshTimer.current);
+            refreshTimer.current = setTimeout(() => void refreshList(), 300);
+          }
           const at = row.last_read_at;
           if (!at) return;
           setReadAt((current) => (current[row.conversation_id] === at ? current : { ...current, [row.conversation_id]: at }));
@@ -189,7 +313,7 @@ export function ConversationList({
         const row = payload.new as { conversation_id: string; content: string; sender_id: string | null; created_at: string; type: string };
         if (!known.current.has(row.conversation_id)) {
           if (refreshTimer.current) clearTimeout(refreshTimer.current);
-          refreshTimer.current = setTimeout(() => router.refresh(), 700);
+          refreshTimer.current = setTimeout(() => void refreshList(), 700);
           return;
         }
         const counts = row.sender_id !== currentUserId && row.conversation_id !== active.current;
@@ -219,12 +343,15 @@ export function ConversationList({
         });
       });
     }
-    listen(channel);
+    // On (again): what happened meanwhile is in the server's list.
+    listen(channel, (status) => {
+      if (status === "SUBSCRIBED") void refreshList();
+    });
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
       void supabase.removeChannel(channel);
     };
-  }, [currentUserId, router, idFilter, directFilter, renewSoon]);
+  }, [currentUserId, idFilter, directFilter, renewSoon, refreshList]);
 
   // Read on this device (thread.tsx): cleared here at once, whatever the
   // line — the server's own word comes through realtime when it can.
@@ -282,52 +409,203 @@ export function ConversationList({
   }, [currentUserId]);
 
   const today = dayKey(new Date(), timeZone);
-  const merged = useMemo(
-    () =>
-      conversations.map((c) => {
-        const l = live[c.id];
-        const read = readAt[c.id];
-        // Read since the server counted: everything it counted is read.
-        const counted = read !== undefined && (!c.last_message_at || time(c.last_message_at) <= time(read)) ? 0 : c.unread_count;
-        const p = peer[c.id];
-        let row: ConversationSummary =
-          l && (!c.last_message_at || time(l.created_at) > time(c.last_message_at))
-            ? {
-                ...c,
-                last_message_content: l.content,
-                last_message_sender_id: l.sender_id,
-                last_message_at: l.created_at,
-                last_message_deleted: false,
-                last_message_type: l.type,
-                unread_count: counted + l.unread,
-              }
-            : { ...c, unread_count: counted };
-        if (p) {
-          row.peer_read_at = later(row.peer_read_at, p.read);
-          row.peer_delivered_at = later(row.peer_delivered_at, p.delivered);
-        }
-        // Still on its way: the last thing said here is what was just written,
-        // and the row goes to the top with it — by this phone's clock or the
-        // server's, whichever is later, so a clock set a little behind cannot
-        // leave it lower down.
-        const w = waiting[c.id];
-        const sortAt = Math.max(time(row.last_message_at ?? row.updated_at), w?.created_at ? time(w.created_at) : 0);
-        if (w?.created_at) {
-          row = {
-            ...row,
-            last_message_content: w.content,
-            last_message_sender_id: currentUserId,
-            last_message_at: w.created_at,
-            last_message_deleted: false,
-            last_message_type: w.type,
-          };
-        }
-        const askedByMe = c.type === "support" && c.created_by === currentUserId;
-        const title = askedByMe ? t("supportTitle") : conversationTitle(row, currentUserId, t("unknownUser"));
-        return { ...row, title, askedByMe, waiting: Boolean(w?.created_at), sortAt };
-      }),
-    [conversations, live, readAt, peer, waiting, currentUserId, t]
-  );
+  const merged = useMemo(() => {
+    // Pins and deletions made here, before the server has said so.
+    const pins = new Map<string, string | null>();
+    const cleared = new Map<string, number>();
+    for (const op of ops) {
+      if (op.kind === "clear") {
+        cleared.set(op.conversationId, Math.max(cleared.get(op.conversationId) ?? 0, time(op.at)));
+        pins.set(op.conversationId, null);
+      } else pins.set(op.conversationId, op.kind === "pin" ? op.at : null);
+    }
+    const result = [];
+    for (const c of rows) {
+      const l = live[c.id];
+      const read = readAt[c.id];
+      // Read since the server counted: everything it counted is read.
+      const counted = read !== undefined && (!c.last_message_at || time(c.last_message_at) <= time(read)) ? 0 : c.unread_count;
+      const p = peer[c.id];
+      let row: ConversationSummary =
+        l && (!c.last_message_at || time(l.created_at) > time(c.last_message_at))
+          ? {
+              ...c,
+              last_message_content: l.content,
+              last_message_sender_id: l.sender_id,
+              last_message_at: l.created_at,
+              last_message_deleted: false,
+              last_message_type: l.type,
+              unread_count: counted + l.unread,
+            }
+          : { ...c, unread_count: counted };
+      // A newer message this device has (sent from here, or seen in its
+      // thread) than the list's: the row says it, not an older one.
+      const h = newestHere[c.id];
+      if (h && !h.is_deleted && (!row.last_message_at || time(h.created_at) > time(row.last_message_at))) {
+        row = {
+          ...row,
+          last_message_content: h.content,
+          last_message_sender_id: h.sender_id,
+          last_message_at: h.created_at,
+          last_message_deleted: false,
+          last_message_type: h.type,
+        };
+      }
+      if (p) {
+        row.peer_read_at = later(row.peer_read_at, p.read);
+        row.peer_delivered_at = later(row.peer_delivered_at, p.delivered);
+      }
+      // Still on its way: the last thing said here is what was just written,
+      // and the row goes to the top with it — by this phone's clock or the
+      // server's, whichever is later, so a clock set a little behind cannot
+      // leave it lower down.
+      const w = waiting[c.id];
+      const sortAt = Math.max(time(row.last_message_at ?? row.updated_at), w?.created_at ? time(w.created_at) : 0);
+      if (w?.created_at) {
+        row = {
+          ...row,
+          last_message_content: w.content,
+          last_message_sender_id: currentUserId,
+          last_message_at: w.created_at,
+          last_message_deleted: false,
+          last_message_type: w.type,
+        };
+      }
+      // Deleted here: gone from the list until something newer is said.
+      const clearedAt = cleared.get(c.id);
+      if (clearedAt !== undefined && (!row.last_message_at || time(row.last_message_at) <= clearedAt)) continue;
+      if (pins.has(c.id)) row.pinned_at = pins.get(c.id) ?? null;
+      const askedByMe = c.type === "support" && c.created_by === currentUserId;
+      const title = askedByMe ? t("supportTitle") : conversationTitle(row, currentUserId, t("unknownUser"));
+      result.push({ ...row, title, askedByMe, waiting: Boolean(w?.created_at && !w.failed), failedHere: Boolean(w?.failed), sortAt });
+    }
+    return result;
+  }, [rows, live, readAt, peer, waiting, newestHere, ops, currentUserId, t]);
+
+  // ------------------------------------------------- press and hold a chat
+
+  const toast = useToast();
+  const [actionsFor, setActionsFor] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const press = useRef<{ id: string; x: number; y: number; timer: number; held: boolean } | null>(null);
+  // Lifting the finger after a long press "clicks" whatever is under it then —
+  // the sheet that has just opened there. Only a tap begun on the sheet acts.
+  const pressedOnSheet = useRef(false);
+  const openActions = useCallback((id: string) => {
+    pressedOnSheet.current = false;
+    setConfirmDelete(false);
+    setActionsFor(id);
+  }, []);
+  const sheetGuard = {
+    onPointerDownCapture: () => {
+      pressedOnSheet.current = true;
+    },
+    onClickCapture: (event: React.MouseEvent) => {
+      // detail 0: the keyboard or a screen reader, never the lift.
+      if (event.detail > 0 && !pressedOnSheet.current) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  };
+  const pressHandlers = (id: string) => ({
+    onPointerDown: (event: React.PointerEvent<HTMLAnchorElement>) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      const anchor = event.currentTarget;
+      if (press.current) window.clearTimeout(press.current.timer);
+      const started = {
+        id,
+        x: event.clientX,
+        y: event.clientY,
+        held: false,
+        timer: window.setTimeout(() => {
+          started.held = true;
+          // The messenger's own tap handling and the link both leave it alone (messages-frame.tsx).
+          anchor.dataset.held = "1";
+          navigator.vibrate?.(12);
+          openActions(id);
+        }, 480),
+      };
+      press.current = started;
+    },
+    onPointerMove: (event: React.PointerEvent<HTMLAnchorElement>) => {
+      const held = press.current;
+      if (!held || held.held) return;
+      if (Math.abs(event.clientX - held.x) > 10 || Math.abs(event.clientY - held.y) > 10) {
+        window.clearTimeout(held.timer);
+        press.current = null;
+      }
+    },
+    onPointerUp: () => {
+      if (press.current && !press.current.held) {
+        window.clearTimeout(press.current.timer);
+        press.current = null;
+      }
+    },
+    onPointerCancel: () => {
+      if (press.current) window.clearTimeout(press.current.timer);
+      press.current = null;
+    },
+    onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+      // The lift after a long press opens nothing.
+      if (event.currentTarget.dataset.held) {
+        event.preventDefault();
+        delete event.currentTarget.dataset.held;
+        press.current = null;
+      }
+    },
+    onContextMenu: (event: React.MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      event.currentTarget.dataset.held = "1";
+      openActions(id);
+    },
+    onKeyDown: (event: React.KeyboardEvent<HTMLAnchorElement>) => {
+      if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+        event.preventDefault();
+        openActions(id);
+      }
+    },
+  });
+  // The lift after a long press ends on the sheet, not on the row: let the row go.
+  useEffect(() => {
+    if (actionsFor) return;
+    for (const anchor of Array.from(document.querySelectorAll<HTMLAnchorElement>("a.msg-row[data-held]"))) delete anchor.dataset.held;
+  }, [actionsFor]);
+
+  const acting = merged.find((c) => c.id === actionsFor) ?? null;
+  // A server without 00098's list (pinned_at) would forget a pin at once: offered only where it holds.
+  const canPin = rows.length === 0 || rows.some((c) => "pinned_at" in c);
+  const togglePin = () => {
+    if (!acting) return;
+    const pinned = Boolean(acting.pinned_at);
+    queueListOp({ userId: currentUserId, conversationId: acting.id, kind: pinned ? "unpin" : "pin", at: new Date().toISOString() });
+    setActionsFor(null);
+    toast("success", t(pinned ? "chatActions.unpinnedToast" : "chatActions.pinnedToast"));
+    window.setTimeout(() => void refreshList(), 1200);
+  };
+  const toggleMute = () => {
+    if (!acting) return;
+    const muted = acting.is_muted;
+    setActionsFor(null);
+    void setMutedAction(acting.id, !muted).then((result) => {
+      toast(result.ok ? "success" : "danger", result.ok ? t(muted ? "unmutedToast" : "mutedToast") : t("chatActions.title"));
+      if (result.ok) void refreshList();
+    });
+  };
+  const deleteChat = () => {
+    if (!acting) return;
+    // Everything on the screen goes, even if this phone's clock is behind the server's.
+    const at = new Date(Math.max(Date.now(), acting.last_message_at ? time(acting.last_message_at) : 0)).toISOString();
+    setClearedUpTo(currentUserId, acting.id, at);
+    queueListOp({ userId: currentUserId, conversationId: acting.id, kind: "clear", at });
+    setClearedChats(currentUserId, [...clearedChats(currentUserId).filter((chat) => chat.id !== acting.id), { id: acting.id, at }]);
+    void forgetConversation(currentUserId, acting.id, time(at));
+    setActionsFor(null);
+    setConfirmDelete(false);
+    toast("success", t("chatActions.deletedToast"));
+    if (activeId === acting.id) router.push("/messages");
+    window.setTimeout(() => void refreshList(), 1200);
+  };
 
   const unreadCount = merged.filter((c) => c.unread_count > 0 && c.id !== activeId).length;
   // The conversations at the top are fetched ahead, whole, so a tap opens
@@ -375,7 +653,12 @@ export function ConversationList({
               ? c.type === "channel"
               : true
       )
-      .sort((a, b) => b.sortAt - a.sortAt);
+      // Pinned first, the last pinned at the top; then the newest.
+      .sort((a, b) => {
+        const pa = a.pinned_at ? time(a.pinned_at) : 0;
+        const pb = b.pinned_at ? time(b.pinned_at) : 0;
+        return pb - pa || b.sortAt - a.sortAt;
+      });
   }, [merged, query, filter, activeId]);
 
   const chips: Array<{ key: Filter; label: string }> = [
@@ -431,7 +714,7 @@ export function ConversationList({
         {items.length === 0 ? (
           <div className="msg-empty">
             <p>
-              {conversations.length === 0
+              {rows.length === 0
                 ? t("noConversations")
                 : query
                   ? t("noMatches")
@@ -497,6 +780,9 @@ export function ConversationList({
                     aria-current={isActive ? "page" : undefined}
                     className="msg-row"
                     data-unread={unread || undefined}
+                    data-pinned={c.pinned_at ? "" : undefined}
+                    aria-keyshortcuts="Shift+F10"
+                    {...pressHandlers(c.id)}
                     // What the thread shows at once while its messages come (messages-frame.tsx).
                     data-title={c.title}
                     data-kind={c.type === "direct" || c.type === "channel" || c.type === "support" ? c.type : "group"}
@@ -522,6 +808,7 @@ export function ConversationList({
                         <span className="msg-name">
                           <span className="truncate">{c.title}</span>
                           {c.type === "support" && !c.askedByMe ? <span className="msg-tag">{t("supportBadge")}</span> : null}
+                          {c.pinned_at ? <Pin className="msg-pin" aria-label={t("chatActions.pinnedMark")} /> : null}
                         </span>
                         <time className="msg-time" dateTime={c.last_message_at ?? undefined}>
                           {when}
@@ -529,7 +816,9 @@ export function ConversationList({
                       </span>
                       <span className="msg-line">
                         <span className="msg-preview">
-                          {ticks ? (
+                          {c.failedHere ? (
+                            <AlertCircle className="msg-failed" aria-label={t("receipt.failed")} />
+                          ) : ticks ? (
                             <Ticks
                               state={ticks}
                               label={
@@ -563,6 +852,52 @@ export function ConversationList({
           </ul>
         )}
       </div>
+
+      <Overlay.Dialog open={Boolean(acting)} onOpenChange={(open) => (open ? null : setActionsFor(null))}>
+        {acting ? (
+          <Overlay.DialogContent
+            title={confirmDelete ? t("chatActions.deleteTitle") : acting.title}
+            description={confirmDelete ? t("chatActions.deleteText") : t("chatActions.title")}
+            closeLabel={t("chatActions.cancel")}
+            size="sm"
+          >
+            {confirmDelete ? (
+              <div className="flex justify-end gap-2" {...sheetGuard}>
+                <button type="button" className="msg-sheet-button" onClick={() => setConfirmDelete(false)}>
+                  {t("chatActions.cancel")}
+                </button>
+                <button type="button" className="msg-sheet-button msg-sheet-danger" onClick={deleteChat} autoFocus>
+                  <Trash2 className="size-4" aria-hidden />
+                  {t("chatActions.deleteConfirm")}
+                </button>
+              </div>
+            ) : (
+              <ul className="msg-sheet" role="menu" aria-label={t("chatActions.title")} {...sheetGuard}>
+                {canPin ? (
+                  <li>
+                    <button type="button" role="menuitem" className="msg-sheet-item" onClick={togglePin} autoFocus>
+                      {acting.pinned_at ? <PinOff aria-hidden /> : <Pin aria-hidden />}
+                      {acting.pinned_at ? t("chatActions.unpin") : t("chatActions.pin")}
+                    </button>
+                  </li>
+                ) : null}
+                <li>
+                  <button type="button" role="menuitem" className="msg-sheet-item" onClick={toggleMute} autoFocus={!canPin}>
+                    {acting.is_muted ? <Bell aria-hidden /> : <BellOff aria-hidden />}
+                    {acting.is_muted ? t("chatActions.unmute") : t("chatActions.mute")}
+                  </button>
+                </li>
+                <li>
+                  <button type="button" role="menuitem" className="msg-sheet-item msg-sheet-danger" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 aria-hidden />
+                    {t("chatActions.delete")}
+                  </button>
+                </li>
+              </ul>
+            )}
+          </Overlay.DialogContent>
+        ) : null}
+      </Overlay.Dialog>
 
       <NewConversationButton canCreateGroup={canCreateGroup} variant="fab" />
       {channelsEnabled ? <ChannelsDialog open={channelsOpen} onOpenChange={setChannelsOpen} canCreate={canCreateGroup} /> : null}

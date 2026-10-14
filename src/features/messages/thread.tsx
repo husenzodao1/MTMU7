@@ -60,18 +60,33 @@ import {
 } from "@/features/messages/actions";
 import { FileCard, MessageText, ReactionBar, ReactionsPill, VoiceNote } from "@/features/messages/bubbles";
 import { checkFile, FILE_ACCEPT, formatBytes, formatDuration, kindOf } from "@/features/messages/files";
-import { READ_EVENT } from "@/features/messages/events";
+import { DRAFT_PREFIX } from "@/features/messages/forget";
+import { LIST_OPS_EVENT, clearedUpTo } from "@/features/messages/list-ops";
+import { forgetConversation, forgetMessages, keepMessages, keepRun, keptMessages, type KeptRun } from "@/features/messages/local-store";
+import { markReadUpTo } from "@/features/messages/read-queue";
 import { MessageGestures } from "@/features/messages/gestures";
-import { dropOutgoing, keepOutgoing, outgoingFor, sendRow, waitForLine, type OutgoingRow } from "@/features/messages/outbox";
+import {
+  claimSending,
+  dropOutgoing,
+  failOutgoing,
+  keepOutgoing,
+  outgoingBytes,
+  outgoingFor,
+  releaseSending,
+  sendRow,
+  settled,
+  waitForLine,
+  waitingRows,
+  type OutgoingRow,
+} from "@/features/messages/outbox";
 import { GroupMembersDialog } from "@/features/messages/group-members";
-import { downloadLink, mediaPath, prepareImage, removeMedia, uploadImage, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
+import { downloadLink, mediaPath, prepareImage, removeMedia, uploadMedia, useSignedUrl, type PreparedImage } from "@/features/messages/media";
 import { LocationCard, locate } from "@/features/messages/location";
 import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/member-card";
 import { Ticks, tickState } from "@/features/messages/ticks";
 import { PhotoViewer, type ViewedPhoto } from "@/features/messages/photo-viewer";
 import { canRecord, useVoiceRecorder, type Recording } from "@/features/messages/recorder";
 import { useWallpaper, WallpaperDialog, WALLPAPERS, type Wallpaper } from "@/features/messages/wallpaper";
-import { announceMessage } from "@/features/push/client";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
 import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
 import { dayKey, formatClock, formatDate } from "@/lib/i18n/format";
@@ -90,62 +105,6 @@ export interface ThreadConversation {
   subtitle?: string;
   /** When the other side of a one-to-one last had the portal open. */
   lastSeenAt?: string | null;
-}
-
-/**
- * Marks the conversation read, straight from the browser. The second tick on
- * the other side turns over as soon as this lands, so it should not wait for a
- * round trip through the portal's own server first.
- *
- * Throttled: in a busy group every arriving line would otherwise be an update
- * to the reader's membership row, and every such update is sent on to
- * everybody with the conversation open. The first mark goes at once, so the
- * sender's second tick is not held back; the rest within a second and a half
- * fold into one more at the end.
- */
-const readCooldown = new Map<string, { timer: ReturnType<typeof setTimeout>; again: boolean }>();
-/** Conversations read while the line was down, told to the server once it is back. */
-const unsentReads = new Set<string>();
-function sendRead(conversationId: string) {
-  getBrowserClient()
-    .rpc("mark_conversation_read", { p_conversation_id: conversationId })
-    .then(
-      ({ error }) => {
-        if (error && !error.code) keepRead(conversationId);
-      },
-      () => keepRead(conversationId)
-    );
-}
-function keepRead(conversationId: string) {
-  if (unsentReads.size === 0) window.addEventListener("online", sendKeptReads, { once: true });
-  unsentReads.add(conversationId);
-}
-function sendKeptReads() {
-  const kept = [...unsentReads];
-  unsentReads.clear();
-  for (const id of kept) sendRead(id);
-}
-/**
- * Read, on this device at once — the list and the bar's count clear before
- * the server has heard (READ_EVENT, events.ts) — and on the server as soon as
- * it can be told: offline, it is kept and sent when the line is back.
- */
-function markRead(conversationId: string) {
-  window.dispatchEvent(new CustomEvent(READ_EVENT, { detail: { conversationId, at: new Date().toISOString() } }));
-  const cooling = readCooldown.get(conversationId);
-  if (cooling) {
-    cooling.again = true;
-    return;
-  }
-  sendRead(conversationId);
-  const entry = {
-    again: false,
-    timer: setTimeout(() => {
-      readCooldown.delete(conversationId);
-      if (entry.again) markRead(conversationId);
-    }, 1500),
-  };
-  readCooldown.set(conversationId, entry);
 }
 
 interface MessageRow {
@@ -191,8 +150,60 @@ const EMPTIED = {
   reactions: [],
 } satisfies Partial<ThreadMessage>;
 
+const at = (value: string) => Date.parse(value) || 0;
+
+/** Oldest first, by the moment the server took each message (one still on its way: when it was written). */
 function sortAsc(list: ThreadMessage[]): ThreadMessage[] {
-  return [...list].sort((a, b) => (a.created_at === b.created_at ? a.id.localeCompare(b.id) : a.created_at.localeCompare(b.created_at)));
+  return [...list].sort((a, b) => at(a.created_at) - at(b.created_at) || a.id.localeCompare(b.id));
+}
+
+/** Not yet the server's: on its way from here, or refused. */
+const isLocal = (m: ThreadMessage) => m.id.startsWith("local:") || Boolean(m.pending) || Boolean(m.failed);
+
+/** The copy on the screen says more than the incoming one: deleted, or edited later. */
+function saysMore(was: ThreadMessage, incoming: ThreadMessage): boolean {
+  if (was.is_deleted && !incoming.is_deleted) return true;
+  return Boolean(was.edited_at && (!incoming.edited_at || at(was.edited_at) > at(incoming.edited_at)));
+}
+
+/**
+ * The server's copies laid over what is on the screen, by id. Nothing is
+ * taken away because an answer does not have it — an answer may be older
+ * than a message just sent — and nothing newer is replaced by something
+ * older. A message still showing as on its way from here gives way to the
+ * server's copy of itself (the same id, made here).
+ */
+function mergeServer(current: ThreadMessage[], incoming: ThreadMessage[]): ThreadMessage[] {
+  if (incoming.length === 0) return current;
+  const byId = new Map(current.map((m) => [m.id, m]));
+  let changed = false;
+  for (const row of incoming) {
+    const local = byId.get(`local:${row.id}`);
+    if (local) {
+      byId.delete(`local:${row.id}`);
+      byId.set(row.id, { ...row, local_preview: local.local_preview });
+      changed = true;
+      continue;
+    }
+    const was = byId.get(row.id);
+    if (was && saysMore(was, row)) continue;
+    byId.set(row.id, was ? { ...was, ...row, local_preview: was.local_preview } : row);
+    changed = true;
+  }
+  return changed ? sortAsc([...byId.values()]) : current;
+}
+
+/** From the oldest to the newest of the server's messages in a list, or nothing. */
+function spanOf(list: ThreadMessage[]): KeptRun | null {
+  const times = list.filter((m) => !isLocal(m)).map((m) => at(m.created_at));
+  return times.length > 0 ? { from: Math.min(...times), to: Math.max(...times) } : null;
+}
+
+/** What was kept on the device, for whatever the screen does not have yet. */
+function mergeMissing(current: ThreadMessage[], kept: ThreadMessage[]): ThreadMessage[] {
+  const have = new Set(current.map((m) => m.id));
+  const missing = kept.filter((m) => !have.has(m.id) && !have.has(`local:${m.id}`));
+  return missing.length > 0 ? sortAsc([...current, ...missing]) : current;
 }
 
 function withReaction(message: ThreadMessage, userId: string, emoji: string | null): ThreadMessage {
@@ -213,6 +224,7 @@ export function Thread({
   myRole,
   currentUserId,
   initialMessages,
+  clearedAt = null,
   initialPinned,
   blockedUserIds,
   canPost,
@@ -226,6 +238,8 @@ export function Thread({
   myRole: "admin" | "member";
   currentUserId: string;
   initialMessages: ThreadMessage[];
+  /** When this person deleted the conversation for themselves, if they did. */
+  clearedAt?: string | null;
   initialPinned: Array<Pick<ThreadMessage, "id" | "content" | "sender_first_name" | "sender_last_name">>;
   blockedUserIds: string[];
   canPost: boolean;
@@ -241,7 +255,31 @@ export function Thread({
   const toast = useToast();
   const router = useRouter();
 
-  const [messages, setMessages] = useState<ThreadMessage[]>(() => sortAsc(initialMessages));
+  const [allMessages, setMessages] = useState<ThreadMessage[]>(() => sortAsc(initialMessages));
+  // Deleted for oneself (the list's long press, here or on another device):
+  // nothing from before it is shown, whatever an older copy of the page, or
+  // what the device kept, still holds.
+  const [hiddenUpTo, setHiddenUpTo] = useState(() => (clearedAt ? at(clearedAt) : 0));
+  const hideUpTo = useCallback((moment: number) => setHiddenUpTo((was) => Math.max(was, moment)), []);
+  useEffect(() => {
+    const look = () => hideUpTo(clearedUpTo(currentUserId, conversation.id));
+    look();
+    window.addEventListener(LIST_OPS_EVENT, look);
+    return () => window.removeEventListener(LIST_OPS_EVENT, look);
+  }, [currentUserId, conversation.id, hideUpTo]);
+  useEffect(() => {
+    if (hiddenUpTo > 0) void forgetConversation(currentUserId, conversation.id, hiddenUpTo);
+  }, [hiddenUpTo, currentUserId, conversation.id]);
+  const messages = useMemo(
+    () => (hiddenUpTo > 0 ? allMessages.filter((m) => isLocal(m) || at(m.created_at) > hiddenUpTo) : allMessages),
+    [allMessages, hiddenUpTo]
+  );
+  // The stretch of the conversation, by time, on the screen with nothing
+  // missing in it: the page's (all it had, newest first, when it was made),
+  // widened by what the device kept whole, catch-ups and older pages.
+  // Messages newer than it (realtime's, one's own, kept from the outbox) are
+  // shown, and the next catch-up makes sure of what lies before them.
+  const span = useRef<KeptRun | null>(spanOf(initialMessages));
   const [hasMore, setHasMore] = useState(initialMessages.length >= 50);
   const [pinned, setPinned] = useState(initialPinned);
   const [replyTo, setReplyTo] = useState<ThreadMessage | null>(null);
@@ -275,7 +313,13 @@ export function Thread({
   // the whole conversation again, every bubble of it, and on a phone the send
   // button trailed the first letter by a visible moment. Now it renders the
   // one button that depends on it (ComposerAction) and nothing else.
-  const draft = useDraft(inputRef);
+  const draft = useDraft(inputRef, `${DRAFT_PREFIX}${currentUserId}:${conversation.id}`);
+  // The words kept from before into the box, once it is there.
+  useEffect(() => {
+    const box = inputRef.current;
+    const text = draft.get();
+    if (box && text && !box.value) box.value = text;
+  }, [draft]);
   useKeyboardSync(inputRef, draft);
   const preserveScroll = useRef<number | null>(null);
   const stickToBottom = useRef(true);
@@ -284,6 +328,35 @@ export function Thread({
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  /**
+   * Read up to the newest message of the server's that is on the screen —
+   * not the newest there is: scrolled up to read earlier ones, what came
+   * after stays unread, as does anything that arrived and was never drawn.
+   * Only with the app on the screen.
+   */
+  const readTimer = useRef(0);
+  const readSoon = useCallback(() => {
+    window.clearTimeout(readTimer.current);
+    readTimer.current = window.setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
+      const box = scrollRef.current;
+      if (!box) return;
+      const bottom = box.getBoundingClientRect().bottom;
+      const list = messagesRef.current;
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const m = list[i]!;
+        if (isLocal(m)) continue;
+        const node = document.getElementById(`message-${m.id}`);
+        if (!node) continue;
+        if (node.getBoundingClientRect().top < bottom - 8) {
+          markReadUpTo(currentUserId, conversation.id, m.created_at);
+          return;
+        }
+      }
+    }, 350);
+  }, [conversation.id, currentUserId]);
+
 
   // What realtime has said since the page was rendered, laid over the props
   // rather than copied from them. Copying props into state needs an effect to
@@ -412,26 +485,26 @@ export function Thread({
   /**
    * Writes one message, straight from the browser to the database.
    *
-   * Row level security and the guard trigger decide whether it may be written,
-   * exactly as they did when this went through a Server Action — the portal's
-   * own server added a round trip and nothing else. The push to everybody
-   * else is asked for once the row exists.
+   * It is kept on the device first (outbox.ts), photos and files with their
+   * bytes, so leaving the conversation, closing the app or losing the line
+   * never loses it; it goes when it can, under its own id, so a retry after a
+   * lost answer cannot make two. Once the server has it, it is kept as sent
+   * (local-store.ts) with the server's own time, so the thread opens with it
+   * whatever an older copy of the page said.
+   *
+   * Row level security and the guard trigger decide whether it may be
+   * written. The push to everybody else is asked for once the row exists.
    */
   const deliver = useCallback(
     (local: ThreadMessage) => {
       upsert(local);
-      // A photo, file or recording starts uploading now, alongside whatever
-      // is ahead of it in the queue, and its message waits in line only for
-      // the insert.
       const photo = local.type === "image" ? photos.current.get(local.id) : undefined;
       const blob = local.type === "file" || local.type === "audio" ? blobs.current.get(local.id) : undefined;
-      const uploaded = local.media_path
-        ? photo
-          ? uploadImage(local.media_path, photo)
-          : blob
-            ? uploadMedia(local.media_path, blob.blob, blob.mime)
-            : null
-        : null;
+      const bytes = photo
+        ? { blob: photo.blob, mime: photo.blob.type, width: photo.width, height: photo.height }
+        : blob
+          ? { blob: blob.blob, mime: blob.mime }
+          : undefined;
       const id = local.id.startsWith("local:") ? local.id.slice(6) : crypto.randomUUID();
       const row: OutgoingRow = {
         id,
@@ -452,50 +525,84 @@ export function Thread({
         media_duration: local.media_duration ?? null,
         created_at: local.created_at,
       };
-      // Kept on the device until the server has it (outbox.ts).
-      keepOutgoing(row);
+      // Kept on the device before anything is sent (outbox.ts).
+      keepOutgoing(row, bytes);
+      // A photo, file or recording starts uploading now, alongside whatever
+      // is ahead of it in the queue, and its message waits in line only for
+      // the insert.
+      const uploaded = local.media_path && bytes ? uploadMedia(local.media_path, bytes.blob, bytes.mime) : null;
       const failed = (key: string) => {
-        dropOutgoing(id);
+        failOutgoing(id);
         setMessages((current) => current.map((m) => (m.id === local.id ? { ...m, pending: false, failed: true } : m)));
         fail(key);
       };
-      queue.current = queue.current.then(async () => {
-        // A photo, file or recording that could not go up is tried again as
-        // the line allows, a few times, before it is marked.
-        let upload = uploaded;
-        for (let tries = 0; local.media_path && !(await upload); tries += 1) {
-          if (tries >= 6) {
-            failed(local.type === "audio" ? "portal.messages.voiceFailed" : local.type === "file" ? "portal.messages.fileFailed" : "portal.messages.photoFailed");
-            return;
-          }
-          await waitForLine(Math.min(30_000, 2000 * 2 ** tries));
-          upload = photo ? uploadImage(local.media_path, photo) : blob ? uploadMedia(local.media_path, blob.blob, blob.mime) : Promise.resolve(false);
-        }
-        // No line, or a line too slow to answer: the clock stays and the
-        // message goes again — when the line is back, or after a growing
-        // pause — and the ones after it wait their turn behind it.
-        for (let tries = 0; ; tries += 1) {
-          const result = await sendRow(row);
-          if ("sent" in result) break;
-          if ("failed" in result) {
-            failed(result.failed);
-            return;
-          }
-          await waitForLine(Math.min(30_000, 1500 * 2 ** Math.min(tries, 5)));
-        }
-        dropOutgoing(id, true);
+      // `announce`: this page wrote it, so it settles it (kept, dropped from
+      // the outbox, the push to the others asked for); written by another
+      // path, the screen only catches up.
+      const arrived = (createdAt: string | null, announce = true) => {
+        if (announce) settled(row, createdAt);
         photos.current.delete(local.id);
         blobs.current.delete(local.id);
         setMessages((current) => {
-          // Realtime may have delivered the real row already; if so the local
-          // one simply goes, rather than appearing twice.
-          const arrived = current.some((m) => m.id === id);
-          const next = arrived
-            ? current.filter((m) => m.id !== local.id)
-            : current.map((m) => (m.id === local.id ? { ...m, id, pending: false } : m));
+          // Realtime or a catch-up may have brought the real row already; if
+          // so the local one simply goes, rather than appearing twice.
+          const there = current.some((m) => m.id === id);
+          const next = there
+            ? current.filter((m) => m.id !== local.id).map((m) => (m.id === id && !m.local_preview ? { ...m, local_preview: local.local_preview } : m))
+            : current.map((m) => (m.id === local.id ? { ...m, id, pending: false, failed: false, created_at: createdAt ?? m.created_at } : m));
           return sortAsc(next);
         });
-        announceMessage(id);
+      };
+      queue.current = queue.current.then(async () => {
+        // The app's frame may be sending this very message from what was kept
+        // (flushOutbox): it is waited for, not sent twice.
+        while (!claimSending(id)) {
+          await waitForLine(1500);
+          if (!waitingRows().some((r) => r.id === id && !r.failed)) {
+            if (!waitingRows().some((r) => r.id === id)) arrived(null, false);
+            return;
+          }
+        }
+        // Sent meanwhile by whoever had it before (an earlier opening of this
+        // conversation, the app's frame): nothing left to send.
+        if (!waitingRows().some((r) => r.id === id)) {
+          releaseSending(id);
+          arrived(null, false);
+          return;
+        }
+        try {
+          // A photo, file or recording that could not go up is tried again as
+          // the line allows, a few times, before it is marked.
+          let upload = uploaded;
+          for (let tries = 0; local.media_path && !(await upload); tries += 1) {
+            if (tries >= 6 || !bytes) {
+              failed(local.type === "audio" ? "portal.messages.voiceFailed" : local.type === "file" ? "portal.messages.fileFailed" : "portal.messages.photoFailed");
+              return;
+            }
+            await waitForLine(Math.min(30_000, 2000 * 2 ** tries));
+            upload = uploadMedia(local.media_path, bytes.blob, bytes.mime);
+          }
+          // No line, or a line too slow to answer: the clock stays and the
+          // message goes again — when the line is back, or after a growing
+          // pause — and the ones after it wait their turn behind it.
+          for (let tries = 0; ; tries += 1) {
+            // Held by this page alone (claimSending), so gone only because it
+            // was let go of: signed out, or deleted unsent. Nothing to send.
+            if (!waitingRows().some((r) => r.id === id)) return;
+            const result = await sendRow(row);
+            if ("sent" in result) {
+              arrived(result.createdAt);
+              return;
+            }
+            if ("failed" in result) {
+              failed(result.failed);
+              return;
+            }
+            await waitForLine(Math.min(30_000, 1500 * 2 ** Math.min(tries, 5)));
+          }
+        } finally {
+          releaseSending(id);
+        }
       });
     },
     [currentUserId, schoolId, upsert, fail]
@@ -551,30 +658,77 @@ export function Thread({
     [members, currentUserId, conversation.id]
   );
 
-  // Words left waiting on this device (outbox.ts) — the app closed, or the
-  // line went — come back with their clocks and go, unless they already have.
+  // What was left waiting on this device (outbox.ts) — the app closed, or the
+  // line went — comes back with its clock and goes, unless it already has;
+  // what the server refused comes back marked, to be sent again or deleted.
   const restored = useRef(false);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (restored.current) return;
       restored.current = true;
       for (const row of outgoingFor(conversation.id, currentUserId)) {
-        if (initialMessages.some((m) => m.id === row.id)) {
+        if (initialMessages.some((m) => m.id === row.id) || messagesRef.current.some((m) => m.id === row.id)) {
           dropOutgoing(row.id);
           continue;
         }
-        deliver({
-          ...localMessage({ content: row.content, type: row.type, reply_to_id: row.reply_to_id, location_lat: row.location_lat, location_lng: row.location_lng }),
+        const local: ThreadMessage = {
+          ...localMessage({
+            content: row.content,
+            type: row.type,
+            reply_to_id: row.reply_to_id,
+            location_lat: row.location_lat,
+            location_lng: row.location_lng,
+            media_path: row.media_path ?? null,
+            media_width: row.media_width ?? null,
+            media_height: row.media_height ?? null,
+            media_name: row.media_name ?? null,
+            media_size: row.media_size ?? null,
+            media_mime: row.media_mime ?? null,
+            media_duration: row.media_duration ?? null,
+          }),
           id: `local:${row.id}`,
           created_at: row.created_at ?? new Date().toISOString(),
+        };
+        if (row.failed) {
+          upsert({ ...local, pending: false, failed: true });
+          continue;
+        }
+        if (row.type === "text" || row.type === "location") {
+          deliver(local);
+          continue;
+        }
+        // A photo, file or recording: its bytes back from the device, then on its way.
+        upsert(local);
+        void outgoingBytes(row).then((kept) => {
+          if (!kept) {
+            failOutgoing(row.id);
+            upsert({ ...local, pending: false, failed: true });
+            return;
+          }
+          const preview = URL.createObjectURL(kept.blob);
+          previews.current.add(preview);
+          if (row.type === "image") {
+            photos.current.set(local.id, {
+              blob: kept.blob,
+              width: kept.width ?? row.media_width ?? 0,
+              height: kept.height ?? row.media_height ?? 0,
+              extension: kept.blob.type === "image/webp" ? "webp" : "jpg",
+              previewUrl: preview,
+            });
+          } else {
+            blobs.current.set(local.id, { blob: kept.blob, mime: kept.mime });
+          }
+          deliver({ ...local, local_preview: preview });
         });
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [conversation.id, currentUserId, initialMessages, deliver, localMessage]);
+  }, [conversation.id, currentUserId, initialMessages, deliver, localMessage, upsert]);
 
   const retry = useCallback(
     (failed: ThreadMessage) => {
+      // The refused one goes from what is kept; it is sent again as a new message.
+      if (failed.id.startsWith("local:")) dropOutgoing(failed.id.slice(6));
       setMessages((current) => current.filter((m) => m.id !== failed.id));
       const again = localMessage({
         content: failed.content,
@@ -876,6 +1030,8 @@ export function Thread({
       setShowJump(far);
       if (!far) setUnseen(0);
     }
+    // Scrolled down to what had not been seen yet: it is read now.
+    readSoon();
   };
 
   const toLatest = () => {
@@ -885,6 +1041,144 @@ export function Thread({
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     setUnseen(0);
   };
+
+  // ------------------------------------------------------- kept and caught up
+
+  // What this device kept of the conversation (local-store.ts), for whatever
+  // the page did not bring — it may be an older copy of the page. Only where
+  // the two meet, so the screen never has a hole: what was kept whole is
+  // joined to the page where they overlap, or replaces a page older than it;
+  // kept further back than the page, with something maybe missing between,
+  // it waits for the server (loadOlder).
+  useEffect(() => {
+    let live = true;
+    void keptMessages(currentUserId, conversation.id).then(({ run, messages: kept }) => {
+      if (!live || kept.length === 0) return;
+      const s = span.current;
+      const inRun = run ? kept.filter((m) => at(m.created_at) >= run.from && at(m.created_at) <= run.to) : [];
+      const oldestInRun = inRun.length > 0 ? at(inRun[0]!.created_at) : null;
+      const newerThan = (moment: number) => kept.filter((m) => at(m.created_at) > moment);
+      let add: ThreadMessage[];
+      let dropBefore: number | null = null;
+      if (run && oldestInRun !== null && (s === null || oldestInRun > s.to)) {
+        // Nothing from the server on the screen, or a page older than what
+        // the device has kept whole since: the kept stretch it is.
+        dropBefore = oldestInRun;
+        add = [...inRun, ...newerThan(run.to)];
+        span.current = { from: oldestInRun, to: run.to };
+        setHasMore(true);
+      } else if (run && oldestInRun !== null && s !== null && run.to >= s.from) {
+        const to = Math.max(s.to, run.to);
+        add = [...inRun, ...newerThan(to)];
+        span.current = { from: Math.min(s.from, oldestInRun), to };
+        if (oldestInRun < s.from) setHasMore(true);
+      } else {
+        // Kept whole only further back than the page, or nothing kept whole:
+        // only what is newer than the screen, for the next catch-up to check.
+        add = s ? newerThan(s.to) : kept;
+      }
+      if (add.length === 0 && dropBefore === null) return;
+      const cut = dropBefore;
+      setMessages((current) => mergeMissing(cut === null ? current : current.filter((m) => isLocal(m) || at(m.created_at) >= cut), add));
+    });
+    return () => {
+      live = false;
+    };
+  }, [conversation.id, currentUserId]);
+
+  /**
+   * The newest of the conversation from the server, laid over what is on the
+   * screen (mergeServer). If more has been said since the newest message
+   * known here than one page holds, the pages in between are fetched too, so
+   * no gap is left.
+   */
+  const catchUp = useCallback(async () => {
+    const supabase = getBrowserClient();
+    const page = async (before?: ThreadMessage): Promise<ThreadMessage[] | null> => {
+      try {
+        const { data, error } = await supabase.rpc("get_conversation_messages", {
+          p_conversation_id: conversation.id,
+          p_limit: 50,
+          ...(before ? { p_before_created_at: before.created_at, p_before_id: before.id } : {}),
+        });
+        return error || !data ? null : (data as unknown as ThreadMessage[]);
+      } catch {
+        return null;
+      }
+    };
+    // Deleted for oneself on another device since this page was made: hidden here too.
+    void Promise.resolve(
+      supabase.from("conversation_members").select("cleared_at").eq("conversation_id", conversation.id).eq("user_id", currentUserId).maybeSingle()
+    ).then(
+      ({ data, error }) => {
+        if (!error && data?.cleared_at) hideUpTo(at(data.cleared_at));
+      },
+      () => undefined
+    );
+    // Newest first, down to the end of the screen's stretch with nothing
+    // missing (`span`) — not to its newest message, which may stand after a
+    // hole (one's own, sent from the outbox while the thread was closed).
+    const s = span.current;
+    const reaches = (list: ThreadMessage[]) => s !== null && list.length > 0 && at(list[list.length - 1]!.created_at) <= s.to;
+    let rows = await page();
+    if (!rows) return;
+    let lastFull = rows.length >= 50;
+    // A page that is not full is the start of the conversation: nothing before it is missing.
+    let joined = !lastFull || reaches(rows);
+    for (let pages = 0; !joined && s !== null && pages < 5; pages += 1) {
+      const more = await page(rows[rows.length - 1]!);
+      // The line failed half way: nothing is laid over the screen, which
+      // would leave a hole in it; the next catch-up (back online, the app
+      // shown again, realtime rejoined) starts again.
+      if (!more) return;
+      rows = rows.concat(more);
+      lastFull = more.length >= 50;
+      joined = !lastFull || reaches(more);
+    }
+    const fetched = rows;
+    if (fetched.length > 0) {
+      const newest = at(fetched[0]!.created_at);
+      const oldest = at(fetched[fetched.length - 1]!.created_at);
+      const now = span.current;
+      if (joined && now !== null) {
+        setMessages((current) => mergeServer(current, fetched));
+        span.current = { from: Math.min(now.from, oldest), to: Math.max(now.to, newest) };
+        // The server's history goes back further than the screen's did.
+        if (oldest < now.from) setHasMore(lastFull);
+      } else {
+        // Nothing on the screen known to be whole, or more said while away
+        // than is fetched at once: what the screen had before the fetched
+        // stretch goes, and the history is paged in from here, in order,
+        // with no hole (loadOlder).
+        setMessages((current) => mergeServer(current.filter((m) => isLocal(m) || at(m.created_at) >= oldest), fetched));
+        span.current = { from: oldest, to: newest };
+        setHasMore(lastFull || !joined);
+      }
+    }
+    readSoon();
+  }, [conversation.id, currentUserId, hideUpTo, readSoon]);
+
+  // Everything the server has said, kept on the device as it comes — the
+  // page's messages, realtime's, the catch-up's, older pages, edits — with
+  // the stretch of it that has nothing missing (local-store.ts).
+  const keptRef = useRef(new Map<string, ThreadMessage>());
+  const keptSpan = useRef("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const s = span.current;
+      const changed = messages.filter((m) => !isLocal(m) && keptRef.current.get(m.id) !== m);
+      const spanKey = s ? `${s.from}:${s.to}` : "";
+      if (changed.length === 0 && spanKey === keptSpan.current) return;
+      for (const m of changed) keptRef.current.set(m.id, m);
+      keptSpan.current = spanKey;
+      const inSpan = s ? changed.filter((m) => at(m.created_at) >= s.from && at(m.created_at) <= s.to) : [];
+      const inside = new Set(inSpan.map((m) => m.id));
+      const outside = changed.filter((m) => !inside.has(m.id));
+      if (s) void keepRun(currentUserId, conversation.id, inSpan, s.from, s.to);
+      if (outside.length > 0) void keepMessages(currentUserId, outside);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [messages, currentUserId, conversation.id]);
 
   // --------------------------------------------------------------- realtime
 
@@ -901,27 +1195,18 @@ export function Thread({
         const row = payload.new as MessageRow;
         const sender = row.sender_id ? memberMapRef.current.get(row.sender_id) : undefined;
         if (row.sender_id === currentUserId) {
-          // Our own message, back from realtime before the insert answered:
-          // it takes the place of the bubble already on screen instead of
-          // standing beside it until the answer arrives.
-          setMessages((current) => {
-            if (current.some((m) => m.id === row.id)) return current;
-            const local = current.find((m) =>
-              m.pending && (row.media_path ? m.media_path === row.media_path : m.content === row.content && m.type === row.type)
-            );
-            const arrived: ThreadMessage = {
-              ...row,
-              sender_first_name: sender?.first_name ?? null,
-              sender_last_name: sender?.last_name ?? null,
-              sender_avatar_url: sender?.avatar_url ?? null,
-              is_favorite: false,
-              reactions: [],
-              // The photo or recording already on this device stays, rather
-              // than blinking out while a link to the uploaded copy is fetched.
-              local_preview: local?.local_preview,
-            };
-            return sortAsc(local ? current.map((m) => (m.id === local.id ? arrived : m)) : [...current, arrived]);
-          });
+          // Our own message, back from realtime — from this device (it takes
+          // the place of its bubble, made here under the same id) or from
+          // another one of ours.
+          const arrived: ThreadMessage = {
+            ...row,
+            sender_first_name: sender?.first_name ?? null,
+            sender_last_name: sender?.last_name ?? null,
+            sender_avatar_url: sender?.avatar_url ?? null,
+            is_favorite: false,
+            reactions: [],
+          };
+          setMessages((current) => (current.some((m) => m.id === row.id) ? current : mergeServer(current, [arrived])));
           return;
         }
         if (row.sender_id) {
@@ -948,7 +1233,8 @@ export function Thread({
             reactions: [],
           });
         }
-        if (document.visibilityState === "visible") markRead(conversation.id);
+        // Seen if it is on the screen — read once it has been drawn there.
+        readSoon();
       })
       // Somebody opened the conversation: their last_read_at changed, and the
       // sender is owed the second tick without reloading anything.
@@ -998,20 +1284,30 @@ export function Thread({
         const row = payload.new as { message_id: string; user_id: string; emoji: string | null };
         applyReaction(row.message_id, row.user_id, row.emoji);
       });
-    listen(channel);
+    // Every time realtime is (back) on — the first time, and after any drop
+    // of the line — what was said meanwhile is fetched: nothing said while
+    // the app was asleep or the line was gone is missed.
+    listen(channel, (status) => {
+      if (status === "SUBSCRIBED") void catchUp();
+    });
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") markRead(conversation.id);
+      if (document.visibilityState !== "visible") return;
+      readSoon();
+      void catchUp();
     };
-    // Opening the thread is reading it (no longer done while the page is
-    // rendered: pages are fetched ahead of any tap, warm-pages.ts).
-    onVisible();
+    const onOnline = () => void catchUp();
+    // Opening the thread is reading what it shows (never done while a page
+    // is only fetched ahead: warm-pages.ts) — what is on the screen, once drawn.
+    readSoon();
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
       void supabase.removeChannel(channel);
     };
-  }, [conversation.id, currentUserId, upsert, applyReaction]);
+  }, [conversation.id, currentUserId, upsert, applyReaction, catchUp, readSoon]);
 
   // --------------------------------------------------------- full screen
 
@@ -1070,6 +1366,14 @@ export function Thread({
 
   // ------------------------------------------------------------- actions
 
+  // An older page, fetched from just before the oldest on the screen: the
+  // stretch with nothing missing now reaches back to it.
+  const widenBack = useCallback((older: ThreadMessage[]) => {
+    const s = span.current;
+    if (!s || older.length === 0) return;
+    span.current = { from: Math.min(s.from, ...older.map((m) => at(m.created_at))), to: s.to };
+  }, []);
+
   const loadOlder = () => {
     const oldest = messages[0];
     if (!oldest) return;
@@ -1079,6 +1383,7 @@ export function Thread({
       const older = result.data ?? [];
       const el = scrollRef.current;
       if (el) preserveScroll.current = el.scrollHeight - el.scrollTop;
+      widenBack(older);
       setMessages((current) => sortAsc([...older.filter((m) => !current.some((c) => c.id === m.id)), ...current]));
       setHasMore(older.length >= 50);
     });
@@ -1111,6 +1416,7 @@ export function Thread({
         if (older.length === 0) break;
         const el = scrollRef.current;
         if (el) preserveScroll.current = el.scrollHeight - el.scrollTop;
+        widenBack(older);
         messagesRef.current = sortAsc([...older.filter((m) => !messagesRef.current.some((c) => c.id === m.id)), ...messagesRef.current]);
         setMessages(messagesRef.current);
         if (older.some((m) => m.id === id)) {
@@ -1123,7 +1429,7 @@ export function Thread({
       }
       toast("danger", t("originalNotFound"));
     },
-    [conversation.id, t, toast]
+    [conversation.id, t, toast, widenBack]
   );
 
   const react = useCallback(
@@ -1665,7 +1971,17 @@ export function Thread({
                                 </Overlay.DropdownMenuItem>
                               ) : null}
                               <Overlay.DropdownMenuSeparator />
-                              <Overlay.DropdownMenuItem onSelect={() => runAction(() => deleteMessageAction(m.id, "me"), () => setMessages((c) => c.filter((x) => x.id !== m.id)))}>
+                              <Overlay.DropdownMenuItem
+                                onSelect={() =>
+                                  runAction(
+                                    () => deleteMessageAction(m.id, "me"),
+                                    () => {
+                                      setMessages((c) => c.filter((x) => x.id !== m.id));
+                                      void forgetMessages(currentUserId, [m.id]);
+                                    }
+                                  )
+                                }
+                              >
                                 <Trash2 aria-hidden />
                                 {t("deleteForMe")}
                               </Overlay.DropdownMenuItem>
@@ -2045,11 +2361,31 @@ interface Draft {
   subscribe(listener: () => void): () => void;
 }
 
-function useDraft(input: RefObject<HTMLTextAreaElement | null>): Draft {
+function useDraft(input: RefObject<HTMLTextAreaElement | null>, key: string): Draft {
   const [draft] = useState<Draft>(() => {
+    // What was being written here before — the conversation left, the app
+    // closed — is there again (forget.ts empties it on signing out).
     let text = "";
+    try {
+      text = localStorage.getItem(key) ?? "";
+    } catch {
+      text = "";
+    }
+    let saving = 0;
+    const save = () => {
+      window.clearTimeout(saving);
+      saving = window.setTimeout(() => {
+        try {
+          if (text.trim()) localStorage.setItem(key, text);
+          else localStorage.removeItem(key);
+        } catch {
+          // Kept while the conversation is open all the same.
+        }
+      }, 250);
+    };
     const listeners = new Set<() => void>();
     const changed = () => {
+      save();
       for (const listener of listeners) listener();
     };
     return {

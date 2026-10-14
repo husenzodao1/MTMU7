@@ -912,6 +912,8 @@ export type Database = {
           last_read_at: string | null;
           is_muted: boolean;
           last_delivered_at: string | null;
+          pinned_at: string | null;
+          cleared_at: string | null;
         };
         Insert: {
           id?: string;
@@ -923,6 +925,8 @@ export type Database = {
           last_read_at?: string | null;
           is_muted?: boolean;
           last_delivered_at?: string | null;
+          pinned_at?: string | null;
+          cleared_at?: string | null;
         };
         Update: {
           id?: string;
@@ -934,6 +938,8 @@ export type Database = {
           last_read_at?: string | null;
           is_muted?: boolean;
           last_delivered_at?: string | null;
+          pinned_at?: string | null;
+          cleared_at?: string | null;
         };
         Relationships: [
           {
@@ -5793,14 +5799,16 @@ export type Database = {
       issue_parent_codes: { Args: { p_class: string }; Returns: { student_id: string | null; class_name: string | null; full_name: string | null; nickname: string | null; login: string | null; code: string | null }[] };
       join_channel: { Args: { p_conversation_id: string }; Returns: undefined };
       join_support_conversation: { Args: { p_conversation_id: string }; Returns: undefined };
-      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null; created_by: string | null; last_message_type: string | null; description: string | null; my_role: string | null; member_count: number | null; peer_read_at: string | null; peer_delivered_at: string | null }[] };
+      list_my_conversations: { Args: { p_limit?: number }; Returns: { id: string | null; type: string | null; name: string | null; avatar_url: string | null; updated_at: string | null; is_muted: boolean | null; last_message_content: string | null; last_message_sender_id: string | null; last_message_at: string | null; last_message_deleted: boolean | null; unread_count: number | null; members: Json | null; created_by: string | null; last_message_type: string | null; description: string | null; my_role: string | null; member_count: number | null; peer_read_at: string | null; peer_delivered_at: string | null; pinned_at: string | null }[] };
       list_news_comments: { Args: { p_article: string; p_limit?: number }; Returns: { id: string | null; body: string | null; created_at: string | null; author_id: string | null; author_name: string | null; author_nickname: string | null; author_avatar_url: string | null; author_role: Json | null; is_mine: boolean | null }[] };
       list_public_schools: { Args: Record<PropertyKey, never>; Returns: { id: string | null; slug: string | null; short_name: string | null; full_name: string | null; logo_url: string | null; photo_url: string | null; address: string | null; district_id: string | null; registration_open: boolean | null }[] };
       list_school_channels: { Args: { p_query?: string; p_limit?: number }; Returns: { id: string | null; name: string | null; description: string | null; avatar_url: string | null; created_by: string | null; owner_first_name: string | null; owner_last_name: string | null; owner_avatar_url: string | null; followers: number | null; is_member: boolean | null; is_admin: boolean | null; last_post_at: string | null }[] };
       list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
       log_app_diagnostics: { Args: { p_device: string; p_user_agent: string; p_events: Json }; Returns: number };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
-      mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
+      mark_conversation_read: { Args: { p_conversation_id: string } | { p_conversation_id: string; p_up_to: string }; Returns: undefined | string | null };
+      set_conversation_pinned: { Args: { p_conversation_id: string; p_pinned: boolean }; Returns: string | null };
+      clear_conversation_for_me: { Args: { p_conversation_id: string; p_up_to?: string }; Returns: string | null };
       mfa_required: { Args: Record<PropertyKey, never>; Returns: boolean };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };

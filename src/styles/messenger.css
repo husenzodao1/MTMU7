@@ -192,6 +192,77 @@
   border-radius: 0.875rem;
   -webkit-tap-highlight-color: transparent;
   transition: background-color var(--duration-fast) var(--ease-standard);
+  /* A press and hold is the chat's actions (conversation-list.tsx), not the
+     phone's own link menu or a text selection. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.msg-row[data-held] {
+  background: color-mix(in oklab, var(--color-surface-muted) 90%, transparent);
+}
+.msg-pin {
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--color-ink-muted);
+  transform: rotate(35deg);
+}
+.msg-failed {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--color-danger-600);
+}
+/* The chat's actions, as a short list of large rows. */
+.msg-sheet {
+  display: flex;
+  flex-direction: column;
+  margin: -0.25rem -0.5rem;
+}
+.msg-sheet-item {
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  text-align: start;
+}
+.msg-sheet-item:hover,
+.msg-sheet-item:focus-visible {
+  background: var(--color-surface-muted);
+  outline: none;
+}
+.msg-sheet-item svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  color: var(--color-ink-secondary);
+}
+.msg-sheet-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.125rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: var(--color-surface-muted);
+  color: var(--color-ink);
+}
+.msg-sheet-danger,
+.msg-sheet-item.msg-sheet-danger,
+.msg-sheet-item.msg-sheet-danger svg {
+  color: var(--color-danger-700);
+}
+.msg-sheet-button.msg-sheet-danger {
+  background: var(--color-danger-600);
+  color: #fff;
 }
 .msg-row:hover {
   background: color-mix(in oklab, var(--color-surface-muted) 70%, transparent);

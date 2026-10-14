@@ -18,7 +18,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
   const t = await getTranslations("portal.messages");
   const supabase = await createClient();
 
-  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }, delivered] = await Promise.all([
+  const [{ data: conversation }, { data: memberRows }, { data: messages }, { data: pinnedRows }, { data: blocks }, delivered, mine] = await Promise.all([
     supabase.from("conversations").select("id, type, name, is_active, created_by").eq("id", id).maybeSingle(),
     supabase
       .from("conversation_members")
@@ -38,6 +38,8 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
     // Asked apart from the members, so a database that has not had 00094 yet
     // still opens the thread — just without the second tick.
     supabase.from("conversation_members").select("user_id, last_delivered_at").eq("conversation_id", id),
+    // When this person deleted the chat for themselves (00098), apart for the same reason.
+    supabase.from("conversation_members").select("cleared_at").eq("conversation_id", id).eq("user_id", access.userId).maybeSingle(),
   ]);
   const deliveredAt = new Map((delivered.error ? [] : delivered.data ?? []).map((row) => [row.user_id, row.last_delivered_at]));
   if (!conversation || !conversation.is_active) return null;
@@ -89,6 +91,7 @@ export async function loadThread(access: Access, id: string): Promise<ComponentP
     myRole,
     currentUserId: access.userId,
     initialMessages: (messages ?? []) as unknown as ThreadMessage[],
+    clearedAt: mine.error ? null : mine.data?.cleared_at ?? null,
     initialPinned: (pinnedRows ?? []).map((p) => ({
       id: p.id,
       content: p.content,

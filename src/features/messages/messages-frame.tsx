@@ -47,6 +47,8 @@ export function MessagesFrame({ sidebar, children }: { sidebar: ReactNode; child
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element | null)?.closest?.("a[href]");
       if (!(anchor instanceof HTMLAnchorElement) || (anchor.target && anchor.target !== "_self")) return;
+      // The lift after a long press on a row opens its actions, not the conversation (conversation-list.tsx).
+      if (anchor.dataset.held) return;
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin || !/^\/messages(\/|$)/.test(url.pathname) || url.pathname === window.location.pathname) return;
       setGoing({

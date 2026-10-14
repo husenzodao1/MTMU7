@@ -660,6 +660,23 @@
         "post": "Post",
         "posting": "Posting…",
         "me": "You"
+      },
+      "chatActions": {
+        "title": "Chat actions",
+        "pin": "Pin",
+        "unpin": "Unpin",
+        "mute": "Mute notifications",
+        "unmute": "Unmute notifications",
+        "delete": "Delete chat",
+        "deleteTitle": "Delete this chat?",
+        "deleteText": "The chat and its messages are deleted for you only. Everyone else keeps them. A new message brings the chat back.",
+        "deleteConfirm": "Delete",
+        "cancel": "Cancel",
+        "pinnedMark": "Pinned",
+        "pinnedToast": "Chat pinned.",
+        "unpinnedToast": "Chat unpinned.",
+        "deletedToast": "Chat deleted.",
+        "hint": "Press and hold a chat for actions"
       }
     },
     "notifications": {

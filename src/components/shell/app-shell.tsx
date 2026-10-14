@@ -25,7 +25,10 @@ import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
 import { forgetWebPush } from "@/features/push/client";
 import { UNREAD_TOTAL_EVENT } from "@/features/messages/events";
-import { flushOutbox, forgetOutbox } from "@/features/messages/outbox";
+import { forgetChat } from "@/features/messages/forget";
+import { flushListOps } from "@/features/messages/list-ops";
+import { flushOutbox } from "@/features/messages/outbox";
+import { flushReads } from "@/features/messages/read-queue";
 import { appPlugin } from "@/features/native/bridge";
 import { forgetKeptPages } from "@/lib/kept-pages";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
@@ -330,16 +333,22 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   const pathname = usePathname();
 
   // Messages written with no line go out by themselves once there is one,
-  // whichever page is open (outbox.ts).
+  // whichever page is open (outbox.ts), with the marks of what was read
+  // (read-queue.ts) and the list's pins and deletions (list-ops.ts) — this
+  // person's only.
   useEffect(() => {
-    const flush = () => void flushOutbox();
+    const flush = () => {
+      void flushOutbox(user.id);
+      void flushReads(user.id);
+      void flushListOps(user.id);
+    };
     const first = window.setTimeout(flush, 2500);
     window.addEventListener("online", flush);
     return () => {
       window.clearTimeout(first);
       window.removeEventListener("online", flush);
     };
-  }, []);
+  }, [user.id]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const appRoot = useRef<HTMLDivElement>(null);
   const burger = useRef<HTMLButtonElement>(null);
@@ -627,8 +636,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
                     document.documentElement.setAttribute("data-leaving", "");
                     // This phone or browser stops getting this person's
                     // notifications first (a second or two at most).
-                    forgetOutbox();
-                    await Promise.all([forgetNativeToken(), forgetWebPush(), forgetKeptPages()]);
+                    await Promise.all([forgetNativeToken(), forgetWebPush(), forgetKeptPages(), forgetChat()]);
                     await signOutAction();
                   }}
                 >
