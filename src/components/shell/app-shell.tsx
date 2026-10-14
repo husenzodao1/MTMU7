@@ -13,6 +13,8 @@ import { useInstantNavigation } from "@/components/shell/instant-nav";
 import { PageInstaller } from "@/components/shell/page-installer";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
 import { useQuietRefresh } from "@/components/shell/quiet-refresh";
+import { usePhotoRetry } from "@/components/shell/photo-retry";
+import { useWarmVisibleLinks } from "@/components/shell/visible-links";
 import { useWarmPages } from "@/components/shell/warm-pages";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
@@ -356,10 +358,14 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // The page in front brought up to date by itself every few seconds, with
   // no pull and no reload (quiet-refresh.ts).
   useQuietRefresh(pathname, Boolean(goingTo));
+  // A photo that could not come shows no broken picture, and comes later (photo-retry.ts).
+  usePhotoRetry();
   // Every section of the menu and the bar kept on the device, ready before
   // it is tapped (warm-pages.ts).
   const warm = [...(mobileBar ?? []).map((item) => item.href), ...groups.flatMap((group) => group.items.map((item) => item.href))].slice(0, 18);
   useWarmPages(warm);
+  // And every link on the screen, as it comes into view (visible-links.ts).
+  useWarmVisibleLinks(pathname);
 
   const [prevCount, setPrevCount] = useState(unreadNotifications);
   if (prevCount !== unreadNotifications) {

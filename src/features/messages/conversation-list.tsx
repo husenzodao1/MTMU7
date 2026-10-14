@@ -4,7 +4,7 @@ import { BellOff, Headset, Megaphone, Search, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/misc";
 import { ChannelsDialog } from "@/features/messages/channels";
 import { NewConversationButton } from "@/features/messages/new-conversation";
@@ -13,6 +13,7 @@ import { Ticks, tickState } from "@/features/messages/ticks";
 import { warmPage } from "@/components/shell/warm-pages";
 import { OUTBOX_EVENT, READ_EVENT, UNREAD_TOTAL_EVENT } from "@/features/messages/events";
 import { OUTBOX_KEY, waitingRows, type OutgoingRow } from "@/features/messages/outbox";
+import { renewKeptPage } from "@/lib/kept-pages";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { dayKey, formatClock, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
@@ -143,6 +144,20 @@ export function ConversationList({
     return ids.length > 0 && ids.length <= 100 ? `conversation_id=in.(${ids.join(",")})` : null;
   }, [conversations]);
 
+  // A burst of messages renews a conversation once, after it settles.
+  const renewTimers = useRef(new Map<string, number>());
+  const renewSoon = useCallback((conversationId: string) => {
+    const timers = renewTimers.current;
+    window.clearTimeout(timers.get(conversationId));
+    timers.set(
+      conversationId,
+      window.setTimeout(() => {
+        timers.delete(conversationId);
+        renewKeptPage(`/messages/${conversationId}`);
+      }, 2500)
+    );
+  }, []);
+
   useEffect(() => {
     const supabase = getBrowserClient();
     let channel = supabase
@@ -178,6 +193,9 @@ export function ConversationList({
           return;
         }
         const counts = row.sender_id !== currentUserId && row.conversation_id !== active.current;
+        // What the phone keeps of that conversation takes the message too, so
+        // it opens with it — even later, with no line (public/sw.js).
+        renewSoon(row.conversation_id);
         setLive((current) => ({
           ...current,
           [row.conversation_id]: {
@@ -206,7 +224,7 @@ export function ConversationList({
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
       void supabase.removeChannel(channel);
     };
-  }, [currentUserId, router, idFilter, directFilter]);
+  }, [currentUserId, router, idFilter, directFilter, renewSoon]);
 
   // Read on this device (thread.tsx): cleared here at once, whatever the
   // line — the server's own word comes through realtime when it can.

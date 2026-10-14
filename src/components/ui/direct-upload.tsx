@@ -6,7 +6,11 @@ import { useId, useRef, useState } from "react";
 import { useFieldError } from "@/components/ui/action-form";
 import { Button } from "@/components/ui/button";
 import { checkFile, formatBytes, UPLOAD_RULES, type UploadKind } from "@/lib/storage/files";
+import { shrinkPhoto } from "@/lib/storage/shrink-photo";
 import { getBrowserClient } from "@/lib/supabase/browser";
+
+/** The long edge photos are made down to before uploading, by kind; the rest go up as they are. */
+const PHOTO_EDGE: Partial<Record<UploadKind, number>> = { avatar: 512, cover: 1000, image: 1600 };
 
 /**
  * Uploads a file straight to Supabase Storage under the user's session (the
@@ -44,14 +48,21 @@ export function DirectUpload({
   const acceptValue = accept ?? Object.keys(rule.types).join(",");
 
   async function onChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const picked = event.target.files?.[0];
+    if (!picked) return;
+    const first = checkFile(kind, picked);
+    if (!first.ok) {
+      setState({ status: "error", error: t(`errors.${first.error}`) });
+      return;
+    }
+    setState({ status: "uploading", file: { name: picked.name, size: picked.size, type: picked.type } });
+    // A photo goes up the size it is shown at (shrink-photo.ts).
+    const file = PHOTO_EDGE[kind] ? await shrinkPhoto(picked, PHOTO_EDGE[kind]) : picked;
     const check = checkFile(kind, file);
     if (!check.ok) {
       setState({ status: "error", error: t(`errors.${check.error}`) });
       return;
     }
-    setState({ status: "uploading", file: { name: file.name, size: file.size, type: file.type } });
     const path = `${folder}/${crypto.randomUUID()}.${check.extension}`;
     const { error } = await getBrowserClient().storage.from(rule.bucket).upload(path, file, { contentType: file.type, upsert: false });
     if (error) {

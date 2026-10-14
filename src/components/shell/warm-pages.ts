@@ -8,9 +8,21 @@ import { readInstalled } from "@/lib/kept-pages";
 const warmedAt = new Map<string, number>();
 
 /** Between one page fetched ahead and the next, so a slow line is never flooded. */
-const SPACING_MS = 150;
+const SPACING_MS = 100;
 /** A page fetched ahead this recently is not fetched again for another list. */
 const RECENT_MS = 60_000;
+/**
+ * Of the pages installed on the phone, how many are made ready as the app
+ * opens: the menu's and the office's own. The rest — each conversation,
+ * account, article — are made ready as their links come into view
+ * (visible-links.ts), so the app's memory never holds hundreds at once.
+ */
+const AT_OPEN = 40;
+
+/** Fetched ahead a moment ago: not again yet. */
+export function warmedRecently(href: string): boolean {
+  return Date.now() - (warmedAt.get(href) ?? 0) <= RECENT_MS;
+}
 
 type Router = ReturnType<typeof useRouter>;
 /** The whole page, data and all — not only the frame a `<Link>` fetches by itself. */
@@ -34,7 +46,7 @@ export function warmPage(router: Router, href: string, keep: () => boolean = () 
 
 /** A list of pages fetched ahead one after another, any fetched a moment ago left out. */
 export function warmPages(router: Router, hrefs: string[], keep: () => boolean = () => true): () => void {
-  const list = [...new Set(hrefs)].filter((href) => Date.now() - (warmedAt.get(href) ?? 0) > RECENT_MS);
+  const list = [...new Set(hrefs)].filter((href) => !warmedRecently(href));
   let index = 0;
   let timer = 0;
   const next = () => {
@@ -47,9 +59,9 @@ export function warmPages(router: Router, hrefs: string[], keep: () => boolean =
 }
 
 /**
- * Every page in `hrefs`, and every page installed on this phone after signing
- * in (page-installer.tsx), kept ready in the app's memory the way an app keeps
- * its screens: fetched one after another once the page in front is idle, and
+ * Every page in `hrefs`, and the first of those installed on this phone after
+ * signing in (page-installer.tsx), kept ready in the app's memory the way an
+ * app keeps its screens: fetched one after another as the app opens, and
  * again whenever a copy grows old — all of it behind the screen. What is on
  * the screen is brought up to date apart from these (quiet-refresh.ts, and a
  * pull at the top, pull-to-refresh.tsx).
@@ -61,13 +73,11 @@ export function useWarmPages(hrefs: string[]) {
   useEffect(() => {
     let live = true;
     let stop = () => {};
+    // Soon after opening: they come from the device (public/sw.js), so this is quick.
     const begin = window.setTimeout(() => {
-      const idle = window.requestIdleCallback ?? ((run: () => void) => window.setTimeout(run, 300));
-      idle(() => {
-        const installed = readInstalled()?.pages ?? [];
-        stop = warmPages(router, [...key.split("|").filter(Boolean), ...installed], () => live);
-      });
-    }, 600);
+      const installed = (readInstalled()?.pages ?? []).slice(0, AT_OPEN);
+      stop = warmPages(router, [...key.split("|").filter(Boolean), ...installed], () => live);
+    }, 200);
     return () => {
       live = false;
       window.clearTimeout(begin);

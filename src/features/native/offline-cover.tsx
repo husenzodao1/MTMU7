@@ -22,12 +22,68 @@ const DEVICE_OFFLINE_MS = 1200;
 const PROBE_MS = 2500;
 /** A look with no answer by now went out and is waiting — the line is there, only slow. Shorter than CONFIRM_MS, so a slow line never shows the cover. */
 const PROBE_TIMEOUT_MS = 3000;
+/** The "no internet" note says it once, for this long, and goes; the page stays usable under it. */
+const OFFLINE_NOTE_MS = 4000;
+/** A note pushed this far sideways goes. */
+const SWIPE_AWAY_PX = 70;
+
+/**
+ * A note at the foot of the screen that goes when it is pushed sideways, as a
+ * phone's own notifications do: it follows the finger, and let go far enough
+ * it slides off; not far enough, it comes back.
+ */
+function useSwipeAway(onAway: () => void) {
+  const start = useRef<{ x: number; y: number; id: number } | null>(null);
+  const away = useRef(onAway);
+  useEffect(() => {
+    away.current = onAway;
+  }, [onAway]);
+  const move = (element: HTMLElement, dx: number) => {
+    element.style.transform = dx ? `translateX(${dx}px)` : "";
+    element.style.opacity = dx ? String(Math.max(0.15, 1 - Math.abs(dx) / 220)) : "";
+  };
+  return {
+    onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
+      if ((event.target as Element).closest("button")) return;
+      start.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+      event.currentTarget.style.transition = "none";
+    },
+    onPointerMove: (event: React.PointerEvent<HTMLElement>) => {
+      const from = start.current;
+      if (!from || from.id !== event.pointerId) return;
+      const dx = event.clientX - from.x;
+      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(event.clientY - from.y)) return;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
+      move(event.currentTarget, dx);
+    },
+    onPointerUp: (event: React.PointerEvent<HTMLElement>) => {
+      const from = start.current;
+      start.current = null;
+      if (!from) return;
+      const element = event.currentTarget;
+      const dx = event.clientX - from.x;
+      element.style.transition = "transform 180ms ease, opacity 180ms ease";
+      if (Math.abs(dx) >= SWIPE_AWAY_PX) {
+        move(element, Math.sign(dx) * window.innerWidth);
+        window.setTimeout(() => away.current(), 180);
+      } else {
+        move(element, 0);
+      }
+    },
+    onPointerCancel: (event: React.PointerEvent<HTMLElement>) => {
+      start.current = null;
+      event.currentTarget.style.transition = "transform 180ms ease, opacity 180ms ease";
+      move(event.currentTarget, 0);
+    },
+  };
+}
 
 /**
  * A note at the foot of the screen when the internet has really gone: a
  * still Wi-Fi sign and plain words — the page under it stays in use, from
- * what is kept on the device. It goes by itself, after a short "connected",
- * when the internet returns.
+ * what is kept on the device. It says so once, goes by itself after a few
+ * seconds or at once when pushed sideways, and is not said again until the
+ * line has come back and gone again; a short "connected" when it returns.
  *
  * Next.js notices the connection (experimental.useOffline) and keeps whatever
  * was asked for meanwhile, sending it again once the connection is back.
@@ -43,6 +99,9 @@ export function OfflineCover() {
   const [back, setBack] = useState(false);
   const [slow, setSlow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  // The "no internet" note, said once for each time the line goes: it goes by
+  // itself after a few seconds, or at once when pushed aside.
+  const [offlineNoted, setOfflineNoted] = useState(false);
 
   // Every word from the device — online or offline — is checked at once.
   const [nudge, setNudge] = useState(0);
@@ -170,9 +229,22 @@ export function OfflineCover() {
     return () => window.clearTimeout(hide);
   }, [back]);
 
+  useEffect(() => {
+    if (!offline) {
+      const reset = window.setTimeout(() => setOfflineNoted(false), 0);
+      return () => window.clearTimeout(reset);
+    }
+    if (offlineNoted) return;
+    const hide = window.setTimeout(() => setOfflineNoted(true), OFFLINE_NOTE_MS);
+    return () => window.clearTimeout(hide);
+  }, [offline, offlineNoted]);
+
+  const swipeSlow = useSwipeAway(() => setDismissed(true));
+  const swipeNet = useSwipeAway(() => (offline ? setOfflineNoted(true) : setBack(false)));
+
   if (!offline && !back && slow && !dismissed) {
     return (
-      <div className="slow-note" role="status" aria-live="polite">
+      <div className="slow-note touch-pan-y" role="status" aria-live="polite" {...swipeSlow}>
         <svg viewBox="0 0 24 24" className="slow-note-waves" aria-hidden>
           <path d="M8.5 15.5a5 5 0 0 1 7 0" />
           <path d="M5.5 12.5a9 9 0 0 1 13 0" />
@@ -193,9 +265,15 @@ export function OfflineCover() {
   // No cover over the page: what is on the device is still there to use —
   // the pages kept and the last of everything (public/sw.js) — so the foot of
   // the screen says so, and goes when the line is back.
-  if (!offline && !back) return null;
+  if ((!offline || offlineNoted) && !back) return null;
   return (
-    <div className="slow-note net-note" data-mode={offline ? "offline" : "back"} role={offline ? "alert" : "status"} aria-live="polite">
+    <div
+      className="slow-note net-note touch-pan-y"
+      data-mode={offline ? "offline" : "back"}
+      role={offline ? "alert" : "status"}
+      aria-live="polite"
+      {...swipeNet}
+    >
       <span className="net-note-icon" aria-hidden>
         {offline ? <WifiOff /> : <Wifi />}
       </span>

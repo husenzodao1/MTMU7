@@ -28,7 +28,7 @@ const SLOW_MS = 6000;
  */
 const FROM_DEVICE_MS = 400;
 
-function pageLink(target: EventTarget | null): URL | null {
+export function pageLink(target: EventTarget | null): URL | null {
   const anchor = (target as Element | null)?.closest?.("a[href]");
   if (!(anchor instanceof HTMLAnchorElement)) return null;
   if ((anchor.target && anchor.target !== "_self") || anchor.hasAttribute("download") || anchor.dataset.instant === "off") return null;

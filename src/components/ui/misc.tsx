@@ -31,12 +31,19 @@ export function Avatar({
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
-  const face = src ? (
-    // eslint-disable-next-line @next/next/no-img-element -- user avatars come from signed/public storage URLs of arbitrary size
-    <img src={src} alt="" className={cn("shrink-0 rounded-full bg-surface object-cover", dimension, className)} loading="lazy" />
-  ) : (
-    <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-brand-100 font-semibold text-brand-text-strong", dimension, className)} aria-hidden>
+  // The initials are always there, under the photo: while it comes, and if it
+  // cannot come at all (a photo that fails is hidden, photo-retry.ts), the
+  // circle shows them rather than a broken picture.
+  const face = (
+    <span
+      className={cn("relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100 font-semibold text-brand-text-strong", dimension, className)}
+      aria-hidden
+    >
       {initials || "?"}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- user avatars come from signed/public storage URLs of arbitrary size
+        <img src={src} alt="" className="absolute inset-0 size-full rounded-full bg-surface object-cover" loading="lazy" />
+      ) : null}
     </span>
   );
   if (!ring) return face;

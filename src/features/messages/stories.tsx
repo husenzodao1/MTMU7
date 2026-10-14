@@ -635,12 +635,20 @@ function StoryComposer({ schoolId, userId, onClose }: { schoolId: string; userId
 
         <div className="story-foot story-foot-compose">
           {mode === "photo" && photo ? (
-            <input
+            // Room to write: a few lines, growing with the words up to about six.
+            <textarea
               className="story-caption-input"
               value={caption}
-              onChange={(event) => setCaption(event.target.value)}
+              onChange={(event) => {
+                setCaption(event.target.value);
+                const field = event.currentTarget;
+                field.style.height = "auto";
+                field.style.height = `${field.scrollHeight}px`;
+              }}
               placeholder={t("caption")}
               maxLength={700}
+              rows={3}
+              enterKeyHint="enter"
               aria-label={t("caption")}
             />
           ) : null}

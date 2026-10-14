@@ -21,19 +21,23 @@
 
 const STATIC_CACHE = "static-v1";
 const PAGE_CACHE = "pages-v1";
+/** Kept data older than this is fetched again behind the copy answered from the device. */
+const DATA_FRESH_MS = 60_000;
+/** Kept data fetched again side by side, at most. */
+const RENEW_AT_ONCE = 3;
 /** A page's data, kept apart from the pages: there is much more of it, and it must never push an installed page out. */
 const DATA_CACHE = "data-v1";
 const MEDIA_CACHE = "media-v1";
 /** How many pages are kept, the oldest let go first. */
-const PAGE_LIMIT = 400;
+const PAGE_LIMIT = 700;
 /** How many data fetches are kept, the oldest let go first. */
-const DATA_LIMIT = 400;
+const DATA_LIMIT = 1200;
 /** After something is saved, the page it was saved on is installed again this long after. */
 const AFTER_CHANGE_MS = 2500;
 /** Pages installed side by side (keep-pages): quick on a good line, gentle on a slow one. */
-const INSTALL_AT_ONCE = 3;
+const INSTALL_AT_ONCE = 5;
 /** How many photos from the school's storage are kept. */
-const MEDIA_LIMIT = 500;
+const MEDIA_LIMIT = 800;
 /** A fresh page's data slower than this is answered from what was kept, if anything was. */
 const DATA_WAIT_MS = 2500;
 /** A page never seen before waits this long for the network before saying there is none. */
@@ -126,9 +130,12 @@ async function trim(cache, limit) {
 
 /**
  * The scripts and styles a page or its data name, fetched into the device
- * now — so a page fetched ahead, never opened, still opens with no line.
+ * now — so a page fetched ahead, never opened, still opens with no line —
+ * and the photos it shows from the school's storage (avatars, news, covers),
+ * so they are there too, with or without one.
  */
 const CHUNK = /(?:\/_next\/)?static\/(?:chunks|css|media)\/[A-Za-z0-9_\-./~%()[\]@]+?\.(?:js|css|woff2)/g;
+const PHOTO = /https:\/\/[a-z0-9.-]+\/storage\/v1\/object\/public\/[A-Za-z0-9_\-./%]+?\.(?:jpe?g|png|webp|gif|avif)/gi;
 async function keepChunks(response) {
   try {
     const text = await response.text();
@@ -138,16 +145,43 @@ async function keepChunks(response) {
       found.add(new URL(path, self.location.origin).href);
       if (found.size >= 80) break;
     }
-    if (found.size === 0) return;
-    const cache = await caches.open(STATIC_CACHE);
-    for (const href of found) {
-      if (await cache.match(href)) continue;
-      const answer = await fetch(href).catch(() => null);
-      if (answer && answer.ok && answer.status === 200) await cache.put(href, answer).catch(() => undefined);
+    if (found.size > 0) {
+      const cache = await caches.open(STATIC_CACHE);
+      for (const href of found) {
+        if (await cache.match(href)) continue;
+        const answer = await fetch(href).catch(() => null);
+        if (answer && answer.ok && answer.status === 200) await cache.put(href, answer).catch(() => undefined);
+      }
+    }
+    const photos = new Set();
+    for (const match of text.matchAll(PHOTO)) {
+      photos.add(match[0]);
+      if (photos.size >= 40) break;
+    }
+    if (photos.size > 0) {
+      const cache = await caches.open(MEDIA_CACHE);
+      for (const href of photos) {
+        if (await cache.match(href, { ignoreVary: true })) continue;
+        const answer = await fetchPhoto(href);
+        if (answer && answer.type === "cors") await cache.put(href, answer).catch(() => undefined);
+      }
+      await trim(cache, MEDIA_LIMIT).catch(() => undefined);
     }
   } catch {
     // Kept is kept; what could not be fetched is fetched when it is needed.
   }
+}
+
+/**
+ * A photo from the school's storage, asked for so that it may be kept: an
+ * <img> asks without CORS, and what comes back then cannot be kept or even
+ * looked at; storage answers CORS requests for public files, so it is asked
+ * that way, and the plain way only if that fails.
+ */
+async function fetchPhoto(href) {
+  const shared = await fetch(href, { mode: "cors", credentials: "omit" }).catch(() => null);
+  if (shared && shared.ok && shared.status === 200) return shared;
+  return null;
 }
 
 /** A plain page for an address never seen before, with no line to fetch it on. */
@@ -166,9 +200,20 @@ button{min-height:2.75rem;padding:0 1.5rem;border:0;border-radius:.75rem;backgro
   return new Response(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
+/** A copy to keep, marked with when it was kept, so it is known how old it is (answerData). */
+function stamped(response) {
+  const headers = new Headers(response.headers);
+  headers.set("x-kept-at", String(Date.now()));
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function keptAt(response) {
+  return Number(response.headers.get("x-kept-at")) || 0;
+}
+
 function keep(event, cache, key, response, limit = PAGE_LIMIT, chunks = true) {
   if (!response || !response.ok || response.status !== 200 || response.type !== "basic" || response.redirected) return;
-  const copy = response.clone();
+  const copy = stamped(response.clone());
   const scan = chunks ? response.clone() : null;
   event.waitUntil(
     cache
@@ -269,13 +314,67 @@ async function answerData(event, request, url) {
     freshFor = null;
     return answerFresh(event, request, url, cache, key, kept, build);
   }
-  if (kept) return kept;
+  if (kept) {
+    // Answered at once from the device; a copy more than a moment old is
+    // fetched again behind it, so the next time — with no line, say — it is
+    // the newest the phone could have had.
+    if (Date.now() - keptAt(kept) > DATA_FRESH_MS && self.navigator.onLine !== false) event.waitUntil(renew(cache, key, request, kept));
+    return kept;
+  }
   const response = await fetch(request).catch(() => null);
   if (response) {
     keep(event, cache, key, response, DATA_LIMIT);
     return response;
   }
   return Response.error();
+}
+
+/** Every kept copy of one page's data fetched again (renew), each asked exactly as it was the first time. */
+async function renewPage(path) {
+  try {
+    const cache = await caches.open(DATA_CACHE);
+    const keys = (await cache.keys()).filter((key) => pagePath(new URL(key.url)) === path);
+    await Promise.all(
+      keys.map(async (key) => {
+        const kept = await cache.match(key, { ignoreVary: true });
+        if (kept) await renew(cache, key.url, key, kept);
+      })
+    );
+  } catch {
+    // Fetched again the next time it is asked for.
+  }
+}
+
+/** Copies being fetched again (renew), and how many at once: the page in front's own requests come first. */
+const renewing = new Set();
+let renewRunning = 0;
+
+/**
+ * A page's kept data fetched again behind the screen and kept in its place —
+ * never one from a newer version of the site than the copy it replaces, which
+ * the page on the screen could not use (the version is taken whole, answerFresh).
+ */
+async function renew(cache, key, request, kept) {
+  if (renewing.has(key)) return;
+  renewing.add(key);
+  try {
+    while (renewRunning >= RENEW_AT_ONCE) await wait(300);
+    renewRunning += 1;
+    try {
+      const response = await fetch(request);
+      const was = kept.headers.get("x-mtmu7-build");
+      const now = response.headers.get("x-mtmu7-build");
+      if (response.ok && response.status === 200 && response.type === "basic" && !response.redirected && !(was && now && was !== now)) {
+        await cache.put(key, stamped(response));
+      }
+    } finally {
+      renewRunning -= 1;
+    }
+  } catch {
+    // No line after all: kept as it was, and tried again next time.
+  } finally {
+    renewing.delete(key);
+  }
 }
 
 /**
@@ -327,13 +426,14 @@ async function answerFresh(event, request, url, cache, key, kept, build) {
 }
 
 /**
- * Something was saved (a form, a journal page, a message): the kept data is
- * let go of, and the page it was saved on is installed again a moment later,
- * so the saved marks are what the page shows next time — not the ones from
- * before.
+ * Something was saved (a form, a journal page): what the device kept of the
+ * page it was saved on is let go of, and the page is installed again a
+ * moment later, so the saved marks are what it shows next time — not the
+ * ones from before. Every other page keeps what it had: whichever is opened
+ * next shows it at once and brings itself up to date a moment later
+ * (quiet-refresh.ts).
  */
 async function afterChange(referrer) {
-  await caches.delete(DATA_CACHE).catch(() => false);
   let url;
   try {
     url = new URL(referrer);
@@ -341,6 +441,13 @@ async function afterChange(referrer) {
     return;
   }
   if (url.origin !== self.location.origin || pageKind({ mode: "navigate", headers: new Headers() }, url) !== "page") return;
+  try {
+    const cache = await caches.open(DATA_CACHE);
+    const path = pagePath(url);
+    for (const key of await cache.keys()) if (pagePath(new URL(key.url)) === path) await cache.delete(key);
+  } catch {
+    // Brought up to date by the page's next refresh all the same.
+  }
   await wait(AFTER_CHANGE_MS);
   await installPage(url);
 }
@@ -358,11 +465,14 @@ async function answerStatic(request) {
   return response;
 }
 
-async function answerMedia(event, request) {
+async function answerMedia(event, request, url) {
   const cache = await caches.open(MEDIA_CACHE);
   const hit = await cache.match(request, { ignoreVary: true });
   if (hit) return hit;
-  const response = await fetch(request);
+  // From the school's storage: asked with CORS, so the answer can be kept
+  // (fetchPhoto); were it asked the <img>'s way, it would come back sealed
+  // and be fetched again every time, and on a bad line not at all.
+  const response = (url.origin !== self.location.origin ? await fetchPhoto(url.href) : null) || (await fetch(request));
   if (response.ok && (response.type === "basic" || response.type === "cors") && response.status === 200) {
     const copy = response.clone();
     event.waitUntil(
@@ -399,7 +509,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (isMedia(url)) {
-    event.respondWith(answerMedia(event, request));
+    event.respondWith(answerMedia(event, request, url));
     return;
   }
   const kind = pageKind(request, url);
@@ -458,6 +568,12 @@ self.addEventListener("message", (event) => {
   }
   if (data.type === "keep-pages" && Array.isArray(data.paths)) {
     event.waitUntil(keepPages(data.paths, event.ports && event.ports[0]));
+  }
+  // Something on a page has changed that the page is not open to show — a
+  // message in a conversation, say (conversation-list.tsx): what the device
+  // kept of it is fetched again now, so it opens with it, line or no line.
+  if (data.type === "renew-page" && typeof data.path === "string") {
+    event.waitUntil(renewPage(data.path));
   }
   // The page in front is about to refresh itself (quiet-refresh.ts): its
   // next data comes from the network. After refreshes that found no line,
