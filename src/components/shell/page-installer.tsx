@@ -29,9 +29,10 @@ interface Progress {
  * scripts and styles (public/sw.js, keep-pages), and the app's memory holds
  * them ready for a tap (warm-pages.ts).
  *
- * After that, nothing is fetched again behind anybody's back: a pull at the
- * top of a page installs everything afresh, quietly, and takes a new version
- * of the site if there is one.
+ * After that, the page in front keeps itself up to date (quiet-refresh.ts),
+ * and a pull at the top of a page installs everything afresh, quietly, and
+ * takes a new version of the site if there is one. A new version opened any
+ * other way has the rest of the pages installed in it the same way.
  */
 export function PageInstaller({ userId }: { userId: string }) {
   const t = useTranslations("common.install");
@@ -41,7 +42,7 @@ export function PageInstaller({ userId }: { userId: string }) {
   const running = useRef(false);
 
   const install = useCallback(
-    async (visible: boolean) => {
+    async (visible: boolean, reloadIfNewer = !visible) => {
       if (running.current) return;
       running.current = true;
       try {
@@ -64,7 +65,7 @@ export function PageInstaller({ userId }: { userId: string }) {
         }
         // A pull that found a newer site: open it — from the pages just installed.
         const here = document.documentElement.dataset.build;
-        if (!visible && here && here !== "local" && build && build !== here) window.location.reload();
+        if (reloadIfNewer && here && here !== "local" && build && build !== here) window.location.reload();
       } catch {
         // No line: tried again on the next pull, or the next time the app opens.
       } finally {
@@ -87,10 +88,15 @@ export function PageInstaller({ userId }: { userId: string }) {
       if (navigator.onLine) void install(true);
       else window.addEventListener("online", () => void install(true), { once: true });
     };
+    const here = document.documentElement.dataset.build;
     if (!record || record.user !== userId) {
       // Somebody else's pages, or none: whoever signs in gets their own.
       if (record) forgetInstalled();
       timer = window.setTimeout(begin, 900);
+    } else if (here && here !== "local" && record.build !== here) {
+      // A newer version of the site is open (a quiet refresh found it,
+      // public/sw.js): the rest of the pages are installed in it, quietly.
+      timer = window.setTimeout(() => void install(false, false), 3000);
     }
     const again = () => void install(false);
     window.addEventListener(REINSTALL_EVENT, again);

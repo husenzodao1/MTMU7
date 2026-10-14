@@ -483,7 +483,7 @@ export function Thread({
           }
           await waitForLine(Math.min(30_000, 1500 * 2 ** Math.min(tries, 5)));
         }
-        dropOutgoing(id);
+        dropOutgoing(id, true);
         photos.current.delete(local.id);
         blobs.current.delete(local.id);
         setMessages((current) => {

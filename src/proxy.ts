@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { BUILD } from "@/lib/build";
 import type { Database } from "@/lib/db/database.types";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
 import { isGuestOnlyPath, isPortalPath, shouldRedirectSignedInAway } from "@/lib/security/routes";
@@ -113,6 +114,9 @@ function withSecurityHeaders(target: NextResponse, csp: string, cookieSource?: N
     for (const cookie of cookieSource.cookies.getAll()) target.cookies.set(cookie);
   }
   target.headers.set("Content-Security-Policy", csp);
+  // Which version of the site answered: a page refreshing itself from an
+  // older one is opened anew in this one instead (public/sw.js, answerFresh).
+  target.headers.set("x-mtmu7-build", BUILD);
   return target;
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { announceMessage } from "@/features/push/client";
+import { OUTBOX_EVENT } from "@/features/messages/events";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
@@ -15,9 +16,14 @@ import { getBrowserClient } from "@/lib/supabase/browser";
  * kept across a restart of the app and go out by themselves once there is a
  * line (flushOutbox, from the app's frame), whether or not their conversation
  * is open; photos, files and recordings go while the app is open.
+ *
+ * The list of conversations shows each one's waiting message, clock and all
+ * (conversation-list.tsx): it is told of every change (OUTBOX_EVENT).
  */
 
-const KEY = "chat-outbox-v1";
+/** Where the waiting words are kept on the device; another tab hears of a change to it. */
+export const OUTBOX_KEY = "chat-outbox-v1";
+const KEY = OUTBOX_KEY;
 
 export interface OutgoingRow {
   id: string;
@@ -57,20 +63,47 @@ function write(rows: OutgoingRow[]) {
   }
 }
 
+/**
+ * Everything on its way from this page, photos, files and recordings too —
+ * which are not kept across a restart, so the list shows their clocks only
+ * while the app stays open.
+ */
+const onTheWay = new Map<string, OutgoingRow>();
+
+function tell(sent?: OutgoingRow) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(OUTBOX_EVENT, { detail: sent ? { sent } : {} }));
+}
+
 /** Kept until sent: words and places only (a photo's bytes are not kept across a restart). */
 export function keepOutgoing(row: OutgoingRow) {
-  if (row.type !== "text" && row.type !== "location") return;
-  write([...read().filter((r) => r.id !== row.id), { ...row, created_at: row.created_at ?? new Date().toISOString() }]);
+  const stamped = { ...row, created_at: row.created_at ?? new Date().toISOString() };
+  onTheWay.set(row.id, stamped);
+  if (row.type === "text" || row.type === "location") write([...read().filter((r) => r.id !== row.id), stamped]);
+  tell();
 }
 
 /** Signing out: one person's unsent words are not sent as the next. */
 export function forgetOutbox() {
+  onTheWay.clear();
   write([]);
+  tell();
 }
 
-export function dropOutgoing(id: string) {
+/** No longer waiting: `sent` when the server has it, which the list shows at once, ticked. */
+export function dropOutgoing(id: string, sent = false) {
   const rows = read();
+  const row = onTheWay.get(id) ?? rows.find((r) => r.id === id);
+  onTheWay.delete(id);
   if (rows.some((r) => r.id === id)) write(rows.filter((r) => r.id !== id));
+  if (row) tell(sent ? row : undefined);
+}
+
+/** Every message still on its way from this device, whatever its conversation. */
+export function waitingRows(): OutgoingRow[] {
+  const rows = new Map(read().map((r) => [r.id, r]));
+  for (const [id, row] of onTheWay) rows.set(id, row);
+  return [...rows.values()];
 }
 
 /** What this person has waiting for a conversation, oldest first. */
@@ -133,9 +166,11 @@ export async function flushOutbox(): Promise<string[]> {
   const sent: string[] = [];
   try {
     for (const row of read()) {
+      // Already going, from its conversation on this page (thread.tsx): not sent twice.
+      if (onTheWay.has(row.id)) continue;
       const result = await sendRow(row);
       if ("again" in result) break;
-      dropOutgoing(row.id);
+      dropOutgoing(row.id, "sent" in result);
       if ("sent" in result) {
         sent.push(row.id);
         announceMessage(row.id);

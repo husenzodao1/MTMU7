@@ -12,6 +12,7 @@ import { BarIcon } from "@/components/shell/bar-icons";
 import { useInstantNavigation } from "@/components/shell/instant-nav";
 import { PageInstaller } from "@/components/shell/page-installer";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
+import { useQuietRefresh } from "@/components/shell/quiet-refresh";
 import { useWarmPages } from "@/components/shell/warm-pages";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
@@ -326,10 +327,6 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   const t = useTranslations();
   const pathname = usePathname();
 
-  // A page opened from what the device kept (public/sw.js) stays as it is:
-  // the screen changes when its person pulls it down, never by itself
-  // (pull-to-refresh.tsx). The service worker has already fetched it again
-  // behind it, so the next opening shows the newer copy.
   // Messages written with no line go out by themselves once there is one,
   // whichever page is open (outbox.ts).
   useEffect(() => {
@@ -356,6 +353,9 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // The page a tap is going to, drawn at once as its loading screen.
   const closeMenu = useCallback(() => setDrawerOpen(false), []);
   const goingTo = useInstantNavigation(pathname, closeMenu);
+  // The page in front brought up to date by itself every few seconds, with
+  // no pull and no reload (quiet-refresh.ts).
+  useQuietRefresh(pathname, Boolean(goingTo));
   // Every section of the menu and the bar kept on the device, ready before
   // it is tapped (warm-pages.ts).
   const warm = [...(mobileBar ?? []).map((item) => item.href), ...groups.flatMap((group) => group.items.map((item) => item.href))].slice(0, 18);

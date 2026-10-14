@@ -11,8 +11,9 @@
  *    person can open is installed after signing in (keep-pages,
  *    page-installer.tsx), and every page and its data shown since is kept.
  *    A page and its data open from the device at once, with or without a
- *    line; the screen changes only when its person pulls it down, and what
- *    was kept is brought up to date when something is saved.
+ *    line; the page in front is then brought up to date from the network
+ *    every few seconds, quietly (fresh-data, quiet-refresh.ts), and what was
+ *    kept is let go of when something is saved or the page is pulled down.
  *
  * Signing out empties the kept pages (app-shell.tsx, signed-out.tsx): one
  * person's screens are never shown to the next.
@@ -37,6 +38,24 @@ const MEDIA_LIMIT = 500;
 const DATA_WAIT_MS = 2500;
 /** A page never seen before waits this long for the network before saying there is none. */
 const PAGE_WAIT_MS = 12000;
+/** A quiet refresh slower than this is answered with the last one, and kept when it comes. */
+const FRESH_WAIT_MS = 8000;
+/** A quiet refresh with no line is tried this many times, a little apart, before giving up. */
+const FRESH_TRIES = 3;
+/** How long the page's word that its next data is to be fresh holds. */
+const FRESH_HOLD_MS = 5000;
+
+/**
+ * The page in front, which has asked for its next data from the network
+ * (quiet-refresh.ts): its address, the version of the site it is, and until
+ * when the word holds.
+ */
+let freshFor = null;
+/** Quiet refreshes that found no line, one after another, and when the last did: they rest a while. */
+let freshMisses = 0;
+let freshMissedAt = 0;
+/** The version of the site a page was last moved on from (answerFresh): moved once, not on every refresh. */
+let movedFrom = "";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -147,15 +166,15 @@ button{min-height:2.75rem;padding:0 1.5rem;border:0;border-radius:.75rem;backgro
   return new Response(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
-function keep(event, cache, key, response, limit = PAGE_LIMIT) {
+function keep(event, cache, key, response, limit = PAGE_LIMIT, chunks = true) {
   if (!response || !response.ok || response.status !== 200 || response.type !== "basic" || response.redirected) return;
   const copy = response.clone();
-  const scan = response.clone();
+  const scan = chunks ? response.clone() : null;
   event.waitUntil(
     cache
       .put(key, copy)
       .then(() => trim(cache, limit))
-      .then(() => keepChunks(scan))
+      .then(() => (scan ? keepChunks(scan) : undefined))
       .catch(() => undefined)
   );
 }
@@ -201,17 +220,55 @@ async function answerPage(event, request, url) {
   return offlinePage();
 }
 
+/** A page's own address, without Next.js's mark of the state its data was asked from. */
+function pagePath(url) {
+  const params = new URLSearchParams(url.search);
+  params.delete("_rsc");
+  const search = params.toString();
+  return `${url.pathname}${search ? `?${search}` : ""}`;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Answered by another version of the site than the page that asked (src/proxy.ts names it). */
+function otherBuild(response, build) {
+  const served = response.headers.get("x-mtmu7-build");
+  return Boolean(served && build && build !== "local" && served !== build);
+}
+
+/** One page fetched afresh and kept, as installing it does (keep-pages). */
+async function installPage(url) {
+  try {
+    const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
+    const html = (response.headers.get("content-type") || "").includes("text/html");
+    if (response.ok && response.status === 200 && !response.redirected && html) {
+      const cache = await caches.open(PAGE_CACHE);
+      await cache.put(pageKey(url, "page"), response);
+    }
+  } catch {
+    // Installed again on the next pull.
+  }
+}
+
 /**
  * A page's data — what a tap inside the portal fetches — from the device
  * whenever it was kept, as the page itself is: the portal does not wait on
  * the network for anything it has already shown. Kept data is let go of
  * when its person pulls a page down (pull-to-refresh.tsx) and when anything
- * is saved (below), so what changed is fetched again then.
+ * is saved (below), so what changed is fetched again then; and the page in
+ * front asks for its own afresh every few seconds (answerFresh).
  */
 async function answerData(event, request, url) {
   const cache = await caches.open(DATA_CACHE);
   const key = pageKey(url, "data");
   const kept = await cache.match(key, { ignoreVary: true });
+  if (freshFor && freshFor.until > Date.now() && freshFor.path === pagePath(url)) {
+    const build = freshFor.build;
+    freshFor = null;
+    return answerFresh(event, request, url, cache, key, kept, build);
+  }
   if (kept) return kept;
   const response = await fetch(request).catch(() => null);
   if (response) {
@@ -219,6 +276,54 @@ async function answerData(event, request, url) {
     return response;
   }
   return Response.error();
+}
+
+/**
+ * The page in front brought up to date, quietly (quiet-refresh.ts): from the
+ * network, and kept, so that the next refresh has it to fall back on. A slow
+ * line is answered with the last refresh, and the new one is kept when it
+ * comes; no line at all is tried a few times, a little apart, then answered
+ * the same way — the page stays as it is, never reloads — and the refreshes
+ * rest a while.
+ *
+ * A newer version of the site cannot be laid over the one on the screen:
+ * Next.js opens the page again for it. So the page is installed anew first,
+ * and opens at once from the device in the new version; what was kept of the
+ * old version's data goes (the rest of the pages are installed again behind
+ * it, page-installer.tsx).
+ */
+async function answerFresh(event, request, url, cache, key, kept, build) {
+  for (let tries = 0; tries < FRESH_TRIES; tries += 1) {
+    if (tries > 0) await wait(1200 * tries);
+    const fresh = fetch(request).catch(() => null);
+    const answer = kept ? await Promise.race([fresh, wait(FRESH_WAIT_MS).then(() => "slow")]) : await fresh;
+    if (answer === "slow") {
+      event.waitUntil(
+        fresh
+          .then((late) => (late && late.ok && late.status === 200 && !late.redirected && !otherBuild(late, build) ? cache.put(key, late) : undefined))
+          .catch(() => undefined)
+      );
+      return kept;
+    }
+    if (!answer) continue;
+    if (otherBuild(answer, build) && movedFrom !== build) {
+      movedFrom = build;
+      await caches.delete(DATA_CACHE).catch(() => false);
+      await installPage(new URL(pagePath(url), self.location.origin));
+      return answer;
+    }
+    if (answer.status >= 500) {
+      freshMisses += 1;
+      freshMissedAt = Date.now();
+      return kept || answer;
+    }
+    freshMisses = 0;
+    keep(event, cache, key, answer, DATA_LIMIT, false);
+    return answer;
+  }
+  freshMisses += 1;
+  freshMissedAt = Date.now();
+  return kept || Response.error();
 }
 
 /**
@@ -236,17 +341,8 @@ async function afterChange(referrer) {
     return;
   }
   if (url.origin !== self.location.origin || pageKind({ mode: "navigate", headers: new Headers() }, url) !== "page") return;
-  await new Promise((resolve) => setTimeout(resolve, AFTER_CHANGE_MS));
-  try {
-    const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
-    const html = (response.headers.get("content-type") || "").includes("text/html");
-    if (response.ok && response.status === 200 && !response.redirected && html) {
-      const cache = await caches.open(PAGE_CACHE);
-      await cache.put(pageKey(url, "page"), response);
-    }
-  } catch {
-    // Installed again on the next pull.
-  }
+  await wait(AFTER_CHANGE_MS);
+  await installPage(url);
 }
 
 async function answerStatic(request) {
@@ -284,9 +380,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") {
     // Answered by the network as ever. A form saved on a page (a server
     // action posts to the page itself) brings what was kept up to date
-    // behind it; the API's own posts — a chat message, a sign of life — do not.
+    // behind it; the API's own posts — a chat message, a sign of life — do
+    // not, and nor does Next.js asking whether the line is back (HEAD).
     const target = new URL(request.url);
-    if (target.origin === self.location.origin && !target.pathname.startsWith("/api/") && request.referrer) {
+    if (request.method !== "HEAD" && target.origin === self.location.origin && !target.pathname.startsWith("/api/") && request.referrer) {
       event.waitUntil(afterChange(request.referrer));
     }
     return;
@@ -361,6 +458,20 @@ self.addEventListener("message", (event) => {
   }
   if (data.type === "keep-pages" && Array.isArray(data.paths)) {
     event.waitUntil(keepPages(data.paths, event.ports && event.ports[0]));
+  }
+  // The page in front is about to refresh itself (quiet-refresh.ts): its
+  // next data comes from the network. After refreshes that found no line,
+  // the next is let through only after a rest — longer each time, up to five
+  // minutes — unless its person pulled the page down.
+  if (data.type === "fresh-data" && typeof data.path === "string") {
+    const rest = freshMisses === 0 ? 0 : Math.min(5 * 60_000, 15_000 * 2 ** (freshMisses - 1));
+    const go = data.force === true || Date.now() - freshMissedAt >= rest;
+    if (go) freshFor = { path: data.path, build: typeof data.build === "string" ? data.build : "", until: Date.now() + FRESH_HOLD_MS };
+    try {
+      if (event.ports && event.ports[0]) event.ports[0].postMessage({ go });
+    } catch {
+      // The page has gone; nothing to tell.
+    }
   }
 });
 

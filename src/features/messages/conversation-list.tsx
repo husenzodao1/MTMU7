@@ -11,7 +11,8 @@ import { NewConversationButton } from "@/features/messages/new-conversation";
 import { StoriesRow, type StoryAuthor } from "@/features/messages/stories";
 import { Ticks, tickState } from "@/features/messages/ticks";
 import { warmPage } from "@/components/shell/warm-pages";
-import { READ_EVENT, UNREAD_TOTAL_EVENT } from "@/features/messages/events";
+import { OUTBOX_EVENT, READ_EVENT, UNREAD_TOTAL_EVENT } from "@/features/messages/events";
+import { OUTBOX_KEY, waitingRows, type OutgoingRow } from "@/features/messages/outbox";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { dayKey, formatClock, formatShortDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
@@ -109,6 +110,9 @@ export function ConversationList({
   const [readAt, setReadAt] = useState<Record<string, string>>({});
   // When the other side of a one-to-one last had it reach them, or read it.
   const [peer, setPeer] = useState<Record<string, { read: string | null; delivered: string | null }>>({});
+  // The newest of one's own messages still on its way, by conversation
+  // (outbox.ts): the row shows it, with its clock, until the server has it.
+  const [waiting, setWaiting] = useState<Record<string, OutgoingRow>>({});
   const [base, setBase] = useState(conversations);
   if (base !== conversations) {
     // Fresh rows from the server supersede whatever realtime said before them.
@@ -219,6 +223,46 @@ export function ConversationList({
     return () => window.removeEventListener(READ_EVENT, onRead);
   }, []);
 
+  // Sent from here, or still on its way: the row says so at once, whatever
+  // the line — a clock while it waits, a tick the moment the server has it.
+  useEffect(() => {
+    const look = () => {
+      const newest: Record<string, OutgoingRow> = {};
+      for (const row of waitingRows()) {
+        if (row.sender_id !== currentUserId || !row.created_at) continue;
+        const was = newest[row.conversation_id];
+        if (!was || time(row.created_at) >= time(was.created_at!)) newest[row.conversation_id] = row;
+      }
+      setWaiting(newest);
+    };
+    const onChange = (event: Event) => {
+      const sent = (event as CustomEvent<{ sent?: OutgoingRow }>).detail?.sent;
+      if (sent && sent.sender_id === currentUserId) {
+        // The server has it now: one tick, until realtime brings the row itself.
+        const at = new Date().toISOString();
+        setLive((current) => {
+          const was = current[sent.conversation_id];
+          if (was && time(was.created_at) > time(at)) return current;
+          return {
+            ...current,
+            [sent.conversation_id]: { content: sent.content, sender_id: currentUserId, created_at: at, type: sent.type, unread: was?.unread ?? 0 },
+          };
+        });
+      }
+      look();
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === OUTBOX_KEY) look();
+    };
+    look();
+    window.addEventListener(OUTBOX_EVENT, onChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(OUTBOX_EVENT, onChange);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [currentUserId]);
+
   const today = dayKey(new Date(), timeZone);
   const merged = useMemo(
     () =>
@@ -228,8 +272,8 @@ export function ConversationList({
         // Read since the server counted: everything it counted is read.
         const counted = read !== undefined && (!c.last_message_at || time(c.last_message_at) <= time(read)) ? 0 : c.unread_count;
         const p = peer[c.id];
-        const row: ConversationSummary =
-          l && (!c.last_message_at || l.created_at > c.last_message_at)
+        let row: ConversationSummary =
+          l && (!c.last_message_at || time(l.created_at) > time(c.last_message_at))
             ? {
                 ...c,
                 last_message_content: l.content,
@@ -244,11 +288,27 @@ export function ConversationList({
           row.peer_read_at = later(row.peer_read_at, p.read);
           row.peer_delivered_at = later(row.peer_delivered_at, p.delivered);
         }
+        // Still on its way: the last thing said here is what was just written,
+        // and the row goes to the top with it — by this phone's clock or the
+        // server's, whichever is later, so a clock set a little behind cannot
+        // leave it lower down.
+        const w = waiting[c.id];
+        const sortAt = Math.max(time(row.last_message_at ?? row.updated_at), w?.created_at ? time(w.created_at) : 0);
+        if (w?.created_at) {
+          row = {
+            ...row,
+            last_message_content: w.content,
+            last_message_sender_id: currentUserId,
+            last_message_at: w.created_at,
+            last_message_deleted: false,
+            last_message_type: w.type,
+          };
+        }
         const askedByMe = c.type === "support" && c.created_by === currentUserId;
         const title = askedByMe ? t("supportTitle") : conversationTitle(row, currentUserId, t("unknownUser"));
-        return { ...row, title, askedByMe };
+        return { ...row, title, askedByMe, waiting: Boolean(w?.created_at), sortAt };
       }),
-    [conversations, live, readAt, peer, currentUserId, t]
+    [conversations, live, readAt, peer, waiting, currentUserId, t]
   );
 
   const unreadCount = merged.filter((c) => c.unread_count > 0 && c.id !== activeId).length;
@@ -297,7 +357,7 @@ export function ConversationList({
               ? c.type === "channel"
               : true
       )
-      .sort((a, b) => (b.last_message_at ?? b.updated_at).localeCompare(a.last_message_at ?? a.updated_at));
+      .sort((a, b) => b.sortAt - a.sortAt);
   }, [merged, query, filter, activeId]);
 
   const chips: Array<{ key: Filter; label: string }> = [
@@ -403,8 +463,9 @@ export function ConversationList({
                   ? formatClock(c.last_message_at, locale, timeZone)
                   : formatShortDate(c.last_message_at, locale, timeZone)
                 : "";
-              const ticks =
-                mine && !broadcast && c.last_message_at
+              const ticks = c.waiting
+                ? ("sending" as const)
+                : mine && !broadcast && c.last_message_at
                   ? tickState(
                       c.last_message_at,
                       c.peer_delivered_at ? time(c.peer_delivered_at) : null,
@@ -453,7 +514,15 @@ export function ConversationList({
                           {ticks ? (
                             <Ticks
                               state={ticks}
-                              label={ticks === "read" ? t("receipt.seen") : ticks === "delivered" ? t("receipt.delivered") : t("receipt.sent")}
+                              label={
+                                ticks === "sending"
+                                  ? t("receipt.sending")
+                                  : ticks === "read"
+                                    ? t("receipt.seen")
+                                    : ticks === "delivered"
+                                      ? t("receipt.delivered")
+                                      : t("receipt.sent")
+                              }
                               className="msg-ticks"
                             />
                           ) : null}

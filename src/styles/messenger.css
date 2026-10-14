@@ -292,6 +292,10 @@
   height: 0.75rem;
   color: var(--color-ink-muted);
 }
+.msg-ticks[data-state="sending"] {
+  width: 0.85rem;
+  height: 0.85rem;
+}
 .msg-ticks[data-state="read"] {
   color: var(--chat-seen);
 }
