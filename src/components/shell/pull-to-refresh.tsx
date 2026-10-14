@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
 import { REINSTALL_EVENT } from "@/components/shell/page-installer";
+import { forgetKeptData } from "@/lib/kept-pages";
 
 /** How far, after the drag's resistance, the mark may come down. */
 const PULL_MAX = 96;
@@ -98,7 +99,12 @@ export function PullToRefresh({ disabled = false }: { disabled?: boolean }) {
       if (distance >= ARM_AT) {
         navigator.vibrate?.(8);
         show(ARM_AT, "refreshing");
-        startRefresh(() => router.refresh());
+        // What the device kept of this page's data goes first, or the
+        // refresh would be answered from it (public/sw.js).
+        startRefresh(async () => {
+          await forgetKeptData();
+          router.refresh();
+        });
         // Every other page installed afresh behind it, and a newer version of
         // the site taken if there is one (page-installer.tsx).
         window.dispatchEvent(new Event(REINSTALL_EVENT));

@@ -7,13 +7,12 @@
  * 2. Keep the portal's unchanging files — its scripts, styles, fonts, icons,
  *    pictures — on the device, so nothing that has been seen once is ever
  *    fetched again: on a school's slow line only what is new travels.
- * 3. Keep the pages themselves, as an app keeps its screens: every page the
- *    portal has shown or fetched ahead (components/shell/warm-pages.ts) is
- *    kept, with the data it came with. A page opens from the device at once
- *    and is fetched again behind it (the page then refreshes itself); a page
- *    whose fresh copy is slow to come, or cannot come at all, is answered
- *    from what was kept. With no line the portal still opens, on its last
- *    state, and says so at the foot of the screen (offline-cover.tsx).
+ * 3. Keep the pages themselves, as an app keeps its screens: every page this
+ *    person can open is installed after signing in (keep-pages,
+ *    page-installer.tsx), and every page and its data shown since is kept.
+ *    A page and its data open from the device at once, with or without a
+ *    line; the screen changes only when its person pulls it down, and what
+ *    was kept is brought up to date when something is saved.
  *
  * Signing out empties the kept pages (app-shell.tsx, signed-out.tsx): one
  * person's screens are never shown to the next.
@@ -21,9 +20,15 @@
 
 const STATIC_CACHE = "static-v1";
 const PAGE_CACHE = "pages-v1";
+/** A page's data, kept apart from the pages: there is much more of it, and it must never push an installed page out. */
+const DATA_CACHE = "data-v1";
 const MEDIA_CACHE = "media-v1";
-/** How many pages (and their data fetches) are kept, the oldest let go first. */
+/** How many pages are kept, the oldest let go first. */
 const PAGE_LIMIT = 400;
+/** How many data fetches are kept, the oldest let go first. */
+const DATA_LIMIT = 400;
+/** After something is saved, the page it was saved on is installed again this long after. */
+const AFTER_CHANGE_MS = 2500;
 /** Pages installed side by side (keep-pages): quick on a good line, gentle on a slow one. */
 const INSTALL_AT_ONCE = 3;
 /** How many photos from the school's storage are kept. */
@@ -40,9 +45,9 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const keep = [STATIC_CACHE, PAGE_CACHE, MEDIA_CACHE];
+      const keep = [STATIC_CACHE, PAGE_CACHE, DATA_CACHE, MEDIA_CACHE];
       const names = await caches.keys();
-      await Promise.all(names.filter((name) => /^(static|pages|media)-/.test(name) && !keep.includes(name)).map((name) => caches.delete(name)));
+      await Promise.all(names.filter((name) => /^(static|pages|data|media)-/.test(name) && !keep.includes(name)).map((name) => caches.delete(name)));
       await self.clients.claim();
     })()
   );
@@ -142,14 +147,14 @@ button{min-height:2.75rem;padding:0 1.5rem;border:0;border-radius:.75rem;backgro
   return new Response(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
-function keep(event, cache, key, response) {
+function keep(event, cache, key, response, limit = PAGE_LIMIT) {
   if (!response || !response.ok || response.status !== 200 || response.type !== "basic" || response.redirected) return;
   const copy = response.clone();
   const scan = response.clone();
   event.waitUntil(
     cache
       .put(key, copy)
-      .then(() => trim(cache, PAGE_LIMIT))
+      .then(() => trim(cache, limit))
       .then(() => keepChunks(scan))
       .catch(() => undefined)
   );
@@ -161,17 +166,14 @@ function keep(event, cache, key, response) {
  * this version's. What was kept of them is only for when there is no line.
  */
 const NETWORK_FIRST = /^\/($|login|register|two-factor|confirm-email|forgot|reset|verify|auth|app(\/|$)|terms|privacy|download|u\/|offline)/;
-/** A kept page served this recently is asked of the network next time: a page reloading itself wants its newest copy. */
-const servedKept = new Map();
-const AGAIN_MS = 15000;
 
 /**
- * A page of the portal opens from the device at once when it is there, and
- * its fresh copy is kept for next time (the page asks for its own fresh data
- * as it opens, app-shell.tsx). A page asked for again straight after — a
- * reload, a new version taking over — waits for the network instead, and
- * falls back on what was kept. A page never kept waits for the network, and
- * with none gets the plain "no internet" page.
+ * A page of the portal opens from the device at once whenever it is there —
+ * installed after signing in (keep-pages) or kept from an earlier visit —
+ * and its fresh copy is kept behind it for the next time; what is on the
+ * screen changes only when its person pulls it down (pull-to-refresh.tsx).
+ * A page never kept waits for the network, and with none gets the plain
+ * "no internet" page.
  */
 async function answerPage(event, request, url) {
   const cache = await caches.open(PAGE_CACHE);
@@ -184,9 +186,7 @@ async function answerPage(event, request, url) {
     },
     () => null
   );
-  const recently = (servedKept.get(key) || 0) > Date.now() - AGAIN_MS;
-  if (kept && !recently && !NETWORK_FIRST.test(url.pathname)) {
-    servedKept.set(key, Date.now());
+  if (kept && !NETWORK_FIRST.test(url.pathname)) {
     event.waitUntil(fresh);
     return kept;
   }
@@ -202,29 +202,51 @@ async function answerPage(event, request, url) {
 }
 
 /**
- * A page's data: the network's if it answers in a moment, else what was kept
- * for the very same request, else the network's whenever it answers.
+ * A page's data — what a tap inside the portal fetches — from the device
+ * whenever it was kept, as the page itself is: the portal does not wait on
+ * the network for anything it has already shown. Kept data is let go of
+ * when its person pulls a page down (pull-to-refresh.tsx) and when anything
+ * is saved (below), so what changed is fetched again then.
  */
 async function answerData(event, request, url) {
-  const cache = await caches.open(PAGE_CACHE);
+  const cache = await caches.open(DATA_CACHE);
   const key = pageKey(url, "data");
-  const fresh = fetch(request).then(
-    (response) => {
-      keep(event, cache, key, response);
-      return response;
-    },
-    () => null
-  );
-  const first = await Promise.race([fresh, new Promise((resolve) => setTimeout(() => resolve("slow"), DATA_WAIT_MS))]);
-  if (first && first !== "slow") return first;
   const kept = await cache.match(key, { ignoreVary: true });
-  if (kept) {
-    event.waitUntil(fresh);
-    return kept;
+  if (kept) return kept;
+  const response = await fetch(request).catch(() => null);
+  if (response) {
+    keep(event, cache, key, response, DATA_LIMIT);
+    return response;
   }
-  const late = await fresh;
-  if (late) return late;
   return Response.error();
+}
+
+/**
+ * Something was saved (a form, a journal page, a message): the kept data is
+ * let go of, and the page it was saved on is installed again a moment later,
+ * so the saved marks are what the page shows next time — not the ones from
+ * before.
+ */
+async function afterChange(referrer) {
+  await caches.delete(DATA_CACHE).catch(() => false);
+  let url;
+  try {
+    url = new URL(referrer);
+  } catch {
+    return;
+  }
+  if (url.origin !== self.location.origin || pageKind({ mode: "navigate", headers: new Headers() }, url) !== "page") return;
+  await new Promise((resolve) => setTimeout(resolve, AFTER_CHANGE_MS));
+  try {
+    const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
+    const html = (response.headers.get("content-type") || "").includes("text/html");
+    if (response.ok && response.status === 200 && !response.redirected && html) {
+      const cache = await caches.open(PAGE_CACHE);
+      await cache.put(pageKey(url, "page"), response);
+    }
+  } catch {
+    // Installed again on the next pull.
+  }
 }
 
 async function answerStatic(request) {
@@ -259,7 +281,16 @@ async function answerMedia(event, request) {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET") return;
+  if (request.method !== "GET") {
+    // Answered by the network as ever. A form saved on a page (a server
+    // action posts to the page itself) brings what was kept up to date
+    // behind it; the API's own posts — a chat message, a sign of life — do not.
+    const target = new URL(request.url);
+    if (target.origin === self.location.origin && !target.pathname.startsWith("/api/") && request.referrer) {
+      event.waitUntil(afterChange(request.referrer));
+    }
+    return;
+  }
   let url;
   try {
     url = new URL(request.url);
@@ -326,7 +357,7 @@ self.addEventListener("message", (event) => {
   if (!data) return;
   // The page asks the worker to forget the kept pages (signing out).
   if (data.type === "forget-pages") {
-    event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(MEDIA_CACHE)]));
+    event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(DATA_CACHE), caches.delete(MEDIA_CACHE)]));
   }
   if (data.type === "keep-pages" && Array.isArray(data.paths)) {
     event.waitUntil(keepPages(data.paths, event.ports && event.ports[0]));

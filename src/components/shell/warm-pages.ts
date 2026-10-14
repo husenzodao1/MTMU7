@@ -8,7 +8,7 @@ import { readInstalled } from "@/lib/kept-pages";
 const warmedAt = new Map<string, number>();
 
 /** Between one page fetched ahead and the next, so a slow line is never flooded. */
-const SPACING_MS = 450;
+const SPACING_MS = 150;
 /** A page fetched ahead this recently is not fetched again for another list. */
 const RECENT_MS = 60_000;
 

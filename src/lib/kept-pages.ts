@@ -7,7 +7,13 @@
 export async function forgetKeptPages(): Promise<void> {
   forgetInstalled();
   if (typeof caches === "undefined") return;
-  await Promise.all(["pages-v1", "media-v1"].map((name) => caches.delete(name).catch(() => false)));
+  await Promise.all(["pages-v1", "data-v1", "media-v1"].map((name) => caches.delete(name).catch(() => false)));
+}
+
+/** The data of pages kept on the device (public/sw.js): let go of on a pull, so the page is asked for afresh. */
+export async function forgetKeptData(): Promise<void> {
+  if (typeof caches === "undefined") return;
+  await caches.delete("data-v1").catch(() => false);
 }
 
 /** What was installed on this phone, for whom, from which version of the site. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { warmPage } from "@/components/shell/warm-pages";
 import { SLOW_EVENT } from "@/features/native/offline-cover";
 
@@ -21,6 +21,12 @@ const MESSENGER = /^\/messages(\/|$)/;
 const GIVE_UP_MS = 25_000;
 /** A page still on its way after this long is a slow line, and the foot of the screen says so. */
 const SLOW_MS = 6000;
+/**
+ * A tap the app's memory could not answer at once (the app has just been
+ * opened, say) is answered by the page installed on the device instead,
+ * after this long: the whole page from the service worker, with no network.
+ */
+const FROM_DEVICE_MS = 400;
 
 function pageLink(target: EventTarget | null): URL | null {
   const anchor = (target as Element | null)?.closest?.("a[href]");
@@ -47,6 +53,8 @@ function pageLink(target: EventTarget | null): URL | null {
 export function useInstantNavigation(pathname: string, onStart?: () => void) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  // The address being gone to, with its query, for the page installed on the device.
+  const target = useRef<string | null>(null);
   // Arrived — or gone somewhere else, by the back button say: the tap is done.
   const [seenPath, setSeenPath] = useState(pathname);
   if (seenPath !== pathname) {
@@ -55,16 +63,17 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
   }
 
   useEffect(() => {
-    const start = (to: string) => {
+    const start = (to: string, full = to) => {
       if (to === window.location.pathname || NOT_A_PAGE.test(to)) return;
       if (MESSENGER.test(to) && MESSENGER.test(window.location.pathname)) return;
+      target.current = full;
       setPending(to);
       onStart?.();
     };
     const onClick = (event: MouseEvent) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const url = pageLink(event.target);
-      if (url) start(url.pathname);
+      if (url) start(url.pathname, `${url.pathname}${url.search}`);
     };
     // The finger is down: the page is asked for now, not when it lifts.
     const onPress = (event: Event) => {
@@ -73,7 +82,10 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
     };
     const onNavigate = (event: Event) => {
       const to = (event as CustomEvent<string>).detail;
-      if (typeof to === "string") start(new URL(to, window.location.href).pathname);
+      if (typeof to === "string") {
+        const url = new URL(to, window.location.href);
+        start(url.pathname, `${url.pathname}${url.search}`);
+      }
     };
     // Capture: seen before any handler below can stop the click.
     document.addEventListener("click", onClick, true);
@@ -90,12 +102,31 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
     if (!pending) return;
     const slow = window.setTimeout(() => window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: true })), SLOW_MS);
     const giveUp = window.setTimeout(() => setPending(null), GIVE_UP_MS);
+    const fromDevice = window.setTimeout(() => {
+      const to = target.current;
+      if (!to || window.location.pathname === pending) return;
+      void installedOnDevice(to).then((kept) => {
+        if (kept && window.location.pathname !== pending) window.location.assign(to);
+      });
+    }, FROM_DEVICE_MS);
     return () => {
       window.clearTimeout(slow);
       window.clearTimeout(giveUp);
+      window.clearTimeout(fromDevice);
       window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: false }));
     };
   }, [pending]);
 
   return pending;
+}
+
+/** Whether the service worker holds this page whole (public/sw.js, pages-v1). */
+async function installedOnDevice(path: string): Promise<boolean> {
+  if (typeof caches === "undefined" || !navigator.serviceWorker?.controller) return false;
+  try {
+    const cache = await caches.open("pages-v1");
+    return Boolean(await cache.match(new URL(path, window.location.origin).href, { ignoreVary: true }));
+  } catch {
+    return false;
+  }
 }
