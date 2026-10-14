@@ -259,6 +259,14 @@
       "hide": "Hide",
       "back": "Connected!",
       "cached": "Showing what was saved last — anything you send goes out by itself when the connection is back."
+    },
+    "install": {
+      "title": "Installing pages",
+      "text": "Every page is being installed on the phone, so it opens with no waiting later.",
+      "doneTitle": "Ready!",
+      "doneText": "Every page is installed. Pull a page down to refresh it.",
+      "count": "{done} of {total}",
+      "background": "Carry on in the background"
     }
   },
   "nav": {

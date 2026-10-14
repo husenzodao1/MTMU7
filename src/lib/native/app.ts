@@ -22,6 +22,20 @@ export function isAppUserAgent(userAgent: string | null | undefined): boolean {
   return Boolean(userAgent && userAgent.includes(APP_USER_AGENT_MARK));
 }
 
+/**
+ * Set by the app's first page (layout.tsx, APP_MARK_SCRIPT) and sent with
+ * every request after it — including the pages the service worker installs
+ * ahead of a tap, which Android's web view sends with its own plain
+ * User-Agent, not the app's. Without it those pages came back drawn for a
+ * browser: the foot with "install the app" inside the app.
+ */
+export const APP_COOKIE = "mtmu7_app";
+
+/** Inside the app, by the User-Agent or by the app's cookie. */
+export function isAppRequest(userAgent: string | null | undefined, appCookie: string | null | undefined): boolean {
+  return isAppUserAgent(userAgent) || appCookie === "1";
+}
+
 /** Only these travel from the browser back into the app with a sign-in. */
 const RETURN_PARAMS = ["code", "via", "next", "error", "error_code", "error_description"] as const;
 

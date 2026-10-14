@@ -9,10 +9,11 @@ import { INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
 import { isWelcome } from "@/lib/auth/welcome";
-import { isAppUserAgent } from "@/lib/native/app";
+import { APP_COOKIE, APP_USER_AGENT_MARK, isAppRequest } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
 import { ViewportGuard } from "@/components/ui/viewport-guard";
 import { publicEnv } from "@/lib/env";
+import { BUILD } from "@/lib/build";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE, themeIsDark } from "@/lib/theme";
 import "@/styles/globals.css";
 
@@ -127,8 +128,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Marks the page as an app when the device says it is one, whatever the User-Agent. */
 const APP_MARK_SCRIPT =
-  "(function(){try{var d=document.documentElement;if(d.hasAttribute('data-app'))return;" +
-  "if(window.Capacitor||navigator.standalone||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches)" +
+  "(function(){try{var d=document.documentElement,u=navigator.userAgent||'';" +
+  // The app itself (not a site added to the home screen) leaves its cookie,
+  // so every page the server draws for it afterwards is drawn as the app's.
+  `var app=!!window.Capacitor||u.indexOf('${APP_USER_AGENT_MARK}')>=0;` +
+  `if(app&&document.cookie.indexOf('${APP_COOKIE}=1')<0)document.cookie='${APP_COOKIE}=1; Path=/; Max-Age=31536000; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');` +
+  "if(d.hasAttribute('data-app'))return;" +
+  "if(app||navigator.standalone||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches)" +
   "d.setAttribute('data-app','')}catch(e){}})()";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -147,7 +153,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // the first page after signing in, which has the book's welcome of its own.
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
-  const opening = !(await isWelcome()) && (isAppUserAgent(userAgent) || !isRobot(userAgent));
+  const inApp = isAppRequest(userAgent, (await cookies()).get(APP_COOKIE)?.value);
+  const opening = !(await isWelcome()) && (inApp || !isRobot(userAgent));
   // The database's address is greeted while the page is still arriving, so
   // the first live update, photo or chat message does not wait for the
   // handshake — on a slow line that is the better part of a second.
@@ -160,10 +167,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
       // Inside the phone app: taps are answered as in an app (globals.css).
-      data-app={isAppUserAgent(userAgent) ? "" : undefined}
+      data-app={inApp ? "" : undefined}
       // Inside the native Android app, a section it still shows from the site
       // sits under the app's own bars: the site draws none of its own.
       data-native={userAgent?.includes("MTMU7Native") ? "" : undefined}
+      // Which version of the site drew this page: a pull at the top takes a
+      // newer one when there is one (page-installer.tsx).
+      data-build={BUILD}
       // APP_MARK_SCRIPT may add data-app before React sees the page.
       suppressHydrationWarning
       className={`${notoSans.variable} ${notoSerif.variable} ${greeting.variable} ${mark.variable} ${mono.variable}`}

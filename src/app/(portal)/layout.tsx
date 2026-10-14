@@ -1,7 +1,6 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
 import { SiteFooter } from "@/components/site/official-header";
-import { renderedAt } from "@/lib/rendered-at";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { getPortalSession } from "@/lib/auth/guards";
 import { isWelcome } from "@/lib/auth/welcome";
@@ -40,7 +39,6 @@ export default async function PortalLayout({ children }: { children: React.React
         locale={shell.locale}
         switchHref={nav.switchHref}
         footer={<SiteFooter />}
-        renderedAt={renderedAt()}
       >
         {children}
       </AppShell>

@@ -1,8 +1,8 @@
 import "server-only";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import type { DownloadLabels } from "@/components/site/download-app";
-import { isAppUserAgent } from "@/lib/native/app";
+import { APP_COOKIE, isAppRequest } from "@/lib/native/app";
 import { APP_PLATFORMS, platformOf, type AppPlatform } from "@/lib/native/downloads";
 
 /**
@@ -14,7 +14,7 @@ export async function getDownloadMenu(): Promise<{ offer: boolean; labels: Downl
   const t = await getTranslations("site");
   const userAgent = (await headers()).get("user-agent");
   return {
-    offer: !isAppUserAgent(userAgent),
+    offer: !isAppRequest(userAgent, (await cookies()).get(APP_COOKIE)?.value),
     recommended: platformOf(userAgent),
     labels: {
       button: t("download.button"),

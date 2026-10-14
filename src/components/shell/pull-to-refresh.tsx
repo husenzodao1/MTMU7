@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
+import { REINSTALL_EVENT } from "@/components/shell/page-installer";
 
 /** How far, after the drag's resistance, the mark may come down. */
 const PULL_MAX = 96;
@@ -24,7 +25,9 @@ function scrolledInside(target: EventTarget | null) {
  * round mark follows the finger down, turning as it comes; let go past the
  * mark and it spins while the page is asked for again (router.refresh — the
  * page stays, and what is new appears in it). Pages are kept on the device
- * (warm-pages.ts), so this is how the newest of everything is had at once.
+ * and never refresh by themselves, so this is how the newest of everything
+ * is had: the page in front at once, every other page installed afresh
+ * behind it.
  *
  * Only from the very top of the page, never over a dialog, and not where the
  * screen scrolls by itself (the messenger, which is live anyway).
@@ -96,6 +99,9 @@ export function PullToRefresh({ disabled = false }: { disabled?: boolean }) {
         navigator.vibrate?.(8);
         show(ARM_AT, "refreshing");
         startRefresh(() => router.refresh());
+        // Every other page installed afresh behind it, and a newer version of
+        // the site taken if there is one (page-installer.tsx).
+        window.dispatchEvent(new Event(REINSTALL_EVENT));
         // A refresh answered before it was ever pending leaves nothing to wait for.
         window.setTimeout(() => {
           if (!busy.current && mark.current?.dataset.state === "refreshing") show(0);

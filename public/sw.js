@@ -23,7 +23,9 @@ const STATIC_CACHE = "static-v1";
 const PAGE_CACHE = "pages-v1";
 const MEDIA_CACHE = "media-v1";
 /** How many pages (and their data fetches) are kept, the oldest let go first. */
-const PAGE_LIMIT = 220;
+const PAGE_LIMIT = 400;
+/** Pages installed side by side (keep-pages): quick on a good line, gentle on a slow one. */
+const INSTALL_AT_ONCE = 3;
 /** How many photos from the school's storage are kept. */
 const MEDIA_LIMIT = 500;
 /** A fresh page's data slower than this is answered from what was kept, if anything was. */
@@ -277,10 +279,57 @@ self.addEventListener("fetch", (event) => {
   else if (kind === "data") event.respondWith(answerData(event, request, url));
 });
 
-// The page asks the worker to forget the kept pages (signing out).
+/**
+ * Installs pages on the device ahead of any tap (page-installer.tsx): each
+ * is fetched, kept as a page opened by a tap would be, and its scripts and
+ * styles with it. Says how far it has got on the port it is given.
+ */
+async function keepPages(paths, port) {
+  const cache = await caches.open(PAGE_CACHE);
+  const queue = paths.filter((path) => typeof path === "string" && path.startsWith("/") && !path.startsWith("//"));
+  const total = queue.length;
+  let done = 0;
+  let kept = 0;
+  const tell = (message) => {
+    try {
+      if (port) port.postMessage(message);
+    } catch {
+      // The page that asked has gone; the pages are installed all the same.
+    }
+  };
+  const worker = async () => {
+    while (queue.length > 0) {
+      const path = queue.shift();
+      try {
+        const url = new URL(path, self.location.origin);
+        const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
+        const html = (response.headers.get("content-type") || "").includes("text/html");
+        if (response.ok && response.status === 200 && !response.redirected && html) {
+          await cache.put(pageKey(url, "page"), response.clone());
+          await keepChunks(response);
+          kept += 1;
+        }
+      } catch {
+        // No line, or a page that would not come: the rest go on.
+      }
+      done += 1;
+      tell({ type: "progress", done, total, kept });
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(INSTALL_AT_ONCE, total) }, worker));
+  await trim(cache, PAGE_LIMIT).catch(() => undefined);
+  tell({ type: "done", done, total, kept });
+}
+
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "forget-pages") {
+  const data = event.data;
+  if (!data) return;
+  // The page asks the worker to forget the kept pages (signing out).
+  if (data.type === "forget-pages") {
     event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(MEDIA_CACHE)]));
+  }
+  if (data.type === "keep-pages" && Array.isArray(data.paths)) {
+    event.waitUntil(keepPages(data.paths, event.ports && event.ports[0]));
   }
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -10,6 +10,7 @@ import { signOutAction, setLocaleAction } from "@/app/actions/session";
 import { forgetNativeToken } from "@/features/native/bridge";
 import { BarIcon } from "@/components/shell/bar-icons";
 import { useInstantNavigation } from "@/components/shell/instant-nav";
+import { PageInstaller } from "@/components/shell/page-installer";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
 import { useWarmPages } from "@/components/shell/warm-pages";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
@@ -49,8 +50,6 @@ export interface ShellSchool {
 }
 
 interface ShellProps {
-  /** When the server drew this page (rendered-at.ts). */
-  renderedAt?: number;
   variant: "portal" | "admin";
   school: ShellSchool;
   user: ShellUser;
@@ -323,30 +322,14 @@ function BottomBar({ items, pathname, goingTo, messagesUnread }: { items: NavIte
   );
 }
 
-/** A page drawn longer ago than this was opened from the device, and is refreshed behind itself. */
-const KEPT_COPY_MS = 15_000;
-/** Back in the app after this long away, the page in front is refreshed. */
-const AWAY_MS = 5 * 60_000;
-
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer, renderedAt }: ShellProps) {
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
-  const router = useRouter();
 
-  // Opened from what the device kept (public/sw.js): on screen at once, and
-  // fresh a moment later — as soon as there is a line to ask on.
-  useEffect(() => {
-    if (!renderedAt || Date.now() - renderedAt < KEPT_COPY_MS) return;
-    const refresh = () => router.refresh();
-    if (navigator.onLine) {
-      const timer = window.setTimeout(refresh, 300);
-      return () => window.clearTimeout(timer);
-    }
-    window.addEventListener("online", refresh, { once: true });
-    return () => window.removeEventListener("online", refresh);
-    // Once, as the page opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // A page opened from what the device kept (public/sw.js) stays as it is:
+  // the screen changes when its person pulls it down, never by itself
+  // (pull-to-refresh.tsx). The service worker has already fetched it again
+  // behind it, so the next opening shows the newer copy.
   // Messages written with no line go out by themselves once there is one,
   // whichever page is open (outbox.ts).
   useEffect(() => {
@@ -358,16 +341,6 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       window.removeEventListener("online", flush);
     };
   }, []);
-  // Back after a while away: the page in front is asked for again.
-  useEffect(() => {
-    let hiddenAt = 0;
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") hiddenAt = Date.now();
-      else if (hiddenAt && Date.now() - hiddenAt > AWAY_MS && navigator.onLine) router.refresh();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [router]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const appRoot = useRef<HTMLDivElement>(null);
   const burger = useRef<HTMLButtonElement>(null);
@@ -386,7 +359,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // Every section of the menu and the bar kept on the device, ready before
   // it is tapped (warm-pages.ts).
   const warm = [...(mobileBar ?? []).map((item) => item.href), ...groups.flatMap((group) => group.items.map((item) => item.href))].slice(0, 18);
-  useWarmPages(warm, pathname);
+  useWarmPages(warm);
 
   const [prevCount, setPrevCount] = useState(unreadNotifications);
   if (prevCount !== unreadNotifications) {
@@ -665,6 +638,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
           {/* The page on its way: a thin line along the top, the page in front still there. */}
           <div className="nav-progress" data-on={goingTo ? "" : undefined} aria-hidden />
           <PullToRefresh disabled={pathname.startsWith("/messages")} />
+          <PageInstaller userId={user.id} />
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7" aria-busy={goingTo ? true : undefined}>
             {children}
           </main>
