@@ -19,7 +19,7 @@ import { getLatestNews, getUpcomingEvents, getVisibleAnnouncements, publicMediaU
 import { splitLeadImage } from "@/components/ui/misc";
 import { markdownToPlainText } from "@/lib/content/markdown";
 import { buttonClasses } from "@/components/ui/button";
-import { Alert, Card, CardBody, CardHeader, Metric } from "@/components/ui/surface";
+import { Alert, Card, CardBody, CardHeader, CardTail, Metric } from "@/components/ui/surface";
 import { can, canAny, canEnterAdmin, hasModule, hasRole } from "@/lib/auth/access";
 import { getPortalSession } from "@/lib/auth/guards";
 import { dayPart, formatDate, todayIso } from "@/lib/i18n/format";
@@ -169,32 +169,32 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <div className={student ? "grid gap-5 xl:grid-cols-3" : "grid gap-5"}>
         <div className={student ? "space-y-5 xl:col-span-2" : "space-y-5"}>
           {teacher ? (
-            <Card>
-              <CardHeader
-                title={t("teacher.title")}
-                description={t("teacher.description", { count: teacher.lessons.length })}
-                actions={<Link href="/teach" className={buttonClasses("secondary", "sm")}>{t("teacher.open")}</Link>}
-              />
-              <CardBody>
-                {teacher.homeroom_classes.filter((c) => !c.daily_attendance_marked).map((c) => (
-                  <Alert key={c.class_id} tone="warning" className="mb-3" actions={
-                    <Link href={`/teach/attendance?class=${c.class_id}&date=${today}`} className={buttonClasses("secondary", "sm")}>
-                      {t("teacher.markDaily")}
-                    </Link>
-                  }>
-                    {t("teacher.dailyPending", { className: c.class_name })}
-                  </Alert>
-                ))}
-                <TeacherLessons lessons={teacher.lessons} today={today} timeZone={access.school?.timezone} emptyLabel={t("teacher.noLessons")} />
-                {teacher.submissions_to_review > 0 ? (
-                  <p className="mt-3 text-sm">
-                    <Link href="/teach/homework" className="font-medium text-brand-text hover:underline">
-                      {t("teacher.toReview", { count: teacher.submissions_to_review })}
-                    </Link>
-                  </p>
-                ) : null}
-              </CardBody>
-            </Card>
+            <div>
+              <Card>
+                {/* With no lessons the list says so itself; the line under the title would say it twice. */}
+                <CardHeader title={t("teacher.title")} description={teacher.lessons.length > 0 ? t("teacher.description", { count: teacher.lessons.length }) : undefined} />
+                <CardBody>
+                  {teacher.homeroom_classes.filter((c) => !c.daily_attendance_marked).map((c) => (
+                    <Alert key={c.class_id} tone="warning" className="mb-3" actions={
+                      <Link href={`/teach/attendance?class=${c.class_id}&date=${today}`} className={buttonClasses("secondary", "sm")}>
+                        {t("teacher.markDaily")}
+                      </Link>
+                    }>
+                      {t("teacher.dailyPending", { className: c.class_name })}
+                    </Alert>
+                  ))}
+                  <TeacherLessons lessons={teacher.lessons} today={today} timeZone={access.school?.timezone} emptyLabel={t("teacher.noLessons")} />
+                  {teacher.submissions_to_review > 0 ? (
+                    <p className="mt-3 text-sm">
+                      <Link href="/teach/homework" className="font-medium text-brand-text hover:underline">
+                        {t("teacher.toReview", { count: teacher.submissions_to_review })}
+                      </Link>
+                    </p>
+                  ) : null}
+                </CardBody>
+              </Card>
+              <CardTail href="/teach">{t("teacher.open")}</CardTail>
+            </div>
           ) : null}
 
           {student ? (
@@ -257,19 +257,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           {admin ? <SetupGuide data={admin} /> : null}
 
           {admin ? (
-            <Card>
-              <CardHeader title={t("admin.title")} description={admin.academic_year ? t("admin.year", { year: admin.academic_year.name }) : undefined}
-                actions={<Link href="/admin" className={buttonClasses("secondary", "sm")}>{t("openAdmin")}</Link>} />
-              <CardBody>
-                <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <Metric label={t("admin.students")} value={admin.counts.students_active} href="/admin/accounts?category=students" />
-                  <Metric label={t("admin.teachers")} value={admin.counts.teachers_active} href="/admin/accounts?category=teachers" />
-                  <Metric label={t("admin.classes")} value={admin.counts.classes_active} href="/admin/classes" />
-                  {/* Registration requests went with self-registration (00045). */}
-                  <Metric label={t("admin.accounts")} value={admin.counts.accounts_active} href="/admin/accounts" />
-                </dl>
-              </CardBody>
-            </Card>
+            <div>
+              <Card>
+                <CardHeader title={t("admin.title")} description={admin.academic_year ? t("admin.year", { year: admin.academic_year.name }) : undefined} />
+                <CardBody>
+                  <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <Metric label={t("admin.students")} value={admin.counts.students_active} href="/admin/accounts?category=students" />
+                    <Metric label={t("admin.teachers")} value={admin.counts.teachers_active} href="/admin/accounts?category=teachers" />
+                    <Metric label={t("admin.classes")} value={admin.counts.classes_active} href="/admin/classes" />
+                    {/* Registration requests went with self-registration (00045). */}
+                    <Metric label={t("admin.accounts")} value={admin.counts.accounts_active} href="/admin/accounts" />
+                  </dl>
+                </CardBody>
+              </Card>
+              <CardTail href="/admin">{t("openAdmin")}</CardTail>
+            </div>
           ) : null}
         </div>
 

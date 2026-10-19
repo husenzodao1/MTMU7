@@ -28,6 +28,20 @@ export function CardBody({ children, className }: { children: ReactNode; classNa
   return <div className={cn(!flush && "px-4 py-4 sm:px-5", className)}>{children}</div>;
 }
 
+/**
+ * The way on from a card, hung under it like a tab pulled out of its lower
+ * edge rather than a button boxed inside it: the card stays the thing read,
+ * and the tab the thing pressed.
+ */
+export function CardTail({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="card-tail">
+      <span>{children}</span>
+      <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
+    </Link>
+  );
+}
+
 export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3 sm:px-5", className)}>{children}</div>;
 }

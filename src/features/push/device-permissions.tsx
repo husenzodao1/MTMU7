@@ -1,27 +1,14 @@
 "use client";
 
-import { Bell, Camera, Check, MapPin, Mic, Settings, X } from "lucide-react";
+import { Bell, Check, Settings, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { devicePermissionsPlugin, nativePush, type DevicePermission, type DevicePermissionStates } from "@/features/native/bridge";
 import { enablePush, pushState, registerWorker, syncPush, type PushState } from "@/features/push/client";
 import { cn } from "@/lib/utils/cn";
 
-type GeoState = "granted" | "denied" | "prompt" | "unsupported";
-
 const DISMISS_KEY = "device-permissions-dismissed-at";
 const ASK_AGAIN_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
-
-async function geoState(): Promise<GeoState> {
-  if (typeof navigator === "undefined" || !("geolocation" in navigator)) return "unsupported";
-  try {
-    const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-    return status.state as GeoState;
-  } catch {
-    // Safari before 16 cannot say; offering the button is the honest answer.
-    return "prompt";
-  }
-}
 
 function dismissedRecently(): boolean {
   try {
@@ -33,8 +20,9 @@ function dismissedRecently(): boolean {
 }
 
 /**
- * The two questions a signed-in person is asked once: may the portal tell you
- * about a message when it is closed, and may the chat send where you are.
+ * The one question a signed-in person is asked once: may the portal tell you
+ * about something new when it is closed. (Where you are, the camera and the
+ * microphone were the chat's, and went with it.)
  *
  * Asked by the portal, in its own words, before the browser asks in its own —
  * a bare browser prompt on arrival is the one people refuse by reflex, and a
@@ -59,11 +47,11 @@ export function DevicePermissions({ locale, userId }: { locale: string; userId: 
   return app ? <AppPermissions plugin={app} locale={locale} /> : <BrowserPermissions locale={locale} userId={userId} />;
 }
 
-const APP_PERMISSIONS: DevicePermission[] = ["notifications", "location", "camera", "microphone"];
+const APP_PERMISSIONS: DevicePermission[] = ["notifications"];
 
 /**
- * In the phone app: the four things the app asked for on its first launch,
- * and only if one of them was refused. A refusal that can still be asked
+ * In the phone app: notifications, asked for on its first launch, and only
+ * if they were refused. A refusal that can still be asked
  * about gets "Allow", which brings Android's own dialog back; one refused for
  * good gets "Settings", the app's page in Android settings. Looked at again
  * whenever the app comes back to the front, so a switch turned on there shows
@@ -126,19 +114,12 @@ function AppPermissions({ plugin, locale }: { plugin: NonNullable<Awaited<Return
     setBusy(null);
   };
 
-  const icons: Record<DevicePermission, React.ReactNode> = {
-    notifications: <Bell className="size-4" aria-hidden />,
-    location: <MapPin className="size-4" aria-hidden />,
-    camera: <Camera className="size-4" aria-hidden />,
-    microphone: <Mic className="size-4" aria-hidden />,
-  };
-
   return (
     <PermissionsCard title={t("appTitle")} text={t("appText")} onLater={() => laterFor(setOpen)} laterLabel={t("later")}>
       {APP_PERMISSIONS.map((key) => (
         <PermissionRow
           key={key}
-          icon={icons[key]}
+          icon={<Bell className="size-4" aria-hidden />}
           label={t(key)}
           hint={t(`${key}Hint`)}
           state={states[key] === "granted" ? "on" : states[key] === "prompt" ? "ask" : "settings"}
@@ -206,23 +187,12 @@ function PermissionsCard({
   );
 }
 
-/**
- * The two questions a signed-in person is asked once in a browser: may the
- * portal tell you about a message when it is closed, and may the chat send
- * where you are.
- *
- * Asked by the portal, in its own words, before the browser asks in its own —
- * a bare browser prompt on arrival is the one people refuse by reflex, and a
- * refusal there cannot be taken back from a web page. Each button is the tap
- * the browser needs; "later" puts the card away for a week. Nothing is asked
- * that the device cannot do.
- */
+/** The same question in a browser (see DevicePermissions). */
 function BrowserPermissions({ locale, userId }: { locale: string; userId: string }) {
   const t = useTranslations("common.permissions");
   const [push, setPush] = useState<PushState>("unsupported");
-  const [geo, setGeo] = useState<GeoState>("unsupported");
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState<"push" | "geo" | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const [native, setNative] = useState<Awaited<ReturnType<typeof nativePush>>>(null);
 
@@ -241,12 +211,10 @@ function BrowserPermissions({ locale, userId }: { locale: string; userId: string
         void syncPush(locale, userId);
         notifications = pushState();
       }
-      const location = await geoState();
       if (cancelled) return;
       setNative(app);
       setPush(notifications);
-      setGeo(location);
-      setOpen((notifications === "default" || location === "prompt") && !dismissedRecently());
+      setOpen(notifications === "default" && !dismissedRecently());
     })();
     return () => {
       cancelled = true;
@@ -255,52 +223,12 @@ function BrowserPermissions({ locale, userId }: { locale: string; userId: string
 
   if (!open) return null;
 
-  const finishIfDone = (nextPush: PushState, nextGeo: GeoState) => {
-    const pushDone = nextPush !== "default";
-    const geoDone = nextGeo !== "prompt";
-    if (pushDone && geoDone) window.setTimeout(() => setOpen(false), 900);
-  };
-
   const askPush = async () => {
-    setBusy("push");
+    setBusy(true);
     const answer = native ? await native.enable(locale) : await enablePush(locale);
-    setBusy(null);
+    setBusy(false);
     setPush(answer);
-    finishIfDone(answer, geo);
-  };
-
-  const askGeo = () => {
-    setBusy("geo");
-    let settled = false;
-    const settle = (next: GeoState) => {
-      if (settled) return;
-      settled = true;
-      setBusy(null);
-      setGeo(next);
-      finishIfDone(push, next);
-    };
-    // Only the permission is wanted here, and the browser says it was given
-    // the moment it is — long before a position is found, which indoors or
-    // with the GPS off may take a while or never come. The row used to wait
-    // for the position and, when finding it timed out, went back to "Allow"
-    // although the permission had been given.
-    void navigator.permissions
-      ?.query({ name: "geolocation" as PermissionName })
-      .then((status) => {
-        status.onchange = () => {
-          if (status.state === "granted" || status.state === "denied") settle(status.state);
-        };
-      })
-      .catch(() => undefined);
-    navigator.geolocation.getCurrentPosition(
-      // The position itself is dropped on the floor: nothing is sent until
-      // somebody taps the pin in a chat.
-      () => settle("granted"),
-      // Only a refusal is a refusal: a position that could not be found, or
-      // took too long, was looked for with the permission already given.
-      (error) => settle(error.code === error.PERMISSION_DENIED ? "denied" : "granted"),
-      { enableHighAccuracy: false, timeout: 15_000, maximumAge: 600_000 }
-    );
+    if (answer !== "default") window.setTimeout(() => setOpen(false), 900);
   };
 
   const words = { allow: t("allow"), allowed: t("allowed"), blocked: t("blocked"), settings: t("openSettings") };
@@ -312,23 +240,12 @@ function BrowserPermissions({ locale, userId }: { locale: string; userId: string
           label={t("notifications")}
           hint={t("notificationsHint")}
           state={push === "default" ? "ask" : push === "granted" ? "on" : "blocked"}
-          busy={busy === "push"}
+          busy={busy}
           onAsk={askPush}
           words={words}
         />
       ) : null}
-      {geo !== "unsupported" ? (
-        <PermissionRow
-          icon={<MapPin className="size-4" aria-hidden />}
-          label={t("location")}
-          hint={t("locationHint")}
-          state={geo === "prompt" ? "ask" : geo === "granted" ? "on" : "blocked"}
-          busy={busy === "geo"}
-          onAsk={askGeo}
-          words={words}
-        />
-      ) : null}
-      {push === "denied" || geo === "denied" ? <p className="mt-2 text-[0.6875rem] leading-snug text-ink-muted">{t("blockedHint")}</p> : null}
+      {push === "denied" ? <p className="mt-2 text-[0.6875rem] leading-snug text-ink-muted">{t("blockedHint")}</p> : null}
     </PermissionsCard>
   );
 }

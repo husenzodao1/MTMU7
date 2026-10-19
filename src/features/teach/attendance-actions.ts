@@ -8,7 +8,8 @@ import { done, failure, success, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
-const STATUSES = ["present", "absent", "late", "excused"] as const;
+/** What a teacher may mark; "excused" is no longer one of them (00100). */
+const STATUSES = ["present", "absent", "late"] as const;
 
 const headerSchema = z.object({
   classId: uuid,

@@ -28,3 +28,14 @@ export async function loadMessages(locale: Locale): Promise<Messages> {
   if (locale === "en") return english;
   return mergeMessages(english, await loadLocale(locale));
 }
+
+/**
+ * What the browser is sent on every page: everything but the office's words
+ * (the "admin" area — nearly half the total), which only the office's pages
+ * and the forms it lends to a class teacher are sent (office-words.tsx).
+ */
+export function withoutOffice<T extends Messages>(messages: T): T {
+  const rest = { ...messages };
+  delete rest.admin;
+  return rest;
+}

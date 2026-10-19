@@ -71,6 +71,8 @@
       "terms": "Terms",
       "noTerms": "No grading terms are set up for this academic year",
       "noTermsHint": "The administration creates terms in the academic year settings.",
+      "pastYearTitle": "From the archive · {year}",
+      "pastYear": "This journal belongs to a past school year. It is kept as it was, to be read.",
       "lockedTitle": "Term locked",
       "locked": "Grades for this term can only be changed by authorized staff.",
       "journal": "Journal",
@@ -133,7 +135,7 @@
       "noTopics": "No topics written yet.",
       "noColumns": "No columns yet. Rule the first one with the date of the lesson.",
       "saveCells": "Save",
-      "cellHelp": "Write a mark in the square, or a letter: a — away, l — late, e — excused.",
+      "cellHelp": "Write a mark in the square, or a letter: a — away, l — late. Approved marks and lessons still to come are locked 🔒.",
       "cellsSaved": "{count} squares saved.",
       "cellsRefused": "{count} squares could not be read. They are marked in red — correct them.",
       "termColumnDate": "Day given",
@@ -151,7 +153,9 @@
       "exitFullScreen": "Exit full screen",
       "fullScreenOpen": "The register is open on the full screen.",
       "termBoxHint": "A column headed «Quarter I», «Half-year I» or «Year» — for the period marks.",
-      "termBox": "Quarter, half-year and year"
+      "termBox": "Quarter, half-year and year",
+      "approvedCell": "Approved mark — can no longer be changed",
+      "closedColumn": "A lesson still to come — closed until its day"
     },
     "homework": {
       "title": "Homework",

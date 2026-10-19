@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ActionForm, SubmitButton, useFieldError, useFieldValue } from "@/components/ui/action-form";
 import { describedBy, FormField } from "@/components/ui/form-controls";
 import { AuthMark } from "@/features/auth/auth-mark";
@@ -175,16 +175,13 @@ export function CodeField({ label, hint }: { label?: string; hint?: string } = {
         />
         <div className="flex items-center justify-center gap-1.5 sm:gap-2" aria-hidden>
           {Array.from({ length: slots }, (_, index) => (
-            <Fragment key={index}>
-              {slots === CODE_LENGTH && index === CODE_LENGTH / 2 ? <span className="otp-dot" /> : null}
-              <span className={cn("otp-box", index < value.length && "otp-box-filled", index === active && "otp-box-active")}>
-                {value[index] ? (
-                  <span key={`${index}:${value[index]}`} className="otp-digit">
-                    {value[index]}
-                  </span>
-                ) : null}
-              </span>
-            </Fragment>
+            <span key={index} className={cn("otp-box", index < value.length && "otp-box-filled", index === active && "otp-box-active")}>
+              {value[index] ? (
+                <span key={`${index}:${value[index]}`} className="otp-digit">
+                  {value[index]}
+                </span>
+              ) : null}
+            </span>
           ))}
         </div>
       </div>
@@ -218,6 +215,7 @@ export function VerifyCodeForm() {
 export function ConfirmEmailForm({ next, email }: { next?: string; email: string }) {
   const t = useTranslations("auth.confirm");
   const tv = useTranslations("auth.verify");
+  const tl = useTranslations("auth.login");
   return (
     <div className="space-y-4">
       <ActionForm
@@ -239,6 +237,14 @@ export function ConfirmEmailForm({ next, email }: { next?: string; email: string
       <ActionForm action={sendConfirmationCodeAction} className="text-center">
         <SubmitButton variant="link">{tv("resend")}</SubmitButton>
       </ActionForm>
+      {/* Or no code at all: Google, for an address that is a Google one —
+          the same way in as on the sign-in page. */}
+      <div className="flex items-center gap-3 text-xs text-ink-muted" aria-hidden>
+        <span className="h-px flex-1 bg-line" />
+        {tl("or")}
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      <GoogleSignInButton label={t("google")} next={next} />
       <p className="text-center text-xs leading-relaxed text-ink-muted">{t("wrongAddress")}</p>
     </div>
   );

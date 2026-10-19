@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bell, ChevronDown, CircleAlert, LogOut, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
-import { signOutAction, setLocaleAction } from "@/app/actions/session";
-import { forgetNativeToken } from "@/features/native/bridge";
+import { Bell, CircleAlert, Search, ShieldCheck, ArrowLeftRight } from "lucide-react";
 import { BarIcon } from "@/components/shell/bar-icons";
 import { useInstantNavigation } from "@/components/shell/instant-nav";
 import { PageInstaller } from "@/components/shell/page-installer";
@@ -21,12 +19,9 @@ import type { NavGroup, NavItem } from "@/components/shell/navigation";
 import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
 import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { Avatar } from "@/components/ui/misc";
-import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
-import { forgetWebPush } from "@/features/push/client";
 import { appPlugin } from "@/features/native/bridge";
 import { forgetChat } from "@/lib/chat-leftovers";
-import { forgetKeptPages } from "@/lib/kept-pages";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
 import { fold } from "@/lib/search/fold";
@@ -387,6 +382,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("is_read", false)
+        .neq("type", "message")
         .then(({ count, error }) => {
           if (!error && count !== null) setNotifications(count);
         });
@@ -397,7 +393,8 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
     const channel = listen(
       supabase
         .channel(`notifications:${user.id}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
+          if ((payload.new as { type?: string }).type === "message") return;
           setNotifications((n) => n + 1);
           setRings((n) => n + 1);
         })
@@ -525,69 +522,19 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
               </Link>
             )}
 
-            <Overlay.DropdownMenu>
-              <Overlay.DropdownMenuTrigger asChild>
-                <button type="button" className="flex h-10 items-center gap-2 rounded-full px-0.5 hover:bg-surface-muted sm:pr-2" aria-label={t("nav.accountMenu")}>
-                  <Avatar name={user.name} src={user.avatarUrl} size="sm" />
-                  <span className="hidden min-w-0 text-left sm:block">
-                    <span className="block max-w-40 truncate text-xs font-medium text-ink">{user.name}</span>
-                    <span className="block max-w-40 truncate text-[0.6875rem] text-ink-muted">{user.roleLabel}</span>
-                  </span>
-                  <ChevronDown className="hidden size-4 text-ink-muted sm:block" aria-hidden />
-                </button>
-              </Overlay.DropdownMenuTrigger>
-              <Overlay.DropdownMenuContent>
-                <Overlay.DropdownMenuLabel>{user.name}</Overlay.DropdownMenuLabel>
-                <Overlay.DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User aria-hidden />
-                    {t("nav.profile")}
-                  </Link>
-                </Overlay.DropdownMenuItem>
-                <Overlay.DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings aria-hidden />
-                    {t("nav.settings")}
-                  </Link>
-                </Overlay.DropdownMenuItem>
-                <Overlay.DropdownMenuSeparator />
-                <Overlay.DropdownMenuLabel>{t("nav.language")}</Overlay.DropdownMenuLabel>
-                <div className="flex gap-1 px-2 pb-1.5">
-                  {(["tg", "ru", "en"] as const).map((code) => (
-                    <form key={code} action={setLocaleAction}>
-                      <input type="hidden" name="locale" value={code} />
-                      <button
-                        type="submit"
-                        aria-pressed={locale === code}
-                        className={cn(
-                          "rounded-md border px-2.5 py-1 text-xs font-medium",
-                          locale === code ? "border-brand-600 bg-brand-50 text-brand-text-strong" : "border-line text-ink-secondary hover:bg-surface-muted"
-                        )}
-                      >
-                        {t(`common.locales.${code}`)}
-                      </button>
-                    </form>
-                  ))}
-                </div>
-                <Overlay.DropdownMenuSeparator />
-                <form
-                  action={async () => {
-                    // At once, whatever the network: the page dims and says it
-                    // is on its way out (html[data-leaving], globals.css).
-                    document.documentElement.setAttribute("data-leaving", "");
-                    // This phone or browser stops getting this person's
-                    // notifications first (a second or two at most).
-                    await Promise.all([forgetNativeToken(), forgetWebPush(), forgetKeptPages(), forgetChat()]);
-                    await signOutAction();
-                  }}
-                >
-                  <button type="submit" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-danger-700 hover:bg-danger-50">
-                    <LogOut className="size-4" aria-hidden />
-                    {t("nav.signOut")}
-                  </button>
-                </form>
-              </Overlay.DropdownMenuContent>
-            </Overlay.DropdownMenu>
+            {/* The face is the way to one's own profile — and from there, Settings (me-header.tsx). */}
+            <Link
+              href="/profile"
+              className="flex h-10 items-center gap-2 rounded-full px-0.5 hover:bg-surface-muted sm:pr-2"
+              aria-label={t("nav.profile")}
+              aria-current={pathname === "/profile" || pathname === "/settings" ? "page" : undefined}
+            >
+              <Avatar name={user.name} src={user.avatarUrl} size="sm" />
+              <span className="hidden min-w-0 text-left sm:block">
+                <span className="block max-w-40 truncate text-xs font-medium text-ink">{user.name}</span>
+                <span className="block max-w-40 truncate text-[0.6875rem] text-ink-muted">{user.roleLabel}</span>
+              </span>
+            </Link>
           </header>
 
           {/* The page on its way: a thin line along the top, the page in front still there. */}

@@ -7,7 +7,7 @@ export type IconName =
   | "announcements" | "events" | "documents" | "messages" | "notifications" | "admin" | "contacts"
   | "students" | "staff" | "guardians" | "users" | "approvals" | "invitations" | "years" | "classes" | "subjects"
   | "gradebook" | "timetable" | "media" | "website" | "broadcasts" | "moderation" | "school" | "roles" | "modules"
-  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status" | "search" | "support";
+  | "platform" | "reports" | "analytics" | "audit" | "settings" | "status" | "search" | "support" | "archive";
 
 export interface NavItem {
   key: string;
@@ -115,6 +115,8 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
       { item: { key: "gradebook", href: "/admin/gradebook", icon: "gradebook", labelKey: "admin.nav.gradebook" }, visible: anyOf("grades.approve", "grades.update", "assessments.manage") },
       { item: { key: "attendance", href: "/admin/attendance", icon: "attendance", labelKey: "admin.nav.attendance" }, visible: anyOf("attendance.update") },
       { item: { key: "timetable", href: "/admin/timetable", icon: "timetable", labelKey: "admin.nav.timetable" }, visible: anyOf("timetable.manage") },
+      // Every year's classes, journals and documents, kept to be read (admin/archive).
+      { item: { key: "archive", href: "/admin/archive", icon: "archive", labelKey: "admin.nav.archive" }, visible: anyOf("classes.view", "grades.view", "grades.approve", "grades.update", "reports.view") },
     ],
   },
   {

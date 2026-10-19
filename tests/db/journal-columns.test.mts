@@ -10,17 +10,19 @@ let a: Academic;
 let termStart: string;
 let termEnd: string;
 let termSpare: string;
+let lastWeek: string;
 
 before(async () => {
   db = await createDatabase();
   t = await seedTenants(db);
   a = await seedAcademic(db, t);
-  const term = await one<{ start_date: string; end_date: string; spare: string }>(
+  const term = await one<{ start_date: string; end_date: string; spare: string; last_week: string }>(
     db,
-    `SELECT start_date::text, end_date::text, (start_date + 3)::text AS spare
+    `SELECT start_date::text, end_date::text, (start_date + 3)::text AS spare, (current_date - 7)::text AS last_week
      FROM public.academic_terms WHERE id = $1`,
     [a.termCurrent]
   );
+  lastWeek = term!.last_week;
   termStart = term!.start_date;
   termEnd = term!.end_date;
   termSpare = term!.spare;
@@ -68,9 +70,23 @@ describe("ruling the columns before they are filled", () => {
   });
 
   it("takes the school from the subject, not from the caller", async () => {
-    const created = await openColumn(t.users.teacherA, { date: termEnd, school: SCHOOL_B });
+    const created = await openColumn(t.users.teacherA, { date: lastWeek, school: SCHOOL_B });
     const stored = await one<{ school_id: string }>(db, `SELECT school_id FROM public.journal_columns WHERE id = $1`, [created!.id]);
     assert.equal(stored!.school_id, SCHOOL_A);
+  });
+
+  it("refuses a lesson on a day still to come, and takes a term column at the term's end (00100)", async () => {
+    const error = await errorOf(() => openColumn(t.users.teacherA, { date: termEnd, label: "Дарс" }));
+    assert.match(error ?? "", /future date/);
+    const term = await asUser(db, t.users.teacherA, (tx) =>
+      one<{ id: string }>(
+        tx,
+        `INSERT INTO public.journal_columns (school_id, class_subject_id, academic_term_id, column_date, assessment_type_id, label, kind)
+         VALUES ($1, $2, $3, $4, $5, 'Чоряки I', 'term') RETURNING id`,
+        [SCHOOL_A, a.mathA, a.termCurrent, termEnd, a.assessmentTest]
+      )
+    );
+    assert.ok(term?.id, "a quarter's column stands at the end of its term");
   });
 
   it("refuses a date that falls outside the term it is filed under", async () => {

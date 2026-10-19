@@ -47,7 +47,8 @@
       "globalSearch": "Ҷустуҷӯ",
       "parents": "Волидон (боти Телеграм)",
       "support": "Дастгирии онлайн",
-      "accounts": "Идораи аккаунтҳо"
+      "accounts": "Идораи аккаунтҳо",
+      "archive": "Хазина"
     },
     "dashboard": {
       "title": "Лавҳаи мактаб",
@@ -1811,6 +1812,33 @@
       "reopen": "Боз кушодан",
       "markedDone": "Ҳамчун анҷомёфта қайд шуд.",
       "reopened": "Боз кушода шуд."
+    },
+    "archive": {
+      "title": "Хазина",
+      "description": "Синфҳо, журналҳо ва ҳуҷҷатҳои ҳар сол — нигоҳ дошта шудаанд, барои хондан.",
+      "years": "Солҳои таҳсил",
+      "now": "ҷорӣ",
+      "views": "Қисмҳои хазина",
+      "classes": "Синфҳо",
+      "journals": "Журналҳо",
+      "documents": "Ҳуҷҷатҳо",
+      "empty": "Ҳанӯз соли таҳсил нест.",
+      "noClasses": "Дар ин сол синфи бо хонанда нест.",
+      "noJournals": "Дар ин сол журнал нест.",
+      "noDocuments": "Дар ин сол ҳуҷҷат сабт нашудааст.",
+      "noHomeroom": "Роҳбари синф нест",
+      "schoolDocuments": "Ҳуҷҷатҳои мактаб",
+      "reportCards": "Табелҳо",
+      "reportCardsOf": "Табелҳои синфи {name}",
+      "archived": "Дар бойгонӣ",
+      "pupils": "Хонандагон",
+      "pupilsCount": "{count} хонанда",
+      "enrollment": {
+        "completed": "Хатм кард",
+        "transferred": "Гузашт",
+        "withdrawn": "Рафт",
+        "other": "Дигар"
+      }
     }
   },
   "accounts": {

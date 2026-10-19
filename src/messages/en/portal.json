@@ -513,7 +513,9 @@
         }
       },
       "clearReadTitle": "Clear the read notifications?",
-      "clearReadDescription": "Unread notifications stay."
+      "clearReadDescription": "Unread notifications stay.",
+      "today": "Today",
+      "yesterday": "Yesterday"
     },
     "profile": {
       "title": "Profile",
@@ -553,7 +555,7 @@
       "enableAllHint": "Turn off to pause all personal notifications.",
       "categories": "Categories",
       "save": "Save preferences",
-      "themeHint": "The portal's colours. The choice is kept in this browser.",
+      "themeHint": "The portal's colours on this device — on every page at once.",
       "twoFactor": {
         "title": "Two-step verification (2FA)",
         "description": "After your password, a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator…) is asked for. Even someone who knows your password cannot get in without your phone.",
@@ -571,7 +573,13 @@
         "disabled": "Two-step verification is off.",
         "alreadyOn": "Two-step verification is already on.",
         "copy": "Copy"
-      }
+      },
+      "textSize": "Text size",
+      "textSizeHint": "All of the portal's text on this device — 10 steps.",
+      "textSmaller": "Smaller",
+      "textLarger": "Larger",
+      "textSample": "This is how text will look everywhere.",
+      "textReset": "Default"
     },
     "friends": {
       "title": "Contacts",

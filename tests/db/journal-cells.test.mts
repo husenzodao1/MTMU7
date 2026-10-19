@@ -69,10 +69,15 @@ describe("one square, one pen", () => {
   });
 
   it("reads a letter as an absence, in any of the school's alphabets", async () => {
-    for (const [letter, status] of [["ғ", "absent"], ["н", "absent"], ["д", "late"], ["о", "late"], ["у", "excused"]] as const) {
+    for (const [letter, status] of [["ғ", "absent"], ["н", "absent"], ["д", "late"], ["о", "late"]] as const) {
       await save(t.users.teacherA, [cell(letter)]);
       assert.equal((await absenceOf())!.status, status, letter);
     }
+  });
+
+  it("no longer takes 'excused' (у): absent or late only (00100)", async () => {
+    const outcome = await save(t.users.teacherA, [cell("у")]);
+    assert.deepEqual(outcome.errors.map((e) => e.code), ["invalid"]);
   });
 
   it("replaces a mark with a letter and leaves nothing behind", async () => {
@@ -158,7 +163,7 @@ describe("the journal and the roll taken at the lesson", () => {
   });
 
   it("emptying a letter removes the letter", async () => {
-    await save(t.users.teacherA, [cell("у")]);
+    await save(t.users.teacherA, [cell("д")]);
     await save(t.users.teacherA, [cell("  ")]);
     assert.deepEqual(await rollOf(), []);
   });
@@ -258,12 +263,22 @@ describe("the rules the register already had", () => {
     assert.deepEqual(outcome.errors.map((e) => e.code), ["future_date"]);
   });
 
-  it("still takes a mark dated at the end of the term, which is where a quarter mark goes", async () => {
+  it("takes a quarter mark at the end of the term in its term column, not a lesson's mark ahead of its day (00100)", async () => {
     const termEnd = await one<{ d: string }>(db, `SELECT end_date::text AS d FROM public.academic_terms WHERE id = $1`, [
       a.termCurrent,
     ]);
-    const outcome = await save(t.users.teacherA, [cell("5", a.students.studentA, termEnd!.d)]);
-    assert.deepEqual(outcome.errors, [], "a quarter column is dated ahead on purpose");
+    const ahead = await save(t.users.teacherA, [cell("5", a.students.studentA, termEnd!.d)]);
+    assert.deepEqual(ahead.errors.map((e) => e.code), ["future_date"], "no lesson has happened there yet");
+
+    await asUser(db, t.users.teacherA, (tx) =>
+      tx.query(
+        `INSERT INTO public.journal_columns (school_id, class_subject_id, academic_term_id, column_date, assessment_type_id, label, kind)
+         VALUES ($1, $2, $3, $4, $5, 'Чоряки I', 'term')`,
+        [SCHOOL_A, a.mathA, a.termCurrent, termEnd!.d, a.assessmentTest]
+      )
+    );
+    const quarter = await save(t.users.teacherA, [cell("5", a.students.studentA, termEnd!.d)]);
+    assert.deepEqual(quarter.errors, [], "a quarter column is dated ahead on purpose");
   });
 
   it("closes the correction window on an old absence, for the teacher but not the administration", async () => {
@@ -298,5 +313,37 @@ describe("the rules the register already had", () => {
     const byAdmin = await save(t.users.adminA, [cell("5")]);
     assert.deepEqual(byAdmin.errors, []);
     await db.query(`UPDATE public.academic_terms SET is_locked = false WHERE id = $1`, [a.termCurrent]);
+  });
+});
+
+describe("an approved mark (00100)", () => {
+  const twoDaysAgo = async () => (await one<{ d: string }>(db, `SELECT (current_date - 2)::text AS d`))!.d;
+  const rowsOf = (date: string) =>
+    db
+      .query<{ score: string; status: string }>(
+        `SELECT score::text AS score, status FROM public.grades WHERE student_id = $1 AND class_subject_id = $2 AND grade_date = $3 ORDER BY status`,
+        [a.students.studentA, a.mathA, date]
+      )
+      .then((r) => r.rows);
+
+  it("is the teacher's no longer: not written over, not cleared — and no second mark beside it", async () => {
+    const date = await twoDaysAgo();
+    await db.query(
+      `INSERT INTO public.grades (school_id, student_id, class_subject_id, academic_term_id, assessment_type_id, score, max_score, grade_date, status)
+       VALUES ($1, $2, $3, $4, $5, 7, 10, $6, 'approved')`,
+      [SCHOOL_A, a.students.studentA, a.mathA, a.termCurrent, a.assessmentTest, date]
+    );
+    const over = await save(t.users.teacherA, [cell("9", a.students.studentA, date)]);
+    assert.deepEqual(over.errors.map((e) => e.code), ["approved"]);
+    const cleared = await save(t.users.teacherA, [cell("", a.students.studentA, date)]);
+    assert.deepEqual(cleared.errors.map((e) => e.code), ["approved"]);
+    assert.deepEqual(await rowsOf(date), [{ score: "7.00", status: "approved" }], "one mark, as approved");
+  });
+
+  it("is still the administration's to correct, in place", async () => {
+    const date = await twoDaysAgo();
+    const byAdmin = await save(t.users.adminA, [cell("8", a.students.studentA, date)]);
+    assert.deepEqual(byAdmin.errors, []);
+    assert.deepEqual(await rowsOf(date), [{ score: "8.00", status: "recorded" }], "the corrected mark replaces the approved one");
   });
 });

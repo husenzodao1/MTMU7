@@ -9,8 +9,13 @@ import { Input } from "@/components/ui/form-controls";
 import { saveAttendanceAction } from "@/features/teach/attendance-actions";
 import { cn } from "@/lib/utils/cn";
 
-const STATUSES = ["present", "absent", "late", "excused"] as const;
-type Status = (typeof STATUSES)[number];
+/**
+ * What a teacher marks: present, absent or late. "Excused" is no longer one
+ * of them (00100); a pupil already marked so stays so, shown under the name,
+ * until the teacher marks the day otherwise.
+ */
+const STATUSES = ["present", "absent", "late"] as const;
+type Status = (typeof STATUSES)[number] | "excused";
 
 export interface RosterRow {
   id: string;
@@ -114,9 +119,10 @@ export function AttendanceRoster({
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-ink">{row.name}</span>
                     {row.number ? <span className="block text-xs text-ink-muted">{row.number}</span> : null}
+                    {current === "excused" ? <span className="block text-xs text-brand-text">{ts("excused")}</span> : null}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 sm:w-auto lg:w-[26rem]" role="radiogroup" aria-label={row.name}>
+                <div className="grid grid-cols-3 gap-1.5 sm:w-auto lg:w-[20rem]" role="radiogroup" aria-label={row.name}>
                   {STATUSES.map((status) => (
                     <label key={status} className="relative">
                       <input

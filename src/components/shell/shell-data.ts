@@ -25,7 +25,7 @@ export async function loadShellData(access: Access): Promise<ShellData> {
   const supabase = await createClient();
 
   const [notifications, publicSchool, tFooter] = await Promise.all([
-    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", access.userId).eq("is_read", false),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", access.userId).eq("is_read", false).neq("type", "message"),
     getAuthSchool(),
     getTranslations("site.footer"),
   ]);

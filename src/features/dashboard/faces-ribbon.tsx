@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { DriftRow } from "@/features/dashboard/drift-row";
 import type { Face } from "@/features/dashboard/faces";
 
 /**
  * At the foot of the dashboard, the school's people: the pupils studying now
  * and the graduates, each a row of small round photographs with a name under
- * them. The rows stand still and scroll sideways; a tap on a face opens that
- * person's profile. A row with nobody in it is left out.
+ * them. A full row drifts slowly sideways on its own — the pupils one way, the
+ * graduates the other — and a finger moves it either way (drift-row.tsx); a
+ * short row stands still. A tap on a face opens that person's profile. A row
+ * with nobody in it is left out.
  */
+
+/** Fewer faces than this fill no screen: the row stands still rather than loop. */
+const DRIFT_FROM = 6;
 
 function initials(name: string): string {
   return name
@@ -31,27 +37,30 @@ function FaceChip({ face }: { face: Face }) {
       <span className="face-name">{face.name}</span>
     </>
   );
-  return face.nickname ? (
-    <Link href={`/u/${face.nickname}`} className="face">
+  return (
+    <Link href={face.nickname ? `/u/${face.nickname}` : `/profile/${face.id}`} className="face">
       {inner}
     </Link>
-  ) : (
-    <span className="face">{inner}</span>
   );
 }
 
-function Row({ title, faces }: { title: string; faces: Face[] }) {
+function Row({ title, faces, direction }: { title: string; faces: Face[]; direction: "left" | "right" }) {
   if (faces.length === 0) return null;
+  const chips = faces.map((face) => (
+    <li key={face.id}>
+      <FaceChip face={face} />
+    </li>
+  ));
   return (
     <div className="faces-row">
       <p className="faces-title">{title}</p>
-      <ul className="faces-rail">
-        {faces.map((face) => (
-          <li key={face.id}>
-            <FaceChip face={face} />
-          </li>
-        ))}
-      </ul>
+      {faces.length >= DRIFT_FROM ? (
+        <DriftRow direction={direction} speed={14} className="faces-drift">
+          <ul className="faces-set">{chips}</ul>
+        </DriftRow>
+      ) : (
+        <ul className="faces-rail">{chips}</ul>
+      )}
     </div>
   );
 }
@@ -67,8 +76,8 @@ export function FacesRibbon({
 }) {
   return (
     <section className="faces" aria-label={labels.title}>
-      <Row title={labels.active} faces={active} />
-      <Row title={labels.graduates} faces={graduates} />
+      <Row title={labels.active} faces={active} direction="left" />
+      <Row title={labels.graduates} faces={graduates} direction="right" />
     </section>
   );
 }

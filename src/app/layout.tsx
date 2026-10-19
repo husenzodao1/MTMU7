@@ -6,6 +6,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Bad_Script, JetBrains_Mono, Noto_Sans, Noto_Serif, Unbounded } from "next/font/google";
 import { Intro } from "@/features/intro/intro";
 import { INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
+import { withoutOffice } from "@/messages";
 import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
 import { APP_COOKIE, APP_USER_AGENT_MARK, isAppRequest } from "@/lib/native/app";
@@ -13,6 +14,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ViewportGuard } from "@/components/ui/viewport-guard";
 import { publicEnv } from "@/lib/env";
 import { BUILD } from "@/lib/build";
+import { asTextSize, DARK_BARS, DEFAULT_TEXT_SIZE, LIGHT_BARS, PREFS_SCRIPT, TEXT_SIZE_COOKIE } from "@/lib/display-prefs";
 import { DEFAULT_THEME, isTheme, THEME_COOKIE, themeIsDark } from "@/lib/theme";
 import "@/styles/globals.css";
 
@@ -33,6 +35,10 @@ const notoSerif = Noto_Serif({
   subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
   weight: ["400", "600", "700"],
   display: "swap",
+  // Twelve files (three weights, four alphabets) for a few headings: not
+  // asked for ahead of the page's own scripts on every load. The browser
+  // fetches the ones a heading uses as it draws, and keeps them after.
+  preload: false,
   variable: "--font-noto-serif",
 });
 
@@ -60,6 +66,8 @@ const mark = Unbounded({
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
   weight: ["500", "600"],
   display: "swap",
+  // Fetched as the header draws, not raced against the page's scripts.
+  preload: false,
   variable: "--font-mark",
 });
 
@@ -73,8 +81,6 @@ const mono = JetBrains_Mono({
 });
 
 /** The canvas by day and by night: the browser's and the phone's bars take it, so they belong to the page. */
-const LIGHT_BARS = "#f4f2ec";
-const DARK_BARS = "#0a0e17";
 
 // Zoom is never disabled (WCAG 1.4.4, SEC-016).
 export async function generateViewport(): Promise<Viewport> {
@@ -146,6 +152,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // on every navigation for somebody who chose the dark one.
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
+  // And the size of the type, one of ten steps (settings; lib/display-prefs.ts).
+  const textSize = asTextSize((await cookies()).get(TEXT_SIZE_COOKIE)?.value);
   // The first page opens with the book and a greeting (src/features/intro/):
   // every time the app is opened and once per visit to the site, never for
   // robots — and not on the first page after signing in, which has the
@@ -168,6 +176,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // "system" writes nothing at all, which is what leaves the media query
       // in charge.
       data-theme={theme === "system" ? undefined : theme}
+      data-text-size={textSize === DEFAULT_TEXT_SIZE ? undefined : textSize}
       // Inside the phone app: taps are answered as in an app (globals.css).
       data-app={inApp ? "" : undefined}
       // Inside the native Android app, a section it still shows from the site
@@ -185,6 +194,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             marked, or the site installed on the home screen — is an app all
             the same: no foot with "install the app" inside it. */}
         <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: APP_MARK_SCRIPT }} />
+        {/* The theme and type size as they are now, over a page drawn before they changed (display-prefs.ts). */}
+        <script nonce={requestHeaders.get("x-nonce") ?? undefined} dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
         {opening ? (
           <>
             <Intro words={t("welcome.opening")} />
@@ -195,7 +206,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="skip-link">
           {t("skipToContent")}
         </a>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        {/* Without the office's words: its pages are sent those themselves (office-words.tsx). */}
+        <NextIntlClientProvider locale={locale} messages={withoutOffice(messages)}>
           <ToastProvider>
             {children}
             <NativeApp />

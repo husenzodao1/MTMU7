@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Lock, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, CardBody, CardHeader } from "@/components/ui/surface";
 import { saveJournalCellsAction } from "@/features/teach/journal-actions";
@@ -19,6 +19,8 @@ export interface JournalColumn {
   heading: string;
   kind: "lesson" | "term";
   title: string;
+  /** A lesson still to come: shown with a lock, nothing written in it yet (00100). */
+  closed?: boolean;
 }
 
 export interface JournalRow {
@@ -26,6 +28,8 @@ export interface JournalRow {
   name: string;
   /** Current contents, keyed by column key: a mark, a letter, or "". */
   cells: Record<string, string>;
+  /** The squares holding an approved mark this person may no longer change (00100). */
+  locked?: string[];
   average: number | null;
 }
 
@@ -185,7 +189,9 @@ export function JournalGrid({
               )}
             >
               {/* Written upwards, as on the printed page: a date takes one
-                  column's width instead of five. */}
+                  column's width instead of five. A lesson still to come
+                  wears a lock over its date. */}
+              {column.closed ? <Lock className="mx-auto mb-1 size-3 text-ink-muted" aria-hidden /> : null}
               <span
                 className={cn(
                   "mx-auto block whitespace-nowrap text-xs font-medium tabular text-ink-secondary [writing-mode:vertical-rl]",
@@ -227,8 +233,14 @@ export function JournalGrid({
             </th>
             {columns.map((column, columnIndex) => {
               const composite = `${row.id}|${column.key}`;
+              const approved = row.locked?.includes(column.key) ?? false;
+              const shut = disabled || column.closed || approved;
               return (
-                <td key={column.key} className="border-b border-e border-line p-0">
+                <td
+                  key={column.key}
+                  className={cn("relative border-b border-e border-line p-0", column.closed && "bg-surface-muted/60", approved && "journal-approved")}
+                  title={approved ? t("approvedCell") : column.closed ? t("closedColumn") : undefined}
+                >
                   <input
                     data-row={rowIndex}
                     data-col={columnIndex}
@@ -236,7 +248,7 @@ export function JournalGrid({
                     onChange={(event) => write(row.id, column.key, event.target.value)}
                     onKeyDown={(event) => onKeyDown(event, rowIndex, columnIndex)}
                     onFocus={(event) => event.target.select()}
-                    disabled={disabled}
+                    disabled={shut}
                     maxLength={4}
                     inputMode="text"
                     aria-label={`${row.name} — ${column.title}`}

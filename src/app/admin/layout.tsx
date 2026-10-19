@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
 import { adminShellNav, loadShellData } from "@/components/shell/shell-data";
+import { OfficeWords } from "@/components/office-words";
 import { SiteFooter } from "@/components/site/official-header";
 import { WelcomeTransition } from "@/features/auth/welcome-transition";
 import { requireAdminArea } from "@/lib/auth/guards";
@@ -33,7 +34,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const [shell, nav, welcome] = await Promise.all([loadShellData(access), adminShellNav(access), isWelcome(), keepTheYearCurrent()]);
 
   return (
-    <>
+    <OfficeWords>
       {welcome ? <WelcomeTransition firstName={access.firstName} nonce={(await headers()).get("x-nonce") ?? undefined} /> : null}
       <AppShell
         variant="admin"
@@ -48,6 +49,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       >
         {children}
       </AppShell>
-    </>
+    </OfficeWords>
   );
 }

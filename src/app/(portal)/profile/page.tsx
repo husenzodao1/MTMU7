@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { DirectUpload } from "@/components/ui/direct-upload";
 import { TextField } from "@/components/ui/fields";
 import { Checkbox } from "@/components/ui/form-controls";
-import { Avatar } from "@/components/ui/misc";
-import { Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/surface";
+import { Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/surface";
+import { MeHeader } from "@/features/profile/me-header";
 import { requireAccess } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
@@ -41,6 +41,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const statsRaw = firstValue((await searchParams).stats);
   const period: StatsPeriod = statsRaw === "week" || statsRaw === "month" ? statsRaw : "term";
   const t = await getTranslations("portal.profile");
+  const tnav = await getTranslations("nav");
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_my_profile");
@@ -49,20 +50,22 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <MeHeader
+        name={fullName}
+        avatarUrl={profile.avatar_url}
+        detail={profile.school_name}
+        active="profile"
+        labels={{ profile: tnav("profile"), settings: tnav("settings") }}
+      >
+        <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+          {profile.roles.map((role) => (
+            <Badge key={role.slug} tone="brand">{pickName(role, locale)}</Badge>
+          ))}
+        </div>
+      </MeHeader>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr]">
         <Card>
-          <CardBody className="flex flex-col items-center text-center">
-            <Avatar name={`${profile.first_name} ${profile.last_name}`} src={profile.avatar_url} size="lg" className="size-24 text-2xl" />
-            <p className="mt-3 text-lg font-semibold text-ink">{fullName}</p>
-            <p className="text-sm text-ink-muted">{profile.school_name}</p>
-            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
-              {profile.roles.map((role) => (
-                <Badge key={role.slug} tone="brand">{pickName(role, locale)}</Badge>
-              ))}
-            </div>
-          </CardBody>
-          <CardBody className="border-t border-line">
+          <CardBody>
             <DescriptionList
               items={[
                 { term: t("publicId"), description: <span className="font-mono tabular">{profile.public_id}</span> },

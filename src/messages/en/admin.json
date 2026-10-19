@@ -47,7 +47,8 @@
       "globalSearch": "Search",
       "parents": "Parents (Telegram bot)",
       "support": "Online support",
-      "accounts": "Accounts"
+      "accounts": "Accounts",
+      "archive": "Archive"
     },
     "dashboard": {
       "title": "School dashboard",
@@ -1811,6 +1812,33 @@
       "reopen": "Reopen",
       "markedDone": "Marked as done.",
       "reopened": "Reopened."
+    },
+    "archive": {
+      "title": "Archive",
+      "description": "Every year's classes, journals and documents — kept, to be read.",
+      "years": "School years",
+      "now": "current",
+      "views": "Archive sections",
+      "classes": "Classes",
+      "journals": "Journals",
+      "documents": "Documents",
+      "empty": "No school years yet.",
+      "noClasses": "No classes with pupils this year.",
+      "noJournals": "No journals this year.",
+      "noDocuments": "No documents were filed this year.",
+      "noHomeroom": "No class teacher",
+      "schoolDocuments": "School documents",
+      "reportCards": "Report cards",
+      "reportCardsOf": "Report cards of {name}",
+      "archived": "Archived",
+      "pupils": "Pupils",
+      "pupilsCount": "{count} pupils",
+      "enrollment": {
+        "completed": "Finished",
+        "transferred": "Transferred",
+        "withdrawn": "Left",
+        "other": "Other"
+      }
     }
   },
   "accounts": {

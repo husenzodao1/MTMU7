@@ -47,7 +47,8 @@
       "globalSearch": "Поиск",
       "parents": "Родители (Telegram-бот)",
       "support": "Онлайн-поддержка",
-      "accounts": "Аккаунты"
+      "accounts": "Аккаунты",
+      "archive": "Архив"
     },
     "dashboard": {
       "title": "Панель школы",
@@ -1811,6 +1812,33 @@
       "reopen": "Открыть снова",
       "markedDone": "Отмечено как выполненное.",
       "reopened": "Открыто снова."
+    },
+    "archive": {
+      "title": "Архив",
+      "description": "Классы, журналы и документы каждого года — сохранены, для чтения.",
+      "years": "Учебные годы",
+      "now": "текущий",
+      "views": "Разделы архива",
+      "classes": "Классы",
+      "journals": "Журналы",
+      "documents": "Документы",
+      "empty": "Учебных лет пока нет.",
+      "noClasses": "В этом году нет классов с учениками.",
+      "noJournals": "В этом году нет журналов.",
+      "noDocuments": "В этом году документы не загружались.",
+      "noHomeroom": "Без классного руководителя",
+      "schoolDocuments": "Документы школы",
+      "reportCards": "Табели",
+      "reportCardsOf": "Табели класса {name}",
+      "archived": "В архиве",
+      "pupils": "Ученики",
+      "pupilsCount": "{count} учеников",
+      "enrollment": {
+        "completed": "Окончил",
+        "transferred": "Переведён",
+        "withdrawn": "Выбыл",
+        "other": "Другое"
+      }
     }
   },
   "accounts": {

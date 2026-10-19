@@ -180,7 +180,8 @@ export function GreetingCard({
           <span className="greeting-word">!</span>
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 [text-shadow:0_1px_8px_rgb(0_0_0/0.35)]">{t(`wishes.${part}`)}</p>
-        {actions ? <div className="mt-5 flex flex-wrap gap-2">{actions}</div> : null}
+        {/* Side by side on one line in every language, however narrow the phone. */}
+        {actions ? <div className="greeting-actions mt-5">{actions}</div> : null}
       </div>
     </section>
   );

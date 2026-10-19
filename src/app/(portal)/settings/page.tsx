@@ -6,13 +6,21 @@ import { NOTIFICATION_PREFERENCE_TYPES } from "@/features/profile/constants";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Checkbox, Fieldset } from "@/components/ui/form-controls";
-import { ThemeSwitcher } from "@/components/site/theme-switcher";
+import { cookies } from "next/headers";
+import { SignOutButton } from "@/features/auth/sign-out-button";
 import { TwoFactorSettings } from "@/features/auth/two-factor-settings";
-import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/surface";
+import { MeHeader } from "@/features/profile/me-header";
+import { TextSizePicker, ThemePicker } from "@/features/settings/display-settings";
+import { Card, CardBody, CardHeader } from "@/components/ui/surface";
+import { displayName } from "@/lib/auth/access";
 import { requireAccess } from "@/lib/auth/guards";
-import { LOCALES } from "@/lib/i18n/text";
+import { asTextSize, TEXT_SIZE_COOKIE } from "@/lib/display-prefs";
+import { DEFAULT_THEME, isTheme, THEME_COOKIE, THEMES, type Theme } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
+
+/** Two languages side by side, Tajik the width of both under them (globals.css, .locale-grid). */
+const LOCALE_ORDER = ["ru", "en", "tg"] as const;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("nav");
@@ -25,7 +33,16 @@ export default async function SettingsPage() {
   const tn = await getTranslations("portal.notifications.types");
   const tl = await getTranslations("common.locales");
   const tt = await getTranslations("common.themes");
+  const tnav = await getTranslations("nav");
   const locale = await getLocale();
+  const jar = await cookies();
+  const cookieTheme = jar.get(THEME_COOKIE)?.value;
+  const theme: Theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
+  const textSize = asTextSize(jar.get(TEXT_SIZE_COOKIE)?.value);
+  const themeNames = Object.fromEntries(THEMES.map((name) => [name, { name: tt(`${name}.name`), hint: tt(`${name}.hint`) }])) as Record<
+    Theme,
+    { name: string; hint: string }
+  >;
   const supabase = await createClient();
   const { data: settings } = await supabase
     .from("user_settings")
@@ -38,19 +55,18 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
-      <div className="grid max-w-3xl gap-5">
-        <Card>
-          <CardHeader title={t("twoFactor.title")} description={t("twoFactor.description")} />
-          <CardBody>
-            <TwoFactorSettings enabled={twoFactorOn} />
-          </CardBody>
-        </Card>
+      <MeHeader
+        name={displayName(access)}
+        avatarUrl={access.avatarUrl}
+        active="settings"
+        labels={{ profile: tnav("profile"), settings: tnav("settings") }}
+      />
+      <div className="mx-auto grid max-w-3xl gap-5">
         <Card>
           <CardHeader title={t("language")} description={t("languageHint")} />
           <CardBody>
-            <form action={setLocaleAction} className="flex flex-wrap gap-2">
-              {LOCALES.map((code) => (
+            <form action={setLocaleAction} className="locale-grid">
+              {LOCALE_ORDER.map((code) => (
                 <button
                   key={code}
                   type="submit"
@@ -58,7 +74,7 @@ export default async function SettingsPage() {
                   value={code}
                   lang={code}
                   aria-pressed={code === locale}
-                  className={cn(buttonClasses(code === locale ? "primary" : "secondary"), "min-w-28")}
+                  className={cn(buttonClasses(code === locale ? "primary" : "secondary"), "w-full")}
                 >
                   {tl(code)}
                 </button>
@@ -70,7 +86,17 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader title={tt("label")} description={t("themeHint")} />
           <CardBody>
-            <ThemeSwitcher />
+            <ThemePicker initial={theme} names={themeNames} />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader title={t("textSize")} description={t("textSizeHint")} />
+          <CardBody>
+            <TextSizePicker
+              initial={textSize}
+              labels={{ smaller: t("textSmaller"), larger: t("textLarger"), level: t("textSize"), sample: t("textSample"), reset: t("textReset") }}
+            />
           </CardBody>
         </Card>
 
@@ -90,6 +116,15 @@ export default async function SettingsPage() {
             </ActionForm>
           </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader title={t("twoFactor.title")} description={t("twoFactor.description")} />
+          <CardBody>
+            <TwoFactorSettings enabled={twoFactorOn} />
+          </CardBody>
+        </Card>
+
+        <SignOutButton label={tnav("signOut")} />
       </div>
     </>
   );

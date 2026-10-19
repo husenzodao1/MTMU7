@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Lock } from "lucide-react";
+import { Archive, Lock } from "lucide-react";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { Fold } from "@/components/ui/fold";
@@ -141,6 +141,9 @@ export default async function GradebookPage({
     ]),
   ].sort();
 
+  // Approved marks are locked for whoever does not approve marks (00100).
+  const mayApprove = can(access, "grades.approve");
+
   const absenceLetter: Record<string, string> = {
     absent: t("absence.absent"),
     late: t("absence.late"),
@@ -159,6 +162,8 @@ export default async function GradebookPage({
       heading: kind === "term" ? (ruledColumn?.label ?? t("termColumn")) : formatShortDate(date, locale),
       kind,
       title: [formatShortDate(date, locale), ruledColumn?.label, type ? pickName(type, locale) : null].filter(Boolean).join(" · "),
+      // A lesson still to come is closed until its day (00100).
+      closed: kind === "lesson" && date > today,
     };
   });
   // By date; on the day a quarter's mark is written, after that day's lesson,
@@ -170,10 +175,12 @@ export default async function GradebookPage({
 
   const rows: JournalRow[] = roster.map((student) => {
     const cells: Record<string, string> = {};
+    const locked: string[] = [];
     for (const column of columns) {
       const mark = markAt.get(`${student.id}|${column.key}`);
       if (mark) {
         cells[column.key] = String(Number(mark.score));
+        if (mark.status === "approved" && !mayApprove) locked.push(column.key);
         continue;
       }
       const absence = absenceAt.get(`${student.id}|${column.date}`);
@@ -196,6 +203,7 @@ export default async function GradebookPage({
       id: student.id,
       name: `${student.lastName} ${student.firstName}`,
       cells,
+      locked,
       average: weights > 0 ? Math.round((weighted / weights) * 1000) / 10 : null,
     };
   });
@@ -207,7 +215,9 @@ export default async function GradebookPage({
     homework: row.homework,
   }));
 
-  const mayWrite = can(access, "grades.enter") || can(access, "grades.update");
+  // A past year's journal is kept to be read (admin/archive); only whoever
+  // corrects marks may still write in it.
+  const mayWrite = cs.pastYear ? can(access, "grades.update") : can(access, "grades.enter") || can(access, "grades.update");
   const defaultDate = today < term.start_date ? term.start_date : today > term.end_date ? term.end_date : today;
 
   return (
@@ -220,6 +230,14 @@ export default async function GradebookPage({
           label={t("terms")}
           items={terms.map((x) => ({ href: `/teach/gradebook/${cs.id}?term=${x.id}`, label: x.name, active: x.id === term.id }))}
         />
+      ) : null}
+      {cs.pastYear ? (
+        <Alert tone="info" className="mb-4" title={t("pastYearTitle", { year: cs.yearName ?? "" })}>
+          <span className="inline-flex items-center gap-1.5">
+            <Archive className="size-4" aria-hidden />
+            {t("pastYear")}
+          </span>
+        </Alert>
       ) : null}
       {term.is_locked ? (
         <Alert tone="warning" className="mb-4" title={t("lockedTitle")}>
@@ -269,7 +287,8 @@ export default async function GradebookPage({
                       label={t("date")}
                       defaultValue={defaultDate}
                       min={term.start_date}
-                      max={term.end_date}
+                      // A lesson is opened on its day or after it, never ahead (00100).
+                      max={today < term.end_date ? today : term.end_date}
                       required
                     />
                     <SelectField

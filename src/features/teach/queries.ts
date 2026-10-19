@@ -8,6 +8,9 @@ export interface ClassSubjectContext {
   classId: string;
   className: string;
   academicYearId: string;
+  /** The class belongs to a year gone by. */
+  pastYear: boolean;
+  yearName: string | null;
   subjectName: string;
   teacherId: string | null;
 }
@@ -19,11 +22,11 @@ export const getClassSubjectContext = cache(async (id: string, locale: Locale): 
   const supabase = await createClient();
   const { data } = await supabase
     .from("class_subjects")
-    .select("id, class_id, teacher_id, classes(name, academic_year_id), subjects(name_tg, name_ru, name_en)")
+    .select("id, class_id, teacher_id, classes(name, academic_year_id, academic_years(is_current, name)), subjects(name_tg, name_ru, name_en)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
-  const klass = data.classes as { name: string; academic_year_id: string } | null;
+  const klass = data.classes as { name: string; academic_year_id: string; academic_years: { is_current: boolean; name: string } | null } | null;
   const subject = data.subjects as Named | null;
   if (!klass || !subject) return null;
   return {
@@ -31,6 +34,9 @@ export const getClassSubjectContext = cache(async (id: string, locale: Locale): 
     classId: data.class_id,
     className: klass.name,
     academicYearId: klass.academic_year_id,
+    /** A year gone by: its journal is kept to be read (admin/archive). */
+    pastYear: klass.academic_years ? !klass.academic_years.is_current : false,
+    yearName: klass.academic_years?.name ?? null,
     subjectName: pickName(subject, locale),
     teacherId: data.teacher_id,
   };
