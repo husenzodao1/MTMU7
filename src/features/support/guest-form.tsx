@@ -7,7 +7,7 @@ import { TextAreaField, TextField } from "@/components/ui/fields";
 import { Alert } from "@/components/ui/surface";
 import { submitSupportRequestAction } from "@/features/support/actions";
 
-/** The note a visitor leaves when they cannot sign in to chat. */
+/** The note left for the desk, answered by phone or email. */
 export function GuestSupportForm() {
   const t = useTranslations("common.support.guest");
   const [sent, setSent] = useState(false);

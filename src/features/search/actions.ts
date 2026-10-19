@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { portalNavigation } from "@/components/shell/navigation";
 import { searchAdmin } from "@/features/admin/search/query";
-import { searchContacts } from "@/features/messages/contact-search";
+import { searchPeople } from "@/features/people/search";
 import { failure, success, type ActionResult } from "@/lib/actions/result";
 import { can, canEnterAdmin, getAccess, hasModule, type Access } from "@/lib/auth/access";
 import { matchAny } from "@/lib/list-params";
@@ -31,6 +31,8 @@ export interface EverythingHit {
   title: string;
   detail?: string;
   href: string;
+  /** A person who can be reached on WhatsApp: the link that opens the chat there. */
+  whatsapp?: string;
 }
 
 export interface EverythingSection {
@@ -75,12 +77,13 @@ export async function searchEverythingAction(raw: string): Promise<ActionResult<
   const [pages, people, admin, announcements, news, events, homework, library, documents] = await Promise.all([
     section("pages", true, () => matchPages(access, query)),
     section("people", can(access, "messages.use") && hasModule(access, "messages"), async () => {
-      const { data } = await searchContacts(supabase, query, PER_SECTION);
-      return (data ?? []).filter((person) => person.id).map((person) => ({
-        id: person.id!,
-        title: `${person.last_name ?? ""} ${person.first_name ?? ""}`.trim(),
+      const people = await searchPeople(supabase, query, PER_SECTION);
+      return people.map((person) => ({
+        id: person.id,
+        title: `${person.last_name} ${person.first_name}`.trim(),
         detail: person.nickname ? `@${person.nickname}` : undefined,
         href: `/profile/${person.id}`,
+        whatsapp: person.whatsapp ?? undefined,
       }));
     }),
     canEnterAdmin(access) ? searchAdmin(access, query).catch(() => []) : Promise.resolve([]),

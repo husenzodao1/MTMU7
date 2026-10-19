@@ -104,23 +104,6 @@ export async function cancelBroadcastAction(_state: FormState, formData: FormDat
 }
 
 // ---------------------------------------------------------------------------
-// Moderation
-// ---------------------------------------------------------------------------
-export async function resolveReportAction(_state: FormState, formData: FormData): Promise<FormState> {
-  const access = await getAccess();
-  if (!access?.school) return done(failure("errors.not_authenticated"));
-  const parsed = z
-    .object({ id: uuid, action: z.enum(["dismiss", "delete_message"]), note: z.string().trim().max(1000).optional() })
-    .safeParse({ id: formData.get("id"), action: formData.get("decision"), note: formData.get("note") ?? undefined });
-  if (!parsed.success) return done(failure("errors.invalid"));
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("moderation_resolve_report", { p_report_id: parsed.data.id, p_action: parsed.data.action, p_note: parsed.data.note || undefined });
-  if (error) return done(mapDbError(error));
-  revalidatePath("/admin/moderation", "layout");
-  return done(success(parsed.data.action === "dismiss" ? "admin.moderation.dismissed" : "admin.moderation.removed"));
-}
-
-// ---------------------------------------------------------------------------
 // School profile and settings
 // ---------------------------------------------------------------------------
 const profileSchema = z.object({

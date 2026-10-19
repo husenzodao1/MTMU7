@@ -60,7 +60,6 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
         searchParams={params}
         page={list.page}
         pageSize={PAGE_SIZE}
-        canMessage={can(access, "messages.use")}
       />
     </>
   );

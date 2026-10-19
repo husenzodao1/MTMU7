@@ -98,7 +98,9 @@ function LensLine({ className, text, label, writes }: { className: string; text:
 /** How much larger the letters are at the middle of the glass. */
 const POWER = 1.75;
 /** From the rim to the end of the handle. */
-const HANDLE = 36;
+const HANDLE = 22;
+/** The glass's radius, against the letters' size: a small glass, just over a letter. */
+const GLASS = 0.82;
 /** The handle's slant below the level, either way. */
 const LEAN = 0.86;
 /** One way along the line, and the handle's swing at its end, in seconds. */
@@ -158,7 +160,7 @@ function measure(ctx: CanvasRenderingContext2D, room: number, text: string, fami
   let radius = 0;
   let side = 0;
   for (let i = 0; i < 3; i++) {
-    radius = Math.round(size * 1.18);
+    radius = Math.round(size * GLASS);
     side = Math.max(radius, (radius + HANDLE) * Math.cos(LEAN)) + 6;
     ctx.font = `${size}px ${family}`;
     width = ctx.measureText(text).width;

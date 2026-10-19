@@ -6,8 +6,9 @@ import type { IconName } from "@/components/shell/navigation";
  * is chosen (motion.css, "the bottom bar"): the dashboard's four blocks flip
  * over two by two, the library's book opens and a page turns (and it closes
  * again when another section is chosen), the board's chart draws itself, the
- * calendar turns a leaf and ticks the day, the pen writes a line, the message
- * bubble pops and starts typing, the newspaper's lines run in.
+ * calendar turns a leaf and ticks the day, the pen writes a line, the bell
+ * swings and its clapper answers (and rings again when something new comes,
+ * app-shell.tsx), the newspaper's lines run in.
  *
  * Drawn on lucide's 24-unit grid at its stroke, so they sit with every other
  * icon in the portal. A section without an act of its own uses its plain icon.
@@ -80,14 +81,12 @@ function Homework() {
   );
 }
 
-function Messages() {
+function Notifications() {
   return (
-    <svg viewBox="0 0 24 24" className="bar-icon" data-icon="messages" aria-hidden {...STROKE}>
-      <path className="bar-bubble" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      <g className="bar-typing" fill="currentColor" stroke="none">
-        <circle cx="8" cy="10" r="1.15" />
-        <circle cx="12" cy="10" r="1.15" />
-        <circle cx="16" cy="10" r="1.15" />
+    <svg viewBox="0 0 24 24" className="bar-icon" data-icon="notifications" aria-hidden {...STROKE}>
+      <g className="bar-bell">
+        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        <path className="bar-clapper" d="M10.268 21a2 2 0 0 0 3.464 0" />
       </g>
     </svg>
   );
@@ -112,7 +111,7 @@ const ANIMATED: Partial<Record<IconName, () => React.ReactElement>> = {
   teach: Teach,
   schedule: Schedule,
   homework: Homework,
-  messages: Messages,
+  notifications: Notifications,
   news: News,
 };
 

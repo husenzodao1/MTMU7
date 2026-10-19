@@ -33,7 +33,6 @@ export async function AccountsView({
   searchParams,
   page,
   pageSize,
-  canMessage,
 }: {
   directory: AccountDirectory | null;
   basePath: string;
@@ -42,7 +41,6 @@ export async function AccountsView({
   searchParams: SearchParams;
   page: number;
   pageSize: number;
-  canMessage: boolean;
 }) {
   const t = await getTranslations("accounts");
   const tRoot = await getTranslations();
@@ -104,7 +102,7 @@ export async function AccountsView({
         ) : (
           <ul className="grid gap-2">
             {directory.rows.map((row) => (
-              <AccountRowItem key={row.id} row={row} basePath={basePath} locale={locale} canMessage={canMessage} t={t} />
+              <AccountRowItem key={row.id} row={row} basePath={basePath} locale={locale} t={t} />
             ))}
           </ul>
         )}
@@ -119,13 +117,11 @@ function AccountRowItem({
   row,
   basePath,
   locale,
-  canMessage,
   t,
 }: {
   row: AccountRow;
   basePath: string;
   locale: Locale;
-  canMessage: boolean;
   t: Awaited<ReturnType<typeof getTranslations<"accounts">>>;
 }) {
   const name = [row.last_name, row.first_name, row.middle_name].filter(Boolean).join(" ");
@@ -141,7 +137,7 @@ function AccountRowItem({
 
   return (
     <li className="account-row group relative flex items-center gap-3 rounded-2xl border border-line bg-surface px-3 py-2.5 shadow-xs transition-all hover:-translate-y-px hover:border-brand-300 hover:shadow-sm">
-      <ProfileAvatar userId={row.id} name={`${row.first_name} ${row.last_name}`} avatarUrl={row.avatar_url} canMessage={canMessage} />
+      <ProfileAvatar userId={row.id} name={`${row.first_name} ${row.last_name}`} avatarUrl={row.avatar_url} />
       <div className="min-w-0 flex-1">
         <Link href={`${basePath}/${row.id}`} className="block truncate font-semibold text-ink after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none group-focus-within:text-brand-text">
           {name}

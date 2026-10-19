@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { splashPlugin } from "@/features/native/bridge";
 import { BookScene } from "@/features/intro/book-scene";
-import { INTRO_MS, INTRO_QUICK_MS } from "@/features/intro/intro-script";
+import { INTRO_GAP_MS, INTRO_MS, INTRO_QUICK_MS, INTRO_SEEN } from "@/features/intro/intro-script";
+import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 import { cn } from "@/lib/utils/cn";
 
 /**
  * The opening over the first page: the book opens, a light comes up out of
  * it and "Хуш омадед" writes itself under it (book-scene.tsx) — once per
- * browser, for a year, and on the app's first start only.
+ * visit to the site and when the app is opened, at most once in half an
+ * hour (intro-script.ts).
  *
  * The server sends it with the HTML, so it covers the page from the first
  * frame, and INTRO_SCRIPT (intro-script.ts), inline right after it, starts it
@@ -26,7 +28,26 @@ export function Intro({ words }: { words: string }) {
     // Normally done already by INTRO_SCRIPT; harmless when it was.
     void splashPlugin().then((splash) => splash?.hide({ fadeOutDuration: 150 }).catch(() => undefined));
     const el = overlay.current;
-    if (el && !el.hasAttribute("data-play")) el.setAttribute("data-play", "");
+    // Drawn by React rather than arriving with the page (INTRO_SCRIPT marks
+    // every opening it sees): the opening of a visit already under way, which
+    // never plays — only one that has not played yet in this tab, should the
+    // inline script not have run at all.
+    if (el && !el.hasAttribute("data-play")) {
+      let seen = false;
+      try {
+        const now = Date.now();
+        seen =
+          sessionStorage.getItem(INTRO_SEEN) === "1" ||
+          document.cookie.includes(`${WELCOME_COOKIE}=1`) ||
+          now - (Number(localStorage.getItem(INTRO_SEEN)) || 0) < INTRO_GAP_MS;
+        sessionStorage.setItem(INTRO_SEEN, "1");
+        if (!seen) localStorage.setItem(INTRO_SEEN, String(now));
+      } catch {
+        // No storage: played, as the script would have.
+      }
+      if (seen) el.setAttribute("data-skip", "");
+      el.setAttribute("data-play", "");
+    }
     // Already played since the app started: it was never shown.
     if (el?.hasAttribute("data-skip")) {
       const gone = window.setTimeout(() => setPhase("gone"), 0);

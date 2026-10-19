@@ -62,7 +62,7 @@ export function pathForAppLink(link: string, siteOrigin: string): string | null 
     return null;
   }
   if (url.protocol === `${APP_SCHEME}:` && url.host === "open") {
-    // tj.mtmu7.app://open/messages/<id> — a notification the app drew itself.
+    // tj.mtmu7.app://open/notifications — a notification the app drew itself.
     // A path on the site and nothing more: letters, digits and dashes only.
     return /^\/[a-z0-9/-]{0,120}$/i.test(url.pathname) && !url.pathname.startsWith("//") ? url.pathname : null;
   }

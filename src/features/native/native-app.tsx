@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Download, X } from "lucide-react";
-import { FROM_LIST } from "@/features/messages/from-list";
 import { appPlugin, googleAccountPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
 import { report, watchErrors } from "@/features/native/diagnostics";
 import { registerWorker } from "@/features/push/client";
@@ -56,18 +55,16 @@ export function NativeApp() {
   /**
    * Android's back button, as in any app rather than as in a browser
    * (lib/native/back.ts): what is open closes, then one step back at a time,
-   * a conversation to its list, and on the first page a second press within
+   * and on the first page a second press within
    * two seconds steps the app aside to the home screen — as the home button
    * does, so it is back at once when opened again.
    */
   const onBack = useRef((app: { minimizeApp?: () => Promise<void> }, canGoBack: boolean) => {
-    // Messages being chosen in a conversation count as open too (thread.tsx).
-    const overlay = document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"], [data-chat-selecting]');
+    const overlay = document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"]');
     const action = backAction({
       path: location.pathname,
       overlayOpen: Boolean(overlay),
       canGoBack,
-      fromList: Boolean((history.state as Record<string, unknown> | null)?.[FROM_LIST]),
       armedAt: exitArmedAt.current,
       now: Date.now(),
     });

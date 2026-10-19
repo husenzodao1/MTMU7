@@ -227,7 +227,7 @@
       "open": "Дастгирии онлайн — навиштан",
       "title": "Дастгирии онлайн",
       "subtitle": "Саволе доред? Мо дар ин ҷо ҳастем, то кӯмак кунем.",
-      "signInToChat": "Ворид шавед ва дар чат нависед",
+      "signInToChat": "Ба система ворид шавед",
       "orLeaveNote": "ё паём гузоред",
       "call": "Занг задан",
       "guest": {
@@ -287,8 +287,6 @@
     "announcements": "Эълонҳо",
     "events": "Чорабиниҳо",
     "documents": "Ҳуҷҷатҳо",
-    "messages": "Паёмҳо",
-    "messagesUnread": "{count, plural, one {# паёми нахонда} other {# паёми нахонда}}",
     "contacts": "Тамосҳо",
     "notifications": "Огоҳиномаҳо",
     "notificationsUnread": "{count, plural, one {Огоҳиномаҳо, # нахонда} other {Огоҳиномаҳо, # нахонда}}",

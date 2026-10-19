@@ -21,11 +21,12 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { NotFoundNote, SearchingPanel, useSearchSweep } from "@/components/ui/searching";
+import { WhatsAppButton } from "@/features/people/whatsapp-button";
 import { searchEverythingAction, type EverythingKind, type EverythingSection } from "@/features/search/actions";
 import { fold } from "@/lib/search/fold";
 
-/** However quick the answer, the note stays this long: long enough to be read. */
-const SWEEP_MS = 3000;
+/** However quick the answer, the note stays this long: long enough to be read, short enough not to wait on. */
+const SWEEP_MS = 1000;
 /** A pause in typing this long sends the search; Enter sends it at once. */
 const TYPING_MS = 450;
 
@@ -53,9 +54,10 @@ const noSubscribe = () => () => undefined;
  * phone, a panel under a dimmed page on a computer.
  *
  * The search runs as the typing pauses (or at Enter) across everything the
- * person may see (actions.ts): the portal's sections, people, announcements,
- * news, events, homework, the library, documents, and in the office the
- * school's records. The note and its glass stay for at least three seconds
+ * person may see (actions.ts): the portal's sections, people — each with
+ * their WhatsApp at the end of the row where they can be reached on it —
+ * announcements, news, events, homework, the library, documents, and in the
+ * office the school's records. The note and its glass stay for a second
  * whatever the speed of the answer, and the results come in under it as it
  * leaves.
  */
@@ -235,7 +237,7 @@ function EverythingOverlay({ onClose }: { onClose: () => void }) {
                     <h2 className="everything-section-title">{t(`kinds.${section.kind}`)}</h2>
                     <ul>
                       {section.hits.map((hit) => (
-                        <li key={`${section.kind}-${hit.id}`}>
+                        <li key={`${section.kind}-${hit.id}`} className="everything-row">
                           <Link href={hit.href} className="everything-hit" onClick={onClose}>
                             <span className="everything-hit-icon" aria-hidden>
                               <Icon className="size-4" strokeWidth={1.75} />
@@ -247,6 +249,7 @@ function EverythingOverlay({ onClose }: { onClose: () => void }) {
                               {hit.detail ? <span className="everything-hit-detail">{hit.detail}</span> : null}
                             </span>
                           </Link>
+                          {hit.whatsapp ? <WhatsAppButton href={hit.whatsapp} name={hit.title} /> : null}
                         </li>
                       ))}
                     </ul>

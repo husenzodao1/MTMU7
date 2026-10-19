@@ -8,7 +8,6 @@ import { Intro } from "@/features/intro/intro";
 import { INTRO_SCRIPT, isRobot } from "@/features/intro/intro-script";
 import { OfflineCover } from "@/features/native/offline-cover";
 import { NativeApp } from "@/features/native/native-app";
-import { isWelcome } from "@/lib/auth/welcome";
 import { APP_COOKIE, APP_USER_AGENT_MARK, isAppRequest } from "@/lib/native/app";
 import { ToastProvider } from "@/components/ui/toast";
 import { ViewportGuard } from "@/components/ui/viewport-guard";
@@ -148,13 +147,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cookieTheme = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(cookieTheme) ? cookieTheme : DEFAULT_THEME;
   // The first page opens with the book and a greeting (src/features/intro/):
-  // every time the app is opened and once per visit to the site (the page
-  // itself skips it after that, INTRO_SCRIPT), never for robots — and not on
-  // the first page after signing in, which has the book's welcome of its own.
+  // every time the app is opened and once per visit to the site, never for
+  // robots — and not on the first page after signing in, which has the
+  // book's welcome of its own. The page itself decides, as it arrives
+  // (INTRO_SCRIPT): drawn here on every page, so the page never gains the
+  // opening anew when its data is fetched again (a pull, a saved form) and
+  // plays it then.
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent");
   const inApp = isAppRequest(userAgent, (await cookies()).get(APP_COOKIE)?.value);
-  const opening = !(await isWelcome()) && (inApp || !isRobot(userAgent));
+  const opening = inApp || !isRobot(userAgent);
   // The database's address is greeted while the page is still arriving, so
   // the first live update, photo or chat message does not wait for the
   // handshake — on a slow line that is the better part of a second.

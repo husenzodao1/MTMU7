@@ -91,7 +91,7 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
       </header>
       <Card as="div">
         <CardBody className="p-5 sm:p-7">
-          <MarkdownBlocks blocks={body} lang={article.language} />
+          <MarkdownBlocks blocks={body} lang={article.language} className="text-[1.0625rem]" />
           {engagement ? (
             <ReactionBar
               className="mt-6 border-t border-line pt-4"

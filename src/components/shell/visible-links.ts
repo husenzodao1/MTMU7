@@ -11,6 +11,11 @@ const SPACING_MS = 80;
 const MARGIN = "240px";
 /** The page's links are looked at again this long after it last changed. */
 const SETTLE_MS = 300;
+/**
+ * On the website, where a page fetched ahead is the server's work rather than
+ * the device's, only this many of a page's links are: the first ones in view.
+ */
+const WEBSITE_MOST = 12;
 
 /**
  * Every link on the screen has its page ready before it is tapped, the way an
@@ -27,11 +32,15 @@ export function useWarmVisibleLinks(pathname: string) {
     let live = true;
     const queue: string[] = [];
     let pumping = 0;
+    let left = document.documentElement.hasAttribute("data-app") ? Infinity : WEBSITE_MOST;
     const pump = () => {
       pumping = 0;
       const href = queue.shift();
-      if (!live || !href) return;
-      if (!warmedRecently(href)) warmPage(router, href, () => live);
+      if (!live || !href || left <= 0) return;
+      if (!warmedRecently(href)) {
+        left -= 1;
+        warmPage(router, href, () => live);
+      }
       if (queue.length > 0) pumping = window.setTimeout(pump, SPACING_MS);
     };
     const seen = new WeakSet<Element>();

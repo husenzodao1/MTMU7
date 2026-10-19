@@ -37,7 +37,7 @@ function isTeachingStaff(access: Access) {
 }
 
 /** The support desk, at the foot of every menu. */
-const SUPPORT: NavItem = { key: "support", href: "/support", icon: "support", labelKey: "nav.support" };
+const SUPPORT: NavItem = { key: "support", href: "/support/contact", icon: "support", labelKey: "nav.support" };
 
 const PORTAL_RULES: Rule[] = [
   { item: { key: "dashboard", href: "/dashboard", icon: "dashboard", labelKey: "nav.dashboard" }, visible: () => true },
@@ -64,7 +64,7 @@ const PORTAL_RULES: Rule[] = [
     visible: (a) => moduleAnd("news", "news.view")(a) || moduleAnd("announcements", "announcements.view")(a) || moduleAnd("events", "events.view")(a),
   },
   { item: { key: "documents", href: "/documents", icon: "documents", labelKey: "nav.documents" }, visible: moduleAnd("documents", "documents.view") },
-  { item: { key: "messages", href: "/messages", icon: "messages", labelKey: "nav.messages" }, visible: moduleAnd("messages", "messages.use") },
+  { item: { key: "notifications", href: "/notifications", icon: "notifications", labelKey: "nav.notifications" }, visible: () => true },
   { item: { key: "contacts", href: "/friends", icon: "contacts", labelKey: "nav.contacts" }, visible: (a) => hasModule(a, "friends") },
   // Last, like any other item: the floating button that used to sit over
   // every page is gone.
@@ -135,7 +135,6 @@ const ADMIN_GROUPS: Array<{ key: string; labelKey: string; rules: Rule[] }> = [
     rules: [
       { item: { key: "broadcasts", href: "/admin/notifications", icon: "broadcasts", labelKey: "admin.nav.notifications" }, visible: anyOf("notifications.send") },
       { item: { key: "support", href: "/admin/support", icon: "support", labelKey: "admin.nav.support" }, visible: anyOf("messages.moderate") },
-      { item: { key: "moderation", href: "/admin/moderation", icon: "moderation", labelKey: "admin.nav.moderation" }, visible: anyOf("messages.moderate") },
     ],
   },
   {

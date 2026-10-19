@@ -5766,8 +5766,10 @@ export type Database = {
       class_substitutions: { Args: { p_class_id: string }; Returns: { substitution_date: string | null; period_number: number | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null; reason: string | null }[] };
       class_teachers: { Args: { p_class_id: string }; Returns: { teacher_name: string | null; subjects_tg: string | null; subjects_ru: string | null; subjects_en: string | null; phone: string | null }[] };
       class_timetable: { Args: { p_class_id: string }; Returns: { timetable_entry_id: string | null; day_of_week: number | null; shift: number | null; period_number: number | null; start_time: string | null; end_time: string | null; class_subject_id: string | null; subject_tg: string | null; subject_ru: string | null; subject_en: string | null; teacher_name: string | null; room_name: string | null }[] };
+      clear_conversation_for_me: { Args: { p_conversation_id: string; p_up_to?: string }; Returns: string };
       close_channel: { Args: { p_conversation_id: string }; Returns: undefined };
       confirm_account: { Args: { p_user_id: string }; Returns: undefined };
+      contact_phone: { Args: { p_user_id: string }; Returns: string };
       create_channel: { Args: { p_name: string; p_description?: string }; Returns: string };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };
       create_group_conversation: { Args: { p_name: string; p_member_ids: string[] }; Returns: string };
@@ -5806,9 +5808,7 @@ export type Database = {
       list_support_inbox: { Args: { p_limit?: number }; Returns: { id: string | null; requester_id: string | null; requester_name: string | null; requester_avatar: string | null; requester_public_id: string | null; requester_roles: Json | null; last_message_content: string | null; last_message_type: string | null; last_message_sender_id: string | null; last_message_at: string | null; awaiting_reply: boolean | null; unread_count: number | null }[] };
       log_app_diagnostics: { Args: { p_device: string; p_user_agent: string; p_events: Json }; Returns: number };
       login_lookup: { Args: { p_login: string; p_secret: string }; Returns: string };
-      mark_conversation_read: { Args: { p_conversation_id: string } | { p_conversation_id: string; p_up_to: string }; Returns: undefined | string | null };
-      set_conversation_pinned: { Args: { p_conversation_id: string; p_pinned: boolean }; Returns: string | null };
-      clear_conversation_for_me: { Args: { p_conversation_id: string; p_up_to?: string }; Returns: string | null };
+      mark_conversation_read: { Args: { p_conversation_id: string; p_up_to: string }; Returns: string } | { Args: { p_conversation_id: string }; Returns: undefined };
       mfa_required: { Args: Record<PropertyKey, never>; Returns: boolean };
       moderation_get_report: { Args: { p_report_id: string }; Returns: Json };
       moderation_resolve_report: { Args: { p_report_id: string; p_action: string; p_note?: string }; Returns: undefined };
@@ -5849,10 +5849,12 @@ export type Database = {
       school_faces: { Args: { p_limit?: number }; Returns: Json };
       scope_school_overview: { Args: Record<PropertyKey, never>; Returns: { school_id: string | null; short_name: string | null; district_id: string | null; status: string | null; students: number | null; staff: number | null; classes: number | null; attendance_rate_30d: number | null; pending_registrations: number | null }[] };
       search_message_contacts: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null }[] };
+      search_people: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null; phone: string | null }[] };
       send_notification_broadcast: { Args: { p_broadcast_id: string }; Returns: number };
       send_parent_note: { Args: { p_student: string; p_text: string }; Returns: number };
       set_account_hidden: { Args: { p_user_id: string; p_hidden: boolean; p_reason?: string }; Returns: undefined };
       set_class_shift: { Args: { p_class_id: string; p_shift: number }; Returns: undefined };
+      set_conversation_pinned: { Args: { p_conversation_id: string; p_pinned: boolean }; Returns: string };
       set_message_pinned: { Args: { p_message_id: string; p_pinned: boolean }; Returns: undefined };
       set_message_reaction: { Args: { p_message_id: string; p_emoji: string }; Returns: undefined };
       start_new_school_year: { Args: { p_name: string; p_start: string; p_end: string; p_terms?: boolean; p_subjects?: boolean }; Returns: Json };

@@ -1,9 +1,8 @@
 /*
  * The portal's service worker. Three jobs:
  *
- * 1. Show a message that arrived while the portal was closed, and open the
- *    conversation when it is tapped — or answer it, or mark it read, from the
- *    notification itself, where the browser offers the buttons.
+ * 1. Show a notification that arrived while the portal was closed, and open
+ *    its page when it is tapped.
  * 2. Keep the portal's unchanging files — its scripts, styles, fonts, icons,
  *    pictures — on the device, so nothing that has been seen once is ever
  *    fetched again: on a school's slow line only what is new travels.
@@ -43,8 +42,11 @@ const PAGE_LIMIT = 700;
 const DATA_LIMIT = 1200;
 /** After something is saved, the page it was saved on is installed again this long after. */
 const AFTER_CHANGE_MS = 2500;
-/** Pages installed side by side (keep-pages): quick on a good line, gentle on a slow one. */
-const INSTALL_AT_ONCE = 5;
+/**
+ * Pages installed side by side (keep-pages): quick enough on a good line,
+ * gentle on a slow one — and on the server when a whole class signs in at once.
+ */
+const INSTALL_AT_ONCE = 3;
 /** How many photos from the school's storage are kept. */
 const MEDIA_LIMIT = 800;
 /** A fresh page's data slower than this is answered from what was kept, if anything was. */
@@ -216,10 +218,29 @@ self.addEventListener("activate", (event) => {
       const keep = [STATIC_CACHE, PAGE_CACHE, DATA_CACHE, MEDIA_CACHE];
       const names = await caches.keys();
       await Promise.all(names.filter((name) => /^(static|pages|data|media)-/.test(name) && !keep.includes(name)).map((name) => caches.delete(name)));
+      await forgetChatPages();
       await self.clients.claim();
     })()
   );
 });
+
+/**
+ * The portal's own chat is retired: whatever the device kept of its pages —
+ * conversations included — goes, so nobody's messages stay on a phone.
+ */
+const CHAT_PAGE = /^\/(messages|support\/chat)(\/|$)/;
+async function forgetChatPages() {
+  for (const name of [PAGE_CACHE, DATA_CACHE]) {
+    try {
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        if (CHAT_PAGE.test(new URL(request.url).pathname)) await cache.delete(request);
+      }
+    } catch {
+      // Tried again when the next version starts.
+    }
+  }
+}
 
 /** A picture the site ships, at one of the sizes Next.js makes of it. */
 function isShippedPicture(url) {
@@ -520,22 +541,6 @@ async function answerData(event, request, url) {
   return Response.error();
 }
 
-/** Every kept copy of one page's data fetched again (renew), each asked exactly as it was the first time. */
-async function renewPage(path) {
-  try {
-    const cache = await caches.open(DATA_CACHE);
-    const keys = (await cache.keys()).filter((key) => pagePath(new URL(key.url)) === path);
-    await Promise.all(
-      keys.map(async (key) => {
-        const kept = await cache.match(key, { ignoreVary: true });
-        if (kept) await renew(cache, key.url, key, kept);
-      })
-    );
-  } catch {
-    // Fetched again the next time it is asked for.
-  }
-}
-
 /** Copies being fetched again (renew), and how many at once: the page in front's own requests come first. */
 const renewing = new Set();
 let renewRunning = 0;
@@ -681,7 +686,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") {
     // Answered by the network as ever. A form saved on a page (a server
     // action posts to the page itself) brings what was kept up to date
-    // behind it; the API's own posts — a chat message, a sign of life — do
+    // behind it; the API's own posts — a sign of life, say — do
     // not, and nor does Next.js asking whether the line is back (HEAD).
     const target = new URL(request.url);
     if (request.method !== "HEAD" && target.origin === self.location.origin && !target.pathname.startsWith("/api/") && request.referrer) {
@@ -777,12 +782,6 @@ self.addEventListener("message", (event) => {
   if (data.type === "keep-pages" && Array.isArray(data.paths)) {
     event.waitUntil(keepPages(data.paths, event.ports && event.ports[0]));
   }
-  // Something on a page has changed that the page is not open to show — a
-  // message in a conversation, say (conversation-list.tsx): what the device
-  // kept of it is fetched again now, so it opens with it, line or no line.
-  if (data.type === "renew-page" && typeof data.path === "string") {
-    event.waitUntil(renewPage(data.path));
-  }
   // The page in front is about to be refreshed by a pull (fresh.ts): its
   // next data comes from the network.
   if (data.type === "fresh-data" && typeof data.path === "string") {
@@ -813,28 +812,14 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = typeof data.title === "string" && data.title ? data.title : "МТМУ №7";
-  const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/messages";
+  const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/notifications";
 
   event.waitUntil(
     (async () => {
-      // Somebody already looking at this very conversation has just watched
-      // the message arrive; a notification on top of it would be noise.
+      // Somebody already looking at this very page has just watched it
+      // arrive; a notification on top of it would be noise.
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       if (windows.some((client) => client.focused && samePage(client.url, url))) return;
-
-      // A signed note from the portal lets the notification be answered
-      // without opening anything (see /api/push/reply). Browsers that can
-      // type into a notification show a box; the rest open the conversation
-      // with the composer ready.
-      const reply = typeof data.reply === "string" ? data.reply : null;
-      const labels = data.labels && typeof data.labels === "object" ? data.labels : null;
-      const actions =
-        reply && labels
-          ? [
-              { action: "reply", type: "text", title: String(labels.reply || "Reply"), placeholder: String(labels.placeholder || "") },
-              { action: "read", title: String(labels.read || "Mark as read") },
-            ]
-          : [];
 
       await self.registration.showNotification(title, {
         body: typeof data.body === "string" ? data.body : "",
@@ -843,49 +828,21 @@ self.addEventListener("push", (event) => {
         tag: typeof data.tag === "string" ? data.tag : undefined,
         renotify: Boolean(data.tag),
         timestamp: Date.now(),
-        actions,
-        data: { url, reply },
+        data: { url },
       });
     })()
   );
 });
 
-function answer(body) {
-  return fetch("/api/push/reply", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    credentials: "omit",
-  }).then(
-    (response) => response.ok,
-    () => false
-  );
-}
-
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const data = event.notification.data || {};
-  let url = data.url || "/messages";
-  const reply = typeof data.reply === "string" ? data.reply : null;
-
-  if (reply && event.action === "read") {
-    event.waitUntil(answer({ action: "read", token: reply }));
-    return;
-  }
-  if (reply && event.action === "reply") {
-    const text = typeof event.reply === "string" ? event.reply.trim() : "";
-    if (text) {
-      event.waitUntil(answer({ action: "reply", token: reply, text }));
-      return;
-    }
-    // No box in this browser: open the conversation, composer first.
-    url = `${url}${url.includes("?") ? "&" : "?"}reply=1`;
-  }
+  const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/notifications";
 
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      // Prefer a tab already on the conversation, then any tab of the portal,
+      // Prefer a tab already on the page, then any tab of the portal,
       // and only then a new window.
       const exact = windows.find((client) => samePage(client.url, url));
       if (exact) return exact.focus();

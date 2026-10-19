@@ -1,15 +1,14 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Award, BookOpen, GraduationCap, House, MessageCircle, UserRound, X } from "lucide-react";
+import { Award, BookOpen, GraduationCap, House, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
-import { useToast } from "@/components/ui/toast";
-import { startDirectConversationAction } from "@/features/messages/actions";
+import { useEffect, useState } from "react";
+import { WhatsAppBox } from "@/features/people/whatsapp-button";
+import { whatsappLink } from "@/lib/contact/whatsapp";
 import type { Locale } from "@/lib/i18n/text";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { cn } from "@/lib/utils/cn";
 
 interface MemberCard {
   id: string;
@@ -25,6 +24,8 @@ interface MemberCard {
   homeroom: string | null;
   /** A pupil's posts in their class: monitor, cleanliness committee… (00072). */
   positions?: string[];
+  /** https://wa.me/… where the caller may see the number (00099) and it can have WhatsApp. */
+  whatsapp: string | null;
 }
 
 /** What is already known before the card arrives: enough to draw it at once. */
@@ -36,7 +37,7 @@ export interface MemberCardSeed {
 
 /**
  * Cards already opened, kept for the life of the tab. Opening the same
- * person twice in a conversation should not be two trips to the database.
+ * person twice should not be two trips to the database.
  */
 const cards = new Map<string, MemberCard | null>();
 
@@ -47,13 +48,15 @@ function useMemberCard(userId: string | null): { card: MemberCard | null; loadin
   useEffect(() => {
     if (!userId || known) return;
     let live = true;
-    void getBrowserClient()
-      .rpc("get_member_card", { p_user_id: userId })
-      .then(({ data, error }) => {
-        const card = error ? null : ((data as MemberCard | null) ?? null);
+    const supabase = getBrowserClient();
+    void Promise.all([supabase.rpc("get_member_card", { p_user_id: userId }), supabase.rpc("contact_phone", { p_user_id: userId })]).then(
+      ([{ data, error }, phone]) => {
+        const found = error ? null : ((data as Omit<MemberCard, "whatsapp"> | null) ?? null);
+        const card = found ? { ...found, whatsapp: whatsappLink(phone.data) } : null;
         if (!error) cards.set(userId, card);
         if (live) setFetched({ userId, card });
-      });
+      }
+    );
     return () => {
       live = false;
     };
@@ -77,30 +80,16 @@ function initials(name: string): string {
 }
 
 /**
- * Who somebody is, from inside a conversation.
+ * Who somebody is, opened by tapping their face in a list.
  *
- * Opened by tapping a name or a face. It draws at once from what the thread
- * already knows — the name and the photo — and fills in the rest (what they
- * do here, a pupil's class, a teacher's subjects) as soon as it arrives.
+ * It draws at once from what the list already knows — the name and the
+ * photo — and fills in the rest (what they do here, a pupil's class, a
+ * teacher's subjects, their WhatsApp) as soon as it arrives.
  */
-export function MemberCardDialog({
-  seed,
-  onClose,
-  canMessage,
-  hideMessage,
-}: {
-  seed: MemberCardSeed | null;
-  onClose: () => void;
-  /** Starting a conversation needs the messaging permission. */
-  canMessage: boolean;
-  /** Already talking to this person one-to-one, here. */
-  hideMessage?: boolean;
-}) {
+export function MemberCardDialog({ seed, onClose }: { seed: MemberCardSeed | null; onClose: () => void }) {
   const t = useTranslations("portal.messages.card");
   const tRoot = useTranslations();
   const locale = useLocale() as Locale;
-  const toast = useToast();
-  const [starting, startTransition] = useTransition();
   const { card, loading } = useMemberCard(seed?.userId ?? null);
 
   const name = card ? `${card.first_name} ${card.last_name}`.trim() : (seed?.name ?? "");
@@ -192,23 +181,13 @@ export function MemberCardDialog({
 
             {!loading && seed && !card ? <p className="mt-4 text-sm text-ink-muted">{t("unavailable")}</p> : null}
 
-            <div className={cn("mt-6 grid w-full gap-2", canMessage && !hideMessage && card ? "grid-cols-2" : "grid-cols-1")}>
-              {canMessage && !hideMessage && card ? (
-                <button
-                  type="button"
-                  disabled={starting}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const result = await startDirectConversationAction(card.id);
-                      if (result && !result.ok) toast("danger", tRoot(result.message));
-                    })
-                  }
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand-solid px-4 text-sm font-semibold text-brand-on-solid shadow-sm transition-[transform,background-color] hover:bg-brand-solid-hover active:scale-[0.98] disabled:opacity-60"
-                >
-                  <MessageCircle className={cn("size-4", starting && "animate-pulse")} aria-hidden />
-                  {t("write")}
-                </button>
-              ) : null}
+            {card?.whatsapp ? (
+              <div className="mt-5 w-full">
+                <WhatsAppBox href={card.whatsapp} name={name} />
+              </div>
+            ) : null}
+
+            <div className={`${card?.whatsapp ? "mt-3" : "mt-6"} grid w-full gap-2`}>
               {seed ? (
                 <Link
                   href={`/profile/${seed.userId}`}

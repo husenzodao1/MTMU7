@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { AppShell } from "@/components/shell/app-shell";
 import { loadShellData, portalShellNav } from "@/components/shell/shell-data";
 import { SiteFooter } from "@/components/site/official-header";
@@ -26,7 +27,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <>
-      {welcome ? <WelcomeTransition firstName={access.firstName} /> : null}
+      {welcome ? <WelcomeTransition firstName={access.firstName} nonce={(await headers()).get("x-nonce") ?? undefined} /> : null}
       <AppShell
         variant="portal"
         school={shell.school}
@@ -34,7 +35,6 @@ export default async function PortalLayout({ children }: { children: React.React
         groups={nav.groups}
         mobileBar={nav.mobileBar}
         unreadNotifications={shell.unreadNotifications}
-        unreadMessages={shell.unreadMessages}
         socials={shell.socials}
         locale={shell.locale}
         switchHref={nav.switchHref}

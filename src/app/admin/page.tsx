@@ -58,7 +58,6 @@ export default async function AdminDashboardPage() {
     { key: "pending_registrations", value: data.queues.pending_registrations, href: "/admin/approvals", show: can(access, "users.approve") },
     { key: "news_in_review", value: data.queues.news_in_review, href: "/admin/news?status=review", show: can(access, "news.publish") },
     { key: "grades_awaiting_approval", value: data.queues.grades_awaiting_approval, href: "/admin/gradebook", show: can(access, "grades.approve") },
-    { key: "open_reports", value: data.queues.open_reports, href: "/admin/moderation", show: can(access, "messages.moderate") },
     { key: "news_scheduled", value: data.queues.news_scheduled, href: "/admin/news?status=scheduled", show: canAny(access, ["news.publish", "news.update"]) },
     { key: "library_drafts", value: data.queues.library_drafts, href: "/admin/library?status=draft", show: canAny(access, ["library.update", "library.publish"]) },
     { key: "documents_drafts", value: data.queues.documents_drafts, href: "/admin/documents?status=draft", show: canAny(access, ["documents.create", "documents.publish"]) },

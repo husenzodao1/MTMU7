@@ -11,18 +11,20 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Enough for a whole office with its people, classes and conversations; the
- * device keeps up to 700 pages (public/sw.js), and leaves room for those
- * opened later.
+ * The pages most likely to be opened, for the device to have before they are
+ * tapped: enough for the menu, the office and what is a tap away from them,
+ * without every sign-in asking the server for hundreds of pages — a class
+ * signing in together would ask for thousands at once. Anything else is kept
+ * the first time it is opened (public/sw.js keeps up to 700).
  */
-const MOST = 450;
+const MOST = 220;
 
 type Row = { id: string };
 
 /**
  * Every page this person can open, for the phone to install at once after
  * signing in (page-installer.tsx): the menu and the office first, then the
- * pages a tap away from them — each conversation, journal, homework, piece
+ * pages a tap away from them — each journal, homework, piece
  * of news and book; for the office, each account, class, article,
  * announcement and book it looks after. With `build`, so a phone holding an
  * older version of the site knows to take the new one.
@@ -43,7 +45,6 @@ export async function GET() {
   const menu = portalNavigation(access).map((item) => item.href);
   for (const href of menu) add(href);
   for (const href of ["/notifications", "/profile", "/settings", "/news", "/announcements", "/events"]) add(href);
-  if (menu.includes("/support")) add("/support/chat");
 
   const office = showAdminLink(access) ? adminNavigation(access).flatMap((group) => group.items.map((item) => item.href)) : [];
   const inOffice = (href: string) => office.includes(href);
@@ -52,12 +53,11 @@ export async function GET() {
   const none = Promise.resolve({ data: [] as Row[] });
   const ids = (result: { data: unknown }) => ((result.data ?? []) as Row[]).map((row) => row.id);
 
-  const [classSubjects, homeroom, children, conversations, news, books, homework, myHomework, accounts, classes, officeNews, officeNotices, officeBooks] =
+  const [classSubjects, homeroom, children, news, books, homework, myHomework, accounts, classes, officeNews, officeNotices, officeBooks] =
     await Promise.all([
       teaches ? getMyClassSubjects(access.userId, "tg").catch(() => []) : Promise.resolve([]),
       teaches ? myHomeroomClasses(access).catch(() => []) : Promise.resolve([]),
       hasRole(access, "parent") ? getMyChildren().catch(() => []) : Promise.resolve([]),
-      menu.includes("/messages") ? supabase.rpc("list_my_conversations", { p_limit: 100 }) : Promise.resolve({ data: [] }),
       menu.includes("/updates")
         ? supabase.from("news_articles").select("slug").eq("status", "published").order("published_at", { ascending: false }).limit(30)
         : Promise.resolve({ data: [] }),
@@ -84,11 +84,6 @@ export async function GET() {
   // The office's own pages, before anything a tap further away.
   for (const href of office) add(href);
 
-  // The conversations, newest first; one's own question to the school opens as the support chat.
-  for (const row of (conversations.data ?? []) as Array<{ id: string; type: string; created_by?: string | null }>) {
-    if (row.type === "support" && row.created_by === access.userId) continue;
-    add(`/messages/${row.id}`);
-  }
   for (const id of ids(homework)) add(`/homework/${id}`);
   if (teaches) {
     add("/teach/homework/new");

@@ -89,6 +89,15 @@ const nextConfig: NextConfig = {
       // One way in for people: the older list pages lead to the account block.
       { source: "/admin/users", destination: "/admin/accounts", permanent: false },
       { source: "/admin/parents", destination: "/admin/accounts/parents", permanent: false },
+      // The portal's own chat is retired (people are reached on WhatsApp);
+      // links to it from old notifications, installed pages and bookmarks
+      // land where its place in the bar went, and the desk's chat on the desk.
+      { source: "/messages", destination: "/notifications", permanent: false },
+      { source: "/messages/:path*", destination: "/notifications", permanent: false },
+      { source: "/support/chat", destination: "/support/contact", permanent: false },
+      { source: "/admin/support/:id", destination: "/admin/support", permanent: false },
+      { source: "/admin/moderation/:path*", destination: "/admin", permanent: false },
+      { source: "/admin/moderation", destination: "/admin", permanent: false },
     ];
   },
   async headers() {

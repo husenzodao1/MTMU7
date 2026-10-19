@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { letGoOfNativeToken } from "@/features/native/bridge";
 import { letGoOfWebPush } from "@/features/push/client";
-import { forgetChat } from "@/features/messages/forget";
+import { forgetChat } from "@/lib/chat-leftovers";
 import { forgetKeptPages } from "@/lib/kept-pages";
 import { getBrowserClient } from "@/lib/supabase/browser";
 

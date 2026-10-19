@@ -52,16 +52,3 @@ export function forgetInstalled(): void {
     // Nothing kept, nothing to forget.
   }
 }
-
-/**
- * Something on a page has changed while the page is not open — a new message
- * in a conversation: what the device kept of it is fetched again now
- * (public/sw.js, renew-page), so it opens with it even with no line.
- */
-export function renewKeptPage(path: string): void {
-  try {
-    navigator.serviceWorker?.controller?.postMessage({ type: "renew-page", path });
-  } catch {
-    // No worker, nothing kept: the page is fetched when it is opened.
-  }
-}

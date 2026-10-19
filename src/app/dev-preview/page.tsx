@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, ClipboardCheck, FileText, Library, MessageSquare, Newspaper, Bell, BookOpen } from "lucide-react";
+import { CalendarDays, ClipboardCheck, FileText, Library, Newspaper, Bell, BellRing, BookOpen } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { SiteFooter, OfficialStrip } from "@/components/site/official-header";
 
@@ -12,7 +12,7 @@ const previewLinks = [
   { href: "/library", icon: Library, key: "library" },
   { href: "/news", icon: Newspaper, key: "news" },
   { href: "/announcements", icon: Bell, key: "announcements" },
-  { href: "/messages", icon: MessageSquare, key: "messages" },
+  { href: "/notifications", icon: BellRing, key: "notifications" },
 ] as const;
 
 export default async function DevelopmentPreviewPage() {

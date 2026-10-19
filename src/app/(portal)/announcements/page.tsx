@@ -50,7 +50,7 @@ export default async function AnnouncementsPage() {
                     {item.priority !== "normal" ? (
                       <Badge tone={item.priority === "critical" ? "danger" : "warning"}>{t(`priority.${item.priority}`)}</Badge>
                     ) : null}
-                    <h2 className="text-lg font-semibold">{item.title}</h2>
+                    <h2 className="text-xl font-semibold">{item.title}</h2>
                     {canManage ? (
                       <Link href={`/admin/announcements/${item.id}`} className="ms-auto inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-medium text-ink-secondary hover:border-brand-300 hover:text-ink">
                         <Settings2 className="size-3.5" aria-hidden />
@@ -62,7 +62,7 @@ export default async function AnnouncementsPage() {
                     {formatDateTime(item.publishAt, locale)}
                     {item.expiresAt ? ` · ${t("until", { date: formatDateTime(item.expiresAt, locale) })}` : ""}
                   </p>
-                  <MarkdownBlocks blocks={rest} />
+                  <MarkdownBlocks blocks={rest} className="text-[1.0625rem]" />
                   {item.attachmentPath && item.attachmentName ? (
                     <a href={`/files/announcements/${item.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-text hover:underline" target="_blank" rel="noopener">
                       <Paperclip className="size-4" aria-hidden />

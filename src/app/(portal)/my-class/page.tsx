@@ -7,7 +7,6 @@ import { AccountsToolbar } from "@/features/accounts/list-parts";
 import { loadDirectory, myHomeroomClasses, PAGE_SIZE } from "@/features/accounts/queries";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/surface";
-import { can } from "@/lib/auth/access";
 import { requireAccess } from "@/lib/auth/guards";
 import { parseListParams, type SearchParams } from "@/lib/list-params";
 
@@ -72,7 +71,6 @@ export default async function MyClassPage({ searchParams }: { searchParams: Prom
         searchParams={params}
         page={list.page}
         pageSize={PAGE_SIZE}
-        canMessage={can(access, "messages.use")}
       />
     </>
   );

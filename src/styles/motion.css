@@ -552,30 +552,81 @@
   }
 }
 
-/* Messages: the bubble pops and starts typing. */
-.bar-bubble,
-.bar-typing circle {
-  transform-box: fill-box;
-  transform-origin: center;
+/*
+ * Notifications: the bell swings from its top and the clapper answers a
+ * beat behind; it rings the same way, chosen or not, each time something new
+ * comes (app-shell.tsx sets data-ring to a fresh value).
+ */
+.bar-bell {
+  transform-box: view-box;
+  transform-origin: 12px 2.5px;
 }
-.bar-typing circle {
-  opacity: 0;
-  transition: opacity 0.25s ease;
+.bar-clapper {
+  transform-box: view-box;
+  transform-origin: 12px 17px;
 }
-[aria-current="page"] .bar-typing circle {
-  opacity: 1;
+.bar[data-ready] [aria-current="page"] .bar-bell,
+[data-ring="a"] .bar-bell {
+  animation: bar-swing-a 0.9s ease-in-out both;
 }
-.bar[data-ready] [aria-current="page"] .bar-bubble {
-  animation: bar-pop 0.45s cubic-bezier(0.34, 1.6, 0.5, 1) both;
+[data-ring="b"] .bar-bell {
+  animation: bar-swing-b 0.9s ease-in-out both;
 }
-.bar[data-ready] [aria-current="page"] .bar-typing circle {
-  animation: bar-dot 0.5s ease-in-out 2 both;
+.bar[data-ready] [aria-current="page"] .bar-clapper,
+[data-ring] .bar-clapper {
+  animation: bar-clap 0.9s ease-in-out 0.06s both;
 }
-.bar[data-ready] [aria-current="page"] .bar-typing circle:nth-child(2) {
-  animation-delay: 0.12s;
+@keyframes bar-swing-a {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: rotate(16deg);
+  }
+  35% {
+    transform: rotate(-13deg);
+  }
+  55% {
+    transform: rotate(8deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
 }
-.bar[data-ready] [aria-current="page"] .bar-typing circle:nth-child(3) {
-  animation-delay: 0.24s;
+/* The same swing under another name, so a second ring starts it over. */
+@keyframes bar-swing-b {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: rotate(16deg);
+  }
+  35% {
+    transform: rotate(-13deg);
+  }
+  55% {
+    transform: rotate(8deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes bar-clap {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-1.6px);
+  }
+  40% {
+    transform: translateX(1.4px);
+  }
+  60% {
+    transform: translateX(-0.8px);
+  }
 }
 @keyframes bar-pop {
   0% {
@@ -586,17 +637,6 @@
   }
   100% {
     transform: scale(1);
-  }
-}
-@keyframes bar-dot {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-2px);
-    opacity: 0.6;
   }
 }
 

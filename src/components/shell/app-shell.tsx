@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bell, ChevronDown, CircleAlert, LogOut, Search, Settings, ShieldCheck, User, ArrowLeftRight } from "lucide-react";
 import { signOutAction, setLocaleAction } from "@/app/actions/session";
@@ -18,17 +18,14 @@ import { useWarmPages } from "@/components/shell/warm-pages";
 import { MenuDrawer } from "@/components/shell/menu-drawer";
 import { NavIcon } from "@/components/shell/nav-icon";
 import type { NavGroup, NavItem } from "@/components/shell/navigation";
+import { RouteSkeleton } from "@/components/skeletons/route-skeleton";
 import { SOCIAL_LINE } from "@/components/site/social-lines";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
 import { DevicePermissions } from "@/features/push/device-permissions";
 import { forgetWebPush } from "@/features/push/client";
-import { UNREAD_TOTAL_EVENT } from "@/features/messages/events";
-import { forgetChat } from "@/features/messages/forget";
-import { flushListOps } from "@/features/messages/list-ops";
-import { flushOutbox } from "@/features/messages/outbox";
-import { flushReads } from "@/features/messages/read-queue";
 import { appPlugin } from "@/features/native/bridge";
+import { forgetChat } from "@/lib/chat-leftovers";
 import { forgetKeptPages } from "@/lib/kept-pages";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
@@ -61,7 +58,6 @@ interface ShellProps {
   groups: NavGroup[];
   mobileBar?: NavItem[];
   unreadNotifications: number;
-  unreadMessages: number;
   locale: string;
   switchHref?: { href: string; label: string } | null;
   /** The school's networks, at the foot of the menu above "About the app". */
@@ -81,6 +77,16 @@ function isActive(pathname: string, href: string) {
   if (href === "/admin" || href === "/dashboard") return pathname === href;
   const under = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
   return under(href) || (ALSO_UNDER[href] ?? []).some(under);
+}
+
+/** Inside the phone app (layout.tsx marks <html data-app>), rather than the website. */
+const noSubscribe = () => () => undefined;
+function useInApp(): boolean {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => document.documentElement.hasAttribute("data-app"),
+    () => false
+  );
 }
 
 /** The emblem of the Republic, shipped with the build. */
@@ -238,12 +244,12 @@ function NavList({ groups, pathname, onNavigate, filter }: { groups: NavGroup[];
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      "flex items-center gap-3 rounded-md px-2.5 py-2.5 text-[0.9375rem] transition-colors",
                       active ? "bg-brand-50 font-semibold text-brand-text-strong" : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
                     )}
                   >
                     <span className={cn(active ? "text-brand-text" : "text-ink-muted")}>
-                      <NavIcon name={item.icon} />
+                      <NavIcon name={item.icon} className="size-5 shrink-0" />
                     </span>
                     <span className="truncate">{t(item.labelKey)}</span>
                   </Link>
@@ -272,9 +278,10 @@ function CountBadge({ count, label }: { count: number; label: string }) {
  * section's icon and glides to the next one when another is tapped — at
  * once, before the page has answered — with a little squash on the way, and
  * each icon plays its own small act as it is chosen (bar-icons.tsx). Nothing
- * moves on the first paint: only a choice moves things.
+ * moves on the first paint: only a choice moves things. The notifications'
+ * bell rings once when something new comes (bar-icons.tsx, data-ring).
  */
-function BottomBar({ items, pathname, goingTo, messagesUnread }: { items: NavItem[]; pathname: string; goingTo: string | null; messagesUnread: number }) {
+function BottomBar({ items, pathname, goingTo, unread, rings }: { items: NavItem[]; pathname: string; goingTo: string | null; unread: number; rings: number }) {
   const t = useTranslations();
   const current = items.findIndex((item) => isActive(pathname, item.href));
   // A tap is believed while its page is on its way, and only then: a page
@@ -312,9 +319,9 @@ function BottomBar({ items, pathname, goingTo, messagesUnread }: { items: NavIte
                 className={cn("bar-item flex min-h-14 flex-col items-center justify-start gap-0.5 px-1 pb-1 pt-1.5 text-xs", on ? "font-semibold text-brand-text" : "text-ink-muted")}
               >
                 <span className="flex h-8 w-[3.75rem] items-center justify-center">
-                  <span className="relative">
+                  <span className="relative" data-ring={item.key === "notifications" && rings > 0 ? rings % 2 ? "a" : "b" : undefined}>
                     <BarIcon name={item.icon} />
-                    {item.key === "messages" ? <CountBadge count={messagesUnread} label={t("nav.messagesUnread", { count: messagesUnread })} /> : null}
+                    {item.key === "notifications" ? <CountBadge count={unread} label={t("nav.notificationsUnread", { count: unread })} /> : null}
                   </span>
                 </span>
                 <span className="max-w-full truncate">{t(item.labelKey)}</span>
@@ -327,27 +334,15 @@ function BottomBar({ items, pathname, goingTo, messagesUnread }: { items: NavIte
   );
 }
 
-export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, unreadMessages, locale, switchHref, socials = [], children, footer }: ShellProps) {
+export function AppShell({ variant, school, user, groups, mobileBar, unreadNotifications, locale, switchHref, socials = [], children, footer }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
 
-  // Messages written with no line go out by themselves once there is one,
-  // whichever page is open (outbox.ts), with the marks of what was read
-  // (read-queue.ts) and the list's pins and deletions (list-ops.ts) — this
-  // person's only.
+  // What the retired messenger kept on this device goes (chat-leftovers.ts).
   useEffect(() => {
-    const flush = () => {
-      void flushOutbox(user.id);
-      void flushReads(user.id);
-      void flushListOps(user.id);
-    };
-    const first = window.setTimeout(flush, 2500);
-    window.addEventListener("online", flush);
-    return () => {
-      window.clearTimeout(first);
-      window.removeEventListener("online", flush);
-    };
-  }, [user.id]);
+    const timer = window.setTimeout(() => void forgetChat(), 4000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const appRoot = useRef<HTMLDivElement>(null);
   const burger = useRef<HTMLButtonElement>(null);
@@ -378,92 +373,38 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
     setNotifications(unreadNotifications);
   }
 
-  // "I am here, and what was sent to me has reached me" (00094): the second
-  // tick on the sender's side, and "last seen" under this person's name. Told
-  // when the portal opens, when it comes back to the screen or leaves it, and
-  // when a message arrives — its notification is what this portal hears of
-  // it, wherever in the portal the person is. Folded into one call a second.
-  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchMessenger = useCallback((now = false) => {
-    if (touchTimer.current) clearTimeout(touchTimer.current);
-    const send = () => {
-      touchTimer.current = null;
+  // The count on the bell: one more as each notification arrives, and asked
+  // again — one small count — when one is read anywhere or the tab comes
+  // back, since the layout that counted it first is not drawn again on the
+  // way between pages. RLS delivers only this person's rows.
+  const [rings, setRings] = useState(0);
+  const recountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recount = useCallback(() => {
+    if (recountTimer.current) clearTimeout(recountTimer.current);
+    recountTimer.current = setTimeout(() => {
       getBrowserClient()
-        .rpc("touch_messenger")
-        .then(
-          () => undefined,
-          () => undefined
-        );
-    };
-    if (now) send();
-    else touchTimer.current = setTimeout(send, 1000);
-  }, []);
-
-  useEffect(() => {
-    touchMessenger(true);
-    const onVisibility = () => touchMessenger(true);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      if (touchTimer.current) clearTimeout(touchTimer.current);
-    };
-  }, [touchMessenger]);
-
-  // Realtime badge: RLS delivers only this user's notification rows.
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .then(({ count, error }) => {
+          if (!error && count !== null) setNotifications(count);
+        });
+    }, 400);
+  }, [user.id]);
   useEffect(() => {
     const supabase = getBrowserClient();
     const channel = listen(
       supabase
         .channel(`notifications:${user.id}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
           setNotifications((n) => n + 1);
-          if ((payload.new as { type?: string }).type === "message") touchMessenger();
+          setRings((n) => n + 1);
         })
-        // A burst of messages from one conversation updates its one unread
-        // notification instead of adding another.
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
-          const row = payload.new as { type?: string; is_read?: boolean };
-          if (row.type === "message" && !row.is_read) touchMessenger();
-        })
-    );
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [user.id, touchMessenger]);
-
-  // The unread messages on the bar's Messages button. The layout counts them
-  // once, and layouts are not rendered again on navigation, so a conversation
-  // read here left the old number standing until a reload. Asked again when
-  // this person reads a conversation anywhere (their membership row changes),
-  // when the tab comes back, and on the way into or out of the messages.
-  const tracksMessages = Boolean(mobileBar?.some((item) => item.key === "messages"));
-  const [messagesUnread, setMessagesUnread] = useState(unreadMessages);
-  const [prevMessages, setPrevMessages] = useState(unreadMessages);
-  if (prevMessages !== unreadMessages) {
-    setPrevMessages(unreadMessages);
-    setMessagesUnread(unreadMessages);
-  }
-  const recountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const recountMessages = useCallback(() => {
-    if (recountTimer.current) clearTimeout(recountTimer.current);
-    recountTimer.current = setTimeout(() => {
-      getBrowserClient()
-        .rpc("get_unread_message_count")
-        .then(({ data, error }) => {
-          if (!error && data !== null) setMessagesUnread(Number(data));
-        });
-    }, 300);
-  }, []);
-  useEffect(() => {
-    if (!tracksMessages) return;
-    const supabase = getBrowserClient();
-    const channel = listen(
-      supabase
-        .channel(`unread-messages:${user.id}`)
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${user.id}` }, recountMessages)
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, recount)
     );
     const onVisible = () => {
-      if (document.visibilityState === "visible") recountMessages();
+      if (document.visibilityState === "visible") recount();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -471,20 +412,20 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
       if (recountTimer.current) clearTimeout(recountTimer.current);
       void supabase.removeChannel(channel);
     };
-  }, [tracksMessages, user.id, recountMessages]);
-  // In the messenger the list knows best, and knows at once (events.ts).
+  }, [user.id, recount]);
+  // Leaving the notifications page, where they were read.
+  const onNotifications = pathname.startsWith("/notifications");
+  const wasOnNotifications = useRef(onNotifications);
   useEffect(() => {
-    const onTotal = (event: Event) => setMessagesUnread(Number((event as CustomEvent<number>).detail) || 0);
-    window.addEventListener(UNREAD_TOTAL_EVENT, onTotal);
-    return () => window.removeEventListener(UNREAD_TOTAL_EVENT, onTotal);
-  }, []);
-  const inMessages = pathname.startsWith("/messages");
-  const wasInMessages = useRef(inMessages);
-  useEffect(() => {
-    if (wasInMessages.current === inMessages) return;
-    wasInMessages.current = inMessages;
-    if (tracksMessages) recountMessages();
-  }, [inMessages, tracksMessages, recountMessages]);
+    if (wasOnNotifications.current === onNotifications) return;
+    wasOnNotifications.current = onNotifications;
+    recount();
+  }, [onNotifications, recount]);
+  const hasBar = Boolean(mobileBar && mobileBar.length > 0);
+  // On the website a tap shows the shape of the page on its way at once; the
+  // app keeps the page in front until the next is there (from the device).
+  const inApp = useInApp();
+  const skeleton = goingTo && !inApp ? goingTo : null;
 
   const subtitle = variant === "admin" ? t("admin.nav.title") : t("common.platformShort");
   const searchable = variant === "admin";
@@ -545,7 +486,7 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
         {/* As tall as the screen at least, so the footer sits at the foot of a
             short page; on a phone it ends where the bottom bar begins, so the
             bar never covers it. */}
-        <div className={cn("flex min-h-dvh min-w-0 flex-col", mobileBar && mobileBar.length > 0 && "shell-over-bar")}>
+        <div className={cn("flex min-h-dvh min-w-0 flex-col", hasBar && "shell-over-bar")}>
           {/* The phone's status bar is above it (--strip-h), so it pads itself below. */}
           <header className="shell-header sticky top-0 z-30 flex h-[calc(3.5rem+var(--strip-h))] items-center gap-1.5 border-b border-line bg-surface/95 px-2.5 pt-[var(--strip-h)] backdrop-blur-[2px] sm:px-5 print:hidden">
             <button
@@ -570,15 +511,19 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
             <div className="hidden flex-1 lg:block" />
 
             {/* The bell, the avatar and the emblem share one centre line: each
-                sits in a box of the same height. */}
-            <Link
-              href="/notifications"
-              className="shell-icon relative"
-              aria-label={notifications > 0 ? t("nav.notificationsUnread", { count: notifications }) : t("nav.notifications")}
-            >
-              <Bell className="size-[1.125rem]" strokeWidth={1.75} aria-hidden />
-              <CountBadge count={notifications} label={t("nav.notificationsUnread", { count: notifications })} />
-            </Link>
+                sits in a box of the same height. In the portal the bell lives
+                in the bottom bar and the menu instead; the office, which has
+                no bar, keeps it here. */}
+            {hasBar ? null : (
+              <Link
+                href="/notifications"
+                className="shell-icon relative"
+                aria-label={notifications > 0 ? t("nav.notificationsUnread", { count: notifications }) : t("nav.notifications")}
+              >
+                <Bell className="size-[1.125rem]" strokeWidth={1.75} aria-hidden />
+                <CountBadge count={notifications} label={t("nav.notificationsUnread", { count: notifications })} />
+              </Link>
+            )}
 
             <Overlay.DropdownMenu>
               <Overlay.DropdownMenuTrigger asChild>
@@ -647,17 +592,20 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
 
           {/* The page on its way: a thin line along the top, the page in front still there. */}
           <div className="nav-progress" data-on={goingTo ? "" : undefined} aria-hidden />
-          <PullToRefresh disabled={pathname.startsWith("/messages")} />
+          <PullToRefresh />
           <PageInstaller userId={user.id} />
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[84rem] flex-1 px-4 pb-8 pt-5 focus:outline-none sm:px-6 sm:pt-7" aria-busy={goingTo ? true : undefined}>
-            {children}
+            {skeleton ? <RouteSkeleton pathname={skeleton} /> : null}
+            <div hidden={Boolean(skeleton)} className="contents">
+              {children}
+            </div>
           </main>
           {footer}
         </div>
 
         <DevicePermissions locale={locale} userId={user.id} />
 
-        {mobileBar && mobileBar.length > 0 ? <BottomBar items={mobileBar} pathname={pathname} goingTo={goingTo} messagesUnread={messagesUnread} /> : null}
+        {mobileBar && hasBar ? <BottomBar items={mobileBar} pathname={pathname} goingTo={goingTo} unread={notifications} rings={rings} /> : null}
       </div>
       <MenuDrawer open={drawerOpen} onOpenChange={setDrawerOpen} label={school.fullName || school.name} appRoot={appRoot} trigger={burger} footer={<MenuFoot socials={socials} />}>
         {sidebar(() => setDrawerOpen(false))}

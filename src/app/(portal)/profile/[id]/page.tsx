@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { MessageSquare } from "lucide-react";
 import { respondFriendRequestAction, sendFriendRequestAction } from "@/features/profile/actions";
-import { StartConversationButton } from "@/features/messages/start-conversation";
+import { WhatsAppBox } from "@/features/people/whatsapp-button";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Avatar } from "@/components/ui/misc";
 import { Breadcrumb, Card, CardBody, PageHeader } from "@/components/ui/surface";
-import { can, hasModule } from "@/lib/auth/access";
+import { hasModule } from "@/lib/auth/access";
+import { whatsappLink } from "@/lib/contact/whatsapp";
 import { requireAccess } from "@/lib/auth/guards";
 import { StudentStatistics, type StatsPeriod } from "@/features/profile/statistics";
 import { firstValue, type SearchParams } from "@/lib/list-params";
@@ -40,12 +40,17 @@ export default async function MemberProfilePage({
     .maybeSingle();
   if (!person) notFound();
 
-  const { data: relation } = await supabase
-    .from("friend_requests")
-    .select("id, sender_id, status")
-    .in("status", ["pending", "accepted"])
-    .or(`and(sender_id.eq.${access.userId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${access.userId})`)
-    .maybeSingle();
+  const [{ data: relation }, { data: phone }] = await Promise.all([
+    supabase
+      .from("friend_requests")
+      .select("id, sender_id, status")
+      .in("status", ["pending", "accepted"])
+      .or(`and(sender_id.eq.${access.userId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${access.userId})`)
+      .maybeSingle(),
+    // The number only where the database lets this person see it (00099).
+    supabase.rpc("contact_phone", { p_user_id: id }),
+  ]);
+  const whatsapp = whatsappLink(phone);
 
   const name = [person.last_name, person.first_name, person.middle_name].filter(Boolean).join(" ");
   const friendsEnabled = hasModule(access, "friends");
@@ -60,9 +65,6 @@ export default async function MemberProfilePage({
             <p className="text-lg font-semibold text-ink">{name}</p>
             <p className="text-sm text-ink-muted">{access.school!.shortName}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-              {hasModule(access, "messages") && can(access, "messages.use") ? (
-                <StartConversationButton userId={person.id} label={t("message")} icon={<MessageSquare aria-hidden />} />
-              ) : null}
               {friendsEnabled && !relation ? (
                 <ActionForm action={sendFriendRequestAction}>
                   <input type="hidden" name="userId" value={person.id} />
@@ -81,6 +83,11 @@ export default async function MemberProfilePage({
               ) : null}
               {friendsEnabled && relation?.status === "accepted" ? <span className="self-center text-sm text-ink-muted">{t("connected")}</span> : null}
             </div>
+            {whatsapp ? (
+              <div className="mt-4">
+                <WhatsAppBox href={whatsapp} name={name} />
+              </div>
+            ) : null}
           </div>
         </CardBody>
       </Card>

@@ -28,18 +28,41 @@ type Router = ReturnType<typeof useRouter>;
 /** The whole page, data and all — not only the frame a `<Link>` fetches by itself. */
 const WHOLE = "full" as unknown as NonNullable<Parameters<Router["prefetch"]>[1]>["kind"];
 
+/** Copies grown old while the portal was out of sight: fetched again when it is back, not before. */
+const whenBack = new Map<string, () => void>();
+let watchingBack = false;
+function onceBack(href: string, again: () => void) {
+  whenBack.set(href, again);
+  if (watchingBack) return;
+  watchingBack = true;
+  document.addEventListener("visibilitychange", function back() {
+    if (document.visibilityState !== "visible") return;
+    document.removeEventListener("visibilitychange", back);
+    watchingBack = false;
+    const waiting = [...whenBack.values()];
+    whenBack.clear();
+    // Spread out, so a school's phones coming back at the bell do not all ask at once.
+    waiting.forEach((run, i) => window.setTimeout(run, 1500 + i * SPACING_MS * 3 + Math.random() * 4000));
+  });
+}
+
 /**
  * Fetches a page ahead of any tap, whole — its data as well as its frame — so
  * that the tap shows it at once from the phone's memory. Next.js calls back
  * when that copy has grown old (staleTimes, next.config.ts), and it is
- * fetched again then, behind the screen, so the copy is always there.
+ * fetched again then, behind the screen, so the copy is always there — while
+ * the portal is on the screen; one in a pocket or a background tab asks
+ * nothing of the server until it is looked at again.
  */
 export function warmPage(router: Router, href: string, keep: () => boolean = () => true) {
   warmedAt.set(href, Date.now());
   router.prefetch(href, {
     kind: WHOLE,
     onInvalidate: () => {
-      if (keep()) window.setTimeout(() => keep() && warmPage(router, href, keep), 1500 + Math.random() * 3000);
+      if (!keep()) return;
+      const again = () => keep() && warmPage(router, href, keep);
+      if (document.visibilityState === "visible") window.setTimeout(again, 1500 + Math.random() * 3000);
+      else onceBack(href, again);
     },
   });
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { BookScene } from "@/features/intro/book-scene";
-import { WELCOME_MS } from "@/features/intro/intro-script";
+import { WELCOME_MS, WELCOME_SCRIPT } from "@/features/intro/intro-script";
 import { report } from "@/features/native/diagnostics";
 import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 import { cn } from "@/lib/utils/cn";
@@ -20,13 +20,25 @@ const VEIL_ATTRIBUTE = "data-signin-veil";
  * loads underneath. A tap skips it.
  *
  * Rendered by the portal's layouts on the first page after a sign-in (the
- * one-minute cookie markWelcome() leaves) and by nothing else.
+ * one-minute cookie markWelcome() leaves) and by nothing else — and played
+ * only while that cookie is still there: the device keeps the page, and a
+ * copy of it opened again later is simply the page (WELCOME_SCRIPT hides it
+ * before it is drawn).
  */
-export function WelcomeTransition({ firstName }: { firstName: string }) {
+export function WelcomeTransition({ firstName, nonce }: { firstName: string; nonce?: string }) {
   const t = useTranslations("common.welcome");
   const [phase, setPhase] = useState<"on" | "out" | "gone">("on");
+  const fresh = useRef<boolean | null>(null);
 
   useEffect(() => {
+    fresh.current ??= document.cookie.includes(`${WELCOME_COOKIE}=1`);
+    if (!fresh.current) {
+      const gone = window.setTimeout(() => {
+        setPhase("gone");
+        document.documentElement.removeAttribute(VEIL_ATTRIBUTE);
+      }, 0);
+      return () => window.clearTimeout(gone);
+    }
     document.cookie = `${WELCOME_COOKIE}=; Max-Age=0; path=/; SameSite=Lax`;
     const out = window.setTimeout(() => setPhase("out"), WELCOME_MS);
     return () => window.clearTimeout(out);
@@ -43,9 +55,12 @@ export function WelcomeTransition({ firstName }: { firstName: string }) {
 
   if (phase === "gone") return null;
   return (
-    <div className={cn("intro intro-welcome", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")}>
-      <BookScene hello={t("hello")} name={firstName} />
-    </div>
+    <>
+      <div className={cn("intro intro-welcome", phase === "out" && "intro-leaving")} data-play="" role="status" onClick={() => setPhase("out")} suppressHydrationWarning>
+        <BookScene hello={t("hello")} name={firstName} />
+      </div>
+      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: WELCOME_SCRIPT }} suppressHydrationWarning />
+    </>
   );
 }
 

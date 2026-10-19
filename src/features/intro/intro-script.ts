@@ -3,14 +3,21 @@
  * so the root layout, a server component, can write it into the HTML as a
  * plain string.
  */
+import { WELCOME_COOKIE } from "@/lib/auth/welcome-cookie";
 
 /**
  * Set, in the tab's own storage, once the opening has played: it plays once
- * per visit to the site and every time the app is opened (the app's web view
+ * per visit to the site and when the app is opened (the app's web view
  * starts with empty session storage on each start), and a page opened after
- * that within the same visit is simply there.
+ * that within the same visit is simply there. The same key in the device's
+ * storage holds when it last played, so that a phone which closed the app
+ * behind the person's back a moment ago (Android does, to free memory) does
+ * not play it again on the way back (INTRO_GAP_MS).
  */
 export const INTRO_SEEN = "mtmu7-intro";
+
+/** The opening plays at most once in this long, however often the app is opened. */
+export const INTRO_GAP_MS = 30 * 60_000;
 
 /** When the greeting has been said and the page is uncovered, from the moment the opening starts. */
 export const INTRO_MS = 3200;
@@ -34,7 +41,9 @@ const OLD_WEBVIEW = 111;
  * Runs as the HTML is parsed, once the stylesheets are in (a script waits for
  * the styles before it), long before the page's own JavaScript.
  *
- * It plays the opening once per visit (INTRO_SEEN). In a browser it starts at
+ * It plays the opening once per visit (INTRO_SEEN), and not on the first page
+ * after signing in, which has the welcome instead (the welcome cookie is
+ * still there: welcome-transition.tsx clears it). In a browser it starts at
  * once; in the app it waits for the phone's own splash — the shut book on the
  * night, the opening's first frame — so Capacitor's bridge, which is on the
  * page before any of the page's scripts, is asked to take the splash away and
@@ -46,6 +55,8 @@ var ua=navigator.userAgent,cap=window.Capacitor,app=ua.indexOf('MTMU7App')>=0;
 var el=document.getElementById('intro');
 if(el){var seen=false,done=false;
 try{seen=sessionStorage.getItem('INTRO_SEEN')==='1';sessionStorage.setItem('INTRO_SEEN','1');}catch(e){}
+if(document.cookie.indexOf('WELCOME_COOKIE=1')>=0)seen=true;
+try{var now=Date.now(),last=+localStorage.getItem('INTRO_SEEN')||0;if(!seen&&now-last<INTRO_GAP_MS)seen=true;if(!seen)localStorage.setItem('INTRO_SEEN',String(now));}catch(e){}
 if(seen)el.setAttribute('data-skip','');
 var play=function(how){if(done)return;done=true;el.setAttribute('data-play','');window.__appLaunch={at:Math.round(performance.now()),splash:how,skipped:seen};};
 try{if(app&&cap&&typeof cap.nativePromise==='function'){cap.nativePromise('SplashScreen','hide',{fadeOutDuration:seen?120:0}).then(function(){play('hidden')},function(){play('refused')});setTimeout(function(){play('timeout')},700);}
@@ -61,7 +72,17 @@ a.style.cssText='background:#c4861c;color:#fff;border-radius:999px;padding:6px 1
 b.appendChild(p);b.appendChild(a);document.body.appendChild(b);}}}catch(e){}
 })();`
   .replace("OLD_WEBVIEW", String(OLD_WEBVIEW))
+  .replace("WELCOME_COOKIE", WELCOME_COOKIE)
+  .replace("INTRO_GAP_MS", String(INTRO_GAP_MS))
   .replaceAll("INTRO_SEEN", INTRO_SEEN);
+
+/**
+ * Inline, right after the welcome (welcome-transition.tsx): a copy of the
+ * first page after signing in that the device kept and opens again later no
+ * longer has the welcome cookie, so its welcome is hidden before it is drawn.
+ */
+export const WELCOME_SCRIPT = `(function(){var s=document.currentScript,el=s&&s.previousElementSibling;
+if(el&&document.cookie.indexOf('WELCOME_COOKIE=1')<0)el.setAttribute('data-skip','');})();`.replace("WELCOME_COOKIE", WELCOME_COOKIE);
 
 /** Link previews, search engines and page-speed robots get the page itself, not a greeting. */
 export function isRobot(userAgent: string | null): boolean {

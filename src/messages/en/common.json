@@ -227,7 +227,7 @@
       "open": "Online support — write to us",
       "title": "Online support",
       "subtitle": "Have a question? We are here to help.",
-      "signInToChat": "Sign in and write in the chat",
+      "signInToChat": "Sign in",
       "orLeaveNote": "or leave a message",
       "call": "Call",
       "guest": {
@@ -287,8 +287,6 @@
     "announcements": "Announcements",
     "events": "Events",
     "documents": "Documents",
-    "messages": "Messages",
-    "messagesUnread": "{count, plural, one {# unread message} other {# unread messages}}",
     "contacts": "Contacts",
     "notifications": "Notifications",
     "notificationsUnread": "{count, plural, one {Notifications, # unread} other {Notifications, # unread}}",

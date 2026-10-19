@@ -7,14 +7,14 @@ import { useState } from "react";
 import { buttonClasses } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/misc";
 import * as Overlay from "@/components/ui/overlay";
-import { MemberCardDialog, type MemberCardSeed } from "@/features/messages/member-card";
+import { MemberCardDialog, type MemberCardSeed } from "@/features/people/member-card";
 
 /**
  * The face at the start of a row. A tap on the row opens the account for
  * editing; a tap on the face opens the person's profile card instead — who
  * they are, rather than what can be changed about them.
  */
-export function ProfileAvatar({ userId, name, avatarUrl, canMessage }: { userId: string; name: string; avatarUrl: string | null; canMessage: boolean }) {
+export function ProfileAvatar({ userId, name, avatarUrl }: { userId: string; name: string; avatarUrl: string | null }) {
   const t = useTranslations("accounts");
   const [seed, setSeed] = useState<MemberCardSeed | null>(null);
   return (
@@ -28,7 +28,7 @@ export function ProfileAvatar({ userId, name, avatarUrl, canMessage }: { userId:
       >
         <Avatar name={name} src={avatarUrl} size="md" />
       </button>
-      <MemberCardDialog seed={seed} onClose={() => setSeed(null)} canMessage={canMessage} />
+      <MemberCardDialog seed={seed} onClose={() => setSeed(null)} />
     </>
   );
 }

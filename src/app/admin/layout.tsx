@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/shell/app-shell";
 import { adminShellNav, loadShellData } from "@/components/shell/shell-data";
@@ -33,14 +34,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <>
-      {welcome ? <WelcomeTransition firstName={access.firstName} /> : null}
+      {welcome ? <WelcomeTransition firstName={access.firstName} nonce={(await headers()).get("x-nonce") ?? undefined} /> : null}
       <AppShell
         variant="admin"
         school={shell.school}
         user={shell.user}
         groups={nav.groups}
         unreadNotifications={shell.unreadNotifications}
-        unreadMessages={shell.unreadMessages}
         socials={shell.socials}
         locale={shell.locale}
         switchHref={nav.switchHref}

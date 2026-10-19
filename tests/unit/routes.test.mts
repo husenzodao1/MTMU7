@@ -4,7 +4,7 @@ import { isGuestOnlyPath, isPortalPath, shouldRedirectSignedInAway } from "../..
 
 describe("route classification used by the proxy", () => {
   it("treats the portal and its subpaths as signed-in areas", () => {
-    for (const path of ["/dashboard", "/admin", "/admin/students", "/teach/attendance", "/messages/42", "/profile"]) {
+    for (const path of ["/dashboard", "/admin", "/admin/students", "/teach/attendance", "/support/contact", "/profile"]) {
       assert.equal(isPortalPath(path), true, path);
     }
   });

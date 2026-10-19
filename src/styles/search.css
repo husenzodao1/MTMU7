@@ -135,8 +135,8 @@
   }
 }
 .everything-glass {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.95rem;
+  height: 0.95rem;
   flex: none;
   fill: none;
   stroke: currentColor;
@@ -267,6 +267,18 @@
   text-transform: uppercase;
   color: var(--color-ink-muted);
 }
+.everything-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.everything-row > .everything-hit {
+  min-width: 0;
+  flex: 1;
+}
+.everything-row > .wa-button {
+  margin-inline-end: 1rem;
+}
 .everything-hit {
   display: flex;
   align-items: center;
@@ -315,7 +327,78 @@
   color: var(--color-ink-muted);
 }
 
+/*
+ * WhatsApp, as a person's way to be reached: the bare green mark in a soft
+ * round, at the end of their row. It settles in a moment after the row.
+ */
+.wa-button {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #25d366;
+  background: color-mix(in oklab, #25d366 10%, transparent);
+  -webkit-tap-highlight-color: transparent;
+  animation: wa-in 0.35s var(--ease-standard) 0.08s both;
+  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+.wa-button:hover,
+.wa-button:focus-visible {
+  background: color-mix(in oklab, #25d366 18%, transparent);
+  outline: none;
+}
+.wa-button:active {
+  transform: scale(0.9);
+}
+@keyframes wa-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* On a profile: the same mark with its words, as a box to press. */
+.wa-box {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, #25d366 28%, var(--color-line));
+  background: color-mix(in oklab, #25d366 6%, var(--color-surface));
+  padding: 0.75rem 1rem;
+  text-align: start;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+.wa-box:hover,
+.wa-box:focus-visible {
+  background: color-mix(in oklab, #25d366 11%, var(--color-surface));
+  outline: none;
+}
+.wa-box:active {
+  transform: scale(0.985);
+}
+.wa-box-mark {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #25d366;
+  color: #fff;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .wa-button,
+  .wa-box {
+    animation: none;
+    transition: none;
+  }
   .everything-dock::before,
   .everything-box,
   .everything-panel,
