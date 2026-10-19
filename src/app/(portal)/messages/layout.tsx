@@ -23,12 +23,15 @@ export default async function MessagesLayout({ children }: { children: ReactNode
   const isStaff = access.roles.some((r) => !["student", "parent"].includes(r.slug));
   const canCreateGroup = isStaff || (hasRole(access, "student") && settings.messaging_students_create_groups === true);
   const ready = !feed.error;
+  const rows = (conversations ?? []) as unknown as ConversationSummary[];
 
   return (
     <MessagesFrame
+      base={{ currentUserId: access.userId, timeZone: access.school!.timezone, schoolId: access.school!.id, canMessage: true }}
+      conversations={rows.map((c) => ({ id: c.id, newestAt: c.last_message_at, memberCount: c.member_count ?? null }))}
       sidebar={
         <ConversationList
-          conversations={(conversations ?? []) as unknown as ConversationSummary[]}
+          conversations={rows}
           currentUserId={access.userId}
           timeZone={access.school!.timezone}
           canCreateGroup={canCreateGroup}

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
 import { REINSTALL_EVENT } from "@/components/shell/page-installer";
-import { askFresh } from "@/components/shell/quiet-refresh";
+import { askFresh } from "@/components/shell/fresh";
 import { forgetKeptData } from "@/lib/kept-pages";
 
 /** How far, after the drag's resistance, the mark may come down. */
@@ -26,10 +26,9 @@ function scrolledInside(target: EventTarget | null) {
  * Pull the page down from its top to refresh it, as in any app: a small
  * round mark follows the finger down, turning as it comes; let go past the
  * mark and it spins while the page is asked for again (router.refresh — the
- * page stays, and what is new appears in it). The page in front refreshes
- * itself every few seconds as well (quiet-refresh.ts); a pull is for the
- * newest of everything at once: the page in front, and every other page
- * installed afresh behind it.
+ * page stays, and what is new appears in it). Nothing refreshes by itself
+ * on a timer: a pull is for the newest of everything at once, the page in
+ * front and every other page installed afresh behind it (fresh.ts).
  *
  * Only from the very top of the page, never over a dialog, and not where the
  * screen scrolls by itself (the messenger, which is live anyway).

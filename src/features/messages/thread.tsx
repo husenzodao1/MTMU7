@@ -65,6 +65,7 @@ import { DRAFT_PREFIX } from "@/features/messages/forget";
 import { LIST_OPS_EVENT, clearedUpTo } from "@/features/messages/list-ops";
 import { forgetConversation, forgetMessages, keepMessages, keepPhoto, keepRun, keptMessages, keptPhoto, type KeptRun } from "@/features/messages/local-store";
 import { keptMarks, laterMark, rememberMarks } from "@/features/messages/read-marks";
+import { rememberThread } from "@/features/messages/thread-props";
 import { markReadUpTo } from "@/features/messages/read-queue";
 import { MessageGestures } from "@/features/messages/gestures";
 import {
@@ -91,7 +92,7 @@ import { canRecord, useVoiceRecorder, type Recording } from "@/features/messages
 import { TextSizeDialog, useChatTextSize } from "@/features/messages/text-size";
 import { useWallpaper, WallpaperDialog, WALLPAPERS, type Wallpaper } from "@/features/messages/wallpaper";
 import { dbErrorKey } from "@/lib/actions/db-error-key";
-import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
+import { EDIT_WINDOW_MS, isBroadcast, MESSAGE_MAX_LENGTH, QUICK_REACTIONS, REPORT_REASONS, type ConversationMember, type Reaction, type ThreadMessage } from "@/features/messages/types";
 import { dayKey, formatClock, formatDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
 import { getBrowserClient, listen } from "@/lib/supabase/browser";
@@ -293,8 +294,48 @@ export function Thread({
   const [wallpaper] = useWallpaper();
   const [textSizeOpen, setTextSizeOpen] = useState(false);
   useChatTextSize();
+  // This screen kept on the device, so the next tap on it opens it from there (thread-props.ts).
+  useEffect(() => {
+    rememberThread({
+      conversation,
+      members: initialMembers,
+      myRole,
+      currentUserId,
+      clearedAt,
+      initialPinned,
+      blockedUserIds,
+      canPost,
+      canManageMembers,
+      canMessage,
+      timeZone,
+      schoolId,
+    });
+  }, [conversation, initialMembers, myRole, currentUserId, clearedAt, initialPinned, blockedUserIds, canPost, canManageMembers, canMessage, timeZone, schoolId]);
   // The message whose menu is open: from its button, a long press or a right-click.
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  // Messages chosen together, as in any messenger: a hold on one starts it,
+  // a tap on another adds it or takes it away again, and the bar over the
+  // thread acts on all of them at once (copy, star, delete, reply).
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const selectedMessages = useMemo(() => {
+    if (selectedIds.length === 0) return [];
+    const chosen = new Set(selectedIds);
+    return messages.filter((m) => chosen.has(m.id));
+  }, [messages, selectedIds]);
+  const selecting = selectedMessages.length > 0;
+  const onlySelected = selectedMessages.length === 1 ? selectedMessages[0]! : null;
+  const toggleSelected = useCallback((id: string) => setSelectedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])), []);
+  const clearSelected = useCallback(() => setSelectedIds([]), []);
+  // Escape — and Android's back button, which presses it (native-app.tsx) — lets go of the choice first.
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") clearSelected();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selecting, clearSelected]);
   // The message a tap on a quote has just brought into view, lit for a moment.
   const [flash, setFlash] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -1665,6 +1706,60 @@ export function Thread({
     inputRef.current?.focus();
   };
 
+  /** The words of the chosen messages, oldest first; several are labelled with when and who, as a messenger copies them. */
+  const copySelected = () => {
+    const textOf = (m: ThreadMessage) => (m.type === "location" && m.location_lat !== null ? `${m.location_lat},${m.location_lng}` : m.content);
+    const chosen = selectedMessages.filter((m) => !m.is_deleted && textOf(m));
+    const text =
+      chosen.length === 1
+        ? textOf(chosen[0]!)
+        : chosen
+            .map((m) => `[${formatDate(m.created_at, locale, timeZone)} ${formatClock(m.created_at, locale, timeZone)}] ${m.sender_id === currentUserId ? t("you") : senderName(m)}: ${textOf(m)}`)
+            .join("\n");
+    clearSelected();
+    if (!text) return;
+    void navigator.clipboard?.writeText(text);
+    toast("success", tRoot("common.copied"));
+  };
+
+  /** Starred all, or — when every one already is — unstarred all. */
+  const starSelected = () => {
+    const targets = selectedMessages.filter((m) => !m.is_deleted);
+    const value = targets.some((m) => !m.is_favorite);
+    clearSelected();
+    startAction(async () => {
+      for (const m of targets) {
+        if (Boolean(m.is_favorite) === value) continue;
+        const result = await toggleMessageFavoriteAction(m.id, value);
+        if (!result.ok) return fail(result.message ?? "errors.unexpected");
+        upsert({ ...m, is_favorite: value });
+      }
+    });
+  };
+
+  /** Each chosen message deleted as its own menu would, one after another; the first refusal stops the rest and says why. */
+  const deleteSelected = (scope: "me" | "everyone") => {
+    const targets = selectedMessages;
+    setDeletingSelected(false);
+    clearSelected();
+    startAction(async () => {
+      for (const m of targets) {
+        const result = await deleteMessageAction(m.id, scope);
+        if (!result.ok) return fail(result.message ?? "errors.unexpected");
+        if (scope === "me") {
+          setMessages((c) => c.filter((x) => x.id !== m.id));
+          void forgetMessages(currentUserId, [m.id]);
+        } else {
+          // The row has let go of the file; the file goes with it.
+          if (m.media_path) removeMedia(m.media_path);
+          upsert({ ...m, is_deleted: true, content: "", ...EMPTIED });
+        }
+      }
+    });
+  };
+  const canDeleteSelectedForEveryone = selecting && selectedMessages.every((m) => m.sender_id === currentUserId && !m.is_deleted);
+  const canCopySelected = selectedMessages.some((m) => !m.is_deleted && (m.content || m.type === "location"));
+
   // Photos and files come in by the button, a paste, or dropped onto the conversation.
   const acceptsFiles = canPost && !iBlockedOther && !editing && !voice.recording;
 
@@ -1742,6 +1837,76 @@ export function Thread({
           <p className="text-sm font-semibold">{t("dropFile")}</p>
         </div>
       ) : null}
+      {selecting ? (
+        <div className="chat-header chat-select-bar absolute inset-x-0 top-0 z-[6] flex min-h-14 items-center gap-0.5 px-2.5 py-2 sm:px-4" data-chat-selecting="" role="toolbar" aria-label={t("select.title", { count: selectedMessages.length })}>
+          <button type="button" onClick={clearSelected} className={buttonClasses("ghost", "icon-sm")} aria-label={t("select.cancel")}>
+            <X aria-hidden />
+          </button>
+          <span className="min-w-0 flex-1 truncate ps-1 text-lg font-semibold tabular text-ink" aria-live="polite">
+            {selectedMessages.length}
+          </span>
+          {onlySelected && canPost && !iBlockedOther && !onlySelected.is_deleted ? (
+            <button
+              type="button"
+              onClick={() => {
+                const m = onlySelected;
+                clearSelected();
+                startReply(m);
+              }}
+              className={buttonClasses("ghost", "icon-sm")}
+              aria-label={t("reply")}
+              title={t("reply")}
+            >
+              <CornerUpLeft aria-hidden />
+            </button>
+          ) : null}
+          {selectedMessages.some((m) => !m.is_deleted) ? (
+            <button type="button" onClick={starSelected} className={buttonClasses("ghost", "icon-sm")} aria-label={t("favorite")} title={t("favorite")}>
+              <Star aria-hidden />
+            </button>
+          ) : null}
+          {canCopySelected ? (
+            <button type="button" onClick={copySelected} className={buttonClasses("ghost", "icon-sm")} aria-label={tRoot("common.copy")} title={tRoot("common.copy")}>
+              <Copy aria-hidden />
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setDeletingSelected(true)} className={buttonClasses("ghost", "icon-sm")} aria-label={tRoot("common.delete")} title={tRoot("common.delete")}>
+            <Trash2 aria-hidden />
+          </button>
+          {onlySelected ? (
+            <button
+              type="button"
+              onClick={() => {
+                const id = onlySelected.id;
+                clearSelected();
+                setMenuFor(id);
+              }}
+              className={buttonClasses("ghost", "icon-sm")}
+              aria-label={t("messageActions")}
+              title={t("messageActions")}
+            >
+              <EllipsisVertical aria-hidden />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <Overlay.Dialog open={deletingSelected && selecting} onOpenChange={setDeletingSelected}>
+        <Overlay.DialogContent title={t("select.deleteTitle", { count: selectedMessages.length })} description={t("select.deleteText")} closeLabel={tRoot("common.close")} size="sm">
+          <div className="flex flex-col gap-2">
+            {canDeleteSelectedForEveryone ? (
+              <Button variant="danger" onClick={() => deleteSelected("everyone")}>
+                {t("deleteForEveryone")}
+              </Button>
+            ) : null}
+            <Button variant={canDeleteSelectedForEveryone ? "secondary" : "danger"} onClick={() => deleteSelected("me")}>
+              {t("deleteForMe")}
+            </Button>
+            <Overlay.DialogClose asChild>
+              <Button variant="ghost">{tRoot("common.cancel")}</Button>
+            </Overlay.DialogClose>
+          </div>
+        </Overlay.DialogContent>
+      </Overlay.Dialog>
       <header className="chat-header flex items-center gap-2 px-2.5 py-2 sm:px-4">
         <Link href={backHref} className={buttonClasses("ghost", "icon-sm", isSupport ? "" : "lg:hidden")} aria-label={t("back")}>
           <ArrowLeft aria-hidden />
@@ -1930,12 +2095,53 @@ export function Thread({
                   ) : null}
                   <li
                     id={`message-${m.id}`}
-                    className={cn("chat-row group flex scroll-my-24", mine ? "justify-end" : "justify-start", firstOfRun && "pt-1.5", flash === m.id && "chat-flash")}
+                    data-selected={selectedIds.includes(m.id) ? "" : undefined}
+                    className={cn(
+                      "chat-row group relative flex scroll-my-24",
+                      mine ? "justify-end" : "justify-start",
+                      firstOfRun && "pt-1.5",
+                      flash === m.id && "chat-flash",
+                      selectedIds.includes(m.id) && "chat-row-selected"
+                    )}
+                    // While messages are being chosen, a tap on one chooses it
+                    // or lets it go — it opens nothing (a photo, a link, a card).
+                    onClickCapture={(event) => {
+                      if (!selecting || (event.target as Element).closest(".chat-select-reactions")) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      if (!m.pending && !m.failed) toggleSelected(m.id);
+                    }}
                   >
+                    {onlySelected?.id === m.id && !m.is_deleted && !iBlockedOther ? (
+                      <div
+                        role="toolbar"
+                        aria-label={t("reactions")}
+                        className={cn("chat-select-reactions absolute -top-11 z-[5] flex items-center gap-0.5 rounded-full px-1.5 py-1", mine ? "end-2" : "start-2")}
+                      >
+                        {QUICK_REACTIONS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => {
+                              react(m, emoji === myReaction ? null : emoji);
+                              clearSelected();
+                            }}
+                            aria-pressed={emoji === myReaction}
+                            className={cn(
+                              "inline-flex size-9 items-center justify-center rounded-full text-[1.4rem] transition-transform active:scale-90",
+                              emoji === myReaction && "bg-brand-100 ring-2 ring-brand-500/40"
+                            )}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                     <MessageGestures
-                      enabled={settled && canPost && !iBlockedOther}
+                      enabled={settled || (m.is_deleted && !m.pending && !m.failed)}
+                      canReply={settled && canPost && !iBlockedOther && !selecting}
                       onReply={() => startReply(m)}
-                      onHold={() => setMenuFor(m.id)}
+                      onHold={() => (selecting ? toggleSelected(m.id) : setSelectedIds([m.id]))}
                       className="max-w-[88%] sm:max-w-[72%]"
                     >
                       <div className={cn("flex items-end gap-1", mine && "flex-row-reverse")}>
@@ -2018,7 +2224,10 @@ export function Thread({
                             <Overlay.DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className="chat-more mb-1 rounded-full p-1 text-ink-muted opacity-100 hover:bg-surface/70 hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 data-[state=open]:opacity-100"
+                                className={cn(
+                                  "chat-more mb-1 rounded-full p-1 text-ink-muted opacity-100 hover:bg-surface/70 hover:text-ink focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 data-[state=open]:opacity-100",
+                                  selecting && "invisible"
+                                )}
                                 aria-label={t("messageActions")}
                               >
                                 <EllipsisVertical className="size-4" aria-hidden />

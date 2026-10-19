@@ -25,8 +25,12 @@ const SLOW_MS = 6000;
  * A tap the app's memory could not answer at once (the app has just been
  * opened, say) is answered by the page installed on the device instead,
  * after this long: the whole page from the service worker, with no network.
+ * Opening a whole page costs a phone a second or two of starting the portal
+ * again, so with a line the network is given a fair moment first — on a
+ * slow one the page on the device still wins; with none it is at once.
  */
-const FROM_DEVICE_MS = 400;
+const FROM_DEVICE_MS = 1200;
+const FROM_DEVICE_OFFLINE_MS = 150;
 
 export function pageLink(target: EventTarget | null): URL | null {
   const anchor = (target as Element | null)?.closest?.("a[href]");
@@ -108,7 +112,7 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
       void installedOnDevice(to).then((kept) => {
         if (kept && window.location.pathname !== pending) window.location.assign(to);
       });
-    }, FROM_DEVICE_MS);
+    }, navigator.onLine === false ? FROM_DEVICE_OFFLINE_MS : FROM_DEVICE_MS);
     return () => {
       window.clearTimeout(slow);
       window.clearTimeout(giveUp);

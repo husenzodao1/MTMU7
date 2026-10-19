@@ -42,6 +42,8 @@ interface AppPlugin {
   addListener(event: "backButton", handler: (event: { canGoBack: boolean }) => void): Promise<Listener>;
   /** Puts the app in the background, as the home button does. */
   minimizeApp(): Promise<void>;
+  /** Closes the app, as going back from an app's first screen does. */
+  exitApp(): Promise<void>;
   /** The link the app was started with, when a link (or a notification) started it. */
   getLaunchUrl(): Promise<{ url?: string } | undefined>;
   /** The installed app's own version, e.g. 1.0.12. */

@@ -1,5 +1,6 @@
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
+import { BUILD } from "./src/lib/build";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -23,6 +24,10 @@ const securityHeaders = [
   // whole site, so the pin failed before the question was ever put to anybody.
   { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Which version of the site answered, on everything — prefetches too, which
+  // src/proxy.ts never sees: the service worker keeps a page and its data
+  // only together with the version they belong to (public/sw.js).
+  { key: "x-mtmu7-build", value: BUILD },
 ];
 
 /**

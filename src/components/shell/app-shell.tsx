@@ -12,7 +12,6 @@ import { BarIcon } from "@/components/shell/bar-icons";
 import { useInstantNavigation } from "@/components/shell/instant-nav";
 import { PageInstaller } from "@/components/shell/page-installer";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
-import { useQuietRefresh } from "@/components/shell/quiet-refresh";
 import { usePhotoRetry } from "@/components/shell/photo-retry";
 import { useWarmVisibleLinks } from "@/components/shell/visible-links";
 import { useWarmPages } from "@/components/shell/warm-pages";
@@ -364,9 +363,6 @@ export function AppShell({ variant, school, user, groups, mobileBar, unreadNotif
   // The page a tap is going to, drawn at once as its loading screen.
   const closeMenu = useCallback(() => setDrawerOpen(false), []);
   const goingTo = useInstantNavigation(pathname, closeMenu);
-  // The page in front brought up to date by itself every few seconds, with
-  // no pull and no reload (quiet-refresh.ts).
-  useQuietRefresh(pathname, Boolean(goingTo));
   // A photo that could not come shows no broken picture, and comes later (photo-retry.ts).
   usePhotoRetry();
   // Every section of the menu and the bar kept on the device, ready before

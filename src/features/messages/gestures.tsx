@@ -13,8 +13,9 @@ const HOLD_MS = 420;
  * The two gestures of a messenger, on one message:
  *
  * - swipe it towards the middle to reply to it, with the arrow appearing
- *   behind it as it goes and a tick of the phone when it is far enough;
- * - hold it (or right-click it) for the menu with the reactions.
+ *   behind it as it goes and a tick of the phone when it is far enough
+ *   (only where a reply may be written: `canReply`);
+ * - hold it (or right-click it) to select it (thread.tsx).
  *
  * Vertical movement is left entirely to the browser (touch-action: pan-y), so
  * scrolling the conversation never catches on a bubble. The bubble is moved
@@ -24,12 +25,14 @@ const HOLD_MS = 420;
 export function MessageGestures({
   children,
   enabled,
+  canReply = true,
   onReply,
   onHold,
   className,
 }: {
   children: ReactNode;
   enabled: boolean;
+  canReply?: boolean;
   onReply: () => void;
   onHold: () => void;
   className?: string;
@@ -77,7 +80,7 @@ export function MessageGestures({
       event.preventDefault();
       return;
     }
-    if (state.axis === "x") {
+    if (state.axis === "x" && canReply) {
       if (state.travel >= REPLY_AT) onReply();
       place(0, true);
     }
@@ -115,7 +118,7 @@ export function MessageGestures({
           state.timer = null;
           state.axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y";
         }
-        if (state.axis !== "x") return;
+        if (state.axis !== "x" || !canReply) return;
         const pull = Math.max(0, dx);
         // Free to the threshold, then heavier, so it is felt where it counts.
         const travel = Math.min(MAX_TRAVEL, pull < REPLY_AT ? pull : REPLY_AT + (pull - REPLY_AT) * 0.35);

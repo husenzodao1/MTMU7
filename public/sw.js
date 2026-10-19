@@ -11,9 +11,18 @@
  *    person can open is installed after signing in (keep-pages,
  *    page-installer.tsx), and every page and its data shown since is kept.
  *    A page and its data open from the device at once, with or without a
- *    line; the page in front is then brought up to date from the network
- *    every few seconds, quietly (fresh-data, quiet-refresh.ts), and what was
- *    kept is let go of when something is saved or the page is pulled down.
+ *    line; what was kept is fetched again behind the screen when it grows
+ *    old, and let go of when something is saved or the page is pulled down
+ *    (fresh-data, pull-to-refresh.tsx). Nothing refreshes on a timer.
+ *
+ * Every page and every piece of data is kept with the version of the site it
+ * belongs to (x-mtmu7-build, data-build on <html>). A page is only ever given
+ * data of its own version — Next.js opens a page anew, whole, for data of
+ * another — and a page kept from an older version than the network last
+ * answered with is asked of the network first while there is a line. Every
+ * script, style and font of the newest version is kept on the device as soon
+ * as the version is seen (app-assets.json, scripts/build/asset-list.mjs), so
+ * the app opens and works with no line at all.
  *
  * Signing out empties the kept pages (app-shell.tsx, signed-out.tsx): one
  * person's screens are never shown to the next.
@@ -48,6 +57,16 @@ const FRESH_WAIT_MS = 8000;
 const FRESH_TRIES = 3;
 /** How long the page's word that its next data is to be fresh holds. */
 const FRESH_HOLD_MS = 5000;
+/** What this worker remembers between its starts: the newest version seen, and which version each open page is. */
+const META_CACHE = "meta-v1";
+const META_KEY = "/__sw/meta";
+const LISTS_KEY = "/__sw/asset-lists";
+/** Every file of a version (scripts/build/asset-list.mjs), written next to them. */
+const ASSET_LIST = "/_next/static/app-assets.json";
+/** A version's files fetched side by side. */
+const ASSETS_AT_ONCE = 3;
+/** Open pages whose version is remembered, at most. */
+const CLIENTS_KEPT = 30;
 
 /**
  * The page in front, which has asked for its next data from the network
@@ -60,6 +79,132 @@ let freshMisses = 0;
 let freshMissedAt = 0;
 /** The version of the site a page was last moved on from (answerFresh): moved once, not on every refresh. */
 let movedFrom = "";
+
+/** The version the network last answered with: the newest there is, as far as this worker knows. */
+let latestBuild = "";
+/** The version whose every script, style and font is on the device. */
+let assetsDone = "";
+/** The version whose files are being fetched now. */
+let assetsFor = "";
+/** Which version each open page is (a client id to a version), so its data is of the same one. */
+const clientBuilds = new Map();
+let metaLoaded = null;
+
+/** A version that says which one it is: never "local", a developer's machine. */
+function realBuild(build) {
+  return typeof build === "string" && build && build !== "local" ? build : "";
+}
+
+/** Which version a response is of: kept with it, or as the site said it. */
+function buildOf(response) {
+  return realBuild(response.headers.get("x-kept-build") || response.headers.get("x-mtmu7-build") || "");
+}
+
+/** The version a page names on its <html> (src/app/layout.tsx) — where an app's own fetch has left the headers behind. */
+const HTML_BUILD = /<html[^>]*?\sdata-build="([^"]*)"/;
+
+function loadMeta() {
+  metaLoaded ??= (async () => {
+    try {
+      const answer = await (await caches.open(META_CACHE)).match(META_KEY);
+      if (!answer) return;
+      const meta = await answer.json();
+      if (!latestBuild) latestBuild = realBuild(meta.latest);
+      if (!assetsDone) assetsDone = realBuild(meta.assets);
+      for (const [id, build] of Array.isArray(meta.clients) ? meta.clients : []) if (!clientBuilds.has(id)) clientBuilds.set(id, build);
+    } catch {
+      // Remembered again from the next answers.
+    }
+  })();
+  return metaLoaded;
+}
+
+async function saveMeta() {
+  try {
+    const meta = { latest: latestBuild, assets: assetsDone, clients: [...clientBuilds].slice(-CLIENTS_KEPT) };
+    await (await caches.open(META_CACHE)).put(META_KEY, new Response(JSON.stringify(meta), { headers: { "Content-Type": "application/json" } }));
+  } catch {
+    // Remembered in memory for as long as this worker runs.
+  }
+}
+
+function rememberClient(id, build) {
+  if (!id || !realBuild(build) || clientBuilds.get(id) === build) return Promise.resolve();
+  clientBuilds.delete(id);
+  clientBuilds.set(id, build);
+  while (clientBuilds.size > CLIENTS_KEPT) clientBuilds.delete(clientBuilds.keys().next().value);
+  return saveMeta();
+}
+
+/** A version the network has answered with: the newest from now on, and its files are fetched onto the device. */
+function seeBuild(build) {
+  const seen = realBuild(build);
+  if (!seen || seen === latestBuild) return Promise.resolve();
+  latestBuild = seen;
+  return saveMeta().then(() => keepBuildFiles(seen));
+}
+
+/**
+ * Every script, style and font of a version, on the device — those a page
+ * names, and those only fetched when needed (a picker, an editor) that no
+ * page names — so nothing of it needs the network again. Once all are here,
+ * the files of versions before the previous one are let go of.
+ */
+async function keepBuildFiles(build) {
+  await loadMeta();
+  if (!build || build === assetsDone || build === assetsFor) return;
+  assetsFor = build;
+  try {
+    const answer = await fetch(ASSET_LIST, { cache: "no-store", credentials: "same-origin" });
+    if (!answer.ok) return;
+    const list = await answer.json();
+    if (!list || !Array.isArray(list.files)) return;
+    // Another version answered (one more has come out meanwhile): its own turn comes.
+    if (realBuild(list.build) && list.build !== build) return;
+    const files = list.files.filter((path) => typeof path === "string" && path.startsWith("/_next/static/"));
+    const queue = files.filter((path) => /\.(?:js|css|woff2)$/.test(path));
+    const cache = await caches.open(STATIC_CACHE);
+    let missed = 0;
+    const worker = async () => {
+      while (queue.length > 0 && latestBuild === build) {
+        const href = new URL(queue.shift(), self.location.origin).href;
+        if (await cache.match(href)) continue;
+        const got = await fetch(href, { credentials: "same-origin" }).catch(() => null);
+        if (got && got.ok && got.status === 200 && got.type === "basic") await cache.put(href, got).catch(() => (missed += 1));
+        else missed += 1;
+      }
+    };
+    await Promise.all(Array.from({ length: ASSETS_AT_ONCE }, worker));
+    if (missed > 0 || latestBuild !== build) return;
+    assetsDone = build;
+    await saveMeta();
+    await letGoOfOldFiles(build, files);
+  } catch {
+    // No line: tried again when a page next says hello.
+  } finally {
+    if (assetsFor === build) assetsFor = "";
+  }
+}
+
+/** The files of this version and the one before it stay; the rest under /_next/static go. */
+async function letGoOfOldFiles(build, files) {
+  try {
+    const meta = await caches.open(META_CACHE);
+    const was = await meta.match(LISTS_KEY).then((answer) => (answer ? answer.json() : []), () => []);
+    const lists = [...(Array.isArray(was) ? was : []).filter((entry) => entry && entry.build !== build).slice(-1), { build, files }];
+    await meta.put(LISTS_KEY, new Response(JSON.stringify(lists), { headers: { "Content-Type": "application/json" } }));
+    // Only once two versions are known, so the one before this is never lost.
+    if (lists.length < 2) return;
+    const wanted = new Set(lists.flatMap((entry) => (Array.isArray(entry.files) ? entry.files : [])));
+    const cache = await caches.open(STATIC_CACHE);
+    for (const key of await cache.keys()) {
+      const path = new URL(key.url).pathname;
+      if (path.startsWith("/_next/static/") && !wanted.has(path)) await cache.delete(key);
+    }
+  } catch {
+    // Let go of next time.
+  }
+}
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -204,23 +349,45 @@ button{min-height:2.75rem;padding:0 1.5rem;border:0;border-radius:.75rem;backgro
 function stamped(response) {
   const headers = new Headers(response.headers);
   headers.set("x-kept-at", String(Date.now()));
+  const build = buildOf(response);
+  if (build) headers.set("x-kept-build", build);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+/**
+ * A page or its data, as the network gave it, kept with when and with the
+ * version it is of — read from <html> when the headers did not come with it
+ * (the app's own fetch of a page leaves them behind). Says which version.
+ */
+async function keepWithBuild(cache, key, response) {
+  const text = await response.text();
+  const named = HTML_BUILD.exec(text.slice(0, 4000));
+  const build = buildOf(response) || realBuild(named ? named[1] : "");
+  const headers = new Headers(response.headers);
+  headers.set("x-kept-at", String(Date.now()));
+  if (build) headers.set("x-kept-build", build);
+  await cache.put(key, new Response(text, { status: response.status, statusText: response.statusText, headers }));
+  return { text, build };
 }
 
 function keptAt(response) {
   return Number(response.headers.get("x-kept-at")) || 0;
 }
 
-function keep(event, cache, key, response, limit = PAGE_LIMIT, chunks = true) {
+/** A network answer kept (keepWithBuild); the page it was for, if one is opening with it, is of its version. */
+function keep(event, cache, key, response, limit = PAGE_LIMIT, chunks = true, clientId = "") {
   if (!response || !response.ok || response.status !== 200 || response.type !== "basic" || response.redirected) return;
-  const copy = stamped(response.clone());
-  const scan = chunks ? response.clone() : null;
+  const copy = response.clone();
   event.waitUntil(
-    cache
-      .put(key, copy)
-      .then(() => trim(cache, limit))
-      .then(() => (scan ? keepChunks(scan) : undefined))
-      .catch(() => undefined)
+    (async () => {
+      const { text, build } = await keepWithBuild(cache, key, copy);
+      if (build) {
+        await rememberClient(clientId, build);
+        await seeBuild(build);
+      }
+      await trim(cache, limit);
+      if (chunks) await keepChunks(new Response(text));
+    })().catch(() => undefined)
   );
 }
 
@@ -236,28 +403,43 @@ const NETWORK_FIRST = /^\/($|login|register|two-factor|confirm-email|forgot|rese
  * installed after signing in (keep-pages) or kept from an earlier visit —
  * and its fresh copy is kept behind it for the next time; what is on the
  * screen changes only when its person pulls it down (pull-to-refresh.tsx).
- * A page never kept waits for the network, and with none gets the plain
- * "no internet" page.
+ * A copy of an older version of the site than the network last answered
+ * with is asked of the network first, while there is a line (a newer version
+ * cannot use the older one's data, nor the older one the newer's), and is
+ * the answer only when the network is slow or not there. A page never kept
+ * waits for the network, and with none gets the plain "no internet" page.
+ *
+ * Which version the page that opens is, is remembered, so its data is of the
+ * same version (answerData).
  */
 async function answerPage(event, request, url) {
+  await loadMeta();
   const cache = await caches.open(PAGE_CACHE);
   const key = pageKey(url, "page");
   const kept = await cache.match(key, { ignoreVary: true });
+  const clientId = event.resultingClientId || "";
   const fresh = fetch(request).then(
     (response) => {
-      keep(event, cache, key, response);
+      keep(event, cache, key, response, PAGE_LIMIT, true, clientId);
       return response;
     },
     () => null
   );
-  if (kept && !NETWORK_FIRST.test(url.pathname)) {
+  const keptBuild = kept ? buildOf(kept) : "";
+  const older = Boolean(keptBuild && latestBuild && keptBuild !== latestBuild && self.navigator.onLine !== false);
+  if (kept && !older && !NETWORK_FIRST.test(url.pathname)) {
     event.waitUntil(fresh);
+    event.waitUntil(rememberClient(clientId, keptBuild));
     return kept;
   }
-  const answer = await Promise.race([fresh, new Promise((resolve) => setTimeout(() => resolve("slow"), kept ? DATA_WAIT_MS * 2 : PAGE_WAIT_MS))]);
-  if (answer && answer !== "slow") return answer;
+  const answer = await Promise.race([fresh, wait(kept ? DATA_WAIT_MS * 2 : PAGE_WAIT_MS).then(() => "slow")]);
+  if (answer && answer !== "slow") {
+    event.waitUntil(rememberClient(clientId, buildOf(answer)));
+    return answer;
+  }
   if (kept) {
     event.waitUntil(fresh);
+    event.waitUntil(rememberClient(clientId, keptBuild));
     return kept;
   }
   const late = await fresh;
@@ -283,14 +465,16 @@ function otherBuild(response, build) {
   return Boolean(served && build && build !== "local" && served !== build);
 }
 
-/** One page fetched afresh and kept, as installing it does (keep-pages). */
+/** One page fetched afresh and kept, with its scripts and styles, as installing it does (keep-pages). */
 async function installPage(url) {
   try {
     const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
     const html = (response.headers.get("content-type") || "").includes("text/html");
     if (response.ok && response.status === 200 && !response.redirected && html) {
       const cache = await caches.open(PAGE_CACHE);
-      await cache.put(pageKey(url, "page"), response);
+      const { text, build } = await keepWithBuild(cache, pageKey(url, "page"), response);
+      await seeBuild(build);
+      await keepChunks(new Response(text));
     }
   } catch {
     // Installed again on the next pull.
@@ -301,11 +485,16 @@ async function installPage(url) {
  * A page's data — what a tap inside the portal fetches — from the device
  * whenever it was kept, as the page itself is: the portal does not wait on
  * the network for anything it has already shown. Kept data is let go of
- * when its person pulls a page down (pull-to-refresh.tsx) and when anything
- * is saved (below), so what changed is fetched again then; and the page in
- * front asks for its own afresh every few seconds (answerFresh).
+ * when its person pulls a page down (pull-to-refresh.tsx, answerFresh) and
+ * when anything is saved (below), so what changed is fetched again then.
+ *
+ * Only data of the asking page's own version is given from the device: for
+ * another, Next.js would throw the page away and open the next one whole
+ * (a reload on every tap). That is asked of the network; with no line it is
+ * refused, and Next.js opens the next page whole from the device instead.
  */
 async function answerData(event, request, url) {
+  await loadMeta();
   const cache = await caches.open(DATA_CACHE);
   const key = pageKey(url, "data");
   const kept = await cache.match(key, { ignoreVary: true });
@@ -314,7 +503,9 @@ async function answerData(event, request, url) {
     freshFor = null;
     return answerFresh(event, request, url, cache, key, kept, build);
   }
-  if (kept) {
+  const asking = clientBuilds.get(event.clientId) || "";
+  const keptBuild = kept ? buildOf(kept) : "";
+  if (kept && !(asking && keptBuild && keptBuild !== asking)) {
     // Answered at once from the device; a copy more than a moment old is
     // fetched again behind it, so the next time — with no line, say — it is
     // the newest the phone could have had.
@@ -378,12 +569,12 @@ async function renew(cache, key, request, kept) {
 }
 
 /**
- * The page in front brought up to date, quietly (quiet-refresh.ts): from the
- * network, and kept, so that the next refresh has it to fall back on. A slow
- * line is answered with the last refresh, and the new one is kept when it
- * comes; no line at all is tried a few times, a little apart, then answered
- * the same way — the page stays as it is, never reloads — and the refreshes
- * rest a while.
+ * The page in front brought up to date by a pull (pull-to-refresh.tsx): from
+ * the network, and kept, so that the next pull has it to fall back on. A slow
+ * line is answered with the last copy, and the new one is kept when it comes;
+ * no line at all is tried a few times, a little apart, then answered the same
+ * way — the page stays as it is, never reloads — and the next pulls rest a
+ * while.
  *
  * A newer version of the site cannot be laid over the one on the screen:
  * Next.js opens the page again for it. So the page is installed anew first,
@@ -430,8 +621,8 @@ async function answerFresh(event, request, url, cache, key, kept, build) {
  * page it was saved on is let go of, and the page is installed again a
  * moment later, so the saved marks are what it shows next time — not the
  * ones from before. Every other page keeps what it had: whichever is opened
- * next shows it at once and brings itself up to date a moment later
- * (quiet-refresh.ts).
+ * next shows it at once and fetches it again behind the screen when it has
+ * grown old (answerData).
  */
 async function afterChange(referrer) {
   let url;
@@ -543,8 +734,9 @@ async function keepPages(paths, port) {
         const response = await fetch(url.href, { credentials: "same-origin", headers: { Accept: "text/html" } });
         const html = (response.headers.get("content-type") || "").includes("text/html");
         if (response.ok && response.status === 200 && !response.redirected && html) {
-          await cache.put(pageKey(url, "page"), response.clone());
-          await keepChunks(response);
+          const { text, build } = await keepWithBuild(cache, pageKey(url, "page"), response);
+          if (build && !latestBuild) latestBuild = build;
+          await keepChunks(new Response(text));
           kept += 1;
         }
       } catch {
@@ -557,11 +749,27 @@ async function keepPages(paths, port) {
   await Promise.all(Array.from({ length: Math.min(INSTALL_AT_ONCE, total) }, worker));
   await trim(cache, PAGE_LIMIT).catch(() => undefined);
   tell({ type: "done", done, total, kept });
+  // And everything else of this version, for the dialogs and pickers no page names.
+  await saveMeta();
+  await keepBuildFiles(latestBuild);
 }
 
 self.addEventListener("message", (event) => {
   const data = event.data;
   if (!data) return;
+  // A page says which version of the site it is (native-app.tsx): its data is
+  // given of the same version. And whatever of the newest version's files is
+  // not on the device yet is fetched now (a start cut short, say).
+  if (data.type === "hello" && event.source && typeof event.source.id === "string") {
+    const id = event.source.id;
+    event.waitUntil(
+      (async () => {
+        await loadMeta();
+        await rememberClient(id, data.build);
+        if (latestBuild && assetsDone !== latestBuild && self.navigator.onLine !== false) await keepBuildFiles(latestBuild);
+      })()
+    );
+  }
   // The page asks the worker to forget the kept pages (signing out).
   if (data.type === "forget-pages") {
     event.waitUntil(Promise.all([caches.delete(PAGE_CACHE), caches.delete(DATA_CACHE), caches.delete(MEDIA_CACHE)]));
@@ -575,10 +783,8 @@ self.addEventListener("message", (event) => {
   if (data.type === "renew-page" && typeof data.path === "string") {
     event.waitUntil(renewPage(data.path));
   }
-  // The page in front is about to refresh itself (quiet-refresh.ts): its
-  // next data comes from the network. After refreshes that found no line,
-  // the next is let through only after a rest — longer each time, up to five
-  // minutes — unless its person pulled the page down.
+  // The page in front is about to be refreshed by a pull (fresh.ts): its
+  // next data comes from the network.
   if (data.type === "fresh-data" && typeof data.path === "string") {
     const rest = freshMisses === 0 ? 0 : Math.min(5 * 60_000, 15_000 * 2 ** (freshMisses - 1));
     const go = data.force === true || Date.now() - freshMissedAt >= rest;

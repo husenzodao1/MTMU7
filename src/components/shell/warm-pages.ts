@@ -63,8 +63,8 @@ export function warmPages(router: Router, hrefs: string[], keep: () => boolean =
  * signing in (page-installer.tsx), kept ready in the app's memory the way an
  * app keeps its screens: fetched one after another as the app opens, and
  * again whenever a copy grows old — all of it behind the screen. What is on
- * the screen is brought up to date apart from these (quiet-refresh.ts, and a
- * pull at the top, pull-to-refresh.tsx).
+ * the screen is brought up to date apart from these, by a pull at the top
+ * (pull-to-refresh.tsx).
  */
 export function useWarmPages(hrefs: string[]) {
   const router = useRouter();

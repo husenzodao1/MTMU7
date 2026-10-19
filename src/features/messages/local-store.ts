@@ -391,6 +391,39 @@ export async function keptList<T>(userId: string): Promise<{ at: number; rows: T
   }
 }
 
+/**
+ * What a conversation's screen is drawn from apart from its messages — its
+ * title, members, pins, who may write (thread-props.ts) — so it opens from
+ * the device at the tap, with or without a line.
+ */
+export async function keepThread(userId: string, conversationId: string, props: unknown): Promise<void> {
+  const db = await open(userId);
+  if (!db) return;
+  try {
+    const tx = db.transaction("lists", "readwrite");
+    tx.objectStore("lists").put({ key: `thread:${conversationId}`, at: Date.now(), props });
+    await done(tx);
+  } catch {
+    // Kept the next time the conversation is opened.
+  }
+}
+
+/** Every conversation's screen kept on this device, by conversation id. */
+export async function keptThreads<T>(userId: string): Promise<Map<string, T>> {
+  const found = new Map<string, T>();
+  const db = await open(userId);
+  if (!db) return found;
+  try {
+    const rows = await asked(db.transaction("lists", "readonly").objectStore("lists").getAll(IDBKeyRange.bound("thread:", "thread:￿")));
+    for (const row of (rows ?? []) as Array<{ key: string; props?: T }>) {
+      if (row.props) found.set(row.key.slice("thread:".length), row.props);
+    }
+  } catch {
+    // Opened from the server, as before.
+  }
+  return found;
+}
+
 /** A photo, file or recording still to be sent, kept with its bytes so a restart cannot lose it. */
 export async function keepBlob(userId: string, value: KeptBlob): Promise<boolean> {
   const db = await open(userId);

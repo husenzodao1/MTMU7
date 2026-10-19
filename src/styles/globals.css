@@ -1061,6 +1061,22 @@ html.chat-lock body {
   }
 }
 
+/* Messages chosen together (thread.tsx): the whole row tinted, as in any messenger. */
+.chat-row-selected {
+  background: color-mix(in oklab, var(--color-brand-solid) 20%, transparent);
+  border-radius: 0.5rem;
+}
+.chat-select-bar {
+  background: var(--chat-bar);
+  animation: var(--animate-fade);
+}
+/* The quick reactions over the one message chosen. */
+.chat-select-reactions {
+  background: var(--color-surface, #fff);
+  box-shadow: 0 6px 22px rgb(0 0 0 / 0.22);
+  animation: var(--animate-fade);
+}
+
 .chat-swipe-arrow {
   background: var(--chat-notice);
   color: var(--color-ink-secondary);
@@ -2765,4 +2781,28 @@ html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], 
 html[data-app] :is(a, button, [role="button"], [role="tab"], [role="menuitem"], summary):active {
   opacity: 0.72;
   transition: opacity 0s;
+}
+
+/*
+ * "Press again to leave" on the app's first page (native-app.tsx): Android's
+ * own little note at the foot of the screen, above the bottom bar, for a
+ * moment.
+ */
+.app-exit-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+  z-index: 70;
+  max-width: calc(100vw - 3rem);
+  transform: translateX(-50%);
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: rgb(32 36 44 / 0.94);
+  color: #f3f1ec;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.28);
+  pointer-events: none;
+  animation: var(--animate-fade);
 }

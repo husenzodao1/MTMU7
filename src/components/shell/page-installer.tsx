@@ -29,10 +29,10 @@ interface Progress {
  * scripts and styles (public/sw.js, keep-pages), and the app's memory holds
  * them ready for a tap (warm-pages.ts).
  *
- * After that, the page in front keeps itself up to date (quiet-refresh.ts),
- * and a pull at the top of a page installs everything afresh, quietly, and
- * takes a new version of the site if there is one. A new version opened any
- * other way has the rest of the pages installed in it the same way.
+ * After that, a pull at the top of a page installs everything afresh,
+ * quietly, and takes a new version of the site if there is one. A new
+ * version opened any other way has the rest of the pages installed in it the
+ * same way.
  */
 export function PageInstaller({ userId }: { userId: string }) {
   const t = useTranslations("common.install");
@@ -94,8 +94,9 @@ export function PageInstaller({ userId }: { userId: string }) {
       if (record) forgetInstalled();
       timer = window.setTimeout(begin, 900);
     } else if (here && here !== "local" && record.build !== here) {
-      // A newer version of the site is open (a quiet refresh found it,
-      // public/sw.js): the rest of the pages are installed in it, quietly.
+      // A newer version of the site is open (the service worker took it as
+      // soon as it saw it, public/sw.js): the rest of the pages are installed
+      // in it, quietly.
       timer = window.setTimeout(() => void install(false, false), 3000);
     }
     const again = () => void install(false);

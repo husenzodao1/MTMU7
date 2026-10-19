@@ -580,6 +580,12 @@
       "originalNotFound": "The original message wasn't found",
       "wallpaper": "Chat wallpaper",
       "wallpaperDescription": "Saved on this device only.",
+      "select": {
+        "title": "{count} selected",
+        "cancel": "Cancel selection",
+        "deleteTitle": "Delete {count} messages?",
+        "deleteText": "The selected messages will be deleted."
+      },
       "textSize": {
         "title": "Text size",
         "description": "How large messages are. Saved on this device only.",

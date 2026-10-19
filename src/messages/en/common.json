@@ -244,6 +244,7 @@
       "hello": "Hello",
       "opening": "Welcome"
     },
+    "appExit": "Press back again to exit",
     "appUpdate": {
       "title": "A new version of the app",
       "text": "Files (samples, import results) are saved to Downloads; Google sign-in says what went wrong.",

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Download, X } from "lucide-react";
+import { FROM_LIST } from "@/features/messages/from-list";
 import { appPlugin, googleAccountPlugin, isInApp, messagingPlugin } from "@/features/native/bridge";
 import { report, watchErrors } from "@/features/native/diagnostics";
 import { registerWorker } from "@/features/push/client";
 import { pathForAppLink } from "@/lib/native/app";
+import { backAction, EXIT_MS } from "@/lib/native/back";
 
 /**
  * The first Android build that saves files into Downloads (build 13). An
@@ -30,35 +32,65 @@ interface CapacitorGlobal {
  * — and when a notification is tapped. Renders nothing, and in a browser does
  * nothing at all.
  */
-/** Pages back does not go behind: from these the app steps aside, like any app at its start. */
-const ROOT_PATHS = new Set(["/", "/dashboard", "/login", "/admin"]);
-
-/**
- * What Android's back button does in the app. A browser's back walks the
- * whole history — after signing out it led back into the portal, after a menu
- * it reopened the page under it. An app closes what is open first (a menu, a
- * dialog, a sheet), then goes one page back, and from its first page it steps
- * aside to the home screen instead of leaving a blank web view.
- */
-function backButton(app: { minimizeApp?: () => Promise<void> }, canGoBack: boolean) {
-  const open = document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"]');
-  if (open) {
-    (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }));
-    return;
-  }
-  if (ROOT_PATHS.has(location.pathname) || !canGoBack) {
-    if (ROOT_PATHS.has(location.pathname)) void app.minimizeApp?.();
-    else location.replace("/dashboard");
-    return;
-  }
-  history.back();
-}
 
 export function NativeApp() {
   const pathname = usePathname();
+  const router = useRouter();
+  const routerRef = useRef(router);
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
   const t = useTranslations("common.appUpdate");
+  const tCommon = useTranslations("common");
   const [outdated, setOutdated] = useState(false);
   const [oldBuild, setOldBuild] = useState(false);
+  // "Press again to leave", on the first page, for a moment.
+  const [exitHint, setExitHint] = useState(false);
+  const exitArmedAt = useRef(0);
+  useEffect(() => {
+    if (!exitHint) return;
+    const hide = window.setTimeout(() => setExitHint(false), EXIT_MS);
+    return () => window.clearTimeout(hide);
+  }, [exitHint]);
+
+  /**
+   * Android's back button, as in any app rather than as in a browser
+   * (lib/native/back.ts): what is open closes, then one step back at a time,
+   * a conversation to its list, and on the first page a second press within
+   * two seconds steps the app aside to the home screen — as the home button
+   * does, so it is back at once when opened again.
+   */
+  const onBack = useRef((app: { minimizeApp?: () => Promise<void> }, canGoBack: boolean) => {
+    // Messages being chosen in a conversation count as open too (thread.tsx).
+    const overlay = document.querySelector('[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"], [data-chat-selecting]');
+    const action = backAction({
+      path: location.pathname,
+      overlayOpen: Boolean(overlay),
+      canGoBack,
+      fromList: Boolean((history.state as Record<string, unknown> | null)?.[FROM_LIST]),
+      armedAt: exitArmedAt.current,
+      now: Date.now(),
+    });
+    switch (action.kind) {
+      case "close":
+        (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }));
+        return;
+      case "hint":
+        exitArmedAt.current = Date.now();
+        setExitHint(true);
+        return;
+      case "leave":
+        exitArmedAt.current = 0;
+        setExitHint(false);
+        void app.minimizeApp?.();
+        return;
+      case "back":
+        history.back();
+        return;
+      case "replace":
+        routerRef.current.replace(action.path);
+    }
+  });
 
   // What the app's page could see as it woke — for reading back when
   // something inside the app does not work (features/native/diagnostics.ts).
@@ -105,6 +137,13 @@ export function NativeApp() {
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((run: () => void) => window.setTimeout(run, 1500));
     idle(() => void registerWorker());
+    // Which version of the site this page is, told to the service worker, so
+    // it answers the page only with data of the same version (public/sw.js).
+    const worker = "serviceWorker" in navigator ? navigator.serviceWorker : null;
+    const hello = () => worker?.controller?.postMessage({ type: "hello", build: document.documentElement.dataset.build ?? "" });
+    hello();
+    worker?.addEventListener("controllerchange", hello);
+    return () => worker?.removeEventListener("controllerchange", hello);
   }, []);
 
   useEffect(() => {
@@ -127,7 +166,7 @@ export function NativeApp() {
       if (app) {
         keep(await app.addListener("appUrlOpen", ({ url }) => go(pathForAppLink(url, location.origin))));
         // Android's back button, as in any app rather than as in a browser.
-        keep(await app.addListener("backButton", ({ canGoBack }) => backButton(app, canGoBack)));
+        keep(await app.addListener("backButton", ({ canGoBack }) => onBack.current(app, canGoBack)));
         // Started by tapping a notification while the app was closed: the
         // link arrives as the launch URL rather than as an event. Followed
         // once per launch, not on every page after it.
@@ -176,34 +215,42 @@ export function NativeApp() {
     return () => document.removeEventListener("click", onClick, true);
   }, [oldBuild]);
 
-  if (!outdated) return null;
-  return (
-    <div
-      role="status"
-      className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-40 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-overlay animate-fade print:hidden"
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-text">
-        <Download className="size-4" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-ink">{t("title")}</span>
-        <span className="block text-xs text-ink-muted">{t("text")}</span>
-      </span>
-      {/* To the phone's browser, which downloads and installs an APK: the app's
-          own web view drops a download, and builds before 13 have nothing to
-          take one. Capacitor sends any address it does not serve itself — the
-          same host over http — to the browser, and the site turns it to https. */}
-      <a href={`http://${typeof location === "undefined" ? "" : location.host}/download/android`} className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
-        {t("action")}
-      </a>
-      <button
-        type="button"
-        onClick={() => setOutdated(false)}
-        className="-me-1 shrink-0 rounded-md p-1 text-ink-muted hover:bg-surface-muted"
-        aria-label={t("later")}
-      >
-        <X className="size-4" aria-hidden />
-      </button>
+  const hint = exitHint ? (
+    <div role="status" className="app-exit-hint print:hidden">
+      {tCommon("appExit")}
     </div>
+  ) : null;
+  if (!outdated) return hint;
+  return (
+    <>
+      {hint}
+      <div
+        role="status"
+        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-40 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-overlay animate-fade print:hidden"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-text">
+          <Download className="size-4" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-ink">{t("title")}</span>
+          <span className="block text-xs text-ink-muted">{t("text")}</span>
+        </span>
+        {/* To the phone's browser, which downloads and installs an APK: the app's
+            own web view drops a download, and builds before 13 have nothing to
+            take one. Capacitor sends any address it does not serve itself — the
+            same host over http — to the browser, and the site turns it to https. */}
+        <a href={`http://${typeof location === "undefined" ? "" : location.host}/download/android`} className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid">
+          {t("action")}
+        </a>
+        <button
+          type="button"
+          onClick={() => setOutdated(false)}
+          className="-me-1 shrink-0 rounded-md p-1 text-ink-muted hover:bg-surface-muted"
+          aria-label={t("later")}
+        >
+          <X className="size-4" aria-hidden />
+        </button>
+      </div>
+    </>
   );
 }
