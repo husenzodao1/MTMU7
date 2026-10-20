@@ -51,6 +51,8 @@ const INSTALL_AT_ONCE = 3;
 const MEDIA_LIMIT = 800;
 /** A fresh page's data slower than this is answered from what was kept, if anything was. */
 const DATA_WAIT_MS = 2500;
+/** A page the device holds, that a newer version has replaced, waits only this long for the new one before the held copy is answered. */
+const STALE_GRACE_MS = 1500;
 /** A page never seen before waits this long for the network before saying there is none. */
 const PAGE_WAIT_MS = 12000;
 /** A quiet refresh slower than this is answered with the last one, and kept when it comes. */
@@ -454,14 +456,41 @@ async function answerPage(event, request, url) {
     () => null
   );
   const keptBuild = kept ? buildOf(kept) : "";
-  const online = self.navigator.onLine !== false;
-  const older = Boolean(keptBuild && latestBuild && keptBuild !== latestBuild && online) || Boolean(kept && online && keptAt(kept) < meChangedAt);
-  if (kept && !older && !NETWORK_FIRST.test(url.pathname)) {
+  // A newer version of the site has come since this copy was kept, or this
+  // person's details changed (me-changed): the copy is still a whole, usable
+  // page. It is never made to wait on the network the way a page the device
+  // has never held is — the old code asked the network first and waited some
+  // five seconds before falling back, which on a bad line (where a phone's
+  // app wrongly says it is online) showed the "still loading" note over every
+  // page. navigator.onLine is not trusted here at all.
+  const stale = Boolean(keptBuild && latestBuild && keptBuild !== latestBuild) || Boolean(kept && keptAt(kept) < meChangedAt);
+
+  if (kept && !NETWORK_FIRST.test(url.pathname)) {
+    if (!stale) {
+      // Held and current: from the device at once, refreshed behind the screen.
+      event.waitUntil(fresh);
+      event.waitUntil(rememberClient(clientId, keptBuild));
+      return kept;
+    }
+    // Held, but a newer version is out: the network gets a short moment to
+    // bring it — on a quick line the newest page wins — and the instant it is
+    // slow or gone, the copy on the device is answered. The newer version is
+    // installed behind the screen (page-installer) and taken on the next open
+    // or a pull.
+    const answer = await Promise.race([fresh, wait(STALE_GRACE_MS).then(() => "slow")]);
+    if (answer && answer !== "slow") {
+      event.waitUntil(rememberClient(clientId, buildOf(answer)));
+      return answer;
+    }
     event.waitUntil(fresh);
     event.waitUntil(rememberClient(clientId, keptBuild));
     return kept;
   }
-  const answer = await Promise.race([fresh, wait(kept ? DATA_WAIT_MS * 2 : PAGE_WAIT_MS).then(() => "slow")]);
+
+  // Never held, or a page that must be this version's (signing in, and the
+  // other NETWORK_FIRST paths): the network, with the plain "no internet" page
+  // when there is none and nothing kept to fall back on.
+  const answer = await Promise.race([fresh, wait(PAGE_WAIT_MS).then(() => "slow")]);
   if (answer && answer !== "slow") {
     event.waitUntil(rememberClient(clientId, buildOf(answer)));
     return answer;
@@ -534,15 +563,23 @@ async function answerData(event, request, url) {
   }
   const asking = clientBuilds.get(event.clientId) || "";
   const keptBuild = kept ? buildOf(kept) : "";
-  const beforeMe = Boolean(kept && keptAt(kept) < meChangedAt && self.navigator.onLine !== false);
-  if (kept && !beforeMe && !(asking && keptBuild && keptBuild !== asking)) {
-    // Answered at once from the device; a copy more than a moment old is
-    // fetched again behind it, so the next time — with no line, say — it is
-    // the newest the phone could have had.
-    if (Date.now() - keptAt(kept) > DATA_FRESH_MS && self.navigator.onLine !== false) event.waitUntil(renew(cache, key, request, kept));
+  // Data of the asking page's own version (or with no version marked) is
+  // usable; another version's would make Next.js throw the page away.
+  const usable = kept && !(asking && keptBuild && keptBuild !== asking);
+  if (usable) {
+    // From the device at once. A copy gone stale — more than a moment old, or
+    // kept before this person's details changed (me-changed) — is fetched
+    // again behind the screen, so the next time (with no line, say) it is the
+    // newest the phone could have had. navigator.onLine is not trusted; a
+    // fetch with no line simply fails and is let go of (renew).
+    if (Date.now() - keptAt(kept) > DATA_FRESH_MS || keptAt(kept) < meChangedAt) event.waitUntil(renew(cache, key, request, kept));
     return kept;
   }
-  const response = await fetch(request).catch(() => null);
+  // No usable copy (never asked, or a newer version is out): the network — but
+  // never a wait without end on a bad line. It is capped; then Next.js, handed
+  // a failed data request, opens the next page whole, which answerPage gives
+  // from the device.
+  const response = await Promise.race([fetch(request).catch(() => null), wait(DATA_WAIT_MS).then(() => null)]);
   if (response) {
     keep(event, cache, key, response, DATA_LIMIT);
     return response;

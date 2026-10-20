@@ -24,6 +24,8 @@ const PROBE_MS = 2500;
 const PROBE_TIMEOUT_MS = 3000;
 /** The "no internet" note says it once, for this long, and goes; the page stays usable under it. */
 const OFFLINE_NOTE_MS = 4000;
+/** That the note was already said this outage — kept so a full-page open does not say it anew. */
+const OFFLINE_NOTED_KEY = "mtmu7:offline-noted";
 /** A note pushed this far sideways goes. */
 const SWIPE_AWAY_PX = 70;
 
@@ -102,6 +104,22 @@ export function OfflineCover() {
   // The "no internet" note, said once for each time the line goes: it goes by
   // itself after a few seconds, or at once when pushed aside.
   const [offlineNoted, setOfflineNoted] = useState(false);
+  // Told already during an outage still going on when this page opened from the
+  // device: do not say it anew (the flag is cleared when the line comes back).
+  // Read here, not in the initial state, because this page is drawn on the
+  // server too, where there is no sessionStorage; and well before the line is
+  // judged gone (~a second), so the note is suppressed before it could show.
+  useEffect(() => {
+    let noted = false;
+    try {
+      noted = sessionStorage.getItem(OFFLINE_NOTED_KEY) === "1";
+    } catch {
+      // No storage: the note is said once per page instead of once per outage.
+    }
+    if (!noted) return;
+    const id = window.setTimeout(() => setOfflineNoted(true), 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Every word from the device — online or offline — is checked at once.
   const [nudge, setNudge] = useState(0);
@@ -213,6 +231,14 @@ export function OfflineCover() {
       const over = window.setTimeout(() => {
         setOffline(false);
         setBack(true);
+        // The outage is over, so the "no internet" note may be said afresh the
+        // next time the line goes (it is remembered only for one outage).
+        setOfflineNoted(false);
+        try {
+          sessionStorage.removeItem(OFFLINE_NOTED_KEY);
+        } catch {
+          // Nothing was remembered.
+        }
         // The device never said it had lost the line, so it will not say it is
         // back: what waits for the line (messages on their way, reads, the
         // page's freshness) is told here instead.
@@ -229,18 +255,39 @@ export function OfflineCover() {
     return () => window.clearTimeout(hide);
   }, [back]);
 
+  // The "no internet" note is said once for the whole outage. It is remembered
+  // in sessionStorage so the full-page opens the portal makes as it draws a
+  // page from the device (instant-nav.ts) do not say it anew — without this it
+  // came back on every tap, which read as nagging to connect on a line that
+  // was simply gone. offlineNoted starts from that memory (above) and is reset
+  // only when the line truly comes back; nothing is reset here, because a page
+  // opening from the device is offline-false for a moment before the line is
+  // re-checked.
   useEffect(() => {
-    if (!offline) {
-      const reset = window.setTimeout(() => setOfflineNoted(false), 0);
-      return () => window.clearTimeout(reset);
+    if (!offline || offlineNoted) return;
+    // Shown now, and remembered straight away — not after it has run its few
+    // seconds — so a page opened from the device meanwhile does not say it anew.
+    try {
+      sessionStorage.setItem(OFFLINE_NOTED_KEY, "1");
+    } catch {
+      // Nothing to remember it by; it is said again on the next page.
     }
-    if (offlineNoted) return;
     const hide = window.setTimeout(() => setOfflineNoted(true), OFFLINE_NOTE_MS);
     return () => window.clearTimeout(hide);
   }, [offline, offlineNoted]);
 
   const swipeSlow = useSwipeAway(() => setDismissed(true));
-  const swipeNet = useSwipeAway(() => (offline ? setOfflineNoted(true) : setBack(false)));
+  // Pushed aside, the "no internet" note is counted as said for the whole
+  // outage, so it does not return on the next page opened from the device.
+  const swipeNet = useSwipeAway(() => {
+    if (!offline) return setBack(false);
+    setOfflineNoted(true);
+    try {
+      sessionStorage.setItem(OFFLINE_NOTED_KEY, "1");
+    } catch {
+      // Nothing to remember it by.
+    }
+  });
 
   if (!offline && !back && slow && !dismissed) {
     return (
