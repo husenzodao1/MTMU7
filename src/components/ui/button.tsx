@@ -24,6 +24,17 @@ const sizes = {
 export type ButtonVariant = keyof typeof variants;
 export type ButtonSize = keyof typeof sizes;
 
+/**
+ * The turning ring a button shows while its work is on its way — an upload, a
+ * form, a request — so a press is plainly doing something, not a button merely
+ * gone dim. It takes the colour of the text around it. Used by the Button
+ * below and by the few buttons that draw themselves (the photo's "Save", an
+ * account's cross, "Allow").
+ */
+export function Spinner({ className }: { className?: string }) {
+  return <span className={cn("inline-block size-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent", className)} aria-hidden />;
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -57,7 +68,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {loading && !asChild ? (
         <>
-          <span className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden />
+          <Spinner />
           {children}
         </>
       ) : (

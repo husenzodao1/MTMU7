@@ -4,7 +4,7 @@ import { BookOpen, CircleCheck, Download, FileSpreadsheet, TriangleAlert } from 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState, useTransition, type ReactNode } from "react";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses, Spinner } from "@/components/ui/button";
 import { Alert } from "@/components/ui/surface";
 import type { ActionResult } from "@/lib/actions/result";
 import { cn } from "@/lib/utils/cn";
@@ -119,8 +119,9 @@ export function SheetImportWizard<O extends SheetOutcome>({ kind, instructions, 
             <label
               htmlFor={inputId}
               className={cn(buttonClasses("primary"), "cursor-pointer", pending && "pointer-events-none opacity-60")}
+              aria-busy={pending || undefined}
             >
-              <FileSpreadsheet aria-hidden />
+              {pending ? <Spinner /> : <FileSpreadsheet aria-hidden />}
               {pending ? t("validating") : t("chooseFile")}
             </label>
             <input

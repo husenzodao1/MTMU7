@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Check, Settings, X } from "lucide-react";
+import { Spinner } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { devicePermissionsPlugin, nativePush, type DevicePermission, type DevicePermissionStates } from "@/features/native/bridge";
@@ -283,8 +284,10 @@ function PermissionRow({
           type="button"
           onClick={onAsk}
           disabled={busy}
-          className="shrink-0 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover disabled:opacity-60"
+          aria-busy={busy || undefined}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-brand-solid px-3 py-1.5 text-xs font-semibold text-brand-on-solid transition-colors hover:bg-brand-solid-hover disabled:opacity-60"
         >
+          {busy ? <Spinner className="size-3.5" /> : null}
           {words.allow}
         </button>
       ) : state === "on" ? (

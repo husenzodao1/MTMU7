@@ -4,7 +4,7 @@ import { BookOpen, CircleCheck, Download, FileSpreadsheet, TriangleAlert } from 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState, useTransition } from "react";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses, Spinner } from "@/components/ui/button";
 import { Alert } from "@/components/ui/surface";
 import { previewPeopleImportAction } from "@/features/admin/import/people-actions";
 import { filesPlugin, isInApp } from "@/features/native/bridge";
@@ -182,8 +182,9 @@ export function PeopleImportWizard({
             <label
               htmlFor={inputId}
               className={cn(buttonClasses("primary"), "cursor-pointer", pending && "pointer-events-none opacity-60")}
+              aria-busy={pending || undefined}
             >
-              <FileSpreadsheet aria-hidden />
+              {pending ? <Spinner /> : <FileSpreadsheet aria-hidden />}
               {pending ? t("validating") : t("chooseFile")}
             </label>
             <input

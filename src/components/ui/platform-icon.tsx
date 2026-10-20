@@ -1,16 +1,28 @@
 import { FileText, FolderOpen, Link2, MapPin, Video } from "lucide-react";
-import { InstagramIcon, TelegramIcon, WhatsAppIcon, XIcon } from "@/components/site/social-icons";
+import { TelegramIcon, WhatsAppIcon, XIcon } from "@/components/site/social-icons";
 import type { Platform } from "@/lib/social/platforms";
 
 /**
- * Each service's mark, filled, on the 24-unit grid of social-icons.tsx (where
- * Telegram, Instagram, WhatsApp and X already are), reduced to the shape that
- * makes it recognisable at sixteen pixels. Google's tools and Zoom take the
+ * Each service's own mark, on the 24-unit grid of social-icons.tsx (where
+ * Telegram, WhatsApp and X already are), reduced to the shape that makes it
+ * recognisable at sixteen pixels — and that reads in white on the service's
+ * colour (the brand tiles on a profile). Google's tools and Zoom take the
  * portal's own line icons: their marks are colour, not shape.
  */
 
 type Props = { className?: string };
 const box = "0 0 24 24";
+
+/** The rounded camera, as Instagram draws it: the outline reads far cleaner than a solid block. */
+function InstagramIcon({ className }: Props) {
+  return (
+    <svg viewBox={box} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="5.4" />
+      <circle cx="12" cy="12" r="4.1" />
+      <circle cx="17.2" cy="6.8" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 function YouTubeIcon({ className }: Props) {
   return (

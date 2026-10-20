@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { Spinner } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/site/social-icons";
 import { useToast } from "@/components/ui/toast";
 import { askContactPermissionAction, type ContactRequestStatus } from "@/features/people/contact-actions";
@@ -66,7 +67,7 @@ function AskSheet({ userId, name, status, onClose }: { userId: string; name: str
           </button>
         ) : (
           <button type="button" className="contact-ask-button" onClick={ask} disabled={pending} aria-busy={pending}>
-            <ShieldQuestion className="size-4" aria-hidden />
+            {pending ? <Spinner /> : <ShieldQuestion className="size-4" aria-hidden />}
             {t("askButton")}
           </button>
         )}

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { ActionForm, SubmitButton, useFieldValue } from "@/components/ui/action-form";
+import { Spinner } from "@/components/ui/button";
 import { TextField } from "@/components/ui/fields";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
@@ -75,8 +76,10 @@ function OwnAccount({ account }: { account: SocialAccount }) {
   const [pending, start] = useTransition();
   return (
     <li className="social-own-row" data-platform={account.platform}>
-      <PlatformIcon platform={account.platform} className="social-link-mark" />
-      <span className="min-w-0 flex-1">
+      <span className="social-link-badge" aria-hidden>
+        <PlatformIcon platform={account.platform} className="social-link-glyph" />
+      </span>
+      <span className="social-link-body flex-1">
         <span className="social-link-name">{platformName(account.platform)}</span>
         <span className="social-link-handle" dir="ltr">
           {accountLabel(account)}
@@ -94,7 +97,7 @@ function OwnAccount({ account }: { account: SocialAccount }) {
           })
         }
       >
-        <X className="size-4" aria-hidden />
+        {pending ? <Spinner className="size-4" /> : <X className="size-4" aria-hidden />}
       </button>
     </li>
   );

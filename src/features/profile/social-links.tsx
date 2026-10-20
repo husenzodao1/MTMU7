@@ -22,8 +22,10 @@ export function SocialLinks({ accounts, className }: { accounts: SocialAccount[]
             data-platform={account.platform}
             title={accountUrl(account)}
           >
-            <PlatformIcon platform={account.platform} className="social-link-mark" />
-            <span className="min-w-0">
+            <span className="social-link-badge" aria-hidden>
+              <PlatformIcon platform={account.platform} className="social-link-glyph" />
+            </span>
+            <span className="social-link-body">
               <span className="social-link-name">{platformName(account.platform)}</span>
               <span className="social-link-handle" dir="ltr">
                 {accountLabel(account)}

@@ -1546,6 +1546,17 @@ a.notice-card:active {
 .avatar-editor-face:disabled {
   opacity: 0.7;
 }
+/* While the photo is on its way up and being saved: a turning ring over the
+   round photo, so the press is plainly working, not the button merely dim. */
+.avatar-editor-busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(8 10 14 / 0.45);
+  color: #fff;
+}
 .avatar-editor-badge {
   position: absolute;
   inset-inline-end: -0.125rem;
@@ -1732,13 +1743,16 @@ a.notice-card:active {
 }
 
 /* Accounts elsewhere on a profile (social-links.tsx, social-accounts-editor.tsx):
-   the service's mark in its colour, its name, the account under it. */
+   each service is a tile — its mark on a badge in the service's own colour, the
+   name above the account it opens. Per platform three variables carry the brand:
+   --brand the accent (hover ring, shadow, picker glyph), --brand-fill the badge
+   (a solid or a gradient) and --brand-ink the glyph that sits on it. */
 .social-links,
 .social-own {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
-@media (min-width: 480px) {
+@media (min-width: 420px) {
   .social-links {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1750,33 +1764,57 @@ a.notice-card:active {
   align-items: center;
   gap: 0.75rem;
   border: 1px solid var(--color-line);
-  border-radius: 0.875rem;
+  border-radius: 1rem;
   background: var(--color-surface);
-  padding: 0.625rem 0.75rem;
+  padding: 0.5rem 0.6875rem;
   text-align: start;
-  transition: background-color 0.15s ease;
+}
+.social-link {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .social-link:hover {
-  background: var(--color-surface-muted);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand, var(--color-line-strong)) 55%, transparent);
+  box-shadow: 0 12px 26px -16px color-mix(in srgb, var(--brand, #000) 85%, transparent);
 }
-.social-link-mark {
+.social-link:active {
+  transform: translateY(0);
+}
+.social-link-badge {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8125rem;
+  background: var(--brand-fill, var(--color-surface-muted));
+  color: var(--brand-ink, var(--color-ink));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--brand-ink, var(--color-ink)) 16%, transparent),
+    0 6px 14px -9px color-mix(in srgb, var(--brand, #000) 80%, transparent);
+}
+.social-link-glyph {
   width: 1.375rem;
   height: 1.375rem;
-  flex: none;
+}
+.social-link-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
 }
 .social-link-name {
-  display: block;
   font-size: 0.75rem;
+  font-weight: 500;
   color: var(--color-ink-muted);
 }
 .social-link-handle {
-  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.875rem;
   font-weight: 600;
-  color: light-dark(#1765c4, #8bbcff);
+  color: var(--color-ink);
 }
 .social-own-remove {
   display: inline-flex;
@@ -1807,36 +1845,73 @@ a.notice-card:active {
   border: 1px solid var(--color-line);
   border-radius: 0.875rem;
   background: var(--color-surface);
-  color: var(--color-ink-muted);
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  color: var(--brand, var(--color-ink-muted));
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 .social-pick-item:has(input:focus-visible) {
   outline: 2px solid var(--color-brand-solid);
   outline-offset: 2px;
 }
 .social-pick-on {
-  border-color: currentColor;
+  border-color: color-mix(in srgb, var(--brand, var(--color-ink)) 60%, var(--color-line));
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px -6px currentColor;
+  box-shadow: 0 5px 12px -7px color-mix(in srgb, var(--brand, #000) 85%, transparent);
 }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="telegram"] :is(.social-link-mark, svg) { color: #229ed9; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="instagram"] :is(.social-link-mark, svg) { color: #e1306c; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="snapchat"] :is(.social-link-mark, svg) { color: #f2c200; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="youtube"] :is(.social-link-mark, svg) { color: #ff0000; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="facebook"] :is(.social-link-mark, svg) { color: #1877f2; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="vk"] :is(.social-link-mark, svg) { color: #0077ff; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="ok"] :is(.social-link-mark, svg) { color: #ee8208; }
-:is(.social-link, .social-own-row, .social-pick-item)[data-platform="linkedin"] :is(.social-link-mark, svg) { color: #0a66c2; }
-:is(.social-link, .social-own-row, .social-pick-item):is([data-platform="tiktok"], [data-platform="x"]) :is(.social-link-mark, svg) { color: var(--color-ink); }
-.social-pick-on[data-platform="telegram"] { color: #229ed9; }
-.social-pick-on[data-platform="instagram"] { color: #e1306c; }
-.social-pick-on[data-platform="snapchat"] { color: #d4a900; }
-.social-pick-on[data-platform="youtube"] { color: #ff0000; }
-.social-pick-on[data-platform="facebook"] { color: #1877f2; }
-.social-pick-on[data-platform="vk"] { color: #0077ff; }
-.social-pick-on[data-platform="ok"] { color: #ee8208; }
-.social-pick-on[data-platform="linkedin"] { color: #0a66c2; }
-.social-pick-on:is([data-platform="tiktok"], [data-platform="x"]) { color: var(--color-ink); }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="telegram"] {
+  --brand: #229ed9;
+  --brand-fill: linear-gradient(135deg, #3fbdf4, #1b92d1);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="instagram"] {
+  --brand: #d62976;
+  --brand-fill: linear-gradient(135deg, #feda75, #fa7e1e 28%, #d62976 60%, #962fbf 82%, #4f5bd5);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="whatsapp"] {
+  --brand: #1faa52;
+  --brand-fill: linear-gradient(135deg, #42d862, #1faa52);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="youtube"] {
+  --brand: #ff0000;
+  --brand-fill: linear-gradient(135deg, #ff4e45, #e60000);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="facebook"] {
+  --brand: #1877f2;
+  --brand-fill: linear-gradient(135deg, #2a8bff, #0b63d6);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="vk"] {
+  --brand: #0077ff;
+  --brand-fill: linear-gradient(135deg, #3f93ff, #0067e6);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="ok"] {
+  --brand: #ee8208;
+  --brand-fill: linear-gradient(135deg, #ff9a3d, #ee8208);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="linkedin"] {
+  --brand: #0a66c2;
+  --brand-fill: linear-gradient(135deg, #2a86e0, #0a5cb0);
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="snapchat"] {
+  --brand: #f2c200;
+  --brand-fill: #fffc00;
+  --brand-ink: #111;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="tiktok"] {
+  --brand: var(--color-ink);
+  --brand-fill: #010101;
+  --brand-ink: #fff;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="x"] {
+  --brand: var(--color-ink);
+  --brand-fill: #000;
+  --brand-ink: #fff;
+}
 
 /* The support page: one's requests to the school (00101), each with its answer. */
 .support-requests {

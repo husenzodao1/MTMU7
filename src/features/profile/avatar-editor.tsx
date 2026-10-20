@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Spinner } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
 import { removeAvatarAction, setAvatarAction } from "@/features/profile/actions";
@@ -133,6 +134,11 @@ export function AvatarEditor({
         <span className="avatar-editor-badge" aria-hidden>
           <Camera size={14} />
         </span>
+        {busy ? (
+          <span className="avatar-editor-busy" aria-hidden>
+            <Spinner className="size-6 border-white border-r-transparent" />
+          </span>
+        ) : null}
       </button>
       {menu ? (
         <div className="avatar-editor-menu" role="menu">
@@ -337,6 +343,7 @@ function PhotoCrop({
             {labels.cancel}
           </button>
           <button type="button" className="photo-crop-done" onClick={finish} disabled={busy} aria-busy={busy}>
+            {busy ? <Spinner /> : null}
             {labels.save}
           </button>
         </div>
