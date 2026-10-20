@@ -43,7 +43,7 @@ export default async function MemberProfilePage({
     .maybeSingle();
   if (!person) notFound();
 
-  const [{ data: relation }, { data: contact }] = await Promise.all([
+  const [{ data: relation }, contact] = await Promise.all([
     supabase
       .from("friend_requests")
       .select("id, sender_id, status")
@@ -55,7 +55,10 @@ export default async function MemberProfilePage({
     // decides first.
     supabase.rpc("contact_card", { p_user_id: id }),
   ]);
-  const card = readContactCard(contact);
+  // A database without 00101 yet answers by the number alone (00099).
+  const card = contact.error
+    ? readContactCard({ rule: "open", phone: (await supabase.rpc("contact_phone", { p_user_id: id })).data ?? null })
+    : readContactCard(contact.data);
   const whatsapp = whatsappLink(card.phone);
 
   const name = [person.last_name, person.first_name, person.middle_name].filter(Boolean).join(" ");

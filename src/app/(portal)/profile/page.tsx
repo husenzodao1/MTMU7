@@ -45,7 +45,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const tnav = await getTranslations("nav");
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
-  const [{ data }, { data: accountRows }] = await Promise.all([
+  const [{ data }, { data: accountRows, error: accountsMissing }] = await Promise.all([
     supabase.rpc("get_my_profile"),
     // One's own accounts elsewhere (00101); none where the table is not there yet.
     supabase.from("user_social_accounts").select("platform, handle").eq("user_id", access.userId).order("platform"),
@@ -105,12 +105,14 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title={t("accounts.title")} description={t("accounts.hint")} />
-            <CardBody>
-              <SocialAccountsEditor accounts={accounts} />
-            </CardBody>
-          </Card>
+          {accountsMissing ? null : (
+            <Card>
+              <CardHeader title={t("accounts.title")} description={t("accounts.hint")} />
+              <CardBody>
+                <SocialAccountsEditor accounts={accounts} />
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHeader title={t("password")} description={t("passwordHint")} />
