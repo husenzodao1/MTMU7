@@ -12,6 +12,8 @@ export interface PersonHit {
   nickname: string | null;
   /** https://wa.me/… where the caller may see the number and it can have WhatsApp. */
   whatsapp: string | null;
+  /** How the caller may reach them (00101): "ask" where the school decides first. */
+  contact: "open" | "ask" | "none";
 }
 
 /** Letters typed one way or the other in Tajik (list-params.ts, ALIKE): any one letter, to the database. */
@@ -20,7 +22,8 @@ const EITHER = /[хҳкқчҷиӣуӯгғеё]/giu;
 /**
  * The people of one's school by a name, a handle or their portal number,
  * typed the way people type them ("Мехровар" finds Меҳровар), each with the
- * WhatsApp to reach them on where the caller may see it (00099).
+ * WhatsApp to reach them on where the caller may see it (00099), and "ask"
+ * where a boy would reach a girl of another class (00101).
  *
  * A database without 00099 yet is asked the way the messenger asked
  * (00095), with no numbers: each folded letter as "any one letter" (ILIKE's
@@ -28,6 +31,21 @@ const EITHER = /[хҳкқчҷиӣуӯгғеё]/giu;
  * was typed.
  */
 export async function searchPeople(supabase: Client, query: string, limit: number): Promise<PersonHit[]> {
+  const found = await supabase.rpc("find_people", { p_query: query, p_limit: limit });
+  if (!found.error) {
+    return (found.data ?? [])
+      .filter((person) => person.id)
+      .map((person) => ({
+        id: person.id!,
+        first_name: person.first_name ?? "",
+        last_name: person.last_name ?? "",
+        nickname: person.nickname,
+        whatsapp: whatsappLink(person.phone),
+        contact: person.contact === "ask" ? "ask" : person.contact === "open" ? "open" : "none",
+      }));
+  }
+
+  // A database without 00101 yet.
   const asked = await supabase.rpc("search_people", { p_query: query, p_limit: limit });
   if (!asked.error) {
     return (asked.data ?? [])
@@ -38,6 +56,7 @@ export async function searchPeople(supabase: Client, query: string, limit: numbe
         last_name: person.last_name ?? "",
         nickname: person.nickname,
         whatsapp: whatsappLink(person.phone),
+        contact: person.phone ? "open" : "none",
       }));
   }
 
@@ -53,5 +72,5 @@ export async function searchPeople(supabase: Client, query: string, limit: numbe
         )
     )
     .slice(0, limit)
-    .map((person) => ({ id: person.id!, first_name: person.first_name ?? "", last_name: person.last_name ?? "", nickname: person.nickname, whatsapp: null }));
+    .map((person) => ({ id: person.id!, first_name: person.first_name ?? "", last_name: person.last_name ?? "", nickname: person.nickname, whatsapp: null, contact: "none" }));
 }

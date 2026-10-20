@@ -231,7 +231,13 @@
         "message": "Your message",
         "send": "Send",
         "sent": "Your message has been received. A member of the school staff will contact you soon."
-      }
+      },
+      "requestsTitle": "Your permission requests",
+      "requestTo": "Write to {name}",
+      "pending": "Waiting",
+      "approved": "Allowed",
+      "declined": "Declined",
+      "openProfile": "Open profile"
     },
     "welcome": {
       "signingIn": "Signing you in…",

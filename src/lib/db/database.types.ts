@@ -5027,6 +5027,78 @@ export type Database = {
           },
         ];
       };
+      contact_permissions: {
+        Row: {
+          id: string;
+          school_id: string;
+          requester_id: string;
+          target_id: string;
+          status: string;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          requester_id: string;
+          target_id: string;
+          status?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          requester_id?: string;
+          target_id?: string;
+          status?: string;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contact_permissions_requester_id_fkey";
+            columns: ["requester_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contact_permissions_target_id_fkey";
+            columns: ["target_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_social_accounts: {
+        Row: {
+          user_id: string;
+          school_id: string;
+          platform: string;
+          handle: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          school_id: string;
+          platform: string;
+          handle: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          school_id?: string;
+          platform?: string;
+          handle?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       support_requests: {
         Row: {
           id: string;
@@ -5769,6 +5841,8 @@ export type Database = {
       clear_conversation_for_me: { Args: { p_conversation_id: string; p_up_to?: string }; Returns: string };
       close_channel: { Args: { p_conversation_id: string }; Returns: undefined };
       confirm_account: { Args: { p_user_id: string }; Returns: undefined };
+      ask_contact_permission: { Args: { p_target: string }; Returns: string };
+      contact_card: { Args: { p_user_id: string }; Returns: Json };
       contact_phone: { Args: { p_user_id: string }; Returns: string };
       create_channel: { Args: { p_name: string; p_description?: string }; Returns: string };
       create_direct_conversation: { Args: { p_target_user_id: string }; Returns: string };
@@ -5777,7 +5851,9 @@ export type Database = {
       current_user_has_permission: { Args: { p_permission_slug: string }; Returns: boolean };
       current_user_is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       current_user_school_id: { Args: Record<PropertyKey, never>; Returns: string };
+      decide_contact_permission: { Args: { p_id: string; p_approve: boolean }; Returns: undefined };
       ensure_school_year: { Args: Record<PropertyKey, never>; Returns: string };
+      find_people: { Args: { p_query: string; p_limit?: number }; Returns: { id: string | null; first_name: string | null; last_name: string | null; nickname: string | null; avatar_url: string | null; roles: Json | null; phone: string | null; contact: string | null }[] };
       forget_my_device_token: { Args: { p_token: string }; Returns: undefined };
       forget_old_stories: { Args: Record<PropertyKey, never>; Returns: string[] };
       get_conversation_messages: { Args: { p_conversation_id: string; p_before_created_at?: string; p_before_id?: string; p_limit?: number }; Returns: { id: string | null; conversation_id: string | null; sender_id: string | null; sender_first_name: string | null; sender_last_name: string | null; sender_avatar_url: string | null; content: string | null; type: string | null; reply_to_id: string | null; is_pinned: boolean | null; is_edited: boolean | null; is_deleted: boolean | null; is_favorite: boolean | null; created_at: string | null; edited_at: string | null; location_lat: number | null; location_lng: number | null; media_path: string | null; media_width: number | null; media_height: number | null; media_name: string | null; media_size: number | null; media_mime: string | null; media_duration: number | null; reactions: Json | null }[] };

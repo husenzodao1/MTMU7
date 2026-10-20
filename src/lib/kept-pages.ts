@@ -16,6 +16,21 @@ export async function forgetKeptData(): Promise<void> {
   await caches.delete("data-v1").catch(() => false);
 }
 
+/**
+ * Something about the person signed in changed — their photo, say — which
+ * every page shows in its header: the worker lets go of the kept data and,
+ * while there is a line, opens each kept page from the network first until it
+ * has been fetched again (public/sw.js, "me-changed"). Said only after the
+ * server has saved it, so nothing older can be kept in its place.
+ */
+export function meChanged(): void {
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ type: "me-changed" });
+  } catch {
+    // No worker: every page is asked of the network as it is.
+  }
+}
+
 /** What was installed on this phone, for whom, from which version of the site. */
 export interface Installed {
   user: string;

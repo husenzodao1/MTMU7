@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = [
 export const TEMPLATE_KEYS = [
   "message.new", "grade.new", "attendance.absent", "attendance.late", "homework.published", "announcement.published",
   "registration.pending", "moderation.report", "friend.request", "friend.accepted", "support.request",
+  "contact.request", "contact.approved", "contact.declined",
 ] as const;
 
 export interface NotificationRow {

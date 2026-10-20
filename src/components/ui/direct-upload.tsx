@@ -5,12 +5,22 @@ import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 import { useFieldError } from "@/components/ui/action-form";
 import { Button } from "@/components/ui/button";
-import { checkFile, formatBytes, UPLOAD_RULES, type UploadKind } from "@/lib/storage/files";
+import { checkFile, fileExtension, formatBytes, UPLOAD_RULES, type UploadKind } from "@/lib/storage/files";
 import { shrinkPhoto } from "@/lib/storage/shrink-photo";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
 /** The long edge photos are made down to before uploading, by kind; the rest go up as they are. */
 const PHOTO_EDGE: Partial<Record<UploadKind, number>> = { avatar: 512, cover: 1000, image: 1600 };
+/** The largest photo taken in to be made small: a phone's camera, with room to spare. */
+const PHOTO_SOURCE_MAX = 40 * 1024 * 1024;
+
+/** The file, named with the ending its type has when its own name has none (or another). */
+export function withExtension(file: File, types: Record<string, string[]>): File {
+  const endings = types[file.type];
+  if (!endings || endings.includes(fileExtension(file.name))) return file;
+  const base = file.name.replace(/\.[^./]{1,8}$/, "") || "file";
+  return new File([file], `${base}.${endings[0]}`, { type: file.type, lastModified: file.lastModified });
+}
 
 /**
  * Uploads a file straight to Supabase Storage under the user's session (the
@@ -48,11 +58,16 @@ export function DirectUpload({
   const acceptValue = accept ?? Object.keys(rule.types).join(",");
 
   async function onChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const picked = event.target.files?.[0];
-    if (!picked) return;
-    const first = checkFile(kind, picked);
-    if (!first.ok) {
-      setState({ status: "error", error: t(`errors.${first.error}`) });
+    const chosen = event.target.files?.[0];
+    if (!chosen) return;
+    // A phone's gallery often hands over a file named "1000012345", with no
+    // ending, and its camera a photo of several megabytes: the name is given
+    // the ending its type has, and a photo is judged by its size after it is
+    // made small (shrink-photo.ts), not before.
+    const picked = withExtension(chosen, rule.types);
+    const first = checkFile(kind, PHOTO_EDGE[kind] ? { name: picked.name, type: picked.type, size: Math.min(picked.size, rule.maxBytes) } : picked);
+    if (!first.ok || (PHOTO_EDGE[kind] && picked.size > PHOTO_SOURCE_MAX)) {
+      setState({ status: "error", error: t(`errors.${first.ok ? "file_too_large" : first.error}`) });
       return;
     }
     setState({ status: "uploading", file: { name: picked.name, size: picked.size, type: picked.type } });

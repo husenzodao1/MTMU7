@@ -1811,7 +1811,15 @@
       "markDone": "Done",
       "reopen": "Reopen",
       "markedDone": "Marked as done.",
-      "reopened": "Reopened."
+      "reopened": "Reopened.",
+      "permissions": "Permissions",
+      "emptyPermissions": "No new requests.",
+      "permissionAsk": "{requester} wants to write to {target} on WhatsApp",
+      "approve": "Allow",
+      "decline": "Decline",
+      "approvedDone": "Allowed.",
+      "declinedDone": "Request declined.",
+      "decided": "Decided"
     },
     "archive": {
       "title": "Archive",

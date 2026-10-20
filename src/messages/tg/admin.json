@@ -1811,7 +1811,15 @@
       "markDone": "Анҷом шуд",
       "reopen": "Боз кушодан",
       "markedDone": "Ҳамчун анҷомёфта қайд шуд.",
-      "reopened": "Боз кушода шуд."
+      "reopened": "Боз кушода шуд.",
+      "permissions": "Иҷозатҳо",
+      "emptyPermissions": "Дархости нав нест.",
+      "permissionAsk": "{requester} мехоҳад ба {target} дар WhatsApp нависад",
+      "approve": "Иҷозат додан",
+      "decline": "Рад кардан",
+      "approvedDone": "Иҷозат дода шуд.",
+      "declinedDone": "Дархост рад шуд.",
+      "decided": "Ҳалшуда"
     },
     "archive": {
       "title": "Хазина",

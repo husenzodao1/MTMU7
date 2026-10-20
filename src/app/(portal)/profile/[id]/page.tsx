@@ -3,6 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { respondFriendRequestAction, sendFriendRequestAction } from "@/features/profile/actions";
 import { WhatsAppBox } from "@/features/people/whatsapp-button";
+import { WhatsAppAskBox } from "@/features/people/contact-ask";
+import { readContactCard } from "@/features/people/contact-card";
+import { SocialLinks } from "@/features/profile/social-links";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Avatar } from "@/components/ui/misc";
 import { Breadcrumb, Card, CardBody, PageHeader } from "@/components/ui/surface";
@@ -40,17 +43,20 @@ export default async function MemberProfilePage({
     .maybeSingle();
   if (!person) notFound();
 
-  const [{ data: relation }, { data: phone }] = await Promise.all([
+  const [{ data: relation }, { data: contact }] = await Promise.all([
     supabase
       .from("friend_requests")
       .select("id, sender_id, status")
       .in("status", ["pending", "accepted"])
       .or(`and(sender_id.eq.${access.userId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${access.userId})`)
       .maybeSingle(),
-    // The number only where the database lets this person see it (00099).
-    supabase.rpc("contact_phone", { p_user_id: id }),
+    // How this person may be reached, by the database's rule (00099, 00101):
+    // the number and their accounts where it is open, "ask" where the school
+    // decides first.
+    supabase.rpc("contact_card", { p_user_id: id }),
   ]);
-  const whatsapp = whatsappLink(phone);
+  const card = readContactCard(contact);
+  const whatsapp = whatsappLink(card.phone);
 
   const name = [person.last_name, person.first_name, person.middle_name].filter(Boolean).join(" ");
   const friendsEnabled = hasModule(access, "friends");
@@ -87,7 +93,12 @@ export default async function MemberProfilePage({
               <div className="mt-4">
                 <WhatsAppBox href={whatsapp} name={name} />
               </div>
+            ) : card.rule === "ask" ? (
+              <div className="mt-4">
+                <WhatsAppAskBox userId={person.id} name={name} status={card.request} />
+              </div>
             ) : null}
+            {card.accounts.length > 0 ? <SocialLinks accounts={card.accounts} className="mt-3" /> : null}
           </div>
         </CardBody>
       </Card>

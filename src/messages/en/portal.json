@@ -510,6 +510,18 @@
         "support_request": {
           "title": "New support note from {name}",
           "body": "Open it in the support inbox."
+        },
+        "contact_request": {
+          "title": "Permission request from {name}",
+          "body": "A pupil asks permission to write on WhatsApp."
+        },
+        "contact_approved": {
+          "title": "Permission granted",
+          "body": "You can now write to {name} on WhatsApp."
+        },
+        "contact_declined": {
+          "title": "Permission not granted",
+          "body": "The administrator did not allow writing to {name}."
         }
       },
       "clearReadTitle": "Clear the read notifications?",
@@ -526,11 +538,24 @@
       "memberSince": "Member since",
       "officialFieldsHint": "Your name, date of birth and roles are maintained by the school administration. Contact them to correct these details.",
       "contact": "Contact details and photo",
-      "contactHint": "The phone number is visible only to school staff with access to personal records.",
+      "contactHint": "Your number is shown to the school's staff, your own parents and the pupils the school's rules allow.",
       "phone": "Phone",
       "photo": "Profile photo",
       "photoHint": "JPEG, PNG or WebP up to 2 MB.",
       "removePhoto": "Remove current photo",
+      "photoChange": "Change photo",
+      "photoChoose": "Choose a photo",
+      "photoRemove": "Remove photo",
+      "photoCropTitle": "Place the photo in the circle",
+      "photoCropHint": "Drag to move, pinch to zoom",
+      "photoZoomIn": "Zoom in",
+      "photoZoomOut": "Zoom out",
+      "photoSave": "Save",
+      "photoCancel": "Cancel",
+      "photoUnreadable": "This photo could not be opened. Choose another one.",
+      "photoFailed": "The photo was not saved. Check the internet and try again.",
+      "photoSaved": "Photo saved",
+      "photoRemoved": "Photo removed",
       "saveContact": "Save",
       "saved": "Your profile has been updated.",
       "password": "Password",
@@ -542,7 +567,23 @@
       "changePassword": "Change password",
       "passwordChanged": "Your password has been changed.",
       "nickname": "Nickname",
-      "nicknameHint": "How people find you in search. Letters, digits, a dot or underscore, 3–30 characters."
+      "nicknameHint": "How people find you in search. Letters, digits, a dot or underscore, 3–30 characters.",
+      "accounts": {
+        "title": "Social accounts",
+        "hint": "Instagram, Telegram, Snapchat and others on your profile — shown to whoever can see your WhatsApp.",
+        "none": "No accounts added yet.",
+        "service": "Service",
+        "handleHint": "The account name, with or without @, or the page's address.",
+        "telegramHint": "The account name (@username) or a phone number.",
+        "add": "Check and add",
+        "remove": "Remove {service}",
+        "saved": "Account found and added",
+        "savedUnchecked": "Account added. This service does not allow checking — make sure the name is right.",
+        "removed": "Account removed",
+        "missing": "No such account on this service.",
+        "invalid": "That account name is not valid.",
+        "otherService": "This address belongs to another service."
+      }
     },
     "settings": {
       "title": "Settings",
@@ -579,7 +620,8 @@
       "textSmaller": "Smaller",
       "textLarger": "Larger",
       "textSample": "This is how text will look everywhere.",
-      "textReset": "Default"
+      "textReset": "Default",
+      "textDone": "Done"
     },
     "friends": {
       "title": "Contacts",
@@ -707,7 +749,15 @@
     "people": {
       "whatsapp": "WhatsApp",
       "whatsappTo": "Message {name} on WhatsApp",
-      "contact": "Contact on WhatsApp"
+      "contact": "Contact on WhatsApp",
+      "askTitle": "The school does not allow writing to girls from other classes",
+      "askText": "To write to {name}, you need permission from the school's administrator.",
+      "askButton": "Ask the administrator for permission",
+      "askPending": "Request sent — waiting for the administrator",
+      "askDeclined": "The administrator did not allow it",
+      "askSee": "See the request in Support",
+      "askSent": "Request sent to the administrator",
+      "askLocked": "{name}'s WhatsApp is closed"
     }
   },
   "reportCard": {

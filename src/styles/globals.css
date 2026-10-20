@@ -1267,11 +1267,86 @@ a.notice-card:active {
   }
 }
 
-/* The size of the type: a slider in ten steps between − and +. */
+/* The size of the type. The row in Settings, and the panel it opens in the
+   middle of the screen: the panel is drawn in pixels, not rem, so it keeps its
+   size while everything behind it follows the step chosen. */
+.text-size-current {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  padding: 0.625rem 0.75rem;
+  transition: border-color 0.15s ease;
+}
+.text-size-current:hover {
+  border-color: var(--color-line-strong);
+}
+.text-size-glyph {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand-solid) 12%, transparent);
+  color: var(--color-brand-text);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+.text-size-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* Light enough to see the page change behind it. */
+  background: color-mix(in oklab, var(--color-canvas) 30%, transparent);
+  animation: text-size-fade 0.18s ease-out;
+}
+.text-size-panel {
+  width: min(340px, 100%);
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  background: var(--color-surface);
+  padding: 16px;
+  box-shadow: 0 18px 50px -12px rgb(0 0 0 / 0.35);
+  font-size: 14px;
+  line-height: 20px;
+  animation: text-size-rise 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.text-size-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.text-size-panel-head .tabular {
+  font-size: 13px;
+  color: var(--color-ink-muted);
+}
+.text-size-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.text-size-panel-track {
+  min-width: 0;
+  flex: 1;
+}
 .text-size-step {
   display: inline-flex;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 36px;
+  height: 36px;
   flex: none;
   align-items: center;
   justify-content: center;
@@ -1284,16 +1359,539 @@ a.notice-card:active {
   opacity: 0.4;
 }
 .text-size-range {
+  width: 100%;
   accent-color: var(--color-brand-solid);
 }
+.text-size-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 0 2px;
+}
 .text-size-tick {
-  width: 0.25rem;
-  height: 0.25rem;
+  width: 4px;
+  height: 4px;
   border-radius: 999px;
   background: var(--color-line-strong);
 }
 .text-size-tick-on {
   background: var(--color-brand-solid);
+}
+.text-size-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.text-size-reset {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-brand-text);
+}
+.text-size-reset:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.text-size-done {
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+@keyframes text-size-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes text-size-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .text-size-layer,
+  .text-size-panel {
+    animation: none;
+  }
+}
+
+/* The support desk's sign (support-mark.tsx): a person with a headset in a
+   ring; half-rings run out from it on both sides, one after another, and fade
+   as they go. */
+.support-mark {
+  display: block;
+  width: 7.5rem;
+  height: 4.75rem;
+  overflow: visible;
+  color: var(--color-brand-text);
+}
+.support-ring {
+  fill: color-mix(in oklab, var(--color-brand-solid) 10%, var(--color-surface));
+  stroke: color-mix(in oklab, var(--color-brand-solid) 55%, transparent);
+  stroke-width: 1.5;
+}
+.support-person {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.support-person rect,
+.support-mic {
+  fill: currentColor;
+  stroke: none;
+}
+.support-wave {
+  fill: none;
+  stroke: var(--color-brand-solid);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  transform-box: view-box;
+  transform-origin: 60px 38px;
+  animation: support-wave 2.4s cubic-bezier(0.3, 0.6, 0.4, 1) infinite;
+  animation-delay: calc(var(--i) * 0.4s);
+}
+@keyframes support-wave {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .support-wave {
+    animation: none;
+    opacity: calc(0.75 - var(--i) * 0.22);
+  }
+}
+
+/* A link in news and announcements (misc.tsx): the service's mark in its own
+   colour and its name in blue, on a faint blue ground, so a Telegram channel
+   reads as a Telegram channel and not as a line of letters. */
+.content-link {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.35em;
+  margin-block: 0.1em;
+  padding: 0.1em 0.55em 0.1em 0.4em;
+  border-radius: 999px;
+  background: light-dark(rgb(29 111 209 / 0.08), rgb(127 178 255 / 0.12));
+  color: light-dark(#1765c4, #8bbcff);
+  font-weight: 600;
+  text-decoration: none;
+  vertical-align: baseline;
+  transition: background-color 0.15s ease;
+}
+.content-link:hover {
+  background: light-dark(rgb(29 111 209 / 0.14), rgb(127 178 255 / 0.2));
+}
+.content-link > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.content-link-mark {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+}
+.content-link[data-platform="telegram"] .content-link-mark { color: #229ed9; }
+.content-link[data-platform="instagram"] .content-link-mark { color: #e1306c; }
+.content-link[data-platform="whatsapp"] .content-link-mark { color: #25d366; }
+.content-link[data-platform="youtube"] .content-link-mark { color: #ff0000; }
+.content-link[data-platform="tiktok"] .content-link-mark,
+.content-link[data-platform="x"] .content-link-mark { color: var(--color-ink); }
+.content-link[data-platform="facebook"] .content-link-mark { color: #1877f2; }
+.content-link[data-platform="snapchat"] .content-link-mark { color: #f2c200; }
+.content-link[data-platform="vk"] .content-link-mark { color: #0077ff; }
+.content-link[data-platform="ok"] .content-link-mark { color: #ee8208; }
+.content-link[data-platform="linkedin"] .content-link-mark { color: #0a66c2; }
+.content-link[data-platform="docs"] .content-link-mark,
+.content-link[data-platform="drive"] .content-link-mark { color: #1a73e8; }
+.content-link[data-platform="maps"] .content-link-mark { color: #34a853; }
+.content-link[data-platform="meet"] .content-link-mark { color: #00897b; }
+.content-link[data-platform="zoom"] .content-link-mark { color: #2d8cff; }
+
+/* One's own photo at the top of Profile and Settings (avatar-editor.tsx): a
+   small camera on its edge, a menu under it, and the circle a new photo is
+   placed in. */
+.avatar-editor {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.avatar-editor-face {
+  position: relative;
+  border-radius: 999px;
+  transition: transform 0.15s ease;
+}
+.avatar-editor-face:active {
+  transform: scale(0.97);
+}
+.avatar-editor-face:disabled {
+  opacity: 0.7;
+}
+.avatar-editor-badge {
+  position: absolute;
+  inset-inline-end: -0.125rem;
+  bottom: -0.125rem;
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-surface);
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
+}
+.avatar-editor-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  z-index: 30;
+  display: grid;
+  min-width: 12rem;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  box-shadow: 0 14px 34px -14px rgb(0 0 0 / 0.35);
+  animation: text-size-rise 0.18s ease-out;
+}
+.avatar-editor-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-align: start;
+}
+.avatar-editor-menu button:hover {
+  background: var(--color-surface-muted);
+}
+.avatar-editor-menu button + button {
+  border-top: 1px solid var(--color-line);
+}
+.avatar-editor-danger {
+  color: var(--color-danger-700) !important;
+}
+.photo-crop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(8 10 14 / 0.72);
+  animation: text-size-fade 0.18s ease-out;
+}
+.photo-crop-panel {
+  width: min(360px, 100%);
+  border-radius: 22px;
+  background: var(--color-surface);
+  padding: 16px;
+  box-shadow: 0 24px 60px -18px rgb(0 0 0 / 0.5);
+  font-size: 14px;
+  line-height: 20px;
+  animation: text-size-rise 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.photo-crop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.photo-crop-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.photo-crop-close {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+}
+.photo-crop-close:hover {
+  background: var(--color-surface-muted);
+}
+.photo-crop-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #0d1015;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.photo-crop-stage:active {
+  cursor: grabbing;
+}
+.photo-crop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The circle, and the dark round it: what is outside does not go up. */
+.photo-crop-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 9999px rgb(8 10 14 / 0.55),
+    inset 0 0 0 2px rgb(255 255 255 / 0.85);
+  pointer-events: none;
+}
+.photo-crop-hint {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-ink-muted);
+}
+.photo-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.photo-crop-zoom input {
+  min-width: 0;
+  flex: 1;
+  accent-color: var(--color-brand-solid);
+}
+.photo-crop-zoom button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-ink-secondary);
+}
+.photo-crop-zoom button:disabled {
+  opacity: 0.4;
+}
+.photo-crop-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.photo-crop-cancel {
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink-secondary);
+}
+.photo-crop-done {
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-on-solid);
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.photo-crop-done[aria-busy="true"] {
+  opacity: 0.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .photo-crop,
+  .photo-crop-panel,
+  .avatar-editor-menu {
+    animation: none;
+  }
+}
+
+/* Accounts elsewhere on a profile (social-links.tsx, social-accounts-editor.tsx):
+   the service's mark in its colour, its name, the account under it. */
+.social-links,
+.social-own {
+  display: grid;
+  gap: 0.5rem;
+}
+@media (min-width: 480px) {
+  .social-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.social-link,
+.social-own-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  padding: 0.625rem 0.75rem;
+  text-align: start;
+  transition: background-color 0.15s ease;
+}
+.social-link:hover {
+  background: var(--color-surface-muted);
+}
+.social-link-mark {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+}
+.social-link-name {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+.social-link-handle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: light-dark(#1765c4, #8bbcff);
+}
+.social-own-remove {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+}
+.social-own-remove:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-danger-700);
+}
+.social-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.social-pick-item {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line);
+  border-radius: 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.social-pick-item:has(input:focus-visible) {
+  outline: 2px solid var(--color-brand-solid);
+  outline-offset: 2px;
+}
+.social-pick-on {
+  border-color: currentColor;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -6px currentColor;
+}
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="telegram"] :is(.social-link-mark, svg) { color: #229ed9; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="instagram"] :is(.social-link-mark, svg) { color: #e1306c; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="snapchat"] :is(.social-link-mark, svg) { color: #f2c200; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="youtube"] :is(.social-link-mark, svg) { color: #ff0000; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="facebook"] :is(.social-link-mark, svg) { color: #1877f2; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="vk"] :is(.social-link-mark, svg) { color: #0077ff; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="ok"] :is(.social-link-mark, svg) { color: #ee8208; }
+:is(.social-link, .social-own-row, .social-pick-item)[data-platform="linkedin"] :is(.social-link-mark, svg) { color: #0a66c2; }
+:is(.social-link, .social-own-row, .social-pick-item):is([data-platform="tiktok"], [data-platform="x"]) :is(.social-link-mark, svg) { color: var(--color-ink); }
+.social-pick-on[data-platform="telegram"] { color: #229ed9; }
+.social-pick-on[data-platform="instagram"] { color: #e1306c; }
+.social-pick-on[data-platform="snapchat"] { color: #d4a900; }
+.social-pick-on[data-platform="youtube"] { color: #ff0000; }
+.social-pick-on[data-platform="facebook"] { color: #1877f2; }
+.social-pick-on[data-platform="vk"] { color: #0077ff; }
+.social-pick-on[data-platform="ok"] { color: #ee8208; }
+.social-pick-on[data-platform="linkedin"] { color: #0a66c2; }
+.social-pick-on:is([data-platform="tiktok"], [data-platform="x"]) { color: var(--color-ink); }
+
+/* The support page: one's requests to the school (00101), each with its answer. */
+.support-requests {
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  background: var(--color-surface-muted);
+  padding: 0.75rem;
+}
+.support-requests-title {
+  margin: 0 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.support-requests ul {
+  display: grid;
+  gap: 0.5rem;
+}
+.support-request {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  padding: 0.625rem 0.75rem;
+}
+.support-request-mark {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, #25d366 14%, transparent);
+  color: #1fa855;
+}
+.support-request-state {
+  flex: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in oklab, var(--color-brand-solid) 12%, transparent);
+  color: var(--color-brand-text);
+}
+.support-request[data-status="approved"] .support-request-state {
+  background: color-mix(in oklab, #25d366 16%, transparent);
+  color: light-dark(#167a3e, #6be09a);
+}
+.support-request[data-status="declined"] .support-request-state {
+  background: color-mix(in oklab, var(--color-danger-700) 12%, transparent);
+  color: var(--color-danger-700);
 }
 
 /* settings: the languages, two side by side and Tajik the width of both under them. */

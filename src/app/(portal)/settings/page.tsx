@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { SignOutButton } from "@/features/auth/sign-out-button";
 import { TwoFactorSettings } from "@/features/auth/two-factor-settings";
 import { MeHeader } from "@/features/profile/me-header";
+import { photoLabels } from "@/features/profile/photo-labels";
 import { TextSizePicker, ThemePicker } from "@/features/settings/display-settings";
 import { Card, CardBody, CardHeader } from "@/components/ui/surface";
 import { displayName } from "@/lib/auth/access";
@@ -60,6 +61,7 @@ export default async function SettingsPage() {
         avatarUrl={access.avatarUrl}
         active="settings"
         labels={{ profile: tnav("profile"), settings: tnav("settings") }}
+        photo={{ folder: `${access.school?.id}/${access.userId}`, labels: await photoLabels() }}
       />
       <div className="mx-auto grid max-w-3xl gap-5">
         <Card>
@@ -95,7 +97,7 @@ export default async function SettingsPage() {
           <CardBody>
             <TextSizePicker
               initial={textSize}
-              labels={{ smaller: t("textSmaller"), larger: t("textLarger"), level: t("textSize"), sample: t("textSample"), reset: t("textReset") }}
+              labels={{ smaller: t("textSmaller"), larger: t("textLarger"), level: t("textSize"), sample: t("textSample"), reset: t("textReset"), done: t("textDone") }}
             />
           </CardBody>
         </Card>

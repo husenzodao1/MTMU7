@@ -5,8 +5,9 @@
  *
  * Supported: paragraphs, ## / ### headings, - and 1. lists, > quotes,
  * **bold**, *italic*, [links](https://…) with http(s), mailto, tel or
- * site-relative targets, hard line breaks inside paragraphs, @mentions of a
- * nickname, and pictures.
+ * site-relative targets, addresses typed as they are (https://…, www.…,
+ * t.me/…), hard line breaks inside paragraphs, @mentions of a nickname, and
+ * pictures.
  *
  * A picture is written ![alt](url), or simply left as a bare image address on
  * a line of its own — which is what people do, and what used to come out as a
@@ -17,7 +18,8 @@ export type Inline =
   | { type: "text"; value: string }
   | { type: "strong"; children: Inline[] }
   | { type: "em"; children: Inline[] }
-  | { type: "link"; href: string; children: Inline[] }
+  /** `bare`: an address typed as it is, with no words of its own (shown by what it points at). */
+  | { type: "link"; href: string; children: Inline[]; bare?: true }
   /** @nickname — the handle a person chose, linked to whoever holds it. */
   | { type: "mention"; nickname: string }
   | { type: "br" };
@@ -98,6 +100,27 @@ export function parseInline(source: string): Inline[] {
         }
         i += match[0].length;
         continue;
+      }
+    }
+
+    // An address typed as it is — what people paste far more often than the
+    // [words](address) form. The punctuation that ends a sentence is not part
+    // of it; a closing bracket is, when the address opened one.
+    if ((i === 0 || /[\s(]/.test(source[i - 1]!)) && /^(?:https?:\/\/|www\.|t\.me\/)/i.test(rest)) {
+      const match = /^(?:https?:\/\/|www\.|t\.me\/)[^\s<>"]{1,2000}/i.exec(rest);
+      if (match) {
+        let raw = match[0];
+        while (/[.,;:!?'")\]]$/.test(raw)) {
+          if (raw.endsWith(")") && (raw.match(/\(/g)?.length ?? 0) >= (raw.match(/\)/g)?.length ?? 0)) break;
+          raw = raw.slice(0, -1);
+        }
+        const href = safeHref(/^https?:/i.test(raw) ? raw : `https://${raw}`);
+        if (href) {
+          flush();
+          nodes.push({ type: "link", href, children: [], bare: true });
+          i += raw.length;
+          continue;
+        }
       }
     }
 

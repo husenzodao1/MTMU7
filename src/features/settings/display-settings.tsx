@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, ChevronDown, Minus, Plus } from "lucide-react";
-import { useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { applyTextSize, applyTheme, asTextSize, DEFAULT_TEXT_SIZE, TEXT_SIZES } from "@/lib/display-prefs";
 import { isTheme, THEMES, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils/cn";
@@ -95,58 +96,99 @@ export function ThemePicker({ initial, names }: { initial: Theme; names: Record<
   );
 }
 
-/** The size of the type everywhere, in ten steps, seen as it changes. */
-export function TextSizePicker({ initial, labels }: { initial: number; labels: { smaller: string; larger: string; level: string; sample: string; reset: string } }) {
+/**
+ * The size of the type everywhere, in ten steps. The row in Settings says the
+ * step in use; a press opens a panel in the middle of the screen, drawn in
+ * pixels so it stays the same size whatever the step, while the page behind it
+ * grows and shrinks. "Done", or a press beside it, puts it away.
+ */
+export function TextSizePicker({
+  initial,
+  labels,
+}: {
+  initial: number;
+  labels: { smaller: string; larger: string; level: string; sample: string; reset: string; done: string };
+}) {
   const size = useSyncExternalStore(
     watchRoot,
     () => asTextSize(document.documentElement.getAttribute("data-text-size") ?? DEFAULT_TEXT_SIZE),
     () => initial
   );
+  const [open, setOpen] = useState(false);
   const id = useId();
   const set = (next: number) => applyTextSize(Math.min(TEXT_SIZES, Math.max(1, next)));
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <button type="button" className="text-size-step" onClick={() => set(size - 1)} disabled={size <= 1} aria-label={labels.smaller}>
-          <Minus className="size-4" aria-hidden />
-        </button>
-        <div className="min-w-0 flex-1">
-          <input
-            id={id}
-            type="range"
-            min={1}
-            max={TEXT_SIZES}
-            step={1}
-            value={size}
-            onChange={(event) => set(Number(event.target.value))}
-            className="text-size-range w-full"
-            aria-valuetext={`${size} / ${TEXT_SIZES}`}
-            aria-label={labels.level}
-          />
-          <div className="mt-1 flex justify-between px-0.5" aria-hidden>
-            {Array.from({ length: TEXT_SIZES }, (_, i) => (
-              <span key={i} className={cn("text-size-tick", i + 1 === size && "text-size-tick-on")} />
-            ))}
-          </div>
-        </div>
-        <button type="button" className="text-size-step" onClick={() => set(size + 1)} disabled={size >= TEXT_SIZES} aria-label={labels.larger}>
-          <Plus className="size-4" aria-hidden />
-        </button>
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-ink-secondary">{labels.sample}</p>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="tabular text-xs font-semibold text-ink-muted">
-            {size} / {TEXT_SIZES}
-          </span>
-          {size !== DEFAULT_TEXT_SIZE ? (
-            <button type="button" className="text-xs font-medium text-brand-text hover:underline" onClick={() => set(DEFAULT_TEXT_SIZE)}>
-              {labels.reset}
-            </button>
-          ) : null}
+    <>
+      <button type="button" className="text-size-current" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+        <span className="text-size-glyph" aria-hidden>
+          Aa
         </span>
-      </div>
-    </div>
+        <span className="min-w-0 flex-1 text-start text-sm text-ink-secondary">{labels.sample}</span>
+        <span className="tabular shrink-0 text-xs font-semibold text-ink-muted">
+          {size} / {TEXT_SIZES}
+        </span>
+        <ChevronDown className="size-4 shrink-0 text-ink-muted" aria-hidden />
+      </button>
+      {open
+        ? createPortal(
+            <div className="text-size-layer" onClick={(event) => event.target === event.currentTarget && setOpen(false)}>
+              <div className="text-size-panel" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`}>
+                <div className="text-size-panel-head">
+                  <span id={`${id}-title`}>{labels.level}</span>
+                  <span className="tabular">
+                    {size} / {TEXT_SIZES}
+                  </span>
+                </div>
+                <div className="text-size-panel-row">
+                  <button type="button" className="text-size-step" onClick={() => set(size - 1)} disabled={size <= 1} aria-label={labels.smaller}>
+                    <Minus size={16} aria-hidden />
+                  </button>
+                  <div className="text-size-panel-track">
+                    <input
+                      id={id}
+                      type="range"
+                      min={1}
+                      max={TEXT_SIZES}
+                      step={1}
+                      value={size}
+                      onChange={(event) => set(Number(event.target.value))}
+                      className="text-size-range"
+                      aria-valuetext={`${size} / ${TEXT_SIZES}`}
+                      aria-label={labels.level}
+                    />
+                    <div className="text-size-ticks" aria-hidden>
+                      {Array.from({ length: TEXT_SIZES }, (_, i) => (
+                        <span key={i} className={cn("text-size-tick", i + 1 === size && "text-size-tick-on")} />
+                      ))}
+                    </div>
+                  </div>
+                  <button type="button" className="text-size-step" onClick={() => set(size + 1)} disabled={size >= TEXT_SIZES} aria-label={labels.larger}>
+                    <Plus size={16} aria-hidden />
+                  </button>
+                </div>
+                <div className="text-size-panel-foot">
+                  <button type="button" className="text-size-reset" onClick={() => set(DEFAULT_TEXT_SIZE)} disabled={size === DEFAULT_TEXT_SIZE}>
+                    {labels.reset}
+                  </button>
+                  <button type="button" className="text-size-done" onClick={() => setOpen(false)} autoFocus>
+                    {labels.done}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+    </>
   );
 }

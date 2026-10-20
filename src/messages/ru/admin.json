@@ -1811,7 +1811,15 @@
       "markDone": "Готово",
       "reopen": "Открыть снова",
       "markedDone": "Отмечено как выполненное.",
-      "reopened": "Открыто снова."
+      "reopened": "Открыто снова.",
+      "permissions": "Разрешения",
+      "emptyPermissions": "Новых запросов нет.",
+      "permissionAsk": "{requester} хочет написать {target} в WhatsApp",
+      "approve": "Разрешить",
+      "decline": "Отклонить",
+      "approvedDone": "Разрешено.",
+      "declinedDone": "Запрос отклонён.",
+      "decided": "Решённые"
     },
     "archive": {
       "title": "Архив",

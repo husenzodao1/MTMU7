@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTran
 import { createPortal } from "react-dom";
 import { NotFoundNote, SearchingPanel, useSearchSweep } from "@/components/ui/searching";
 import { WhatsAppButton } from "@/features/people/whatsapp-button";
+import { WhatsAppAskButton } from "@/features/people/contact-ask";
 import { searchEverythingAction, type EverythingKind, type EverythingSection } from "@/features/search/actions";
 import { fold } from "@/lib/search/fold";
 
@@ -249,7 +250,11 @@ function EverythingOverlay({ onClose }: { onClose: () => void }) {
                               {hit.detail ? <span className="everything-hit-detail">{hit.detail}</span> : null}
                             </span>
                           </Link>
-                          {hit.whatsapp ? <WhatsAppButton href={hit.whatsapp} name={hit.title} /> : null}
+                          {hit.whatsapp ? (
+                            <WhatsAppButton href={hit.whatsapp} name={hit.title} />
+                          ) : hit.askFirst ? (
+                            <WhatsAppAskButton userId={hit.id} name={hit.title} />
+                          ) : null}
                         </li>
                       ))}
                     </ul>

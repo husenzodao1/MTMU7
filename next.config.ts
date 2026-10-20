@@ -13,6 +13,22 @@ function supabaseImagePattern() {
   }
 }
 
+/**
+ * The service worker's own policy. It fetches the school's photos from
+ * Supabase Storage to keep them on the device (public/sw.js, answerMedia),
+ * and a worker's fetches answer to its policy: with 'self' alone every
+ * photo it was asked for failed, and a new profile photo showed as initials.
+ */
+function serviceWorkerPolicy(): string {
+  let storage = "";
+  try {
+    storage = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    // No project configured: the worker reaches nothing but the site.
+  }
+  return ["default-src 'self'", "script-src 'self'", `connect-src 'self'${storage ? ` ${storage}` : ""}`].join("; ");
+}
+
 /** Static security headers; the CSP (with a per-request nonce) is set in src/proxy.ts. */
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -110,7 +126,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Type", value: "application/javascript; charset=utf-8" },
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+          { key: "Content-Security-Policy", value: serviceWorkerPolicy() },
         ],
       },
     ];

@@ -33,6 +33,8 @@ export interface EverythingHit {
   href: string;
   /** A person who can be reached on WhatsApp: the link that opens the chat there. */
   whatsapp?: string;
+  /** A girl of another class, for a boy: WhatsApp only once the school says yes (00101). */
+  askFirst?: boolean;
 }
 
 export interface EverythingSection {
@@ -84,6 +86,7 @@ export async function searchEverythingAction(raw: string): Promise<ActionResult<
         detail: person.nickname ? `@${person.nickname}` : undefined,
         href: `/profile/${person.id}`,
         whatsapp: person.whatsapp ?? undefined,
+        askFirst: person.contact === "ask" || undefined,
       }));
     }),
     canEnterAdmin(access) ? searchAdmin(access, query).catch(() => []) : Promise.resolve([]),

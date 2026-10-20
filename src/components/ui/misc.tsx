@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Block, Inline } from "@/lib/content/markdown";
 import { parseMarkdown } from "@/lib/content/markdown";
+import { PLATFORM_NAME, platformOf, shortAddress } from "@/lib/social/platforms";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -91,6 +93,32 @@ function renderInline(nodes: Inline[], keyPrefix: string): ReactNode[] {
         return <em key={key}>{renderInline(node.children, key)}</em>;
       case "link": {
         const external = /^https?:/i.test(node.href);
+        // A service's address shows its mark and its name — «Telegram ·
+        // @mtmu7» — in blue; any other address typed as it is, the site's mark
+        // and the address made short. Words the writer gave stay the words.
+        const service = external ? platformOf(node.href) : null;
+        if (external && (service || node.bare)) {
+          return (
+            <a
+              key={key}
+              href={node.href}
+              className="content-link"
+              data-platform={service?.platform}
+              title={node.href}
+              rel="noopener noreferrer nofollow"
+              target="_blank"
+            >
+              <PlatformIcon platform={service?.platform ?? null} className="content-link-mark" />
+              <span>
+                {node.children.length > 0
+                  ? renderInline(node.children, key)
+                  : service
+                    ? [PLATFORM_NAME[service.platform], service.handle].filter(Boolean).join(" · ")
+                    : shortAddress(node.href)}
+              </span>
+            </a>
+          );
+        }
         return (
           <a key={key} href={node.href} className="font-medium text-brand-text underline underline-offset-2 hover:text-brand-text-strong" {...(external ? { rel: "noopener noreferrer nofollow", target: "_blank" } : {})}>
             {renderInline(node.children, key)}

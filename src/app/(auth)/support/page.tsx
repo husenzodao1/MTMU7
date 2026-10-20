@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Headset, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/surface";
 import { SupportContacts } from "@/features/support/contacts";
 import { GuestSupportForm } from "@/features/support/guest-form";
+import { SupportMark } from "@/features/support/support-mark";
 import { getAccess } from "@/lib/auth/access";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,9 +33,7 @@ export default async function SupportPage() {
     <Card as="div">
       <CardBody className="space-y-5 p-6 sm:p-8">
         <div className="text-center">
-          <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full border border-line bg-surface-muted text-brand-text" aria-hidden>
-            <Headset className="size-5" />
-          </span>
+          <SupportMark className="mx-auto mb-2" />
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
           <p className="mt-1 text-sm text-ink-secondary">{t("subtitle")}</p>
         </div>

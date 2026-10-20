@@ -86,6 +86,12 @@ let movedFrom = "";
 let latestBuild = "";
 /** The version whose every script, style and font is on the device. */
 let assetsDone = "";
+/**
+ * When something about the person signed in last changed (their photo, which
+ * every page's header shows): a page or its data kept before then is asked of
+ * the network first while there is a line, and kept anew (kept-pages.ts).
+ */
+let meChangedAt = 0;
 /** The version whose files are being fetched now. */
 let assetsFor = "";
 /** Which version each open page is (a client id to a version), so its data is of the same one. */
@@ -113,6 +119,7 @@ function loadMeta() {
       const meta = await answer.json();
       if (!latestBuild) latestBuild = realBuild(meta.latest);
       if (!assetsDone) assetsDone = realBuild(meta.assets);
+      if (typeof meta.me === "number" && meta.me > meChangedAt) meChangedAt = meta.me;
       for (const [id, build] of Array.isArray(meta.clients) ? meta.clients : []) if (!clientBuilds.has(id)) clientBuilds.set(id, build);
     } catch {
       // Remembered again from the next answers.
@@ -123,7 +130,7 @@ function loadMeta() {
 
 async function saveMeta() {
   try {
-    const meta = { latest: latestBuild, assets: assetsDone, clients: [...clientBuilds].slice(-CLIENTS_KEPT) };
+    const meta = { latest: latestBuild, assets: assetsDone, me: meChangedAt, clients: [...clientBuilds].slice(-CLIENTS_KEPT) };
     await (await caches.open(META_CACHE)).put(META_KEY, new Response(JSON.stringify(meta), { headers: { "Content-Type": "application/json" } }));
   } catch {
     // Remembered in memory for as long as this worker runs.
@@ -447,7 +454,8 @@ async function answerPage(event, request, url) {
     () => null
   );
   const keptBuild = kept ? buildOf(kept) : "";
-  const older = Boolean(keptBuild && latestBuild && keptBuild !== latestBuild && self.navigator.onLine !== false);
+  const online = self.navigator.onLine !== false;
+  const older = Boolean(keptBuild && latestBuild && keptBuild !== latestBuild && online) || Boolean(kept && online && keptAt(kept) < meChangedAt);
   if (kept && !older && !NETWORK_FIRST.test(url.pathname)) {
     event.waitUntil(fresh);
     event.waitUntil(rememberClient(clientId, keptBuild));
@@ -526,7 +534,8 @@ async function answerData(event, request, url) {
   }
   const asking = clientBuilds.get(event.clientId) || "";
   const keptBuild = kept ? buildOf(kept) : "";
-  if (kept && !(asking && keptBuild && keptBuild !== asking)) {
+  const beforeMe = Boolean(kept && keptAt(kept) < meChangedAt && self.navigator.onLine !== false);
+  if (kept && !beforeMe && !(asking && keptBuild && keptBuild !== asking)) {
     // Answered at once from the device; a copy more than a moment old is
     // fetched again behind it, so the next time — with no line, say — it is
     // the newest the phone could have had.
@@ -772,6 +781,18 @@ self.addEventListener("message", (event) => {
         await loadMeta();
         await rememberClient(id, data.build);
         if (latestBuild && assetsDone !== latestBuild && self.navigator.onLine !== false) await keepBuildFiles(latestBuild);
+      })()
+    );
+  }
+  // Something about the person signed in changed (kept-pages.ts, meChanged):
+  // the kept data goes, and each kept page is fetched again before it is shown.
+  if (data.type === "me-changed") {
+    event.waitUntil(
+      (async () => {
+        await loadMeta();
+        meChangedAt = Date.now();
+        await caches.delete(DATA_CACHE).catch(() => false);
+        await saveMeta();
       })()
     );
   }

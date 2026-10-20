@@ -6,11 +6,12 @@ import { z } from "zod";
 import { changePasswordAction, updateContactAction } from "@/features/profile/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
-import { DirectUpload } from "@/components/ui/direct-upload";
 import { TextField } from "@/components/ui/fields";
-import { Checkbox } from "@/components/ui/form-controls";
 import { Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/surface";
 import { MeHeader } from "@/features/profile/me-header";
+import { photoLabels } from "@/features/profile/photo-labels";
+import { SocialAccountsEditor } from "@/features/profile/social-accounts-editor";
+import { isSocialPlatform } from "@/lib/social/accounts";
 import { requireAccess } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
 import { pickName, type Locale } from "@/lib/i18n/text";
@@ -44,8 +45,13 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const tnav = await getTranslations("nav");
   const locale = (await getLocale()) as Locale;
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_my_profile");
+  const [{ data }, { data: accountRows }] = await Promise.all([
+    supabase.rpc("get_my_profile"),
+    // One's own accounts elsewhere (00101); none where the table is not there yet.
+    supabase.from("user_social_accounts").select("platform, handle").eq("user_id", access.userId).order("platform"),
+  ]);
   const profile = profileSchema.parse(data);
+  const accounts = (accountRows ?? []).flatMap((row) => (isSocialPlatform(row.platform) ? [{ platform: row.platform, handle: row.handle }] : []));
   const fullName = [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(" ");
 
   return (
@@ -56,6 +62,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         detail={profile.school_name}
         active="profile"
         labels={{ profile: tnav("profile"), settings: tnav("settings") }}
+        photo={{ folder: `${access.school?.id}/${access.userId}`, labels: await photoLabels() }}
       >
         <div className="mt-2 flex flex-wrap justify-center gap-1.5">
           {profile.roles.map((role) => (
@@ -93,10 +100,15 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                   autoComplete="off"
                   placeholder="@nickname"
                 />
-                <DirectUpload kind="avatar" folder={`${access.school?.id}/${access.userId}`} name="avatar" label={t("photo")} hint={t("photoHint")} />
-                {profile.avatar_url ? <Checkbox name="removeAvatar" label={t("removePhoto")} /> : null}
                 <SubmitButton>{t("saveContact")}</SubmitButton>
               </ActionForm>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title={t("accounts.title")} description={t("accounts.hint")} />
+            <CardBody>
+              <SocialAccountsEditor accounts={accounts} />
             </CardBody>
           </Card>
 

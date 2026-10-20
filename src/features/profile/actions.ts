@@ -5,10 +5,9 @@ import { z } from "zod";
 import { uuid } from "@/lib/validation/uuid";
 import { passwordSchema } from "@/features/auth/schemas";
 import { mapDbError } from "@/lib/actions/errors";
-import { done, failure, formDataToObject, parseInput, success, type FormState } from "@/lib/actions/result";
+import { done, failure, formDataToObject, parseInput, success, type ActionResult, type FormState } from "@/lib/actions/result";
 import { getAccess } from "@/lib/auth/access";
 import { publicEnv } from "@/lib/env";
-import { checkFile } from "@/lib/storage/files";
 import { createClient } from "@/lib/supabase/server";
 import { NOTIFICATION_PREFERENCE_TYPES } from "@/features/profile/constants";
 
@@ -23,14 +22,9 @@ const contactSchema = z.object({
     .refine((v) => v === "" || /^[A-Za-z0-9._]{3,30}$/.test(v), "validation.nickname")
     .optional()
     .transform((v) => v || null),
-  avatarPath: z.string().max(500).optional(),
-  avatarName: z.string().max(255).optional(),
-  avatarSize: z.coerce.number().int().positive().optional(),
-  avatarType: z.string().max(100).optional(),
-  removeAvatar: z.string().optional(),
 });
 
-/** Contact details and photo — the only profile fields users may change themselves. */
+/** Contact details — with the photo (below), the only profile fields users may change themselves. */
 export async function updateContactAction(_state: FormState, formData: FormData): Promise<FormState> {
   const access = await getAccess();
   if (!access?.school) return done(failure("errors.not_authenticated"));
@@ -38,18 +32,7 @@ export async function updateContactAction(_state: FormState, formData: FormData)
   if (!input.ok) return done(input.result);
   const v = input.data;
 
-  const patch: { phone: string | null; nickname: string | null; avatar_url?: string | null } = { phone: v.phone, nickname: v.nickname };
-  if (v.avatarPath) {
-    const prefix = `${access.school.id}/${access.userId}/`;
-    const check = checkFile("avatar", { name: v.avatarName ?? "", type: v.avatarType ?? "", size: v.avatarSize ?? 0 });
-    if (!v.avatarPath.startsWith(prefix) || v.avatarPath.includes("..") || !/^[0-9a-f/-]+\.[a-z0-9]{1,8}$/.test(v.avatarPath) || !check.ok) {
-      return done(failure("errors.invalid_file_path"));
-    }
-    patch.avatar_url = `${publicEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${v.avatarPath}`;
-  } else if (v.removeAvatar === "on") {
-    patch.avatar_url = null;
-  }
-
+  const patch = { phone: v.phone, nickname: v.nickname };
   const supabase = await createClient();
   const { error } = await supabase.from("users").update(patch).eq("id", access.userId);
   if (error) {
@@ -60,6 +43,38 @@ export async function updateContactAction(_state: FormState, formData: FormData)
   }
   revalidatePath("/", "layout");
   return done(success("portal.profile.saved"));
+}
+
+/**
+ * One's own photo, saved the moment it is cropped (avatar-editor.tsx): the
+ * picture already went up to the avatars bucket under the person's own
+ * folder, as a JPEG the editor drew; here the address is checked and kept.
+ */
+export async function setAvatarAction(path: string): Promise<ActionResult> {
+  const access = await getAccess();
+  if (!access?.school) return failure("errors.not_authenticated");
+  const prefix = `${access.school.id}/${access.userId}/`;
+  if (typeof path !== "string" || !path.startsWith(prefix) || path.includes("..") || !/^[0-9a-f/-]+\.jpg$/.test(path)) {
+    return failure("errors.invalid_file_path");
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("users")
+    .update({ avatar_url: `${publicEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${path}` })
+    .eq("id", access.userId);
+  if (error) return mapDbError(error);
+  revalidatePath("/", "layout");
+  return success("portal.profile.photoSaved");
+}
+
+export async function removeAvatarAction(): Promise<ActionResult> {
+  const access = await getAccess();
+  if (!access?.school) return failure("errors.not_authenticated");
+  const supabase = await createClient();
+  const { error } = await supabase.from("users").update({ avatar_url: null }).eq("id", access.userId);
+  if (error) return mapDbError(error);
+  revalidatePath("/", "layout");
+  return success("portal.profile.photoRemoved");
 }
 
 const passwordChangeSchema = z
