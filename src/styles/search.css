@@ -1,0 +1,583 @@
+/*
+ * "Search everything" (features/search/everything-search.tsx).
+ *
+ * The box at the top of the dashboard: small, soft-cornered, a faint glass
+ * and a line of small type. A press sinks it a touch and it springs back —
+ * quickly, and only a little past where it rests. Every few seconds a pale
+ * sheen of brass crosses it, enough for the eye to find it, never more.
+ *
+ * Opened, the search covers the screen on a phone, and on a computer comes as
+ * a panel under a dimmed page.
+ */
+
+/* Where the box would be if it did not stay: what tells it it has moved. */
+.everything-place {
+  display: block;
+  height: 0;
+}
+/*
+ * The box stays under the portal's header as the page scrolls. Once it has
+ * left its place a veil of the page's own colour opens down from the header
+ * behind it — solid as far as the box, then gone a few pixels below it — so
+ * what scrolls up fades into the page just before it passes under the box,
+ * and comes out of it the same way. The veil grows down as the box settles and
+ * draws back up as it leaves.
+ */
+.everything-dock {
+  position: sticky;
+  top: calc(3.5rem + var(--strip-h));
+  z-index: 20;
+  margin: -0.75rem 0 0.875rem;
+  padding-top: 0.5rem;
+}
+.everything-dock::before {
+  content: "";
+  position: absolute;
+  inset: 0 -1rem -0.875rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--color-canvas) 0%,
+    var(--color-canvas) calc(100% - 0.875rem),
+    color-mix(in oklab, var(--color-canvas) 55%, transparent) calc(100% - 0.5rem),
+    color-mix(in oklab, var(--color-canvas) 18%, transparent) calc(100% - 0.2rem),
+    transparent 100%
+  );
+  opacity: 0;
+  transform: scaleY(0.55);
+  transform-origin: top;
+  transition:
+    opacity 0.3s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.everything-dock[data-stuck]::before {
+  opacity: 1;
+  transform: none;
+}
+@media (min-width: 640px) {
+  .everything-dock::before {
+    inset-inline: -1.5rem;
+  }
+}
+/* Soft-cornered, exactly as wide as the greeting under it, on a
+   solid ground. At rest a small shadow; held over the page a close, short
+   one — black enough to read on the night's canvas too — and a hair of light
+   along its top edge there. */
+.everything-box {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 2.625rem;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--color-line) 85%, transparent);
+  border-radius: 1.125rem;
+  background: var(--color-surface);
+  box-shadow:
+    0 1px 2px rgb(20 24 33 / 0.05),
+    0 6px 16px -10px rgb(20 24 33 / 0.28);
+  box-shadow:
+    0 1px 2px light-dark(rgb(20 24 33 / 0.05), rgb(0 0 0 / 0.3)),
+    0 6px 16px -10px light-dark(rgb(20 24 33 / 0.28), rgb(0 0 0 / 0.6));
+  font-size: 0.875rem;
+  letter-spacing: 0.005em;
+  color: var(--color-ink-muted);
+  text-align: start;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.45, 0.64, 1),
+    box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.3s var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+.everything-dock[data-stuck] .everything-box {
+  border-color: color-mix(in oklab, var(--color-brand-solid) 16%, var(--color-line));
+  box-shadow:
+    0 1px 2px rgb(20 24 33 / 0.07),
+    0 5px 12px -6px rgb(20 24 33 / 0.3);
+  box-shadow:
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.07)),
+    0 1px 2px light-dark(rgb(20 24 33 / 0.07), rgb(0 0 0 / 0.4)),
+    0 5px 12px -6px light-dark(rgb(20 24 33 / 0.3), rgb(0 0 0 / 0.75));
+}
+.everything-box:hover {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink-secondary);
+}
+.everything-box:active {
+  transform: scale(0.975);
+  transition-duration: 0.1s;
+}
+.everything-box:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.everything-box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--color-brand-solid) 20%, transparent) 50%, transparent 70%);
+  translate: -100% 0;
+  animation: everything-sheen 8s ease-in-out 1.4s infinite;
+}
+@keyframes everything-sheen {
+  0% {
+    translate: -100% 0;
+  }
+  16%,
+  100% {
+    translate: 100% 0;
+  }
+}
+.everything-glass {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------- the search */
+
+.everything-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+}
+.everything-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 14 23 / 0.45);
+  animation: everything-fade 0.2s ease both;
+}
+.everything-panel {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--color-canvas);
+  animation: everything-in 0.28s var(--ease-standard) both;
+}
+@media (min-width: 768px) {
+  .everything-panel {
+    height: auto;
+    max-height: 76vh;
+    max-width: 40rem;
+    margin-top: 10vh;
+    padding-top: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: 1.25rem;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-overlay, 0 24px 60px -20px rgb(0 0 0 / 0.45));
+  }
+}
+@keyframes everything-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes everything-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+.everything-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem 0.625rem 1.125rem;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+}
+.everything-input {
+  height: 2.75rem;
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--color-ink);
+  outline: none;
+}
+.everything-input::placeholder {
+  color: var(--color-ink-muted);
+}
+.everything-input::-webkit-search-cancel-button {
+  display: none;
+}
+.everything-clear {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-ink-muted) 20%, transparent);
+  color: var(--color-ink-secondary);
+}
+.everything-cancel {
+  flex: none;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-brand-text);
+}
+.everything-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.25rem 0 calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+.everything-body .searching,
+.everything-body .lens-empty {
+  padding: 2.25rem 0 1rem;
+}
+.everything-hint {
+  padding: 2.75rem 1.75rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-ink-muted);
+}
+.everything-results {
+  animation: searching-in 0.3s ease both;
+}
+.everything-section-title {
+  padding: 0.875rem 1.25rem 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.everything-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.everything-row > .everything-hit {
+  min-width: 0;
+  flex: 1;
+}
+.everything-row > .wa-button {
+  margin-inline-end: 1rem;
+}
+.everything-hit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.everything-hit:hover,
+.everything-hit:focus-visible {
+  background: var(--color-surface-muted);
+  outline: none;
+}
+.everything-hit-icon {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-secondary);
+}
+.everything-hit-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.everything-hit-title mark {
+  border-radius: 0.2em;
+  padding: 0 0.08em;
+  background: color-mix(in oklab, var(--color-brand-solid) 32%, transparent);
+  color: inherit;
+}
+.everything-hit-detail {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+
+/*
+ * WhatsApp, as a person's way to be reached: the bare green mark in a soft
+ * round, at the end of their row. It settles in a moment after the row.
+ */
+.wa-button {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #25d366;
+  background: color-mix(in oklab, #25d366 10%, transparent);
+  -webkit-tap-highlight-color: transparent;
+  animation: wa-in 0.35s var(--ease-standard) 0.08s both;
+  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+.wa-button:hover,
+.wa-button:focus-visible {
+  background: color-mix(in oklab, #25d366 18%, transparent);
+  outline: none;
+}
+.wa-button:active {
+  transform: scale(0.9);
+}
+@keyframes wa-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* On a profile: the same mark with its words, as a box to press. */
+.wa-box {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, #25d366 28%, var(--color-line));
+  background: color-mix(in oklab, #25d366 6%, var(--color-surface));
+  padding: 0.75rem 1rem;
+  text-align: start;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+.wa-box:hover,
+.wa-box:focus-visible {
+  background: color-mix(in oklab, #25d366 11%, var(--color-surface));
+  outline: none;
+}
+.wa-box:active {
+  transform: scale(0.985);
+}
+.wa-box-mark {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #25d366;
+  color: #fff;
+}
+
+/* A girl of another class, for a boy (00101): the mark greyed, with a lock;
+   a press brings the school's word and the way to ask (contact-ask.tsx). */
+.wa-button-shut {
+  position: relative;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-muted);
+}
+.wa-button-shut:hover,
+.wa-button-shut:focus-visible {
+  background: color-mix(in oklab, var(--color-ink) 8%, var(--color-surface-muted));
+}
+.wa-button-lock {
+  position: absolute;
+  right: 0.125rem;
+  bottom: 0.125rem;
+  display: inline-flex;
+  width: 0.875rem;
+  height: 0.875rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-ink-secondary);
+  color: var(--color-surface);
+}
+.wa-box-shut {
+  width: 100%;
+  border-color: var(--color-line);
+  background: var(--color-surface-muted);
+}
+.wa-box-shut .wa-box-mark {
+  background: var(--color-ink-muted);
+}
+.wa-box-shut:hover,
+.wa-box-shut:focus-visible {
+  background: color-mix(in oklab, var(--color-ink) 5%, var(--color-surface-muted));
+}
+.contact-ask-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: rgb(8 10 14 / 0.5);
+  animation: wa-fade 0.18s ease-out;
+}
+@media (min-width: 640px) {
+  .contact-ask-layer {
+    align-items: center;
+  }
+}
+.contact-ask-sheet {
+  position: relative;
+  display: flex;
+  width: min(24rem, 100%);
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 1.5rem;
+  background: var(--color-surface);
+  padding: 1.75rem 1.25rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 24px 60px -18px rgb(0 0 0 / 0.45);
+  animation: wa-rise 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+.contact-ask-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+}
+.contact-ask-mark {
+  position: relative;
+  display: inline-flex;
+  width: 3.25rem;
+  height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+}
+.contact-ask-lock {
+  position: absolute;
+  right: -0.125rem;
+  bottom: -0.125rem;
+  display: inline-flex;
+  width: 1.375rem;
+  height: 1.375rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-surface);
+  border-radius: 999px;
+  background: var(--color-danger-700);
+  color: #fff;
+}
+.contact-ask-title {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-ink);
+  text-wrap: balance;
+}
+.contact-ask-text {
+  font-size: 0.875rem;
+  color: var(--color-ink-secondary);
+}
+.contact-ask-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand-solid) 10%, transparent);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-brand-text);
+}
+.contact-ask-declined {
+  background: color-mix(in oklab, var(--color-danger-700) 10%, transparent);
+  color: var(--color-danger-700);
+}
+.contact-ask-button {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  border-radius: 0.875rem;
+  background: var(--color-brand-solid);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-brand-on-solid);
+}
+.contact-ask-button[aria-busy="true"] {
+  opacity: 0.7;
+}
+.contact-ask-quiet {
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+@keyframes wa-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes wa-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-ask-layer,
+  .contact-ask-sheet {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-button,
+  .wa-box {
+    animation: none;
+    transition: none;
+  }
+  .everything-dock::before,
+  .everything-box,
+  .everything-panel,
+  .everything-scrim,
+  .everything-results {
+    animation: none;
+    transition: none;
+  }
+  .everything-box::after {
+    display: none;
+  }
+}

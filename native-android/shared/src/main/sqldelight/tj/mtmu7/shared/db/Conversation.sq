@@ -1,0 +1,73 @@
+-- The conversation list as the server last told it (list_my_conversations),
+-- kept on the phone so the list is on screen the moment the app opens.
+-- Times are epoch milliseconds.
+CREATE TABLE conversation (
+  id TEXT NOT NULL PRIMARY KEY,
+  type TEXT NOT NULL,
+  name TEXT,
+  description TEXT,
+  created_by TEXT,
+  my_role TEXT,
+  is_muted INTEGER NOT NULL DEFAULT 0,
+  member_count INTEGER NOT NULL DEFAULT 0,
+  members_json TEXT NOT NULL DEFAULT '[]',
+  last_message_content TEXT,
+  last_message_sender_id TEXT,
+  last_message_at INTEGER,
+  last_message_type TEXT,
+  last_message_deleted INTEGER NOT NULL DEFAULT 0,
+  unread_count INTEGER NOT NULL DEFAULT 0,
+  peer_read_at INTEGER,
+  peer_delivered_at INTEGER,
+  updated_at INTEGER,
+  sort_at INTEGER NOT NULL
+);
+
+all:
+SELECT * FROM conversation ORDER BY sort_at DESC, id;
+
+byId:
+SELECT * FROM conversation WHERE id = ?;
+
+ids:
+SELECT id FROM conversation;
+
+upsert:
+INSERT OR REPLACE INTO conversation (
+  id, type, name, description, created_by, my_role, is_muted, member_count, members_json,
+  last_message_content, last_message_sender_id, last_message_at, last_message_type, last_message_deleted,
+  unread_count, peer_read_at, peer_delivered_at, updated_at, sort_at
+) VALUES ?;
+
+-- A message arrived or was sent: the preview, the order and the unread count follow.
+setLast:
+UPDATE conversation SET
+  last_message_content = :content,
+  last_message_sender_id = :senderId,
+  last_message_at = :at,
+  last_message_type = :type,
+  last_message_deleted = :deleted,
+  unread_count = unread_count + :unreadDelta,
+  sort_at = max(sort_at, :at)
+WHERE id = :id AND (last_message_at IS NULL OR last_message_at <= :at);
+
+markRead:
+UPDATE conversation SET unread_count = 0 WHERE id = ?;
+
+setMuted:
+UPDATE conversation SET is_muted = ? WHERE id = ?;
+
+setPeerMarks:
+UPDATE conversation SET peer_read_at = ?, peer_delivered_at = ? WHERE id = ?;
+
+deleteNotIn:
+DELETE FROM conversation WHERE id NOT IN ?;
+
+deleteById:
+DELETE FROM conversation WHERE id = ?;
+
+unreadTotal:
+SELECT coalesce(sum(unread_count), 0) FROM conversation WHERE is_muted = 0;
+
+clear:
+DELETE FROM conversation;

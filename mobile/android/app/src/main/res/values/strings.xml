@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">МТМУ №7</string>
+    <string name="title_activity_main">МТМУ №7</string>
+    <string name="package_name">tj.mtmu7.app</string>
+    <string name="custom_url_scheme">tj.mtmu7.app</string>
+</resources>

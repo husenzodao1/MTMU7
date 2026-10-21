@@ -1,8 +1,136 @@
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
+import { BUILD } from "./src/lib/build";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-const nextConfig: NextConfig = {};
+function supabaseImagePattern() {
+  try {
+    const url = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+    return [{ protocol: url.protocol.replace(":", "") as "http" | "https", hostname: url.hostname, pathname: "/storage/v1/**" }];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The service worker's own policy. It fetches the school's photos from
+ * Supabase Storage to keep them on the device (public/sw.js, answerMedia),
+ * and a worker's fetches answer to its policy: with 'self' alone every
+ * photo it was asked for failed, and a new profile photo showed as initials.
+ */
+function serviceWorkerPolicy(): string {
+  let storage = "";
+  try {
+    storage = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    // No project configured: the worker reaches nothing but the site.
+  }
+  return ["default-src 'self'", "script-src 'self'", `connect-src 'self'${storage ? ` ${storage}` : ""}`].join("; ");
+}
+
+/** Static security headers; the CSP (with a per-request nonce) is set in src/proxy.ts. */
+const securityHeaders = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // geolocation=(self): the chat's pin asks for one position, on this origin
+  // only. The empty list that stood here switched the browser API off for the
+  // whole site, so the pin failed before the question was ever put to anybody.
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(self), payment=(), usb=(), interest-cohort=()" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Which version of the site answered, on everything — prefetches too, which
+  // src/proxy.ts never sees: the service worker keeps a page and its data
+  // only together with the version they belong to (public/sw.js).
+  { key: "x-mtmu7-build", value: BUILD },
+];
+
+/**
+ * The site's version as the menu shows it: the day it was built and, on
+ * Vercel, the commit — 2026.09.27 · 4948fca.
+ */
+function buildVersion(): string {
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, ".");
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+  return commit ? `${day} · ${commit}` : day;
+}
+
+const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_BUILD_VERSION: buildVersion(),
+  },
+  images: {
+    remotePatterns: supabaseImagePattern(),
+  },
+  // The parents' report is drawn with these fonts (src/lib/telegram/report-card.tsx),
+  // read from disk by the two routes that send it.
+  outputFileTracingIncludes: {
+    "/api/cron/telegram-dispatch": ["src/lib/telegram/fonts/*.ttf"],
+    "/api/telegram/webhook": ["src/lib/telegram/fonts/*.ttf"],
+    // Report cards and office reports as PDF (src/lib/pdf): the same fonts and the emblem.
+    "/report-cards": ["src/lib/telegram/fonts/*.ttf", "src/lib/pdf/assets/*.png"],
+    "/admin/reports/export": ["src/lib/telegram/fonts/*.ttf", "src/lib/pdf/assets/*.png"],
+  },
+  experimental: {
+    // The connection watched for us: offline is noticed (the browser's own
+    // event, or a page, prefetch or save that could not reach the server),
+    // what was asked for is kept and sent again when it is back, and the
+    // offline cover (features/native/offline-cover.tsx) reads it.
+    useOffline: true,
+    // Pages are kept in the phone's memory and opened from there at once:
+    // the menu's and the bar's sections are fetched whole ahead of any tap
+    // and kept a quarter of an hour (static — fetched again as soon as they
+    // grow old, components/shell/warm-pages.ts), any other page five minutes
+    // after it was opened (dynamic). A page shown from an older copy is
+    // refreshed behind it at once, and anything saved clears what it changed
+    // (revalidatePath), so nobody sees their own change missing.
+    staleTimes: {
+      dynamic: 300,
+      static: 900,
+    },
+    serverActions: {
+      // Book files are uploaded directly to storage from the browser; action
+      // payloads stay small (metadata, CSV imports up to ~2 MB).
+      bodySizeLimit: "4mb",
+    },
+  },
+  // The public school site ("about us", its news, events and documents) is
+  // gone; links to it that are still out there land on the front page.
+  async redirects() {
+    return [
+      { source: "/s/:path*", destination: "/", permanent: false },
+      { source: "/admin/website", destination: "/admin", permanent: false },
+      // One way in for people: the older list pages lead to the account block.
+      { source: "/admin/users", destination: "/admin/accounts", permanent: false },
+      { source: "/admin/parents", destination: "/admin/accounts/parents", permanent: false },
+      // The portal's own chat is retired (people are reached on WhatsApp);
+      // links to it from old notifications, installed pages and bookmarks
+      // land where its place in the bar went, and the desk's chat on the desk.
+      { source: "/messages", destination: "/notifications", permanent: false },
+      { source: "/messages/:path*", destination: "/notifications", permanent: false },
+      { source: "/support/chat", destination: "/support/contact", permanent: false },
+      { source: "/admin/support/:id", destination: "/admin/support", permanent: false },
+      { source: "/admin/moderation/:path*", destination: "/admin", permanent: false },
+      { source: "/admin/moderation", destination: "/admin", permanent: false },
+    ];
+  },
+  async headers() {
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // The service worker must never be served from a cache: a stale one
+        // keeps running old code on every device until it happens to expire.
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: serviceWorkerPolicy() },
+        ],
+      },
+    ];
+  },
+};
 
 export default withNextIntl(nextConfig);

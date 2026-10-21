@@ -1,0 +1,1325 @@
+/*
+ * The portal's movements: the sky over the greeting, the dashboard's drifting
+ * wall, the bottom bar, the welcome, the offline cover, lists, search and the
+ * warm homework cards. Kept apart from globals.css, which holds the system.
+ *
+ * Every movement here is a transform or an opacity, so the phone's compositor
+ * carries it, and every one of them stops for whoever asks for less motion
+ * (the last section).
+ */
+
+/* ------------------------------------------------------- the greeting's sky */
+
+/*
+ * weather-photo.tsx: a photograph of the sky for the hour and the weather,
+ * filling the card. It drifts very slowly closer and back; a shade darkens it
+ * most behind the words, on the left, and towards the foot, and a soft
+ * vignette rounds it off. While the photograph is on its way, the card's own
+ * colours for the hour (globals.css, .greeting-card) show, and Next.js lays
+ * a blurred copy over them first.
+ */
+.photo-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.photo-sky-img {
+  object-fit: cover;
+  scale: 1.04;
+  animation: photo-drift 48s ease-in-out infinite alternate;
+}
+@keyframes photo-drift {
+  to {
+    scale: 1.12;
+    translate: -1.5% -1%;
+  }
+}
+.photo-sky-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(6 9 22 / 0.74) 0%, rgb(6 9 22 / 0.46) 45%, rgb(6 9 22 / 0.2) 100%),
+    linear-gradient(0deg, rgb(6 9 22 / 0.55) 0%, transparent 60%),
+    radial-gradient(130% 110% at 65% 35%, transparent 45%, rgb(0 0 0 / 0.35) 100%);
+}
+/* Night photographs are dark already; the shade lightens its hand. */
+.photo-sky:is([data-photo="clear-night"], [data-photo="night-clouds"], [data-photo="rain-night"], [data-photo="snow-night"], [data-photo="storm"]) .photo-sky-shade {
+  opacity: 0.7;
+}
+
+/* Snow keeps falling over its photograph, fog drifts, a storm flashes now and then. */
+.sky-snow,
+.sky-fog,
+.sky-storm {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* Over a photograph the flakes keep to a whisper, so the greeting stays clear. */
+.sky-snow {
+  opacity: 0.5;
+}
+.sky-snow i {
+  position: absolute;
+  inset: -120px -40px 0 -40px;
+  background-repeat: repeat;
+}
+.sky-snow i:nth-child(1) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='12' cy='10' r='2.2' fill-opacity='0.9'/%3E%3Ccircle cx='48' cy='34' r='1.7' fill-opacity='0.8'/%3E%3Ccircle cx='26' cy='58' r='2.4' fill-opacity='0.85'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 70px 70px;
+  animation: sky-snow-near 7s linear infinite;
+}
+.sky-snow i:nth-child(2) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Cg fill='%23ffffff' fill-opacity='0.5'%3E%3Ccircle cx='8' cy='14' r='1.1'/%3E%3Ccircle cx='36' cy='40' r='1'/%3E%3Ccircle cx='30' cy='8' r='0.9'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 50px 50px;
+  animation: sky-snow-far 11s linear infinite;
+}
+@keyframes sky-snow-near {
+  50% {
+    transform: translate3d(10px, 35px, 0);
+  }
+  to {
+    transform: translate3d(0, 70px, 0);
+  }
+}
+@keyframes sky-snow-far {
+  50% {
+    transform: translate3d(-8px, 25px, 0);
+  }
+  to {
+    transform: translate3d(0, 50px, 0);
+  }
+}
+
+.sky-fog i {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 46%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(235 240 250 / 0.3), transparent);
+  filter: blur(4px);
+  animation: sky-fog 26s ease-in-out infinite alternate;
+}
+.sky-fog i:nth-child(1) {
+  top: 8%;
+}
+.sky-fog i:nth-child(2) {
+  top: 40%;
+  animation-duration: 34s;
+  animation-direction: alternate-reverse;
+}
+.sky-fog i:nth-child(3) {
+  top: 66%;
+  animation-duration: 22s;
+}
+@keyframes sky-fog {
+  from {
+    transform: translateX(-12%);
+  }
+  to {
+    transform: translateX(12%);
+  }
+}
+
+.sky-storm {
+  animation: sky-flash 7s linear infinite;
+}
+@keyframes sky-flash {
+  0%,
+  86%,
+  89%,
+  92%,
+  100% {
+    background: transparent;
+  }
+  87%,
+  90.5% {
+    background: rgb(220 232 255 / 0.28);
+  }
+}
+
+/* Nothing moves while the card is out of sight. */
+.greeting-card:not([data-on-screen]) .photo-sky * {
+  animation-play-state: paused;
+}
+
+/* The weather, in a corner: the sign, the degrees, the town. */
+.sky-chip {
+  position: absolute;
+  top: 1rem;
+  right: 1.1rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgb(238 233 223 / 0.85);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.5);
+  animation: sky-chip-in 0.6s ease both;
+}
+.sky-chip svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: #eee9df;
+  filter: drop-shadow(0 1px 6px rgb(0 0 0 / 0.45));
+}
+@keyframes sky-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* The greeting itself: one line, whatever the name (greeting-card.tsx sizes it). */
+.greeting-line {
+  display: flex;
+  align-items: baseline;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 28px;
+  line-height: 1.4;
+}
+@media (min-width: 640px) {
+  .greeting-line {
+    font-size: 38px;
+    line-height: 1.35;
+  }
+}
+.greeting-line > * {
+  flex-shrink: 0;
+}
+.greeting-line > .greeting-name {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.1em;
+}
+.greeting-line[data-measuring] > .greeting-name {
+  flex-shrink: 0;
+}
+.greeting-gap {
+  white-space: pre;
+}
+.greeting-word {
+  font-family: var(--font-greeting), var(--font-display);
+  color: #eee9df;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 0.35);
+}
+.greeting-date {
+  padding-right: 6rem;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+}
+
+/* ------------------------------------------------------------ the bottom bar */
+
+/*
+ * app-shell.tsx (BottomBar) and bar-icons.tsx. The light under the chosen icon
+ * is placed by --i of --n slots across the bar's own width (a container), so
+ * it glides on the compositor; --move restarts the squash on every choice.
+ */
+/*
+ * A page on its way (app-shell.tsx, instant-nav.ts): a thin brass line under
+ * the header, running most of the way and waiting there; the page in front
+ * stays as it is until the next one is in. Most pages are on the device
+ * already and come before the line is seen at all.
+ */
+.nav-progress {
+  position: fixed;
+  top: calc(3.5rem + var(--strip-h));
+  left: 0;
+  z-index: 40;
+  width: 100%;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--color-brand-solid) 40%, transparent), var(--color-brand-solid));
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  transition: opacity 0.25s ease 0.1s;
+}
+.nav-progress[data-on] {
+  opacity: 1;
+  transition-delay: 0.12s;
+  animation: nav-progress-run 9s cubic-bezier(0.08, 0.7, 0.2, 1) 0.12s forwards;
+}
+@keyframes nav-progress-run {
+  to {
+    transform: scaleX(0.92);
+  }
+}
+
+/*
+ * Pull to refresh (pull-to-refresh.tsx): a small round mark under the
+ * header that follows the finger down, turning as it comes, and spins while
+ * the page is asked for again.
+ */
+.ptr {
+  --pull: 0;
+  position: fixed;
+  top: calc(3.5rem + var(--strip-h));
+  left: 50%;
+  z-index: 35;
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px var(--color-line),
+    0 6px 16px -6px rgb(0 0 0 / 0.35);
+  color: var(--color-brand-text);
+  pointer-events: none;
+  translate: -50% calc(var(--pull) * 1px - 2.6rem);
+  opacity: min(1, calc(var(--pull) / 36));
+  transition:
+    translate 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease;
+}
+.ptr[data-state="pulling"],
+.ptr[data-state="armed"] {
+  transition: none;
+}
+.ptr svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  rotate: calc(var(--pull) * 4deg);
+}
+.ptr[data-state="armed"] {
+  color: var(--color-brand-solid);
+}
+.ptr[data-state="refreshing"] svg {
+  animation: ptr-spin 0.8s linear infinite;
+}
+@keyframes ptr-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+/* The browser's own pull-to-reload would come with ours. */
+@media (pointer: coarse) {
+  html {
+    overscroll-behavior-y: none;
+  }
+}
+
+.bar {
+  container-type: inline-size;
+}
+/* Its middle is the chosen icon's middle: the icon's box starts 0.375rem
+   down (the item's padding) and the chosen icon rises a pixel, so the light
+   rises with it. Measured, not guessed: e2e checks the two centres agree. */
+.bar-pill {
+  position: absolute;
+  top: calc(0.375rem - 1px);
+  left: 0;
+  width: 3.75rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand-solid) 15%, var(--color-surface));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--color-brand-solid) 20%, transparent),
+    0 4px 14px -6px color-mix(in oklab, var(--color-brand-solid) 55%, transparent);
+  translate: calc(100cqw / var(--n) * var(--i) + (100cqw / var(--n) - 3.75rem) / 2) 0;
+  transition:
+    translate 0.48s cubic-bezier(0.34, 1.32, 0.5, 1),
+    opacity 0.25s ease,
+    scale 0.25s ease;
+}
+.bar-pill[data-hidden] {
+  opacity: 0;
+  scale: 0.6;
+}
+.bar[data-ready] .bar-pill[data-move="a"] {
+  animation: bar-squash-a 0.48s ease;
+}
+.bar[data-ready] .bar-pill[data-move="b"] {
+  animation: bar-squash-b 0.48s ease;
+}
+@keyframes bar-squash-a {
+  35% {
+    scale: 1.3 0.84;
+  }
+  70% {
+    scale: 0.95 1.05;
+  }
+}
+@keyframes bar-squash-b {
+  35% {
+    scale: 1.3 0.84;
+  }
+  70% {
+    scale: 0.95 1.05;
+  }
+}
+.bar-item {
+  transition: color 0.25s ease;
+}
+.bar-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+  overflow: visible;
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.bar-item[aria-current="page"] .bar-icon {
+  transform: translateY(-1px) scale(1.06);
+}
+
+/* The dashboard: four blocks, flipping over two by two. */
+.bar-block {
+  fill: currentColor;
+  fill-opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill-opacity 0.35s ease;
+}
+[aria-current="page"] .bar-block-a {
+  fill-opacity: 0.22;
+}
+.bar[data-ready] [aria-current="page"] .bar-block-a {
+  animation: bar-flip 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+.bar[data-ready] [aria-current="page"] .bar-block-b {
+  animation: bar-flip-back 0.55s cubic-bezier(0.3, 0.7, 0.3, 1) 0.14s both;
+}
+@keyframes bar-flip {
+  0% {
+    transform: scaleY(1);
+  }
+  45% {
+    transform: scaleY(0.05);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes bar-flip-back {
+  0% {
+    transform: scaleX(1);
+  }
+  45% {
+    transform: scaleX(0.05);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* The library: the shut book opens from its spine, a page turns; it shuts again when left. */
+.bar-book-shut,
+.bar-book-open,
+.bar-book-leaf {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+.bar-book-shut {
+  transition:
+    transform 0.4s cubic-bezier(0.3, 0.8, 0.3, 1),
+    opacity 0.3s ease;
+}
+.bar-book-open {
+  opacity: 0;
+  transform: scaleX(0.15);
+  transition:
+    transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1) 0.08s,
+    opacity 0.25s ease 0.08s;
+}
+[aria-current="page"] .bar-book-shut {
+  opacity: 0;
+  transform: scaleX(0.15);
+}
+[aria-current="page"] .bar-book-open {
+  opacity: 1;
+  transform: scaleX(1);
+}
+.bar-book-leaf {
+  opacity: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-book-leaf {
+  animation: bar-leaf 0.62s ease-in-out 0.28s both;
+}
+@keyframes bar-leaf {
+  0% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  96% {
+    opacity: 1;
+    transform: scaleX(-1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(-1);
+  }
+}
+
+/* Teaching: the board's chart draws itself. */
+.bar-chart,
+.bar-tick,
+.bar-scribble {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-chart {
+  animation: bar-draw 0.6s ease-out 0.1s both;
+}
+@keyframes bar-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* The timetable: a leaf turns, the day is ticked. */
+.bar-leaf {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: none;
+  transform-box: view-box;
+  transform-origin: 12px 10px;
+}
+.bar-tick {
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s ease;
+}
+[aria-current="page"] .bar-tick {
+  stroke-dashoffset: 0;
+}
+.bar[data-ready] [aria-current="page"] .bar-leaf {
+  animation: bar-turn 0.55s ease-in-out both;
+}
+.bar[data-ready] [aria-current="page"] .bar-tick {
+  animation: bar-draw 0.35s ease-out 0.4s both;
+}
+@keyframes bar-turn {
+  0% {
+    transform: scaleY(1);
+    fill-opacity: 0.3;
+  }
+  50% {
+    transform: scaleY(0);
+    fill-opacity: 0.3;
+  }
+  100% {
+    transform: scaleY(1);
+    fill-opacity: 0;
+  }
+}
+
+/* Homework: the pen writes a line. */
+.bar-scribble {
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s ease;
+}
+[aria-current="page"] .bar-scribble {
+  stroke-dashoffset: 0;
+}
+.bar-pen {
+  transform-box: view-box;
+  transform-origin: 13px 11px;
+}
+.bar[data-ready] [aria-current="page"] .bar-scribble {
+  animation: bar-draw 0.5s ease-out 0.12s both;
+}
+.bar[data-ready] [aria-current="page"] .bar-pen {
+  animation: bar-write 0.62s ease-in-out both;
+}
+@keyframes bar-write {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translate(-4px, 5px) rotate(-10deg);
+  }
+  50% {
+    transform: translate(-1.5px, 4px) rotate(-4deg);
+  }
+  75% {
+    transform: translate(1px, 5px) rotate(-9deg);
+  }
+}
+
+/*
+ * Notifications: the bell swings from its top and the clapper answers a
+ * beat behind; it rings the same way, chosen or not, each time something new
+ * comes (app-shell.tsx sets data-ring to a fresh value).
+ */
+.bar-bell {
+  transform-box: view-box;
+  transform-origin: 12px 2.5px;
+}
+.bar-clapper {
+  transform-box: view-box;
+  transform-origin: 12px 17px;
+}
+.bar[data-ready] [aria-current="page"] .bar-bell,
+[data-ring="a"] .bar-bell {
+  animation: bar-swing-a 0.9s ease-in-out both;
+}
+[data-ring="b"] .bar-bell {
+  animation: bar-swing-b 0.9s ease-in-out both;
+}
+.bar[data-ready] [aria-current="page"] .bar-clapper,
+[data-ring] .bar-clapper {
+  animation: bar-clap 0.9s ease-in-out 0.06s both;
+}
+@keyframes bar-swing-a {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: rotate(16deg);
+  }
+  35% {
+    transform: rotate(-13deg);
+  }
+  55% {
+    transform: rotate(8deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+}
+/* The same swing under another name, so a second ring starts it over. */
+@keyframes bar-swing-b {
+  0%,
+  100% {
+    transform: none;
+  }
+  15% {
+    transform: rotate(16deg);
+  }
+  35% {
+    transform: rotate(-13deg);
+  }
+  55% {
+    transform: rotate(8deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes bar-clap {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-1.6px);
+  }
+  40% {
+    transform: translateX(1.4px);
+  }
+  60% {
+    transform: translateX(-0.8px);
+  }
+}
+@keyframes bar-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* News: the headline drops in, the lines run in after it. */
+.bar-headline,
+.bar-line {
+  transform-box: fill-box;
+}
+.bar-headline {
+  transform-origin: center;
+  fill: currentColor;
+  fill-opacity: 0;
+  transition: fill-opacity 0.3s ease;
+}
+[aria-current="page"] .bar-headline {
+  fill-opacity: 0.25;
+}
+.bar-line {
+  transform-origin: left center;
+}
+.bar[data-ready] [aria-current="page"] .bar-headline {
+  animation: bar-pop 0.45s cubic-bezier(0.34, 1.6, 0.5, 1) both;
+}
+.bar[data-ready] [aria-current="page"] .bar-line-1 {
+  animation: bar-run 0.4s ease-out 0.15s both;
+}
+.bar[data-ready] [aria-current="page"] .bar-line-2 {
+  animation: bar-run 0.4s ease-out 0.27s both;
+}
+@keyframes bar-run {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* -------------------------------------------------------------- the welcome */
+
+/*
+ * The opening of the site and the welcome after every sign-in
+ * (book-scene.tsx, intro.tsx, welcome-transition.tsx), about three seconds;
+ * the timeline is written out at the top of book-scene.tsx.
+ *
+ * The overlay is drawn by the server with the page, so it covers it from the
+ * first frame; until data-play is set (intro-script.ts, or React for the
+ * welcome) every movement waits at its first frame. A tap ends it. If no
+ * script ever runs, it lifts by itself after five seconds.
+ */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  /* The night canvas, the same as the app's splash; the book brings its own light. */
+  background: #0a0e17;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    opacity 0.45s ease,
+    visibility 0.45s;
+  animation: intro-fallback 0.4s ease 5s forwards;
+}
+.intro-welcome {
+  z-index: 110;
+}
+.intro[data-skip] {
+  display: none;
+}
+.intro-leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.intro:not([data-play]) *,
+.intro:not([data-play]) *::before,
+.intro:not([data-play]) *::after {
+  animation-play-state: paused !important;
+}
+@keyframes intro-fallback {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.intro-veil {
+  cursor: progress;
+  animation: intro-fade 0.3s ease both;
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+.intro-veil-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(18%, 7rem);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.74);
+}
+
+/*
+ * The book (book-scene.tsx). --w is a cover's width; the book stands in the
+ * right half of a box two covers wide and is drawn back by half a cover while
+ * shut, so it is centred shut and open. Pages and cover turn on their left
+ * edge, each in its own perspective; which one lies on top changes half-way
+ * through its turn (z-index in the keyframes), so a turning page is never
+ * hidden by the pages already turned.
+ */
+.book-stage {
+  --w: clamp(5.75rem, 26vw, 7.25rem);
+  --h: calc(var(--w) * 1.34);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+/* In the app the splash showed the shut book at this size, in this place. */
+html[data-app] #intro .book-stage {
+  --w: 92px;
+}
+.book-scene {
+  position: relative;
+  width: calc(var(--w) * 2);
+  height: var(--h);
+  animation: book-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.book-glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: calc(var(--w) * 4.4);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 214 130 / 0.55), rgb(255 170 80 / 0.16) 55%, transparent);
+  opacity: 0;
+  scale: 0.6;
+  animation: book-glow 0.9s ease-out 0.9s forwards;
+}
+.book {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--w);
+  translate: calc(var(--w) / -2) 0;
+  animation:
+    book-centre 0.7s cubic-bezier(0.45, 0, 0.2, 1) 0.45s forwards,
+    book-approach 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) 1.1s forwards;
+}
+/* Once open, the book comes a little closer, as if lifted to be read. */
+@keyframes book-approach {
+  to {
+    scale: 1.06;
+  }
+}
+.book-block,
+.book-leaf,
+.book-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px 7px 7px 2px;
+  transform-origin: left center;
+}
+.book-block {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 calc(var(--h) / 11 - 1px), rgb(120 100 70 / 0.12) calc(var(--h) / 11 - 1px) calc(var(--h) / 11)) 22% 18% / 62% 64% no-repeat,
+    linear-gradient(90deg, #e9dfc8, #fdf8ee 14%, #fbf5e6);
+  box-shadow:
+    1.5px 1.5px 0 #efe6d2,
+    3px 3px 0 #e2d7bd,
+    0 22px 44px rgb(0 0 0 / 0.4);
+}
+.book-leaf::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgb(60 40 10 / 0.35), transparent 70%);
+  opacity: 0;
+  animation: book-leaf-shade 0.62s ease-in-out calc(0.85s + var(--i) * 0.17s);
+}
+@keyframes book-leaf-shade {
+  50% {
+    opacity: 1;
+  }
+}
+.book-leaf {
+  z-index: var(--from);
+  background: linear-gradient(90deg, #ece2cb, #fdf8ee 16%, #fcf7ea);
+  transform: perspective(1100px) rotateY(0deg);
+  animation: book-leaf 0.62s cubic-bezier(0.45, 0, 0.3, 1) calc(0.85s + var(--i) * 0.17s) forwards;
+}
+.book-cover {
+  z-index: 10;
+  transform-style: preserve-3d;
+  transform: perspective(1100px) rotateY(0deg);
+  animation: book-cover 0.75s cubic-bezier(0.45, 0, 0.2, 1) 0.45s forwards;
+}
+.book-cover-front,
+.book-cover-inside {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+}
+.book-cover-front {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.16), transparent 7%) #ff5a1f;
+}
+.book-cover-inside {
+  transform: rotateY(180deg);
+  background: linear-gradient(270deg, #e9dfc8, #fdf8ee 16%, #fbf5e6);
+}
+.book-mark {
+  width: 46%;
+  fill: #fff;
+  stroke: #fff;
+  stroke-width: 48;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.book-mark path {
+  fill: none;
+}
+.book-motes {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+}
+.book-motes i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffe2a0;
+  box-shadow: 0 0 8px 2px rgb(255 214 130 / 0.6);
+  opacity: 0;
+  animation: book-mote 1.6s ease-out calc(1.1s + var(--d)) forwards;
+}
+.book-words {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + var(--h) / 2 + 1.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.book-hello {
+  max-width: 92vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 0.35em;
+  font-family: var(--font-greeting), var(--font-display);
+  font-size: clamp(2rem, 9vw, 3rem);
+  line-height: 1.35;
+  color: #fff;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.3);
+  /* Written left to right: a soft edge sweeps across and leaves the words behind it. */
+  -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+  mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+  -webkit-mask-size: 220% 100%;
+  mask-size: 220% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  animation: book-write 1s cubic-bezier(0.4, 0.1, 0.5, 0.95) 1.25s forwards;
+}
+.book-name {
+  color: #e2c48f;
+}
+.book-flourish {
+  width: min(78vw, 17rem);
+  margin-top: 0.1rem;
+  overflow: visible;
+  color: #d9be8c;
+}
+/* The swashes run out from the star, revealed from the middle outwards. */
+.book-swash {
+  fill: currentColor;
+  clip-path: inset(0 0 0 100%);
+  animation: book-swash 0.95s cubic-bezier(0.3, 0, 0.2, 1) 1.7s forwards;
+}
+.book-curl {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: book-curl 0.5s ease-out 2.45s forwards;
+}
+.book-dot {
+  fill: currentColor;
+  opacity: 0;
+  scale: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: book-dot 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) 2.8s forwards;
+}
+.book-star {
+  fill: #f3dfb4;
+  opacity: 0;
+  scale: 0.2;
+  rotate: -90deg;
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 0 4px rgb(243 223 180 / 0.8));
+  animation:
+    book-star 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) 1.55s forwards,
+    book-star-glint 0.9s ease-in-out 3.05s;
+}
+@keyframes book-swash {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes book-curl {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes book-dot {
+  to {
+    opacity: 0.8;
+    scale: 1;
+  }
+}
+@keyframes book-star {
+  to {
+    opacity: 1;
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+@keyframes book-star-glint {
+  50% {
+    scale: 1.35;
+    rotate: 45deg;
+  }
+}
+
+/* Waiting while a sign-in is checked: the book shut, floating, breathing light. */
+.book-stage[data-waiting] {
+  .book-scene {
+    animation: book-float 2.4s ease-in-out infinite alternate;
+  }
+  .book-glow {
+    animation: book-breathe 2.4s ease-in-out infinite alternate;
+  }
+  .book,
+  .book-cover,
+  .book-leaf,
+  .book-motes i {
+    animation: none;
+  }
+}
+/* Coming straight from that wait, or in the app straight from its splash:
+   the book is already there and opens at once. */
+[data-signin-veil] .intro-welcome:not(.intro-veil) .book-scene,
+html[data-app] #intro .book-scene {
+  animation: none;
+}
+
+@keyframes book-rise {
+  from {
+    opacity: 0;
+    translate: 0 22px;
+    scale: 0.92;
+  }
+}
+@keyframes book-centre {
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes book-cover {
+  0%,
+  49% {
+    z-index: 10;
+  }
+  51%,
+  100% {
+    z-index: 1;
+  }
+  to {
+    transform: perspective(1100px) rotateY(-180deg);
+  }
+}
+@keyframes book-leaf {
+  0%,
+  49% {
+    z-index: var(--from);
+  }
+  51%,
+  100% {
+    z-index: var(--to);
+  }
+  to {
+    transform: perspective(1100px) rotateY(-179deg);
+  }
+}
+@keyframes book-glow {
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes book-breathe {
+  from {
+    opacity: 0.18;
+    scale: 0.55;
+  }
+  to {
+    opacity: 0.4;
+    scale: 0.68;
+  }
+}
+@keyframes book-float {
+  from {
+    translate: 0 -4px;
+  }
+  to {
+    translate: 0 5px;
+  }
+}
+@keyframes book-mote {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--x) -70px;
+  }
+}
+@keyframes book-write {
+  to {
+    -webkit-mask-position: 0 0;
+    mask-position: 0 0;
+  }
+}
+
+/* ------------------------------------------------------------- less motion */
+
+/*
+ * For whoever asks for less motion: nothing drifts, sways, flips or flies;
+ * each picture is drawn in its finished state — the photograph still, the wall
+ * still, the bar's light simply in its place, and the welcome already
+ * saying hello over the open book.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .photo-sky *,
+  .bar *,
+  .intro *,
+  .intro *::before,
+  .intro *::after {
+    animation: none !important;
+  }
+  .bar *,
+  .bar-pill {
+    transition-duration: 0s !important;
+  }
+  .book-stage:not([data-waiting]) {
+    .book {
+      translate: 0 0;
+    }
+    .book-cover {
+      z-index: 1;
+      transform: perspective(1100px) rotateY(-180deg);
+    }
+    .book-glow {
+      opacity: 1;
+      scale: 1;
+    }
+    .book-hello {
+      -webkit-mask-position: 0 0;
+      mask-position: 0 0;
+    }
+    .book-swash {
+      clip-path: none;
+    }
+    .book-curl {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+    .book-dot {
+      opacity: 0.8;
+      scale: 1;
+    }
+    .book-star {
+      opacity: 1;
+      scale: 1;
+      rotate: 0deg;
+    }
+  }
+}
+
+/* ---------------------------------------------------------- a slow page */
+
+/*
+ * A page that is only slow to come: a small note at the foot of the screen,
+ * above the phone's bottom bar, with the Wi-Fi sign's waves filling one after
+ * another. Nothing is covered; the page keeps loading under it.
+ */
+.slow-note {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 4.75rem);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.6rem 0.5rem 0.6rem 0.9rem;
+  border-radius: 1rem;
+  background: rgb(20 26 48 / 0.92);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.28);
+  backdrop-filter: blur(8px);
+  translate: -50% 0;
+  animation: slow-note-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 1024px) {
+  .slow-note {
+    bottom: 1.5rem;
+  }
+}
+/* No line (offline-cover.tsx): the same note, a still Wi-Fi sign. */
+.net-note {
+  padding-right: 1rem;
+}
+.net-note-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  color: #ffd25a;
+}
+.net-note[data-mode="back"] .net-note-icon {
+  color: #7dd6a4;
+}
+.net-note-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.slow-note-waves {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: none;
+  stroke: #ffd25a;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.slow-note-waves circle {
+  fill: #ffd25a;
+  stroke: none;
+}
+.slow-note-waves path {
+  animation: slow-note-wave 1.8s ease-in-out infinite;
+}
+.slow-note-waves path:nth-child(2) {
+  animation-delay: 0.25s;
+}
+.slow-note-waves path:nth-child(3) {
+  animation-delay: 0.5s;
+}
+.slow-note-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.7);
+}
+.slow-note-close:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+.slow-note-close svg {
+  width: 1rem;
+  height: 1rem;
+}
+@keyframes slow-note-in {
+  from {
+    opacity: 0;
+    translate: -50% 12px;
+  }
+}
+@keyframes slow-note-wave {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40%,
+  60% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slow-note,
+  .slow-note-waves path {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------- searching */
+
+/*
+ * searching.tsx: a short handwritten line with a glass going along it — while
+ * a search looks (.searching) and when it found nothing (.lens-empty). Both
+ * are drawn on one canvas that sizes itself to the room it has; the line is
+ * written in the element's `color`. Whatever the search box belongs to dims
+ * what comes after it until the glass is done.
+ */
+.searching {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0 0;
+  color: var(--color-ink-secondary);
+}
+.lens-empty {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  color: var(--color-ink-secondary);
+}
+.lens-line {
+  display: block;
+  flex: none;
+  animation: lens-line-in 0.4s ease both;
+}
+/* A box that holds only "nothing found" (surface.tsx's EmptyState) gives up
+   its border, its ground and its shadow: the line and its glass stand on the
+   page itself. */
+:has(> .empty-nothing) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+@keyframes lens-line-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes searching-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+.filter-bar[data-searching] ~ * {
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens-line {
+    animation: none;
+  }
+}

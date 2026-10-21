@@ -1,0 +1,76 @@
+import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { ArrowRight, Check } from "lucide-react";
+import type { AdminDashboard } from "@/features/admin/dashboard-query";
+import { Card, CardBody, CardHeader } from "@/components/ui/surface";
+import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils/cn";
+
+type StepKey = "staff" | "students" | "timetable";
+
+interface Step {
+  key: StepKey;
+  href: string;
+  done: boolean;
+}
+
+/**
+ * First-run guide for a school that has not been set up yet. Every step is
+ * derived from what the dashboard actually reports — no invented progress —
+ * and the card disappears once the school is running.
+ */
+export function setupSteps(data: AdminDashboard, hasTimetable: boolean): Step[] {
+  // The year, its classes (1А … 11Д) and the bells are there by themselves
+  // (00086): what is left for the office is three workbooks, in this order.
+  return [
+    { key: "staff", href: "/admin/staff/import", done: Number(data.counts.teachers_active) > 0 },
+    { key: "students", href: "/admin/students/import", done: Number(data.counts.students_active) > 0 },
+    { key: "timetable", href: "/admin/timetable/import", done: hasTimetable },
+  ];
+}
+
+export async function SetupGuide({ data, className }: { data: AdminDashboard; className?: string }) {
+  // Whether there is a timetable, not how long it is: one row answers it.
+  const { data: anyLesson } = data.academic_year
+    ? await (await createClient()).from("timetable_entries").select("id").eq("academic_year_id", data.academic_year.id).limit(1)
+    : { data: [] };
+  const steps = setupSteps(data, (anyLesson?.length ?? 0) > 0);
+  const pending = steps.filter((step) => !step.done);
+  if (pending.length === 0) return null;
+  const t = await getTranslations("admin.setup");
+  const done = steps.length - pending.length;
+
+  return (
+    <Card className={className}>
+      <CardHeader title={t("title")} description={t("progress", { done, total: steps.length })} />
+      <CardBody className="p-0">
+        <ol className="divide-y divide-line">
+          {steps.map((step) => (
+            <li key={step.key} className="flex flex-wrap items-center gap-3 px-5 py-3">
+              <span
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                  step.done ? "border-success-600 text-success-600" : "border-line-strong text-ink-muted"
+                )}
+                aria-hidden
+              >
+                {step.done ? <Check className="size-3.5" /> : null}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className={cn("block font-medium", step.done && "text-ink-muted line-through")}>{t(`steps.${step.key}.title`)}</span>
+                <span className="block text-sm text-ink-muted">{t(`steps.${step.key}.hint`)}</span>
+                <span className="sr-only">{step.done ? t("doneLabel") : t("todoLabel")}</span>
+              </span>
+              {step.done ? null : (
+                <Link href={step.href} className="shrink-0 text-sm font-semibold text-brand-text hover:underline">
+                  {t("open")}
+                  <ArrowRight className="ms-1 inline size-4" aria-hidden />
+                </Link>
+              )}
+            </li>
+          ))}
+        </ol>
+      </CardBody>
+    </Card>
+  );
+}

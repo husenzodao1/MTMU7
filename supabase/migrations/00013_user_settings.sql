@@ -30,6 +30,21 @@ CREATE POLICY user_settings_update ON public.user_settings FOR UPDATE TO authent
 -- No DELETE policy — settings are never deleted, only updated
 
 -- Trigger for updated_at
+-- FUN-001: this migration originally referenced public.set_updated_at(), which no
+-- earlier migration defines, so a fresh database could not be built. The
+-- definition below is idempotent and identical in behaviour to
+-- public.update_updated_at() from 00010.
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
 CREATE TRIGGER set_user_settings_updated_at
   BEFORE UPDATE ON public.user_settings
   FOR EACH ROW

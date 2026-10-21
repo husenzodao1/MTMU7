@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Тоҷикӣ: the app's own language. Russian and English beside it. -->
+<resources>
+    <string name="app_name">МТМУ №7</string>
+    <string name="school_subtitle">Портали мактаб</string>
+
+    <!-- Sign-in -->
+    <string name="sign_in_title">Воридшавӣ</string>
+    <string name="sign_in_lead">Бо логине, ки мактаб додааст (MT10001), лақаб ё почтаи электронӣ ворид шавед.</string>
+    <string name="login">Логин, лақаб ё почта</string>
+    <string name="password">Парол</string>
+    <string name="sign_in">Даромадан</string>
+    <string name="show_password">Нишон додани парол</string>
+    <string name="code_title">Тасдиқи дуқадама</string>
+    <string name="code_lead">Рамзи 6-рақамаро аз барномаи Authenticator нависед.</string>
+    <string name="code">Рамз</string>
+    <string name="confirm">Тасдиқ</string>
+    <string name="back">Бозгашт</string>
+    <string name="connecting">Пайвастшавӣ…</string>
+    <string name="forgot_password">Паролро фаромӯш кардед?</string>
+
+    <!-- Errors -->
+    <string name="error_invalid_credentials">Логин ё парол нодуруст аст.</string>
+    <string name="error_rate_limited">Кӯшишҳо хеле зиёданд. Каме истед ва аз нав кӯшиш кунед.</string>
+    <string name="error_account_inactive">Ҳисоб фаъол нест. Ба маъмури мактаб муроҷиат кунед.</string>
+    <string name="error_email_not_confirmed">Почтаи электронӣ ҳанӯз тасдиқ нашудааст. Бори аввал дар сомона ворид шуда, онро тасдиқ кунед.</string>
+    <string name="error_network">Пайвасти интернет нест. Баъди пайвастшавӣ аз нав кӯшиш кунед.</string>
+    <string name="error_invalid_code">Рамз нодуруст аст.</string>
+    <string name="error_unexpected">Амал иҷро нашуд. Лутфан аз нав кӯшиш кунед.</string>
+    <string name="error_forbidden">Барои ин амал иҷозат нест.</string>
+    <string name="error_blocked">Мубодилаи паём бо ин шахс маҳдуд аст.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Панели асосӣ</string>
+    <string name="nav_teach">Таълим</string>
+    <string name="nav_my_class">Синфи ман</string>
+    <string name="nav_schedule">Ҷадвали дарсҳо</string>
+    <string name="nav_homework">Вазифаи хонагӣ</string>
+    <string name="nav_library">Китобхона</string>
+    <string name="nav_messages">Паёмҳо</string>
+    <string name="nav_news">Хабарҳо ва эълонҳо</string>
+    <string name="nav_grades">Баҳоҳо</string>
+    <string name="nav_attendance">Ҳозирӣ</string>
+    <string name="nav_children">Фарзандони ман</string>
+    <string name="nav_documents">Ҳуҷҷатҳо</string>
+    <string name="nav_support">Дастгирӣ</string>
+    <string name="nav_notifications">Огоҳиномаҳо</string>
+    <string name="nav_profile">Профил</string>
+    <string name="nav_settings">Танзимот</string>
+    <string name="nav_admin">Маркази идоракунӣ</string>
+    <string name="menu">Меню</string>
+    <string name="sign_out">Баромад</string>
+    <string name="sign_out_confirm">Аз аккаунт бароед? Паёмҳо ва маълумоти ин аккаунт аз телефон тоза мешаванд.</string>
+    <string name="language">Забон</string>
+    <string name="theme">Намуд</string>
+    <string name="theme_light">Рӯз</string>
+    <string name="theme_dark">Шаб</string>
+    <string name="theme_system">Мисли телефон</string>
+    <string name="about">Дар бораи барнома</string>
+    <string name="version">Версия %1$s</string>
+
+    <!-- Offline -->
+    <string name="offline_title">Пайвасти интернет нест</string>
+    <string name="offline_text">Нусхаи охирин нишон дода мешавад — ҳар чӣ фиристед, баъди пайвастшавӣ худаш меравад.</string>
+    <string name="back_online">Пайваст шуд!</string>
+
+    <!-- Home -->
+    <string name="greeting_morning">Субҳ ба хайр</string>
+    <string name="greeting_day">Рӯз ба хайр</string>
+    <string name="greeting_evening">Шом ба хайр</string>
+    <string name="greeting_night">Шаб ба хайр</string>
+    <string name="wish_morning">Рӯзи хуш ва дарсҳои пурсамар ба шумо!</string>
+    <string name="wish_day">Рӯзатон пурбаракат ва корҳоятон бомуваффақият бод!</string>
+    <string name="wish_evening">Шоми хуш ва истироҳати гуворо!</string>
+    <string name="wish_night">Хоби ширин — фардо рӯзи нав аст.</string>
+    <string name="lessons_today">Дарсҳои имрӯз</string>
+    <string name="no_lessons_today">Имрӯз дарс нест.</string>
+    <string name="lesson_number">Дарси %1$d</string>
+    <string name="students_count">%1$d хонанда</string>
+    <string name="attendance_marked">Давомот қайд шуд</string>
+    <string name="attendance_not_marked">Давомот қайд нашудааст</string>
+    <string name="mark_attendance">Қайди давомот</string>
+    <string name="announcements">Эълонҳо</string>
+    <string name="news">Хабарҳо</string>
+    <string name="events">Чорабиниҳо</string>
+    <string name="latest_grades">Баҳоҳои охирин</string>
+    <string name="homework_due">Вазифаҳои наздик</string>
+    <string name="see_all">Ҳама</string>
+    <string name="open">Кушодан</string>
+    <string name="nothing_here">Ҳоло чизе нест.</string>
+
+    <!-- Messenger -->
+    <string name="chats_filter">Филтри сӯҳбатҳо</string>
+    <string name="filter_all">Ҳама</string>
+    <string name="filter_unread">Нохонда</string>
+    <string name="filter_groups">Гурӯҳҳо</string>
+    <string name="filter_channels">Каналҳо</string>
+    <string name="no_chats">Ҳанӯз сӯҳбат нест. Барои оғоз тугмаи «Сӯҳбати нав»-ро пахш кунед.</string>
+    <string name="no_unread">Ҳамаи паёмҳо хонда шудаанд.</string>
+    <string name="no_messages_yet">Ҳанӯз паём нест</string>
+    <string name="message_deleted">Паём нест карда шуд</string>
+    <string name="photo">Расм</string>
+    <string name="file">Файл</string>
+    <string name="voice">Паёми овозӣ</string>
+    <string name="location">Ҷойгиршавӣ</string>
+    <string name="composer_hint">Паём нависед…</string>
+    <string name="send">Фиристодан</string>
+    <string name="attach">Замима</string>
+    <string name="reply">Ҷавоб</string>
+    <string name="copy">Нусха</string>
+    <string name="copied">Нусха гирифта шуд</string>
+    <string name="edit">Таҳрир</string>
+    <string name="delete">Нест кардан</string>
+    <string name="delete_for_all">Барои ҳама нест кардан</string>
+    <string name="delete_confirm">Ин паём барои ҳама нест карда шавад?</string>
+    <string name="edited">таҳрир шуд</string>
+    <string name="editing">Таҳрири паём</string>
+    <string name="today">Имрӯз</string>
+    <string name="yesterday">Дирӯз</string>
+    <string name="online">дар шабака</string>
+    <string name="last_seen_today">имрӯз дар %1$s буд</string>
+    <string name="last_seen_on">%1$s дар %2$s буд</string>
+    <string name="members_count">%1$d аъзо</string>
+    <string name="new_chat">Сӯҳбати нав</string>
+    <string name="search_people">Номи шахсро нависед</string>
+    <string name="search_people_hint">Ақаллан ду ҳарф. Ҳ ва Х, Қ ва К якхела ҷустуҷӯ мешаванд.</string>
+    <string name="nobody_found">Касе ёфт нашуд.</string>
+    <string name="support_chat">Дастгирии онлайн</string>
+    <string name="mute">Бесадо кардан</string>
+    <string name="unmute">Бо садо кардан</string>
+    <string name="muted">бесадо</string>
+    <string name="retry">Аз нав фиристодан</string>
+    <string name="sending">Фиристода истодааст</string>
+    <string name="failed_tap">Нафиристод — барои такрор пахш кунед</string>
+    <string name="you">Шумо</string>
+    <string name="channel">Канал</string>
+    <string name="channel_read_only">Дар ин канал танҳо маъмурон менависанд.</string>
+    <string name="reply_earlier">Паёми пештара</string>
+    <string name="open_map">Кушодан дар харита</string>
+    <string name="send_location">Фиристодани ҷойгиршавӣ</string>
+    <string name="send_photo">Фиристодани расм</string>
+    <string name="location_failed">Ҷойгиршавӣ муайян нашуд. GPS-ро фаъол кунед.</string>
+    <string name="load_older">Паёмҳои пештара</string>
+    <string name="unread_badge_more">99+</string>
+
+    <!-- Notifications -->
+    <string name="channel_messages">Паёмҳо</string>
+    <string name="channel_messages_description">Паёмҳои нав дар чат ва дастгирӣ</string>
+    <string name="mark_all_read">Ҳамаро хонда шуд</string>
+    <string name="no_notifications">Огоҳинома нест.</string>
+    <string name="allow_notifications">Огоҳиҳоро иҷозат диҳед, то паёмҳои навро фавран бинед.</string>
+    <string name="allow">Иҷозат</string>
+
+    <!-- Web sections -->
+    <string name="loading_section">Боз шуда истодааст…</string>
+    <string name="refresh">Навсозӣ</string>
+    <string name="nav_contacts">Дӯстон</string>
+    <string name="login_label">Логин: %1$s</string>
+    <string name="security">Парол ва амният</string>
+    <string name="cancel">Бекор</string>
+    <string name="try_again">Аз нав кӯшиш кунед</string>
+    <string name="first_launch_offline">Бори аввал барнома бояд ба интернет пайваст шавад, то мактабро шиносад. Баъд аз ин бе интернет ҳам кушода мешавад.</string>
+</resources>
