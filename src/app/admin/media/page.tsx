@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DirectUpload } from "@/components/ui/direct-upload";
 import { TextField } from "@/components/ui/fields";
 import { ListBox, Pagination } from "@/components/ui/pagination";
-import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
+import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDate } from "@/lib/i18n/format";
@@ -54,7 +54,7 @@ export default async function AdminMediaPage({ searchParams }: { searchParams: P
       />
       <ListBox>
         {!data || data.length === 0 ? (
-          <Card as="div"><EmptyState icon={<Images />} title={t("empty")} description={t("emptyHint")} /></Card>
+          <EmptyState icon={<Images />} title={t("empty")} description={t("emptyHint")} />
         ) : (
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             {data.map((asset) => {

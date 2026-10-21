@@ -145,7 +145,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </CardBody>
         </Card>
       ) : (
-        <Card as="div"><EmptyState icon={<FileBarChart />} title={t("pick")} /></Card>
+        <EmptyState icon={<FileBarChart />} title={t("pick")} />
       )}
     </>
   );

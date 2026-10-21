@@ -69,7 +69,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
       </form>
       <ListBox>
         {!data || data.length === 0 ? (
-          <Card as="div"><EmptyState icon={<ScrollText />} title={t("empty")} description={t("emptyHint")} /></Card>
+          <EmptyState icon={<ScrollText />} title={t("empty")} description={t("emptyHint")} />
         ) : (
           <Card as="div">
             <CardBody className="p-0">

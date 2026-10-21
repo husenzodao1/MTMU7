@@ -31,7 +31,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
     return (
       <>
         <PageHeader title={t("title")} />
-        <Card as="div"><EmptyState icon={<GraduationCap />} title={t("noStudent")} /></Card>
+        <EmptyState icon={<GraduationCap />} title={t("noStudent")} />
       </>
     );
   }
@@ -99,7 +99,7 @@ export default async function GradesPage({ searchParams }: { searchParams: Promi
       ) : null}
 
       {subjects.length === 0 ? (
-        <Card as="div"><EmptyState icon={<GraduationCap />} title={t("none")} /></Card>
+        <EmptyState icon={<GraduationCap />} title={t("none")} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {subjects.map((subject) => {

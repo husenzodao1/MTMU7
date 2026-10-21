@@ -95,9 +95,9 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
         <>
           <FilterBar searchLabel={t("search")} />
           {query.length < 2 ? (
-            <Card as="div"><EmptyState icon={<Users />} title={t("searchHint")} hint /></Card>
+            <EmptyState icon={<Users />} title={t("searchHint")} hint />
           ) : found.length === 0 ? (
-            <Card as="div"><EmptyState icon={<Users />} title={t("noResults")} /></Card>
+            <EmptyState icon={<Users />} title={t("noResults")} />
           ) : (
             <Card as="div">
               <ul className="divide-y divide-line">
@@ -119,9 +119,7 @@ export default async function FriendsPage({ searchParams }: { searchParams: Prom
           )}
         </>
       ) : list.length === 0 ? (
-        <Card as="div">
-          <EmptyState icon={<Users />} title={t(`empty.${view}`)} />
-        </Card>
+        <EmptyState icon={<Users />} title={t(`empty.${view}`)} />
       ) : (
         <Card as="div">
           <CardBody className="p-0">

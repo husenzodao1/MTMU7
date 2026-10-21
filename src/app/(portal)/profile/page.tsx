@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { StudentStatistics, type StatsPeriod } from "@/features/profile/statistics";
 import { firstValue, type SearchParams } from "@/lib/list-params";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -122,7 +123,13 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                 <TextField name="currentPassword" type="password" autoComplete="current-password" label={t("currentPassword")} required />
                 <TextField name="password" type="password" autoComplete="new-password" label={t("newPassword")} hint={t("passwordRules")} required />
                 <TextField name="confirmPassword" type="password" autoComplete="new-password" label={t("confirmPassword")} required />
-                <SubmitButton>{t("changePassword")}</SubmitButton>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <SubmitButton>{t("changePassword")}</SubmitButton>
+                  {/* Doesn't know the current one: the email-code reset (reset-password) sets a new one. */}
+                  <Link href="/reset-password" className="text-sm font-medium text-brand-text hover:underline">
+                    {t("forgotCurrent")}
+                  </Link>
+                </div>
               </ActionForm>
             </CardBody>
           </Card>

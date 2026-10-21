@@ -185,7 +185,7 @@ export default async function TeachAttendancePage({ searchParams }: { searchPara
       } />
       {closed ? <Alert tone="warning" className="mb-4">{t("windowClosed", { days: windowDays })}</Alert> : null}
       {rows.length === 0 ? (
-        <Card as="div"><EmptyState icon={<ClipboardCheck />} title={t("emptyRoster")} /></Card>
+        <EmptyState icon={<ClipboardCheck />} title={t("emptyRoster")} />
       ) : (
         <AttendanceRoster rows={rows} classId={classId} classSubjectId={classSubjectId} date={date} period={classSubjectId ? period : null} readOnly={closed} />
       )}

@@ -29,7 +29,7 @@ export default async function TeachPage() {
     <>
       <PageHeader title={t("title")} description={formatDate(today, locale, timeZone)} />
       {!teacher ? (
-        <Card as="div"><EmptyState title={t("noStaffRecord")} description={t("noStaffRecordHint")} /></Card>
+        <EmptyState title={t("noStaffRecord")} description={t("noStaffRecordHint")} />
       ) : (
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-3">

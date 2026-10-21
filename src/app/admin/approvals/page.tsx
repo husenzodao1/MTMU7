@@ -66,7 +66,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
       />
       <ListBox>
         {!data || data.length === 0 ? (
-          <Card as="div"><EmptyState icon={<UserCheck />} title={view === "pending" ? t("emptyPending") : t("emptyReviewed")} /></Card>
+          <EmptyState icon={<UserCheck />} title={view === "pending" ? t("emptyPending") : t("emptyReviewed")} />
         ) : (
           <ul className="space-y-4">
             {data.map((request) => {

@@ -24,7 +24,7 @@ import { ActionForm, ConfirmAction, SubmitButton } from "@/components/ui/action-
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filters";
 import { ListBox, Pagination } from "@/components/ui/pagination";
-import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
+import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { requireAccess } from "@/lib/auth/guards";
 import { dayKey, formatClock, formatDate, todayIso } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/text";
@@ -138,9 +138,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
       <FilterBar filters={[{ name: "type", label: t("type"), options: NOTIFICATION_TYPES.filter((type) => type !== "message" && type !== "moderation").map((type) => ({ value: type, label: t(`types.${type}`) })) }]} />
       <ListBox>
         {items.length === 0 ? (
-          <Card as="div">
-            <EmptyState icon={<Bell />} title={unreadOnly ? t("emptyUnread") : t("empty")} />
-          </Card>
+          <EmptyState icon={<Bell />} title={unreadOnly ? t("emptyUnread") : t("empty")} />
         ) : (
           <div className="notice-days">
             {days.map((day) => (

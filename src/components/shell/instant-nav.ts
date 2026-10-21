@@ -23,11 +23,16 @@ const SLOW_MS = 6000;
  * opened, say) is answered by the page installed on the device instead,
  * after this long: the whole page from the service worker, with no network.
  * Opening a whole page costs a phone a second or two of starting the portal
- * again, so with a line the network is given a fair moment first — on a
- * slow one the page on the device still wins; with none it is at once.
+ * again, so the network is given a fair moment first; on a slow line, or with
+ * none, the page on the device then wins.
+ *
+ * Only a cold start's last resort: once the router has moved the app once (it
+ * is then "proven", below) a slow tap waits for the router, never a whole-page
+ * load. And the wait is one fixed moment — not cut to a blink on a false
+ * navigator.onLine, which the Android webview reports even when the line is
+ * fine, and which used to turn ordinary in-app taps into back-to-back reloads.
  */
 const FROM_DEVICE_MS = 1200;
-const FROM_DEVICE_OFFLINE_MS = 150;
 
 export function pageLink(target: EventTarget | null): URL | null {
   const anchor = (target as Element | null)?.closest?.("a[href]");
@@ -56,11 +61,19 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
   const [pending, setPending] = useState<string | null>(null);
   // The address being gone to, with its query, for the page installed on the device.
   const target = useRef<string | null>(null);
+  // Once the router has carried the app from one page to another on its own, it
+  // is trusted to keep doing so: a later tap that is slow to arrive waits for
+  // the router, not a whole-page load. The whole-page fallback is only for a
+  // cold start, before the router has shown it can move — firing it in the
+  // middle of an ordinary in-app navigation is what made rapid taps reboot the
+  // app again and again until it seized up.
+  const [proven, setProven] = useState(false);
   // Arrived — or gone somewhere else, by the back button say: the tap is done.
   const [seenPath, setSeenPath] = useState(pathname);
   if (seenPath !== pathname) {
     setSeenPath(pathname);
     setPending(null);
+    setProven(true);
   }
 
   useEffect(() => {
@@ -104,18 +117,18 @@ export function useInstantNavigation(pathname: string, onStart?: () => void) {
     const giveUp = window.setTimeout(() => setPending(null), GIVE_UP_MS);
     const fromDevice = window.setTimeout(() => {
       const to = target.current;
-      if (!to || window.location.pathname === pending) return;
+      if (!to || proven || window.location.pathname === pending) return;
       void installedOnDevice(to).then((kept) => {
         if (kept && window.location.pathname !== pending) window.location.assign(to);
       });
-    }, navigator.onLine === false ? FROM_DEVICE_OFFLINE_MS : FROM_DEVICE_MS);
+    }, FROM_DEVICE_MS);
     return () => {
       window.clearTimeout(slow);
       window.clearTimeout(giveUp);
       window.clearTimeout(fromDevice);
       window.dispatchEvent(new CustomEvent(SLOW_EVENT, { detail: false }));
     };
-  }, [pending]);
+  }, [pending, proven]);
 
   return pending;
 }

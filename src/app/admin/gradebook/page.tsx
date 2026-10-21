@@ -112,7 +112,7 @@ export default async function AdminGradebookPage({ searchParams }: { searchParam
         {header}
         <FilterBar filters={[{ name: "class", label: t("class"), emptyLabel: t("chooseClass"), options: classes.map(({ value, label }) => ({ value, label })) }]} />
         {!classId ? (
-          <Card as="div"><EmptyState icon={<ClipboardCheck />} title={t("chooseClassHint")} /></Card>
+          <EmptyState icon={<ClipboardCheck />} title={t("chooseClassHint")} />
         ) : (
           <Card>
             <CardBody className="p-0">
@@ -158,7 +158,7 @@ export default async function AdminGradebookPage({ searchParams }: { searchParam
       {header}
       <FilterBar filters={[{ name: "class", label: t("class"), options: classes.map(({ value, label }) => ({ value, label })) }]} />
       {!pending || pending.length === 0 ? (
-        <Card as="div"><EmptyState icon={<ClipboardCheck />} title={t("nothingToApprove")} /></Card>
+        <EmptyState icon={<ClipboardCheck />} title={t("nothingToApprove")} />
       ) : (
         <ActionForm action={approveGradesAction}>
           <Card>

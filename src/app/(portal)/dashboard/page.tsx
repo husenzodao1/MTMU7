@@ -169,7 +169,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <div className={student ? "grid gap-5 xl:grid-cols-3" : "grid gap-5"}>
         <div className={student ? "space-y-5 xl:col-span-2" : "space-y-5"}>
           {teacher ? (
-            <div>
+            <div className="space-y-2.5">
               <Card>
                 {/* With no lessons the list says so itself; the line under the title would say it twice. */}
                 <CardHeader title={t("teacher.title")} description={teacher.lessons.length > 0 ? t("teacher.description", { count: teacher.lessons.length }) : undefined} />
@@ -193,7 +193,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   ) : null}
                 </CardBody>
               </Card>
-              <CardTail href="/teach">{t("teacher.open")}</CardTail>
+              {/* The way on, set apart below the box as its own note rather than a tab hung on its edge. */}
+              <p className="text-end text-sm">
+                <Link href="/teach" className="inline-flex items-center gap-1 font-medium text-brand-text hover:underline">
+                  {t("teacher.open")}
+                  <ArrowRight className="size-3.5 rtl:rotate-180" aria-hidden />
+                </Link>
+              </p>
             </div>
           ) : null}
 

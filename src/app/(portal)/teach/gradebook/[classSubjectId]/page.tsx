@@ -265,6 +265,7 @@ export default async function GradebookPage({
               academicTermId={term.id}
               columns={columns}
               rows={rows}
+              topics={topics}
               locked={term.is_locked}
               readOnly={!mayWrite}
             />

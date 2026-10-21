@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { FilterBar } from "@/components/ui/filters";
 import { ListBox, Pagination } from "@/components/ui/pagination";
-import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
+import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requireModule } from "@/lib/auth/guards";
 import { markdownToPlainText } from "@/lib/content/markdown";
@@ -84,7 +84,7 @@ export default async function NewsPage({ searchParams }: { searchParams: Promise
       />
       <ListBox>
         {!data || data.length === 0 ? (
-          <Card as="div"><EmptyState icon={<Newspaper />} title={t("empty")} /></Card>
+          <EmptyState icon={<Newspaper />} title={t("empty")} />
         ) : (
           <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.map((article) => (

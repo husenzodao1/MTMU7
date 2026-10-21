@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BookOpenCheck } from "lucide-react";
 import { getMyClassSubjects, getSchoolClassSubjects } from "@/features/teach/queries";
-import { Breadcrumb, Card, EmptyState, PageHeader } from "@/components/ui/surface";
+import { Breadcrumb, EmptyState, PageHeader } from "@/components/ui/surface";
 import { can } from "@/lib/auth/access";
 import { requirePermission } from "@/lib/auth/guards";
 import type { Locale } from "@/lib/i18n/text";
@@ -30,7 +30,7 @@ export default async function GradebookIndexPage() {
     <>
       <PageHeader breadcrumb={<Breadcrumb label={tt("breadcrumb")} items={[{ label: tt("title"), href: "/teach" }, { label: t("title") }]} />} title={t("title")} description={t("indexDescription")} />
       {classSubjects.length === 0 && others.length === 0 ? (
-        <Card as="div"><EmptyState icon={<BookOpenCheck />} title={tt("noClasses")} description={tt("noClassesHint")} /></Card>
+        <EmptyState icon={<BookOpenCheck />} title={tt("noClasses")} description={tt("noClassesHint")} />
       ) : classSubjects.length === 0 ? null : (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {classSubjects.map((cs) => (

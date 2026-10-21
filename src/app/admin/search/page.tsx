@@ -29,9 +29,9 @@ export default async function AdminSearchPage({ searchParams }: { searchParams: 
       <SearchForm label={t("field")} defaultValue={query} autoFocus placeholder={t("placeholder")} submitLabel={t("submit")} searchingLabel={tc("searching")} />
 
       {query.trim().length < 2 ? (
-        <Card as="div"><EmptyState icon={<SearchIcon />} title={t("hint")} hint /></Card>
+        <EmptyState icon={<SearchIcon />} title={t("hint")} hint />
       ) : total === 0 ? (
-        <Card as="div"><EmptyState icon={<SearchIcon />} title={t("empty", { query })} /></Card>
+        <EmptyState icon={<SearchIcon />} title={t("empty", { query })} />
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
           {sections.map((section) => (

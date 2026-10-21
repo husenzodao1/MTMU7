@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { Lock, Maximize2, Minimize2 } from "lucide-react";
+import { Lock, Maximize2, Minimize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, CardBody, CardHeader } from "@/components/ui/surface";
 import { saveJournalCellsAction } from "@/features/teach/journal-actions";
+import { type LessonTopic } from "@/features/teach/lesson-topics";
+import { formatDate } from "@/lib/i18n/format";
+import { type Locale } from "@/lib/i18n/text";
 import { cn } from "@/lib/utils/cn";
 
 export interface JournalColumn {
@@ -55,6 +58,7 @@ export function JournalGrid({
   academicTermId,
   columns,
   rows,
+  topics,
   locked,
   readOnly,
 }: {
@@ -64,22 +68,32 @@ export function JournalGrid({
   academicTermId: string;
   columns: JournalColumn[];
   rows: JournalRow[];
+  /** What each lesson was about, by date — shown, read only, under a tapped day. */
+  topics?: LessonTopic[];
   locked?: boolean;
   readOnly?: boolean;
 }) {
   const t = useTranslations("teach.gradebook");
   const tRoot = useTranslations();
+  const locale = useLocale() as Locale;
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [rejected, setRejected] = useState<Set<string>>(new Set());
   const [saved, setSaved] = useState(0);
   const [pending, startTransition] = useTransition();
   const [full, setFull] = useState(false);
+  // The day whose lesson a teacher tapped a column to read — its topic and
+  // homework are shown, read only, under the register. Null when none is open.
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const gridRef = useRef<HTMLTableElement>(null);
 
   const disabled = Boolean(locked || readOnly);
   const valueOf = (row: JournalRow, key: string) => draft[`${row.id}|${key}`] ?? row.cells[key] ?? "";
   const dirty = Object.keys(draft).length > 0;
+
+  // The lesson behind the open column, and what it was about (by its date).
+  const openColumn = openKey ? (columns.find((c) => c.key === openKey && c.kind === "lesson") ?? null) : null;
+  const openTopic = openColumn ? (topics?.find((x) => x.date === openColumn.date) ?? null) : null;
 
   function write(rowId: string, key: string, value: string) {
     setDraft((current) => ({ ...current, [`${rowId}|${key}`]: value }));
@@ -177,32 +191,58 @@ export function JournalGrid({
           >
             {t("student")}
           </th>
-          {columns.map((column) => (
-            <th
-              key={column.key}
-              scope="col"
-              title={column.title}
-              className={cn(
-                "border-b border-e border-line px-0 py-2 align-bottom",
-                column.kind === "term" ? "bg-brand-50" : full && "bg-surface",
-                full && "sticky top-0 z-10"
-              )}
-            >
-              {/* Written upwards, as on the printed page: a date takes one
-                  column's width instead of five. A lesson still to come
-                  wears a lock over its date. */}
-              {column.closed ? <Lock className="mx-auto mb-1 size-3 text-ink-muted" aria-hidden /> : null}
-              <span
+          {columns.map((column) => {
+            const open = openKey === column.key && column.kind === "lesson";
+            // Written upwards, as on the printed page: a date takes one column's
+            // width instead of five. A lesson still to come wears a lock over
+            // its date; the open day's heading turns brand so it is plain which
+            // column the note below belongs to.
+            const inner = (
+              <>
+                {column.closed ? <Lock className="mb-1 size-3 text-ink-muted" aria-hidden /> : null}
+                <span
+                  className={cn(
+                    "block whitespace-nowrap text-xs font-medium tabular [writing-mode:vertical-rl]",
+                    open ? "text-brand-text" : "text-ink-secondary",
+                    full ? "h-20 w-11" : "h-24 w-7"
+                  )}
+                  style={{ transform: "rotate(180deg)" }}
+                >
+                  {column.heading}
+                </span>
+              </>
+            );
+            return (
+              <th
+                key={column.key}
+                scope="col"
+                title={column.title}
+                aria-selected={open || undefined}
                 className={cn(
-                  "mx-auto block whitespace-nowrap text-xs font-medium tabular text-ink-secondary [writing-mode:vertical-rl]",
-                  full ? "h-20 w-11" : "h-24 w-7"
+                  "border-b border-e border-line px-0 py-2 align-bottom",
+                  column.kind === "term" ? "bg-brand-50" : open ? "bg-brand-50" : full && "bg-surface",
+                  full && "sticky top-0 z-10"
                 )}
-                style={{ transform: "rotate(180deg)" }}
               >
-                {column.heading}
-              </span>
-            </th>
-          ))}
+                {/* A lesson column is a button: tapping it reads that day's
+                    topic and homework under the register, without changing a
+                    thing. Term columns hold no lesson, so they stay plain. */}
+                {column.kind === "lesson" ? (
+                  <button
+                    type="button"
+                    onClick={() => setOpenKey((current) => (current === column.key ? null : column.key))}
+                    aria-pressed={open}
+                    aria-label={t("showDay")}
+                    className="mx-auto flex cursor-pointer flex-col items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <div className="mx-auto flex flex-col items-center">{inner}</div>
+                )}
+              </th>
+            );
+          })}
           <th
             scope="col"
             className={cn(
@@ -272,6 +312,36 @@ export function JournalGrid({
     </table>
   );
 
+  // The read-only note under a tapped day: its date, the lesson's topic and the
+  // homework set. A day with nothing written says so; nothing here can be edited.
+  const dayPanel = openColumn ? (
+    <div className="rounded-xl border border-line bg-surface-muted/50 p-3 text-sm" role="region" aria-label={t("topic")}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-semibold text-ink">{formatDate(openColumn.date, locale)}</span>
+        <button
+          type="button"
+          onClick={() => setOpenKey(null)}
+          aria-label={t("closeDay")}
+          className="-m-1 rounded-md p-1 text-ink-muted transition-colors hover:bg-surface hover:text-ink"
+        >
+          <X className="size-4" aria-hidden />
+        </button>
+      </div>
+      {openTopic ? (
+        <>
+          <p className="text-ink">{openTopic.topic}</p>
+          {openTopic.homework ? (
+            <p className="mt-1 text-xs text-ink-muted">
+              <span className="font-medium">{t("homework")}:</span> {openTopic.homework}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <p className="text-ink-muted">{t("noTopicForDay")}</p>
+      )}
+    </div>
+  ) : null;
+
   const footer = (
     <>
       {columns.length === 0 ? <p className="text-sm text-ink-muted">{t("noColumns")}</p> : null}
@@ -312,6 +382,7 @@ export function JournalGrid({
           <div className="space-y-3">
             {notes}
             <div className="overflow-x-auto">{table}</div>
+            {dayPanel}
             {footer}
           </div>
         )}
@@ -346,6 +417,7 @@ export function JournalGrid({
               </div>
               {problem || saved > 0 ? <div className="space-y-2 px-3 pt-2 sm:px-5">{notes}</div> : null}
               <div className="min-h-0 flex-1 overflow-auto overscroll-contain px-1 pb-[env(safe-area-inset-bottom)] sm:px-3">{table}</div>
+              {dayPanel ? <div className="border-t border-line px-3 py-2 sm:px-5">{dayPanel}</div> : null}
               {!disabled ? (
                 <p className="border-t border-line px-3 py-2 text-xs text-ink-muted sm:px-5">{t("cellHelp")}</p>
               ) : null}

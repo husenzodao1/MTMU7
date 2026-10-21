@@ -31,7 +31,7 @@ export default async function AnnouncementsPage() {
     <>
       <PageHeader title={t("title")} description={t("description")} />
       {items.length === 0 ? (
-        <Card as="div"><EmptyState icon={<Megaphone />} title={t("empty")} /></Card>
+        <EmptyState icon={<Megaphone />} title={t("empty")} />
       ) : (
         <ul className="space-y-4">
           {items.map((item) => {

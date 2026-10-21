@@ -29,7 +29,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
     return (
       <>
         <PageHeader title={t("title")} />
-        <Card as="div"><EmptyState icon={<ClipboardCheck />} title={t("noStudent")} /></Card>
+        <EmptyState icon={<ClipboardCheck />} title={t("noStudent")} />
       </>
     );
   }

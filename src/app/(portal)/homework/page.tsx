@@ -5,7 +5,7 @@ import { ChildSwitcher } from "@/features/academic/child-switcher";
 import { resolveStudentContext } from "@/features/academic/student-context";
 import { WorkCard } from "@/features/academic/work-card";
 import { StatusBadge } from "@/components/ui/badge";
-import { Card, EmptyState, PageHeader } from "@/components/ui/surface";
+import { EmptyState, PageHeader } from "@/components/ui/surface";
 import { TabNav } from "@/components/ui/misc";
 import { requireModule } from "@/lib/auth/guards";
 import { formatDate, formatDateTime } from "@/lib/i18n/format";
@@ -32,7 +32,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
     return (
       <>
         <PageHeader title={t("title")} />
-        <Card as="div"><EmptyState icon={<NotebookPen />} title={t("noStudent")} /></Card>
+        <EmptyState icon={<NotebookPen />} title={t("noStudent")} />
       </>
     );
   }
@@ -118,9 +118,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
         </section>
       ) : null}
       {rows.length === 0 ? (
-        <Card as="div">
-          <EmptyState icon={<NotebookPen />} title={t("nothingDue")} />
-        </Card>
+        <EmptyState icon={<NotebookPen />} title={t("nothingDue")} />
       ) : (
         <ul className="work-list" aria-label={t("title")}>
           {rows.map((r) => (
